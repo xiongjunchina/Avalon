@@ -1,0 +1,35 @@
+{
+  admin off
+  {$HTTPS_GLOBAL_OPTIONS}
+  skip_install_trust
+  # Loopback IP clients do not send a DNS SNI name.
+  {$LOCAL_SNI}
+}
+
+{$SITE_ADDRESS} {
+  {$TLS_DIRECTIVE}
+  encode zstd gzip
+  header {
+    -Server
+    X-Content-Type-Options nosniff
+    Referrer-Policy no-referrer
+    Permissions-Policy "camera=(), microphone=(), geolocation=()"
+    Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"
+  }
+  @api path /api /api/*
+  handle @api {
+    reverse_proxy server:3001 {
+      header_up X-Forwarded-For {$CLIENT_IP_SOURCE}
+      header_up -Forwarded
+    }
+  }
+  handle {
+    root * /srv
+    @assets path /assets/* /art/*
+    header @assets Cache-Control "public, max-age=86400"
+    @page not path /assets/* /art/*
+    header @page Cache-Control "no-cache"
+    try_files {path} /index.html
+    file_server
+  }
+}

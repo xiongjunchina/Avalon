@@ -1,0 +1,5 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": { "noEmit": false, "rootDir": ".", "outDir": "dist/server", "sourceMap": false },
+  "include": ["apps/server/src", "packages/*/src", "scripts/migrate.ts"]
+}

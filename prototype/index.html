@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Avalon · 朋友房 · 交互线框</title>
+<style>
+:root{font-family:system-ui,-apple-system,"PingFang SC",sans-serif;color:#20352f;background:#eeeae2;font-size:15px}*{box-sizing:border-box}body{margin:0}button,select{font:inherit}button{cursor:pointer}button:focus-visible,select:focus-visible{outline:3px solid #b78136;outline-offset:3px}.workspace{max-width:1020px;margin:40px auto;padding:0 20px;display:grid;grid-template-columns:1fr 400px;gap:64px}.intro{padding-top:40px}.eyebrow{font-size:12px;letter-spacing:3px;color:#617569}h1{font-size:44px;font-weight:550;line-height:1.2}h2{font-size:24px;font-weight:550;margin:12px 0}h3{font-size:17px}p{line-height:1.8}.muted{color:#64746d;font-size:13px}.nav{display:flex;gap:8px;flex-wrap:wrap;margin:28px 0}.nav button{padding:10px 14px;border:1px solid #bcc8be;background:transparent;border-radius:8px}.nav button[aria-pressed=true]{background:#203e33;color:white}.notes{border-top:1px solid #c8cec3;margin-top:28px;padding-top:16px}.phone{background:#faf9f4;border:1px solid #bec8bc;border-radius:26px;overflow:hidden;box-shadow:0 18px 48px #24362b14;min-height:760px}.top{padding:22px 22px 12px;display:flex;justify-content:space-between;border-bottom:1px solid #e0e5db;font-size:12px;letter-spacing:1px}.demo{background:#f4ead1;padding:8px 18px;font-size:12px;color:#6b532a}.screen{padding:20px;display:none}.screen.active{display:block}.row{display:flex;align-items:center;justify-content:space-between;gap:12px}.card{border:1px solid #d9dfd4;border-radius:12px;padding:16px;margin:14px 0;background:#fffefa}.primary,.secondary{width:100%;padding:13px;border-radius:8px;margin-top:10px}.primary{color:#fff;background:#284c3e;border:1px solid #284c3e}.secondary{color:#284c3e;background:transparent;border:1px solid #aebdae}.tag{font-size:12px;border:1px solid #bac9b9;border-radius:20px;padding:4px 8px}.seats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0}.seat{border:1px solid #d2dbc9;border-radius:10px;text-align:center;padding:15px 3px;background:#f1f5ec;font-size:13px}.seat small{display:block;margin-top:5px;color:#6c786c}.seat.selected{outline:2px solid #3e6651;background:#e4efdf}.seat.captain::before{content:'队长 · ';font-size:11px}label.setting{display:flex;justify-content:space-between;gap:10px;align-items:center;border-bottom:1px solid #e3e7dc;padding:14px 0;font-size:14px}select{max-width:150px;padding:7px;border:1px solid #bbc6b6;border-radius:6px;background:white}input{accent-color:#284c3e;width:19px;height:19px}.steps{display:flex;justify-content:space-between;gap:6px;margin:20px 0}.step{flex:1;text-align:center;padding:10px 2px;background:#e9eee4;border-radius:7px;font-size:12px}.step.done{background:#dbeadc}.step.current{border:2px solid #9b7738;background:#f7edd7}.voice{border:1px solid #c7d5c4;background:#edf3e8;border-radius:10px;padding:12px;margin-top:18px}.voice button{padding:8px 12px;background:white;border:1px solid #9eb297;border-radius:6px}.stats{display:grid;grid-template-columns:repeat(3,1fr);text-align:center;gap:8px;margin:22px 0}.stats strong{display:block;font-size:27px}.stats small{color:#6c7c70}.link{background:transparent;border:0;padding:14px 0;color:#284c3e;text-align:left;width:100%;border-bottom:1px solid #dce2d6}.timeline{padding-left:18px;border-left:2px solid #bacab3;margin-left:8px}.timeline p{font-size:13px}.notice{font-size:12px;padding:12px;background:#f4eddc;border-radius:8px;line-height:1.6}#toast{min-height:40px;font-size:13px;color:#775725;margin-top:16px}summary{cursor:pointer}details p{font-size:13px}.footer{padding:18px;text-align:center;font-size:11px;color:#7c877b}@media(max-width:760px){.workspace{display:block;margin:0 auto;padding:16px;max-width:460px}.intro{padding:0}.intro h1{font-size:28px;margin:12px 0}.intro>p,.notes{display:none}.nav{margin:16px 0}.phone{border-radius:16px;min-height:730px}.eyebrow{font-size:10px}.nav button{padding:8px 10px;font-size:13px}}
+</style>
+</head>
+<body>
+<main class="workspace">
+<aside class="intro">
+<div class="eyebrow">AVALON / PRIVATE TABLE</div>
+<h1>一张桌子，<br>一局朋友间的较量。</h1>
+<p>第一版交互线框。先验证信息组织、操作顺序和秘密信息边界，正式视觉与角色素材将在实现阶段完善。</p>
+<nav class="nav" aria-label="线框页面">
+<button data-page="home" aria-pressed="true">首页</button><button data-page="lobby" aria-pressed="false">等待房间</button><button data-page="settings" aria-pressed="false">设置</button><button data-page="game" aria-pressed="false">对局</button><button data-page="result" aria-pressed="false">复盘</button><button data-page="profile" aria-pressed="false">个人中心</button>
+</nav>
+<div class="notes"><h3>阅读线框</h3><p class="muted">按钮可切换页面与演示状态。所有人物、战绩、麦克风状态均为虚构样例；没有真实通话、房间、存储或账号。</p><p class="muted">绿色呈现确认操作，金色提示当前阶段。任务结果只展示票数，不提供出牌人与选票的对应关系。</p></div>
+<p id="toast" role="status" aria-live="polite"></p>
+</aside>
+<section class="phone" aria-label="手机线框">
+<header class="top"><span>AVALON · 朋友房</span><span>设计稿 01</span></header>
+<div class="demo">交互演示 · 无真实房间与语音连接</div>
+<section id="home" class="screen active">
+<p class="muted">今晚，和熟悉的人玩一局。</p><h2>欢迎回来，阿青</h2>
+<div class="card"><span class="tag">待开始 · 演示</span><h3>周三朋友局</h3><p class="muted">6 人标准局 · 已入座 5 人<br>实名组队表决 · 全局累计流局</p><button class="primary" data-page="lobby">回到房间</button></div>
+<button class="secondary" data-page="settings">创建房间</button><button class="secondary" data-demo="正式版可粘贴邀请链接或输入房间码加入。">通过房间码加入</button>
+<div class="card"><h3>只需一条邀请链接</h3><p class="muted">开房 → 分享给朋友 → 入座准备。身份会在开局后分配，只有自己能查看。</p></div>
+<button class="link" data-page="profile">个人资料与历史战绩 →</button>
+</section>
+<section id="lobby" class="screen">
+<div class="row"><h2>周三朋友局</h2><span class="tag">5 / 6 人</span></div><p class="muted">演示房号 A6K9 · 房主 阿青</p>
+<div class="seats"><div class="seat">阿青<small>房主 · 未准备</small></div><div class="seat">小林<small>已准备</small></div><div class="seat">阿远<small>已准备</small></div><div class="seat">小麦<small>已准备</small></div><div class="seat">小乔<small>未准备</small></div><div class="seat">空座<small>等待朋友</small></div></div>
+<button class="secondary" data-demo="演示稿不生成公网邀请。正式版提供分享或复制房间链接。">邀请朋友</button>
+<div class="card"><div class="row"><strong>本局规则</strong><button data-page="settings">调整</button></div><p class="muted">顺序队长 · 实名组队投票<br>全局累计 5 次流局判负<br>湖中女神：关闭 · 提前刺杀：关闭</p></div>
+<div class="voice row"><span class="muted">语音示意 · 尚未连接</span><button data-demo="正式版会先请求麦克风权限，再加入房间通话。">测试麦克风</button></div>
+<button class="primary" data-demo="正式版需要人数齐全且全员准备；此按钮仅展示等待提示。">等待全员入座与准备</button>
+</section>
+<section id="settings" class="screen">
+<h2>房间设置</h2><p class="muted">开局后锁定；修改会重置准备状态。</p>
+<label class="setting">人数<select aria-label="人数"><option>5 人</option><option selected>6 人</option><option>7 人</option><option>8 人</option><option>9 人</option><option>10 人</option></select></label>
+<label class="setting">队长顺序<select aria-label="队长顺序"><option>按座位循环</option><option>开局打乱后循环</option></select></label>
+<label class="setting">匿名组队投票<input type="checkbox"></label>
+<p class="muted">开启后仅公布赞成／反对总票数。任务出牌始终匿名。</p>
+<label class="setting">流局计数<select aria-label="流局计数"><option>全局累计</option><option>每次任务单独累计</option></select></label>
+<label class="setting">湖中女神<input type="checkbox"></label>
+<label class="setting">提前刺杀<input type="checkbox"></label>
+<p class="muted">提前刺杀从第 2 次实际任务结束后开放；流局不计入这两次任务。</p>
+<button class="primary" data-demo="设置未保存：这里是布局演示，正式版将校验权限、人数并广播规则变化。">保存设置（演示）</button><button class="secondary" data-demo="正式版可保存为自己的常用设置；演示稿不持久化。">存为常用设置</button>
+</section>
+<section id="game" class="screen">
+<div class="row"><h2>第 3 次任务</h2><span class="tag">讨论中</span></div>
+<div class="steps"><div class="step done">① 成功</div><div class="step">② 失败</div><div class="step current">③ 当前</div><div class="step">④ 待定</div><div class="step">⑤ 待定</div></div>
+<p class="muted">6 人局 · 本次选 4 人 · 1 张失败票即任务失败<br>全局流局 1 / 5 · 顺时针发言</p>
+<div class="seats"><div class="seat selected">阿青<small>入选</small></div><div class="seat captain selected">小林<small>入选</small></div><div class="seat selected">阿远<small>入选</small></div><div class="seat">小麦<small>未入选</small></div><div class="seat selected">小乔<small>入选</small></div><div class="seat">阿舟<small>未入选</small></div></div>
+<div class="card"><strong>队伍已选定，先听听大家的判断。</strong><p class="muted">队长结束讨论后，全员表决是否同意这支队伍。</p><button class="secondary" data-demo="当前演示玩家不是队长，正式版不会允许结束讨论。">等待队长结束讨论</button></div>
+<details class="card"><summary>查看我的身份（演示）</summary><p>忠臣 · 蓝方<br>没有额外视野；执行任务时只能提交成功。</p></details>
+<div class="voice row"><span class="muted">语音演示 · 麦克风关闭</span><button data-demo="这不是可用的麦克风开关。真实通话将在技术验证阶段接入。">开启麦克风</button></div>
+</section>
+<section id="result" class="screen">
+<span class="tag">已结束 · 演示对局</span><h2>蓝方获胜</h2><p class="muted">三次任务成功，梅林躲过了刺杀。</p>
+<div class="card"><strong>最终身份</strong><p class="muted">阿青 · 忠臣　小林 · 梅林<br>阿远 · 派西维尔　小麦 · 莫甘娜<br>小乔 · 忠臣　阿舟 · 刺客</p></div>
+<h3>关键进程</h3><div class="timeline"><p>任务 1 · 成功<br><span class="muted">小林、阿青执行 · 成功 2 / 失败 0</span></p><p>任务 2 · 失败<br><span class="muted">小麦、小乔、阿舟执行 · 成功 2 / 失败 1</span></p><p>任务 3 · 成功<br><span class="muted">阿青、小林、阿远、小乔执行 · 成功 4 / 失败 0</span></p><p>任务 4 · 成功<br><span class="muted">阿青、小林、阿远执行 · 成功 3 / 失败 0</span></p><p>刺杀 · 未命中<br><span class="muted">阿舟选择阿远，蓝方获胜。</span></p></div>
+<button class="secondary" id="favorite">收藏本局（演示）</button><button class="primary" data-page="lobby">返回房间，再来一局</button>
+</section>
+<section id="profile" class="screen">
+<p class="eyebrow">PLAYER / 访客</p><div class="row"><h2>阿青</h2><button data-demo="正式版支持编辑昵称与选择预置头像。">编辑资料</button></div>
+<div class="notice">身份保存在当前设备。清除浏览器数据或换设备可能无法找回账号；当前尚未接入微信认证。</div>
+<div class="stats"><div><strong>12</strong><small>完成局数</small></div><div><strong>8</strong><small>胜利</small></div><div><strong>67%</strong><small>胜率</small></div></div>
+<p class="muted">以上为演示统计：4 负；中断局不计入胜率。</p>
+<button class="link" data-page="result">历史战绩与复盘 →</button><button class="link" data-page="result">我的收藏 →</button><button class="link" data-demo="正式版按角色和阵营分别展示局数、胜负与胜率。">角色／阵营统计 →</button><button class="link" data-page="settings">常用房间设置 →</button>
+<div class="card"><h3>最近一局</h3><p class="muted">6 人局 · 忠臣 · 蓝方获胜</p><button class="secondary" data-page="result">查看对局</button></div>
+</section>
+<footer class="footer">规则与布局原型 · 非正式游戏</footer>
+</section>
+</main>
+<script>
+const show=(id)=>{document.querySelectorAll('.screen').forEach(el=>el.classList.toggle('active',el.id===id));document.querySelectorAll('.nav button').forEach(el=>el.setAttribute('aria-pressed',String(el.dataset.page===id)));document.querySelectorAll('details').forEach(el=>el.open=false);document.getElementById('toast').textContent='';};
+document.querySelectorAll('[data-page]').forEach(el=>el.addEventListener('click',()=>show(el.dataset.page)));
+document.querySelectorAll('[data-demo]').forEach(el=>el.addEventListener('click',()=>{document.getElementById('toast').textContent=el.dataset.demo;}));
+document.getElementById('favorite').addEventListener('click',function(){const active=this.getAttribute('aria-pressed')==='true';this.setAttribute('aria-pressed',String(!active));this.textContent=active?'收藏本局（演示）':'已收藏（仅本页演示）';});
+</script>
+</body>
+</html>

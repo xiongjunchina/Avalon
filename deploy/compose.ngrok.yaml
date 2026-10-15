@@ -1,0 +1,9 @@
+# ngrok terminates public HTTPS; this HTTP listener remains loopback-only.
+services:
+  gateway:
+    environment:
+      SITE_ADDRESS: "http://:${GATEWAY_PORT}"
+      TLS_DIRECTIVE: ""
+      LOCAL_SNI: ""
+      # ngrok appends the real client IP. The server trusts only the last value.
+      CLIENT_IP_SOURCE: "{http.request.header.X-Forwarded-For}"

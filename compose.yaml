@@ -1,0 +1,19 @@
+name: avalon
+services:
+  postgres:
+    image: postgres:18.4-alpine
+    environment:
+      POSTGRES_USER: avalon
+      POSTGRES_DB: avalon
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Run npm run setup:local first}
+    ports:
+      - "127.0.0.1:55433:5432"
+    volumes:
+      - avalon_pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U avalon -d avalon"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+volumes:
+  avalon_pgdata:

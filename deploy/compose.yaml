@@ -1,0 +1,72 @@
+name: ${PROJECT:?Run npm run deploy:setup first}
+services:
+  postgres:
+    image: ${POSTGRES_IMAGE:-postgres:18.4-alpine@sha256:9a8afca54e7861fd90fab5fdf4c42477a6b1cb7d293595148e674e0a3181de15}
+    environment:
+      POSTGRES_USER: avalon
+      POSTGRES_DB: avalon
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Missing deployment password}
+    volumes:
+      - pgdata:/var/lib/postgresql
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U avalon -d avalon"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+  server:
+    image: avalon-server:${IMAGE_TAG:-stage7}
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+      target: server
+      args:
+        NODE_IMAGE: ${NODE_IMAGE:-node:24-alpine@sha256:d32cdf619f63fe0471182d08996dd516c6275bb5fd31ae06e55a570bd9e1ad43}
+        CADDY_IMAGE: ${CADDY_IMAGE:-caddy:2-alpine@sha256:6aeddd44c3078b0f9a35206472a11420648a79c184603ef95957d0a20044cb2b}
+    environment:
+      DATABASE_URL: postgresql://avalon:${POSTGRES_PASSWORD}@postgres:5432/avalon
+      APP_ORIGIN: ${APP_ORIGIN:?Missing origin}
+      COOKIE_SECURE: ${COOKIE_SECURE:?Missing cookie policy}
+      TRUST_PROXY: "true"
+    depends_on:
+      postgres: { condition: service_healthy }
+    init: true
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    restart: unless-stopped
+    stop_grace_period: 30s
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3001/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 5s
+      timeout: 4s
+      retries: 20
+  gateway:
+    image: avalon-gateway:${IMAGE_TAG:-stage7}
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+      target: gateway
+      args:
+        NODE_IMAGE: ${NODE_IMAGE:-node:24-alpine@sha256:d32cdf619f63fe0471182d08996dd516c6275bb5fd31ae06e55a570bd9e1ad43}
+        CADDY_IMAGE: ${CADDY_IMAGE:-caddy:2-alpine@sha256:6aeddd44c3078b0f9a35206472a11420648a79c184603ef95957d0a20044cb2b}
+    environment:
+      APP_ORIGIN: ${APP_ORIGIN}
+      SITE_ADDRESS: ${APP_ORIGIN}
+      CLIENT_IP_SOURCE: "{remote_host}"
+      TLS_DIRECTIVE: ${TLS_DIRECTIVE:-}
+      HTTPS_GLOBAL_OPTIONS: auto_https disable_redirects
+      LOCAL_SNI: default_sni 127.0.0.1
+    ports:
+      - "127.0.0.1:${GATEWAY_PORT:?Missing port}:${GATEWAY_PORT}"
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      server: { condition: service_healthy }
+    restart: unless-stopped
+    security_opt: [no-new-privileges:true]
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:

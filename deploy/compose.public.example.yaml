@@ -1,0 +1,14 @@
+# TEMPLATE ONLY. Do not run until the host/domain and public release are approved.
+# Combine with compose.yaml and a private production env file; requires Compose 2.24.4+.
+services:
+  server:
+    environment:
+      COOKIE_SECURE: "true"
+  gateway:
+    ports: !override
+      - "0.0.0.0:80:80"
+      - "0.0.0.0:443:443"
+    environment:
+      TLS_DIRECTIVE: ""
+      HTTPS_GLOBAL_OPTIONS: ""
+      LOCAL_SNI: ""
