@@ -86,7 +86,9 @@ function App() {
   const [setupSettings, setSetupSettings] = useState<Settings>(() => ({
     ...defaultSettings,
     playerCount: 6,
-    ladyEnabled: true,
+    captainMode: 'random_order',
+    anonymousTeamVote: true,
+    ladyEnabled: false,
     earlyAssassinationEnabled: true,
   }));
   const pendingSettingsRef = useRef<Settings | null>(null);
