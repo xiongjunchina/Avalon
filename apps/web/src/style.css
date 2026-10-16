@@ -1,12 +1,14 @@
 :root {
-  font-family: system-ui,-apple-system,"PingFang SC",sans-serif;
+  --sans: "Noto Sans SC", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+  --display: "ZCOOL XiaoWei", "Ma Shan Zheng", "STKaiti", "Kaiti SC", "Noto Sans SC", sans-serif;
+  --calligraphy: "Ma Shan Zheng", "ZCOOL XiaoWei", "STKaiti", "Kaiti SC", cursive, sans-serif;
+  font-family: var(--sans);
   color: #eee8d8; background: #0b141b; font-size: 16px; font-synthesis: none; color-scheme: dark;
   --accent: #dfbd7d; --border: #3c4c52; --muted: #b1bfc0;
   --surface: #14222c; --raised: #1c2d38; --ink: #101920;
-  --display: "Songti SC","STSong","Noto Serif SC",Georgia,serif;
 }
 * { box-sizing:border-box }
-body { margin:0; min-height:100dvh }
+body { margin:0; min-height:100dvh; font-family:var(--sans) }
 main { max-width:1160px; margin:auto; padding:24px 32px }
 a { color:var(--accent) }
 header,.section-head { display:flex; align-items:center; justify-content:space-between; gap:16px }
@@ -14,19 +16,19 @@ header { border-bottom:1px solid var(--border); padding:0 0 20px }
 .brand { display:flex; align-items:center; gap:12px; color:var(--accent); text-decoration:none }
 .emblem { width:40px; height:40px; flex-shrink:0; vertical-align:middle }
 .brand>.emblem { width:48px; height:48px }
-.brand-wordmark { font:28px Georgia,serif; letter-spacing:5px }
-.brand small { display:block; font:12px system-ui,sans-serif; letter-spacing:3px; color:var(--muted); margin-top:6px }
+.brand-wordmark { font:28px var(--display); letter-spacing:5px }
+.brand small { display:block; font:12px var(--sans); letter-spacing:3px; color:var(--muted); margin-top:6px }
 .edition { font:14px/1.8 var(--display); letter-spacing:3px; color:var(--muted); text-align:right }
-h1,h2,h3,h4 { font-family:var(--display); text-wrap:balance }
+h1,h2,h3,h4 { font-family:var(--display); text-wrap:balance; letter-spacing:0.5px }
 h1 { font-size:clamp(30px,5vw,48px); line-height:1.35; font-weight:600; margin:0 0 14px; letter-spacing:2px }
 h2 { font-size:25px; margin:0 0 20px; font-weight:600 }
 h3 { font-size:21px; font-weight:600 }
 h4 { font-size:18px; font-weight:600 }
-small { font:14px system-ui,sans-serif; color:var(--muted); font-variant-numeric:tabular-nums }
+small { font:14px var(--sans); color:var(--muted); font-variant-numeric:tabular-nums }
 p { line-height:1.75; text-wrap:pretty }
 .muted { color:var(--muted) }
 .hint { font-size:14px; color:var(--muted); line-height:1.8 }
-.eyebrow { font-size:11px; letter-spacing:2.2px; color:var(--accent); margin:0 0 10px; font-weight:500 }
+.eyebrow { font-size:11px; letter-spacing:2.2px; color:var(--accent); margin:0 0 10px; font-weight:600 }
 .realm-hero { position:relative; isolation:isolate; margin:28px 0; min-height:285px; display:flex; align-items:center; padding:38px; background:#12212b url('/art/avalon-moonlit.png?v=huajian2') center 48%/cover; border:1px solid #4b5551; border-radius:4px 24px 4px 24px; overflow:hidden }
 .realm-hero:before { content:""; position:absolute; inset:0; background:#071016; opacity:.33; z-index:-1 }
 .realm-hero:after { content:""; position:absolute; inset:9px; border:1px solid #c6a57055; border-radius:1px 16px 1px 16px; pointer-events:none }
@@ -60,46 +62,56 @@ button:disabled { opacity:.5; cursor:not-allowed }
 .deal-card-back>.emblem { width:36px; height:36px; margin-top:15px }
 .deal-card-back strong { font:72px/1 var(--display); font-variant-numeric:tabular-nums; align-self:start }
 .deal-message { font:22px/1.5 var(--display); color:var(--accent) }
-.guide { margin:32px auto; max-width:1000px }
+.guide { margin:20px auto 32px; max-width:1000px; padding:0 14px }
 .guide-heading { display:flex; align-items:center; justify-content:space-between; gap:20px }
 .guide-heading button { width:auto; flex-shrink:0; margin:0 }
 .guide-heading h1 { margin-bottom:8px }
 .guide-heading p { margin-bottom:0 }
-.guide-nav { display:flex; gap:12px; margin:24px 0 }
+.guide-nav { display:flex; gap:12px; margin:20px 0 }
 .guide-nav button[aria-pressed=true] { background:var(--accent); color:var(--ink) }
-.guide-rules { display:grid; gap:24px }
-.guide-victories,.guide-configs,.guide-role-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px }
-.guide-victories>div { padding:18px; border:1px solid var(--faction-border); background:var(--faction-bg); border-radius:4px }
+.guide-rules { display:grid; gap:20px }
+.guide-victories,.guide-configs { display:grid; grid-template-columns:1fr 1fr; gap:16px }
+.guide-role-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(290px, 1fr)); gap:16px }
+.guide-victories>div { padding:18px; border:1px solid var(--faction-border); background:var(--faction-bg); border-radius:8px }
 .guide h3 { margin:0 0 12px }
 .guide-victories h3,.guide-faction>h2 { display:flex; align-items:center; gap:12px; color:var(--faction) }
 .guide-victories .emblem { width:28px; height:28px }
 .guide p:last-child { margin-bottom:0 }
 .guide-steps { padding-left:25px; margin:0 }
-.guide-steps>li { padding-left:8px; margin-bottom:28px }
+.guide-steps>li { padding-left:8px; margin-bottom:24px }
 .guide-steps>li::marker { color:var(--accent); font:20px var(--display) }
-.guide li { line-height:1.85 }
-.guide-config { padding:18px; border:1px solid var(--border); background:var(--ink) }
+.guide li { line-height:1.8 }
+.guide-config { padding:18px; border:1px solid var(--border); background:var(--ink); border-radius:8px }
 .guide-config p { margin:12px 0; overflow-wrap:anywhere }
 .guide-config p>strong { color:var(--accent); margin-right:6px }
 .guide-missions { display:grid; grid-template-columns:repeat(5,1fr); gap:6px; list-style:none; padding:0; margin:12px 0 0; text-align:center }
 .guide-missions li { display:flex; flex-direction:column; gap:4px; padding:8px 2px; border-top:1px solid var(--border); font-variant-numeric:tabular-nums }
 .guide-missions span { font-size:12px; color:var(--muted) }
-.guide dt { color:var(--accent); font-weight:600; margin-top:18px }
-.guide dd { margin:6px 0 0; line-height:1.85 }
-.guide-faction { margin-top:32px }
-.guide-role { padding:24px; border:1px solid var(--faction-border); border-radius:4px 18px 4px 18px; background:var(--surface); color:#eee8d8; min-width:0 }
-.guide-role-heading { display:flex; align-items:center; gap:20px }
-.guide-role-heading .role-portrait { width:132px }
-.guide-role-heading h3 { color:var(--faction); font-size:28px; margin:8px 0 }
-.guide-role-heading .eyebrow { color:var(--faction) }
-.guide-role dl { margin-bottom:0 }
+.guide dt { color:var(--accent); font-weight:600; margin-top:16px }
+.guide dd { margin:6px 0 0; line-height:1.75 }
+.guide-faction { margin-top:28px }
+.guide-role { padding:18px; border:1px solid var(--faction-border); border-radius:12px; background:linear-gradient(165deg, rgba(24, 42, 56, 0.92) 0%, rgba(14, 24, 34, 0.96) 100%); box-shadow:0 8px 22px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08); color:#eee8d8; min-width:0; display:flex; flex-direction:column; gap:14px }
+.guide-role.allegiance-red { background:linear-gradient(165deg, rgba(54, 28, 32, 0.92) 0%, rgba(22, 16, 20, 0.96) 100%) }
+.guide-role-heading { display:grid; grid-template-columns:88px minmax(0, 1fr); align-items:center; gap:14px; padding-bottom:12px; border-bottom:1px solid rgba(255, 255, 255, 0.1) }
+.guide-role-heading .role-portrait { width:88px; height:88px; border-radius:12px; box-shadow:0 4px 12px rgba(0, 0, 0, 0.45) }
+.guide-role-meta { min-width:0; display:flex; flex-direction:column; gap:5px }
+.guide-role-badges { display:flex; flex-wrap:wrap; align-items:center; gap:6px }
+.guide-role-faction-pill,.guide-role-title-pill { display:inline-flex; align-items:center; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:600; letter-spacing:0.5px; line-height:1.4; white-space:nowrap }
+.guide-role-faction-pill { background:var(--faction-bg); color:var(--faction); border:1px solid var(--faction-border) }
+.guide-role-title-pill { background:rgba(223, 189, 125, 0.14); color:#f3dcb1; border:1px solid rgba(223, 189, 125, 0.4) }
+.guide-role-heading h3 { color:#fff4dc; font-family:var(--display); font-size:26px; line-height:1.2; margin:2px 0 0; letter-spacing:2px; white-space:nowrap }
+.guide-role-motto { margin:0; font-size:13px; line-height:1.45; color:var(--faction); font-weight:500 }
+.guide-role-dl { margin:0; display:grid; gap:10px }
+.guide-role-detail { padding:9px 12px; border-radius:8px; background:rgba(9, 16, 23, 0.55); border:1px solid rgba(255, 255, 255, 0.06) }
+.guide-role-detail dt { margin:0 0 3px; font-size:12px; letter-spacing:1px; color:var(--accent); font-weight:700 }
+.guide-role-detail dd { margin:0; font-size:13.5px; line-height:1.6; color:#e4dfd3 }
 @media(max-width:700px) {
   .guide-victories,.guide-configs,.guide-role-grid { grid-template-columns:1fr }
   .guide-heading { align-items:flex-start }
-  .guide-heading button { padding:10px; font-size:14px }
-  .guide-role { padding:18px }
-  .guide-role-heading { gap:16px }
-  .guide-role-heading .role-portrait { width:110px }
+  .guide-heading button { padding:10px 14px; font-size:14px }
+  .guide-role { padding:16px }
+  .guide-role-heading { grid-template-columns:80px minmax(0, 1fr); gap:12px }
+  .guide-role-heading .role-portrait { width:80px; height:80px }
   .guide-role-heading h3 { font-size:24px }
 }
 .status { font-size:12px; white-space:nowrap; border:1px solid #6a7568; padding:6px 10px; border-radius:3px; color:#d0d9c2; font-variant-numeric:tabular-nums }
@@ -127,7 +139,7 @@ footer small { margin-top:8px; color:#a0adb1 }
 .seat.is-ready { border-color:var(--accent) }
 .seat .emblem { color:#70858e; width:38px; height:38px; margin:10px 0 4px }
 .seat.occupied .emblem { color:var(--accent) }
-.seat-number { position:absolute; top:7px; left:9px; font:12px Georgia,serif; color:var(--muted); font-variant-numeric:tabular-nums }
+.seat-number { position:absolute; top:7px; left:9px; font:12px var(--display); color:var(--muted); font-variant-numeric:tabular-nums }
 .seat strong { font-size:14px; font-weight:500; overflow-wrap:anywhere }
 .seat>span:last-child { font-size:12px; color:var(--muted) }
 .compact-seats .seat { min-height:0; padding:10px 7px; gap:6px }
@@ -176,7 +188,7 @@ footer small { margin-top:8px; color:#a0adb1 }
 .account,.replay { max-width:960px; margin:28px auto 0 }
 .account { padding:0; background:transparent; border:0 }
 .account-banner { position:relative; height:180px; border:1px solid #556365; background:#162731 url('/art/avalon-moonlit.png?v=huajian2') center 43%/cover; border-radius:6px 18px 0 0 }
-.account-banner>span { position:absolute; left:24px; top:24px; font:11px Georgia,serif; letter-spacing:3px; color:#d9cba9; background:#101c27db; padding:9px 12px }
+.account-banner>span { position:absolute; left:24px; top:24px; font:11px var(--display); letter-spacing:3px; color:#d9cba9; background:#101c27db; padding:9px 12px }
 .profile-bar { position:relative; border:1px solid var(--border); border-top:0; background:var(--surface); padding:0 26px 24px; border-radius:0 0 6px 6px }
 .profile-heading { display:flex; align-items:center; gap:20px; min-width:0; margin-top:-20px }
 .profile-heading>div { padding-top:30px; min-width:0 }
@@ -194,12 +206,12 @@ footer small { margin-top:8px; color:#a0adb1 }
 .stat-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); margin:30px 0 20px; padding:12px 0 }
 .stat-grid>div { display:flex; flex-direction:column; gap:10px; padding:0 8px; text-align:center; border-right:1px solid var(--border) }
 .stat-grid>div:last-child { border:0 }
-.stat-grid strong { font:42px Georgia,serif; color:#f1deba; font-variant-numeric:tabular-nums }
+.stat-grid strong { font:42px var(--display); color:#f1deba; font-variant-numeric:tabular-nums }
 .stat-grid span { font-size:14px; color:var(--muted) }
 .stats-section { margin-top:38px }
 .ornament-heading { display:flex; align-items:center; justify-content:space-between; gap:14px; margin-bottom:20px }
 .ornament-heading h2 { margin:0; font-size:26px; letter-spacing:2px }
-.ornament-heading .eyebrow { font:10px Georgia,serif; letter-spacing:3px; margin-bottom:8px }
+.ornament-heading .eyebrow { font:10px var(--sans); letter-spacing:3px; margin-bottom:8px }
 .ornament-heading>span { color:var(--muted); font:14px var(--display); letter-spacing:1px; border-top:1px solid var(--border); padding-top:10px }
 .allegiance-blue { --faction:#b9e2ed; --faction-border:#557f94; --faction-bg:#162d3b }
 .allegiance-red { --faction:#f0bea8; --faction-border:#946653; --faction-bg:#332525 }
@@ -210,12 +222,12 @@ footer small { margin-top:8px; color:#a0adb1 }
 .faction-motto { margin:0; font:12px var(--display); letter-spacing:4px }
 .faction-card h3 { font-size:25px; margin:8px 0 18px; letter-spacing:2px }
 .faction-rate { display:flex; justify-content:center; align-items:baseline; gap:8px; margin:14px 0 }
-.faction-rate strong { font:36px Georgia,serif; font-variant-numeric:tabular-nums }
+.faction-rate strong { font:36px var(--display); font-variant-numeric:tabular-nums }
 .faction-rate>span { font-size:12px; color:var(--muted) }
 .score-pair { display:flex; justify-content:center; gap:64px; padding-top:18px; border-top:1px solid var(--faction-border); margin:20px 0 16px }
 .score-pair>div { display:flex; flex-direction:column-reverse; gap:4px }
 .score-pair dt { font-size:12px; color:var(--muted) }
-.score-pair dd { margin:0; font:24px Georgia,serif; font-variant-numeric:tabular-nums }
+.score-pair dd { margin:0; font:24px var(--display); font-variant-numeric:tabular-nums }
 .card-foot { font-size:12px; color:var(--muted); margin:12px 0 0; font-variant-numeric:tabular-nums }
 .role-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px }
 .role-card { position:relative; min-width:0; background:var(--surface); border:1px solid var(--border); border-top:2px solid var(--faction-border); border-radius:4px; padding:26px 12px 18px; text-align:center }
@@ -223,7 +235,7 @@ footer small { margin-top:8px; color:#a0adb1 }
 .role-team { position:absolute; top:9px; right:10px; color:var(--faction); font-size:11px; letter-spacing:2px }
 .role-card h3 { font-size:21px; margin:6px 0 18px; color:#eee4ce; letter-spacing:1px }
 .role-rate { margin:0; display:flex; align-items:baseline; justify-content:center; gap:6px }
-.role-rate strong { font:26px Georgia,serif; font-variant-numeric:tabular-nums }
+.role-rate strong { font:26px var(--display); font-variant-numeric:tabular-nums }
 .role-rate>span { font-size:12px; color:var(--muted) }
 .role-record { display:flex; justify-content:center; gap:22px; margin:14px 0; font-size:14px; color:var(--faction); font-variant-numeric:tabular-nums }
 .role-card .card-foot { border-top:1px solid var(--border); padding-top:12px }
@@ -459,7 +471,7 @@ main.app-shell.is-table-viewport {
 }
 
 .mp-avalon-logo {
-  font-family: "STKaiti", "Kaiti SC", "Songti SC", "STSong", "Noto Serif SC", serif;
+  font-family: var(--calligraphy);
   font-size: clamp(44px, 11vw, 58px);
   font-weight: 800;
   letter-spacing: 12px;
@@ -663,7 +675,7 @@ main.app-shell.is-table-viewport {
   color: #ffffff;
   border: 0;
   clip-path: polygon(0 0, 100% 0, 100% 74%, 50% 100%, 0 74%);
-  font-family: Georgia, serif;
+  font-family: var(--display);
   font-size: 18px;
   font-weight: 700;
 }
@@ -1097,7 +1109,7 @@ main.app-shell.is-table-viewport {
 .quest-circle-num {
   position: relative;
   z-index: 2;
-  font: 700 clamp(20px, 5.2vw, 27px)/1 Georgia, "Times New Roman", serif !important;
+  font: 700 clamp(20px, 5.2vw, 27px)/1 var(--display) !important;
   color: #f7f4ec;
   text-shadow: 0 2px 5px rgba(0, 0, 0, 0.95), 0 0 1px #fff;
 }
@@ -1217,7 +1229,7 @@ main.app-shell.is-table-viewport {
 }
 
 .vote-spot-num {
-  font: 700 11px/1 Georgia, serif;
+  font: 700 11px/1 var(--display);
   color: #f2ece0;
 }
 
@@ -1731,7 +1743,7 @@ main.app-shell.is-table-viewport {
   right: -5px;
   bottom: -2px;
   z-index: 3;
-  font: 700 9.5px/1.1 Georgia, "Times New Roman", serif;
+  font: 700 9.5px/1.1 var(--sans);
   color: #f4e6c8;
   background: linear-gradient(180deg, #283f52 0%, #12202c 100%);
   border: 1px solid rgba(218, 192, 138, 0.75);

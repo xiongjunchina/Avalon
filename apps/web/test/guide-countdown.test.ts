@@ -16,7 +16,7 @@ test('guide covers all retained roles, asymmetric vision and standard/extension 
   assert.match(roleDescriptions.merlin.ability,/除岳不群/);assert.match(roleDescriptions.oberon.ability,/红方队友也看不见你/);
   assert.match(roleDescriptions.percival.ability,/不知道谁对应哪个身份/);
   assert.match(roleDescriptions.guinevere.ability,/岳不群/);
-  for(const text of ['倒计时5秒','严格超过半数','平票不通过','两张失败牌','湖中女神','提前刺杀','匿名','全局累计'])assert.ok(rules.includes(text),text);
+  for(const text of ['倒计时5秒','严格超过半数','平票不通过','两张失败牌','少林明镜','提前刺杀','匿名','全局累计'])assert.ok(rules.includes(text),text);
   for(let n=5;n<=12;n++)assert.ok(rules.includes(`${n}人局各任务人数`));
 });
 

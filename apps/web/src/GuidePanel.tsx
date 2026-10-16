@@ -12,7 +12,7 @@ export const roleDescriptions:Record<Role,{ability:string;visibility:string;tip:
   loyal:{ability:'只知道自己的正道侠客身份，没有其他初始身份视野。任务只能提交成功。',visibility:'你的准确身份不会在开局自动告知其他人。',tip:'凭逻辑观察每次会盟组队和表决记录，协助正道找出可靠同道，也可在发言中主动掩护风清扬。'},
   morgana:{ability:'看见除左冷禅以外的红方队友，但不知道他们各自的具体角色。任务可提交成功或失败。',visibility:'风清扬能看见你属于红方；令狐冲会把你与风清扬同时看作候选，无法区分。',tip:'用话术假扮风清扬迷惑令狐冲，乱真惑众、操控会盟组队与表决走向。'},
   assassin:{ability:'看见除左冷禅以外的红方队友。蓝方完成三次任务后，你亮出辟邪剑选择一名玩家刺杀：命中风清扬则红方获胜，否则蓝方获胜。',visibility:'风清扬能看见你属于红方；其他可互认的红方只知道你是队友，不知道你的具体角色。',tip:'冷眼观察谁掌握了全局信息。开启提前刺杀时，完成两个任务后的轮间窗口可私下决定是否提前亮剑。'},
-  mordred:{ability:'看见除左冷禅以外的红方队友，但凭伪君子假面不会被风清扬的开局视野看见。任务可提交成功或失败。',visibility:'除左冷禅外的红方队友能看见你属于红方；湖中女神仍能查出你的红方阵营。',tip:'利用风清扬视野的盲区伪装成正道君子骗取信任，伺机混入会盟队伍制造失败。'},
+  mordred:{ability:'看见除左冷禅以外的红方队友，但凭伪君子假面不会被风清扬的开局视野看见。任务可提交成功或失败。',visibility:'除左冷禅外的红方队友能看见你属于红方；冲虚·方证明镜查验仍能识破你的红方阵营。',tip:'利用风清扬视野的盲区伪装成正道君子骗取信任，伺机混入会盟队伍制造失败。'},
   oberon:{ability:'属于红方，但孤狼独行——看不见红方队友，红方队友也看不见你。任务可提交成功或失败。',visibility:'风清扬能看见你属于红方；你不属于其他红方的互认名单。',tip:'通过发言和行动寻找魔教同党线索，搅乱五岳会盟局势，避免误伤红方队友。'},
   minion:{ability:'魔教骨干成员，看见除左冷禅以外的红方队友，不知道他们各自的具体角色。任务可提交成功或失败。',visibility:'风清扬与除左冷禅以外的红方队友都能看见你属于红方。',tip:'争取进入五岳会盟队伍，配合教主干扰推理、制造会盟任务失败。'},
 };
@@ -44,11 +44,11 @@ export function GuideRules() {
       <dt>五次流局</dt><dd>默认全局累计，达到五次红方胜；也可只累计当前任务，实际任务结束后清零。一次组队表决未通过计一次流局。</dd>
       <dt>新成员加入</dt><dd>等待时房主可关闭新成员加入，已有成员仍可重连。开局后锁定席位。修改玩法会清除准备状态，切换接纳开关不会。</dd>
     </dl></section>
-    <section className="panel"><p className="eyebrow">05 / 拓展玩法</p><h2>湖中女神</h2><p>可选开启，建议7人以上。第2、3、4个实际任务结束后，若尚未终局，持有人查验一名玩家的蓝／红阵营；不会得知具体角色。</p>
-      <ul><li>首位持有人为首任队长在座位顺序中的上一位。</li><li>不能查验自己或任何曾经持有女神的玩家。</li><li>查验对象和交接公开，结果只有本次查验者能在私密身份区域查看并确认。</li><li>被查验者接任下一位持有人，但不能读取前任的查验结果。</li></ul>
+    <section className="panel"><p className="eyebrow">05 / 拓展玩法</p><h2>少林明镜（冲虚·方证辩忠奸）</h2><p>可选开启，建议7人以上。武当掌门冲虚道长与少林方丈方证大师执掌武林明镜令：第2、3、4个实际会盟任务结束后，若尚未终局，执令持有人可查验一名玩家的蓝／红阵营（正道或魔教）；不会得知具体角色。</p>
+      <ul><li>首位执令人为首任盟主（队长）在座位顺序中的上一位。</li><li>不能查验自己或任何曾经执掌明镜令的玩家。</li><li>查验对象和明镜令交接公开，阵营结果只有本次查验者能在私密身份区域查看并确认。</li><li>被查验者接任下一位明镜令持有人，但不能读取前任的查验结果。</li></ul>
       <h2>提前刺杀</h2><p>可选开启。完成第二个实际任务起，在轮间确认窗口由林平之（刺客）私下决定发起或跳过；此后的任务结束或组队流局也可能再出现窗口，流局本身不计实际任务。</p>
-      <ul><li>每局最多发起一次。跳过本次窗口不会消耗机会。</li><li>发起后不能撤回，林平之必须选人；命中风清扬红方胜，刺错则立即蓝方胜。</li><li>不能在投票、任务出牌或女神查验过程中随时打断。</li><li>其他玩家只看到“轮间确认中”，不会获知谁是林平之。</li></ul>
-      <p className="notice">判定顺序：先判断终局；未终局时先完成女神查验，再进入提前刺杀窗口。三次任务成功走正常刺杀，三次失败或五次流局直接结束。</p>
+      <ul><li>每局最多发起一次。跳过本次窗口不会消耗机会。</li><li>发起后不能撤回，林平之必须选人；命中风清扬红方胜，刺错则立即蓝方胜。</li><li>不能在投票、任务出牌或明镜查验过程中随时打断。</li><li>其他玩家只看到“轮间确认中”，不会获知谁是林平之。</li></ul>
+      <p className="notice">判定顺序：先判断终局；未终局时先完成明镜查验，再进入提前刺杀窗口。三次任务成功走正常刺杀，三次失败或五次流局直接结束。</p>
     </section>
   </div>;
 }
@@ -57,8 +57,22 @@ export function GuideRoles() {
     {(['blue','red'] as const).map(team=><section key={team} aria-label={`${team==='blue'?'蓝方':'红方'}角色介绍`} className={`guide-faction allegiance-${team}`}>
       <h2><Emblem kind={team}/>{team==='blue'?'蓝方 · 正道同盟':'红方 · 日月暗影'}</h2>
       <div className="guide-role-grid">{allRoles.filter(r=>roleTeam(r)===team).map(role=><article className={`guide-role allegiance-${team}`} key={role}>
-        <div className="guide-role-heading"><RolePortrait role={role}/><div><p className="eyebrow">{team==='blue'?'蓝方 · 正道同盟':'红方 · 日月暗影'} · {roleTitles[role]}</p><h3>{roleNames[role]}</h3><p className="hint">{roleMottos[role]}</p></div></div>
-        <dl><dt>能力与视野</dt><dd>{roleDescriptions[role].ability}</dd><dt>谁能看见你</dt><dd>{roleDescriptions[role].visibility}</dd><dt>玩法提示</dt><dd>{roleDescriptions[role].tip}</dd></dl>
+        <div className="guide-role-heading">
+          <RolePortrait role={role}/>
+          <div className="guide-role-meta">
+            <div className="guide-role-badges">
+              <span className="guide-role-faction-pill">{team==='blue'?'蓝方 · 正道同盟':'红方 · 日月暗影'}</span>
+              <span className="guide-role-title-pill">{roleTitles[role]}</span>
+            </div>
+            <h3>{roleNames[role]}</h3>
+            <p className="guide-role-motto">{roleMottos[role]}</p>
+          </div>
+        </div>
+        <dl className="guide-role-dl">
+          <div className="guide-role-detail"><dt>能力与视野</dt><dd>{roleDescriptions[role].ability}</dd></div>
+          <div className="guide-role-detail"><dt>谁能看见你</dt><dd>{roleDescriptions[role].visibility}</dd></div>
+          <div className="guide-role-detail"><dt>玩法提示</dt><dd>{roleDescriptions[role].tip}</dd></div>
+        </dl>
       </article>)}</div>
     </section>)}<p className="hint">蓝方所有角色的任务牌都只能选成功；红方所有角色都可以选成功或失败。红方互认仅显示阵营，不揭示队友的具体角色。</p>
   </div>;

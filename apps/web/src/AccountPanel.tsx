@@ -178,7 +178,7 @@ export function ReplayView({replay:g}:{replay:Replay}) {
       {r.vote?<><p>表决：{r.vote.approvals} 赞成 / {r.vote.rejections} 反对 · {r.vote.passed?'通过':'否决'}</p>
         {!g.settings.anonymousTeamVote&&r.vote.ballots&&<p className="hint">{Object.entries(r.vote.ballots).map(([id,yes])=>`${name(id)}：${yes?'赞成':'反对'}`).join('；')}</p>}</>:<p className="hint">本次表决未完成，不展示未收齐的个人选择。</p>}
       {r.result&&<p>任务：{r.result.successes} 成功 / {r.result.failures} 失败（匿名）</p>}
-      {g.inspections.filter(i=>i.afterMission===r.mission&&r.result).map(i=><p key={i.afterMission} className="hint">湖中女神：{name(i.inspectorId)} 查验 {name(i.targetId)}，随后交接给被查验者。</p>)}
+      {g.inspections.filter(i=>i.afterMission===r.mission&&r.result).map(i=><p key={i.afterMission} className="hint">少林明镜：{name(i.inspectorId)} 查验 {name(i.targetId)}，随后交接给被查验者。</p>)}
       {g.earlyWindows.filter(w=>w.afterProposal===r.number).map((w,i)=><p className="hint" key={i}>轮间窗口：{w.decision==='skip'?'跳过提前刺杀':'发起提前刺杀'}（完成任务 {w.afterMission} 后）。</p>)}
     </article>)}</div>
   </>;

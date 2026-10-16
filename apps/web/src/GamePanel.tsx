@@ -15,7 +15,7 @@ const phaseNames: Record<GameView['phase'], string> = {
   discussion: '围桌论剑',
   team_vote: '组队表决',
   mission: '五岳会盟',
-  lady: '湖中女神查验',
+  lady: '少林明镜查验',
   lady_reveal: '确认查验结果',
   early_window: '轮间确认中',
   assassination: '刺杀风清扬',
@@ -730,7 +730,7 @@ export function GamePanel({
                             {isNextCaptain ? '👑 候任' : '👑 队长'}
                           </span>
                         )}
-                        {isLadyHolder && <span className="seat-badge badge-lady">🌊 女神</span>}
+                        {isLadyHolder && <span className="seat-badge badge-lady">☯️ 明镜</span>}
                       </>
                     )}
                   </div>
@@ -776,7 +776,7 @@ export function GamePanel({
                     <span className="seat-chip chip-team">🛡️ 入阵</span>
                   ) : isTargeted ? (
                     <span className="seat-chip chip-target">
-                      {g.phase === 'lady' ? '🌊 查验' : '🗡️ 目标'}
+                      {g.phase === 'lady' ? '☯️ 查验' : '🗡️ 目标'}
                     </span>
                   ) : canTapSeat ? (
                     <span className="seat-chip chip-hint">

@@ -1079,9 +1079,9 @@ function App() {
                   className={`waiting-ext-orb ${room.settings.ladyEnabled ? 'is-enabled' : ''}`}
                   onClick={() => updateSettings({ ladyEnabled: !room.settings.ladyEnabled })}
                 >
-                  <span className="orb-icon">🌊</span>
+                  <span className="orb-icon">☯️</span>
                   <span className="orb-text">
-                    <strong>湖中女神</strong>
+                    <strong>少林明镜</strong>
                     <small>{room.settings.ladyEnabled ? '已开启' : '点击开启'}</small>
                   </span>
                 </button>
