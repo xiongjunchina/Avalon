@@ -64,7 +64,7 @@ export class Accounts {
   }
   async statistics(userId:string):Promise<Statistics> {
     const empty=():Score=>({completed:0,wins:0,losses:0,aborted:0,winRate:null});
-    const roles:Role[]=['merlin','percival','loyal','morgana','assassin','mordred','oberon','minion'];
+    const roles:Role[]=['merlin','percival','guinevere','loyal','morgana','assassin','mordred','oberon','minion'];
     const stats:Statistics={...empty(),byRole:Object.fromEntries(roles.map(r=>[r,empty()])) as Record<Role,Score>,byTeam:{blue:empty(),red:empty()}};
     return this.store.tx(async c=>{
       const rows=(await c.query<{role:Role;winner:Team|null;count:number}>(`SELECT g.state->'roles'->>($1::text) AS role,

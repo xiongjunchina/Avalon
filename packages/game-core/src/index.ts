@@ -3,6 +3,7 @@ export const RULESET_VERSION = 'standard-no-lancelot-v2';
 export const MISSION_SIZES: Record<number, number[]> = {
   5: [2,3,2,3,3], 6: [2,3,4,3,4], 7: [2,3,3,4,4],
   8: [3,4,4,5,5], 9: [3,4,4,5,5], 10: [3,4,4,5,5],
+  11: [3,4,5,6,5], 12: [3,4,5,6,6],
 };
 export const ROLE_CONFIG: Record<number, Role[]> = {
   5: ['merlin','percival','loyal','morgana','assassin'],
@@ -11,8 +12,10 @@ export const ROLE_CONFIG: Record<number, Role[]> = {
   8: ['merlin','percival','loyal','loyal','loyal','morgana','assassin','minion'],
   9: ['merlin','percival','loyal','loyal','loyal','loyal','morgana','assassin','mordred'],
   10: ['merlin','percival','loyal','loyal','loyal','loyal','morgana','assassin','mordred','oberon'],
+  11: ['merlin','percival','guinevere','loyal','loyal','loyal','loyal','morgana','assassin','mordred','minion'],
+  12: ['merlin','percival','guinevere','loyal','loyal','loyal','loyal','morgana','assassin','mordred','minion','oberon'],
 };
-export const teamOf = (role: Role): Team => ['merlin','percival','loyal'].includes(role) ? 'blue' : 'red';
+export const teamOf = (role: Role): Team => ['merlin','percival','guinevere','loyal'].includes(role) ? 'blue' : 'red';
 export class RuleError extends Error {}
 function requireRule(condition: unknown, code: string): asserts condition { if (!condition) throw new RuleError(code); }
 export interface GameState {
@@ -20,28 +23,63 @@ export interface GameState {
   dealEndsAt?: string;
   phase: GameView['phase']; mission: number; rejectionCount: number; captainOrder: string[]; captainIndex: number;
   confirmed: string[]; teamVotes: Record<string, boolean>; missionVotes: Record<string, boolean>; rounds: RoundView[];
+  guinevereCandidates?: string[];
   lady?: { holderId: string; holderIds: string[]; inspections: PrivateInspection[] };
   earlyAssassination?: { used: boolean; windows: EarlyWindow[] };
   assassinationMode?: 'normal' | 'early';
   result?: GameResult; abortPoll?: { requestedBy: string; electorate: string[]; approvals: string[] };
 }
-export function createGame(id: string, players: Player[], settings: Settings, shuffle: <T>(values: T[]) => T[]): GameState {
+export function createGame(
+  id: string,
+  players: Player[],
+  settings: Settings,
+  shuffle: <T>(values: T[]) => T[],
+  protectedUserIds: string[] = []
+): GameState {
   requireRule(players.length === settings.playerCount && ROLE_CONFIG[players.length], 'NOT_READY');
   const sorted = [...players].sort((a,b) => a.seat-b.seat);
-  const dealt = shuffle([...ROLE_CONFIG[players.length]]);
+  const configRoles = [...ROLE_CONFIG[players.length]];
+  const validProtected = sorted.filter(p => protectedUserIds.includes(p.id)).map(p => p.id);
+  let roles: Record<string, Role>;
+  if (validProtected.length > 0) {
+    const visionPool = shuffle(configRoles.filter(r => r !== 'loyal' && r !== 'oberon'));
+    const restPool = configRoles.filter(r => r === 'loyal' || r === 'oberon');
+    const assignedProtected = visionPool.slice(0, validProtected.length);
+    const remainingRoles = shuffle([...visionPool.slice(validProtected.length), ...restPool]);
+    roles = {};
+    let pIdx = 0, rIdx = 0;
+    for (const p of sorted) {
+      roles[p.id] = validProtected.includes(p.id) ? assignedProtected[pIdx++] : remainingRoles[rIdx++];
+    }
+  } else {
+    const dealt = shuffle(configRoles);
+    roles = Object.fromEntries(sorted.map((p,i) => [p.id, dealt[i]]));
+  }
+  let guinevereCandidates: string[] | undefined;
+  if (Object.values(roles).includes('guinevere')) {
+    const mordredId = sorted.find(p => roles[p.id] === 'mordred')?.id;
+    const blueDecoys = sorted.filter(p => ['percival', 'loyal'].includes(roles[p.id])).map(p => p.id);
+    const decoyId = shuffle(blueDecoys)[0];
+    guinevereCandidates = sorted
+      .filter(p => p.id === mordredId || p.id === decoyId)
+      .map(p => p.id);
+  }
   const seats = sorted.map(p => p.id);
   const captainOrder = settings.captainMode === 'random_order' ? shuffle(seats) : seats;
   const initialHolder = seats[(seats.indexOf(captainOrder[0])+seats.length-1)%seats.length];
   return { id, rulesetVersion: RULESET_VERSION, settings: { ...settings }, players: sorted,
-    roles: Object.fromEntries(sorted.map((p,i) => [p.id,dealt[i]])), phase: 'role_reveal', mission: 1,
+    roles, phase: 'role_reveal', mission: 1,
     rejectionCount: 0, captainOrder,
+    ...(guinevereCandidates ? { guinevereCandidates } : {}),
     ...(settings.ladyEnabled ? { lady: { holderId: initialHolder, holderIds: [initialHolder], inspections: [] } } : {}),
     ...(settings.earlyAssassinationEnabled ? { earlyAssassination: { used: false, windows: [] } } : {}),
     captainIndex: 0, confirmed: [], teamVotes: {}, missionVotes: {}, rounds: [] };
 }
 export const isEnded = (g: GameState) => g.phase === 'finished' || g.phase === 'aborted';
 export const captain = (g: GameState) => g.captainOrder[g.captainIndex];
-export const failuresRequired = (g: GameState) => g.players.length >= 7 && g.mission === 4 ? 2 : 1;
+export const failuresRequiredFor = (playerCount: number, mission: number): number =>
+  (playerCount >= 7 && mission === 4) || (playerCount === 12 && mission === 3) ? 2 : 1;
+export const failuresRequired = (g: GameState) => failuresRequiredFor(g.players.length, g.mission);
 export function finish(g: GameState, result: GameResult) {
   g.result = result; g.phase = result.winner ? 'finished' : 'aborted';
   // Individual mission cards are ephemeral private state, never part of the replay.
@@ -225,6 +263,7 @@ export function projectGame(g: GameState, userId?: string): GameView {
       required: g.abortPoll.electorate.length, voted: !!userId && g.abortPoll.approvals.includes(userId) } } : {}),
     ...(role && userId ? { self: { role, team: teamOf(role), evilIds,
       merlinCandidates: role === 'percival' ? g.players.filter(p => ['merlin','morgana'].includes(g.roles[p.id])).map(p => p.id) : [],
+      guinevereCandidates: role === 'guinevere' ? [...(g.guinevereCandidates ?? [])] : [],
       confirmed: g.confirmed.includes(userId), teamVoted: userId in g.teamVotes, missionVoted: userId in g.missionVotes,
       inspections: structuredClone((g.lady?.inspections ?? []).filter(i => i.inspectorId === userId)),
       canInspect: g.phase === 'lady' && g.lady?.holderId === userId,

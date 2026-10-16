@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const settingsSchema = z.object({
-  playerCount: z.number().int().min(5).max(10),
+  playerCount: z.number().int().min(5).max(12),
   captainMode: z.enum(['seat_order', 'random_order']),
   anonymousTeamVote: z.boolean(),
   rejectionScope: z.enum(['game', 'mission']),
@@ -21,7 +21,7 @@ export const commandSchema = z.discriminatedUnion('type', [
   z.object({ ...base, type: z.literal('setAdmission'), payload: z.object({ acceptingNewMembers: z.boolean() }).strict() }).strict(),
   ...(['startGame', 'confirmRole', 'startTeamVote', 'returnToLobby', 'requestAbort', 'confirmInspection'] as const).map(type =>
     z.object({ ...base, type: z.literal(type), payload: z.object({}).strict() }).strict()),
-  z.object({ ...base, type: z.literal('proposeTeam'), payload: z.object({ playerIds: z.array(z.string().uuid()).min(2).max(5), direction: z.enum(['clockwise', 'counterclockwise']) }).strict() }).strict(),
+  z.object({ ...base, type: z.literal('proposeTeam'), payload: z.object({ playerIds: z.array(z.string().uuid()).min(2).max(6), direction: z.enum(['clockwise', 'counterclockwise']) }).strict() }).strict(),
   z.object({ ...base, type: z.literal('teamVote'), payload: z.object({ approve: z.boolean() }).strict() }).strict(),
   z.object({ ...base, type: z.literal('missionVote'), payload: z.object({ success: z.boolean() }).strict() }).strict(),
   z.object({ ...base, type: z.literal('inspectAlignment'), payload: z.object({ targetId: z.string().uuid() }).strict() }).strict(),
@@ -50,7 +50,7 @@ export type ServerMessage =
   | { type: 'takenOver' }
   | { type: 'left' };
 
-export type Role = 'merlin' | 'percival' | 'loyal' | 'morgana' | 'assassin' | 'mordred' | 'oberon' | 'minion';
+export type Role = 'merlin' | 'percival' | 'guinevere' | 'loyal' | 'morgana' | 'assassin' | 'mordred' | 'oberon' | 'minion';
 export type Team = 'blue' | 'red';
 export type GamePhase = 'dealing' | 'role_reveal' | 'proposing' | 'discussion' | 'team_vote' | 'mission' | 'lady' | 'lady_reveal' | 'early_window' | 'assassination' | 'finished' | 'aborted';
 export type Player = User & { seat: number };
@@ -80,7 +80,7 @@ export interface GameView {
   assassinId?: string;
   result?: GameResult; revealedRoles?: Record<string, Role>;
   abortPoll?: { requestedBy: string; approvals: number; required: number; voted: boolean };
-  self?: { role: Role; team: Team; evilIds: string[]; merlinCandidates: string[];
+  self?: { role: Role; team: Team; evilIds: string[]; merlinCandidates: string[]; guinevereCandidates?: string[];
     confirmed: boolean; teamVoted: boolean; missionVoted: boolean;
     inspections: PrivateInspection[]; canInspect: boolean; canConfirmInspection: boolean; canDecideEarly: boolean };
 }

@@ -195,7 +195,20 @@ export class PostgresStore {
       if (command.type==='startGame') {
         if(r.host_id!==userId) throw new DomainError('FORBIDDEN',403);
         if(members.length!==r.settings.playerCount || !members.every(m=>m.ready)) throw new DomainError('NOT_READY',409);
-        const game=createGame(randomUUID(),members.map(m=>({id:m.user_id,nickname:m.nickname,seat:m.seat})),r.settings,secureShuffle);
+        const recentRoles=await c.query<{user_id:string;role:string}>(
+          `SELECT user_id,role FROM (
+             SELECT p.user_id,g.state->'roles'->>(p.user_id::text) AS role,
+                    ROW_NUMBER() OVER (PARTITION BY p.user_id ORDER BY g.created_at DESC,g.id DESC) AS rn
+             FROM game_participants p JOIN games g ON g.id=p.game_id
+             WHERE p.user_id=ANY($1::uuid[])
+           ) t WHERE rn<=2`,
+          [members.map(m=>m.user_id)]
+        );
+        const protectedUserIds=members.map(m=>m.user_id).filter(uid=>{
+          const hist=recentRoles.rows.filter(row=>row.user_id===uid);
+          return hist.length===2&&hist.every(row=>row.role==='loyal');
+        });
+        const game=createGame(randomUUID(),members.map(m=>({id:m.user_id,nickname:m.nickname,seat:m.seat})),r.settings,secureShuffle,protectedUserIds);
         dealEndsAt=new Date(this.now()+DEAL_MS).toISOString();
         game.phase='dealing';game.dealEndsAt=dealEndsAt;
         await c.query('INSERT INTO games(id,room_id,ruleset_version,state,created_at) VALUES($1,$2,$3,$4,$5)',[game.id,roomId,game.rulesetVersion,game,this.date()]);

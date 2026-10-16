@@ -15,6 +15,7 @@ import {
   ROLE_CONFIG,
   captain as getCaptainId,
   createGame,
+  failuresRequiredFor,
   isEnded,
   projectGame,
   teamOf,
@@ -37,6 +38,7 @@ const SHOWCASE_ROLES: Role[] = [
   'assassin',
   'percival',
   'morgana',
+  'guinevere',
   'mordred',
   'oberon',
   'loyal',
@@ -46,6 +48,7 @@ const SHOWCASE_ROLES: Role[] = [
 const ROLE_EN_NAMES: Record<Role, string> = {
   merlin: 'MERLIN',
   percival: 'PERCIVAL',
+  guinevere: 'GUINEVERE',
   loyal: 'LOYAL SERVANT',
   morgana: 'MORGANA',
   assassin: 'ASSASSIN',
@@ -54,7 +57,7 @@ const ROLE_EN_NAMES: Record<Role, string> = {
   minion: 'MINION',
 };
 
-const BOT_NAMES = ['子容', '阿青', '大熊', '云舒', '老周', '晓月', '林深', '北辰', '知秋', '南风'];
+const BOT_NAMES = ['子容', '阿青', '大熊', '云舒', '老周', '晓月', '林深', '北辰', '知秋', '南风', '清河'];
 
 function groupRoles(roles: Role[]): Array<{ role: Role; count: number }> {
   const counts = new Map<Role, number>();
@@ -621,7 +624,7 @@ function App() {
             </header>
 
             <div className="mp-shield-row" role="radiogroup" aria-label="选择游戏人数">
-              {[5, 6, 7, 8, 9, 10].map(count => (
+              {[5, 6, 7, 8, 9, 10, 11, 12].map(count => (
                 <button
                   key={count}
                   type="button"
@@ -926,7 +929,7 @@ function App() {
               <div className="avalon-quest-board">
                 <div className="game-score quest-circles-row" aria-label="本局五轮任务配置">
                   {(MISSION_SIZES[room.settings.playerCount] ?? MISSION_SIZES[6]).map((count, i) => {
-                    const twoFailsRequired = i === 3 && room.settings.playerCount >= 7;
+                    const twoFailsRequired = failuresRequiredFor(room.settings.playerCount, i + 1) === 2;
                     return (
                       <div
                         key={i}
@@ -986,9 +989,15 @@ function App() {
                 </div>
               </div>
 
-              {/* 5–10 Player Compact Seat Grid */}
+              {/* 5–12 Player Compact Seat Grid */}
               <div
-                className={`table-seats-grid ${room.settings.playerCount > 8 ? 'grid-10' : 'grid-8'}`}
+                className={`table-seats-grid ${
+                  room.settings.playerCount > 10
+                    ? 'grid-12'
+                    : room.settings.playerCount > 8
+                      ? 'grid-10'
+                      : 'grid-8'
+                }`}
                 aria-label="房间座位"
               >
                 {Array.from({ length: room.settings.playerCount }, (_, i) => {

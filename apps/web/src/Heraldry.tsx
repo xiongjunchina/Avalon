@@ -8,6 +8,7 @@ export function Emblem({kind,className=''}:{kind:Mark;className?:string}) {
       (kind==='red'||kind==='assassin')?<><path d="m39 7 9 9-23 25-8-8Z M36 10l9 9 M12 29l18 18 M21 39 10 50l4 4 11-11 M8 49l7 7"/><path d="m19 10 29 37m-4-5 8 7-4 5-9-9 M12 7l7 3-3 5Z" opacity=".5"/></>:
       kind==='merlin'?<><path d="M21 44 35 9l11 35ZM18 48h31M24 54h19M34 28l4 3-4 4-4-4Z M12 19v8m-4-4h8M47 10v8m-4-4h8"/></>:
       kind==='percival'?<><path d="M7 32s10-14 25-14 25 14 25 14-10 14-25 14S7 32 7 32Z"/><circle cx="32" cy="32" r="8"/><path d="M32 9v4m0 38v4M11 14l4 4m34 28 4 4M11 50l4-4m34-28 4-4"/></>:
+      kind==='guinevere'?<><path d="m12 24 10 8 10-16 10 16 10-8-5 22H17Z"/><path d="M17 51h30M24 38h16"/><circle cx="32" cy="12" r="2.5"/></>:
       kind==='morgana'?<><path d="M41 9c-20-1-32 25-13 40 9 7 19 3 24-2-18 2-30-18-11-38Z"/><path d="m46 20 2 6 7 1-6 4 1 7-5-4-6 3 2-7-4-5 7 1Z"/></>:
       kind==='mordred'?<><path d="M16 26 22 10h20l6 16-4 22-12 8-12-8Z M16 26l16 6 16-6M32 32v24M21 36l6 3m10 0 6-3M23 10l9 12 9-12"/></>:
       kind==='oberon'?<><path d="M15 31c2-12 8-20 17-24 9 4 15 12 17 24l6 22H9Z M22 30c1-6 5-10 10-12 5 2 9 6 10 12l-3 14-7 5-7-5Z M26 33h2m8 0h2"/></>:
@@ -23,4 +24,4 @@ export function Emblem({kind,className=''}:{kind:Mark;className?:string}) {
       <><path d="m9 19 12 10L32 12l11 17 12-10-6 29H15ZM16 42h32M16 54h32"/><circle cx="9" cy="15" r="2"/><circle cx="32" cy="8" r="2"/><circle cx="55" cy="15" r="2"/></>}
   </svg>;
 }
-export const roleTeam=(role:Role):Team=>['merlin','percival','loyal'].includes(role)?'blue':'red';
+export const roleTeam=(role:Role):Team=>['merlin','percival','guinevere','loyal'].includes(role)?'blue':'red';

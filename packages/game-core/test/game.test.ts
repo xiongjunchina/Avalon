@@ -15,8 +15,8 @@ function mission(g:GameState, failures=0) {
   for(const id of team)g=act(g,id,'missionVote',{success:!red.slice(0,failures).includes(id)});
   return g;
 }
-test('all 5–10 configurations, exact mission sizes, role vision matrix and private projections',()=>{
-  for(let n=5;n<=10;n++){
+test('all 5–12 configurations, exact mission sizes, role vision matrix and private projections',()=>{
+  for(let n=5;n<=12;n++){
     const g=game(n);assert.equal(g.players.length,n);assert.deepEqual(Object.values(g.roles),ROLE_CONFIG[n]);
     assert.deepEqual(projectGame(g).missionSizes,MISSION_SIZES[n]);assert.equal(projectGame(g).self,undefined);
     for(const p of g.players){
@@ -26,7 +26,33 @@ test('all 5–10 configurations, exact mission sizes, role vision matrix and pri
         :teamOf(role)==='red'&&role!=='oberon'?g.players.filter(q=>q.id!==p.id&&teamOf(g.roles[q.id])==='red'&&g.roles[q.id]!=='oberon').map(q=>q.id):[];
       assert.deepEqual(v.self!.evilIds,expected);
       assert.deepEqual(v.self!.merlinCandidates,role==='percival'?g.players.filter(q=>['merlin','morgana'].includes(g.roles[q.id])).map(q=>q.id):[]);
+      if(role==='guinevere'){
+        const cands=v.self!.guinevereCandidates??[];
+        assert.equal(cands.length,2);
+        const mordredId=g.players.find(q=>g.roles[q.id]==='mordred')!.id;
+        assert.ok(cands.includes(mordredId));
+        const decoyId=cands.find(id=>id!==mordredId)!;
+        assert.ok(['percival','loyal'].includes(g.roles[decoyId]));
+      }else{
+        assert.deepEqual(v.self!.guinevereCandidates,[]);
+      }
     }
+  }
+});
+test('silent anti-3-streak loyal protection guarantees vision role to protected players',()=>{
+  for(let n=5;n<=12;n++){
+    const players=Array.from({length:n},(_,i)=>({id:`u-${i+1}`,nickname:`玩家${i+1}`,seat:i+1}));
+    // Under identity shuffle (values=>values), find seats that would normally draw 'loyal'
+    const baseline=createGame(randomUUID(),players,{...defaultSettings,playerCount:n},values=>values);
+    const loyalIds=players.filter(p=>baseline.roles[p.id]==='loyal').map(p=>p.id);
+    assert.ok(loyalIds.length>=1);
+    const protectedIds=loyalIds;
+    const protectedGame=createGame(randomUUID(),players,{...defaultSettings,playerCount:n},values=>values,protectedIds);
+    for(const pid of protectedIds){
+      assert.notEqual(protectedGame.roles[pid],'loyal');
+      assert.notEqual(protectedGame.roles[pid],'oberon');
+    }
+    assert.equal(Object.values(protectedGame.roles).sort().join(','), [...ROLE_CONFIG[n]].sort().join(','));
   }
 });
 test('confirmation, permission, exact unique team size and fixed shuffled captain cycle',()=>{
@@ -61,9 +87,13 @@ test('only chosen players can play; blue cannot fail; failed commands do not mut
   assert.equal(projectGame(g).rounds[0].result,undefined);
   g=act(g,g.players[1].id,'missionVote',{success:true});assert.equal(g.mission,2);assert.deepEqual(g.missionVotes,{});
 });
-test('7–10 fourth mission takes two fails, all others take one',()=>{
-  for(let n=5;n<=10;n++) for(const failures of [1,2]){
-    let g=ready(game(n));g=mission(g,0);g=mission(g,1);g=mission(g,0);assert.equal(g.mission,4);
+test('7–12 fourth mission and 12 third mission take two fails, all others take one',()=>{
+  for(let n=5;n<=12;n++) for(const failures of [1,2]){
+    let g=ready(game(n));g=mission(g,0);g=mission(g,1);
+    assert.equal(g.mission,3);
+    const g3=mission(structuredClone(g),failures);
+    assert.equal(g3.rounds.at(-1)!.result?.passed,n===12&&failures===1);
+    g=mission(g,0);assert.equal(g.mission,4);
     g=mission(g,failures);assert.equal(g.rounds.at(-1)!.result?.passed,n>=7&&failures===1);
   }
 });

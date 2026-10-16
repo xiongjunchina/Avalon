@@ -1,7 +1,7 @@
 import { PrivateExtensions, ExtensionStep, ExtensionHistory } from './Extensions';
 import { useEffect, useState } from 'react';
 import type { Command, GameView, RoomView } from '@avalon/contracts';
-import { ROLE_CONFIG } from '@avalon/game-core';
+import { ROLE_CONFIG, failuresRequiredFor } from '@avalon/game-core';
 import { Emblem, roleTeam } from './Heraldry';
 import { IdentityCard, RolePortrait } from './RolePortrait';
 import { roleNames } from './roles';
@@ -183,7 +183,7 @@ export function GamePanel({
             const missionProposals = g.rounds.filter(r => r.mission === missionNum);
             const result = missionProposals.find(r => r.result)?.result;
             const isCurrent = !ended && g.phase !== 'assassination' && missionNum === g.mission;
-            const twoFailsRequired = i === 3 && g.players.length >= 7;
+            const twoFailsRequired = failuresRequiredFor(g.players.length, missionNum) >= 2;
             const stateClass = result
               ? result.passed
                 ? 'mission-success'
@@ -518,7 +518,9 @@ export function GamePanel({
       {/* 3. Compact, High-Visibility Player Seat Grid (Hidden for non-assassins during assassination phase) */}
       {!(g.phase === 'assassination' && self?.role !== 'assassin') && (
         <div
-          className={`table-seats-grid ${g.players.length > 8 ? 'grid-10' : 'grid-8'} ${
+          className={`table-seats-grid ${
+            g.players.length > 10 ? 'grid-12' : g.players.length > 8 ? 'grid-10' : 'grid-8'
+          } ${
             ended ? 'is-ended-grid' : g.phase === 'assassination' ? 'is-assassin-picker-grid' : ''
           }`}
           aria-label="对局座位表"
@@ -1016,13 +1018,20 @@ export function GamePanel({
             {self.merlinCandidates.length > 0 && (
               <p>梅林与莫甘娜是：{names(self.merlinCandidates)}。你不知道谁是真正的梅林。</p>
             )}
+            {(self.guinevereCandidates?.length ?? 0) > 0 && (
+              <p>
+                你看到的两人是：{names(self.guinevereCandidates!)}。其中一人是莫德雷德，另一人是蓝方同伴，但你不知道具体对应关系。
+              </p>
+            )}
             {self.evilIds.length > 0 && (
               <p>
                 {self.role === 'merlin' ? '你看到的红方成员（不含莫德雷德）' : '你看到的红方队友（不含奥伯伦）'}：
                 {names(self.evilIds)}。不显示具体角色。
               </p>
             )}
-            {!self.merlinCandidates.length && !self.evilIds.length && <p>你的角色没有其他初始身份视野。</p>}
+            {!self.merlinCandidates.length &&
+              !(self.guinevereCandidates?.length ?? 0) &&
+              !self.evilIds.length && <p>你的角色没有其他初始身份视野。</p>}
             <p className="hint">
               {self.team === 'blue' ? '任务只能提交成功。' : '任务可以提交成功或失败。'}切到其他页面或断线时会自动收起。
             </p>
@@ -1052,7 +1061,9 @@ export function GamePanel({
             <div className="table-modal-head">
               <strong>
                 任务 {inspectMission} 详情（需 {g.missionSizes[inspectMission - 1]} 人
-                {inspectMission === 4 && g.players.length >= 7 ? ' · 2张失败牌才失败' : ' · 1张失败牌即失败'}）
+                {failuresRequiredFor(g.players.length, inspectMission) === 2
+                  ? ' · 2张失败牌才失败'
+                  : ' · 1张失败牌即失败'}）
               </strong>
               <button type="button" className="secondary tool-pill" onClick={() => setInspectMission(null)}>
                 关闭

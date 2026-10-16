@@ -108,3 +108,28 @@ test('WebSocket broadcasts and HTTP reconnect expose only the authenticated play
   await waitUntil(()=>clients[1].messages.some(m=>m.type==='commandResult'&&!m.ok&&m.error==='INVALID_INPUT'));
   assert.equal((await f.state()).version,before);
 });
+test('12-player room deals Guinevere and database-backed 2-game loyal streak guarantees vision role on 3rd game',async t=>{
+  const f=await gameFixture(t,false,{playerCount:12});
+  const targetUserId=f.people[0].user.id;
+  // Seed 2 previous games where targetUserId drew 'loyal'
+  for(let i=0;i<2;i++){
+    const gid=randomUUID();
+    await f.pool.query(
+      `INSERT INTO games (id,room_id,ruleset_version,state,created_at,ended_at) VALUES ($1,$2,'2',$3::jsonb,now() - ($4 || ' minutes')::interval,now())`,
+      [gid,f.room.id,JSON.stringify({roles:{[targetUserId]:'loyal'}}),String(10-i)]
+    );
+    await f.pool.query(
+      `INSERT INTO game_participants (game_id,user_id) VALUES ($1,$2)`,
+      [gid,targetUserId]
+    );
+  }
+  await f.command(f.people[0].user.id,'startGame');
+  await f.finishDeal();
+  const targetView=(await f.state(targetUserId)).game!;
+  assert.notEqual(targetView.self!.role,'loyal');
+  assert.notEqual(targetView.self!.role,'oberon');
+  const allRoles=await Promise.all(f.people.map(async p=>(await f.state(p.user.id)).game!.self!.role));
+  assert.ok(allRoles.includes('guinevere'));
+  assert.equal(allRoles.filter(r=>r==='loyal').length,4);
+});
+

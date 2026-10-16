@@ -11,7 +11,7 @@ import { roleNames } from '../src/roles.js';
 
 test('closed identities never mount or preload character images, for every supported role',()=>{
   const seen=new Set<Role>();
-  for(let count=5;count<=10;count++) {
+  for(let count=5;count<=12;count++) {
     const players=Array.from({length:count},(_,i)=>({id:randomUUID(),seat:i+1,nickname:`朋友${i+1}`}));
     const game=createGame(randomUUID(),players,{...defaultSettings,playerCount:count},a=>a);
     for(const player of players) {
@@ -26,7 +26,7 @@ test('closed identities never mount or preload character images, for every suppo
       assert.ok(card.includes(roleNames[game.roles[player.id]]));
     }
   }
-  assert.equal(seen.size,8);
+  assert.equal(seen.size,9);
 });
 
 test('ended game portraits match the server-revealed roles, including after an interruption',()=>{

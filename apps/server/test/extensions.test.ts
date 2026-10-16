@@ -20,11 +20,11 @@ test('lady selection, private result, early decision and committed assassination
   await f.store.execute(inspector,f.room.id,inspect);assert.equal((await f.state()).game!.lady!.inspections.length,1);
   await assert.rejects(f.command(target,'confirmInspection'),/NOT_INSPECTOR/);
   const ack=await f.command(inspector,'confirmInspection');const assassin=await rolePlayer(f,'assassin');
-  await f.restart();const early=(await f.state()).game!;assert.equal(early.phase,'early_window');
-  await f.store.execute(inspector,f.room.id,ack);assert.equal((await f.state()).game!.phase,'early_window');
+  await f.restart();const early=(await f.state()).game!;assert.equal(early.phase,'proposing');
+  await f.store.execute(inspector,f.room.id,ack);assert.equal((await f.state()).game!.phase,'proposing');
   for(const p of f.people){const v=await httpGame(f,p.user.id);assert.equal(v.self!.canDecideEarly,p.user.id===assassin.user.id);const {self,...pub}=v;assert.deepEqual(pub,early);}
   await f.command(assassin.user.id,'earlyAssassinationDecision',{attempt:false});assert.equal((await f.state()).game!.phase,'proposing');
-  // A rejected proposal after two actual missions opens a new decision window.
+  // A rejected proposal after two actual missions keeps early assassination available.
   const g=(await f.state()).game!;
   await f.command(g.captainId,'proposeTeam',{playerIds:g.players.slice(0,g.missionSizes[g.mission-1]).map(p=>p.id),direction:'clockwise'});
   await f.command(g.captainId,'startTeamVote');for(const p of f.people)await f.command(p.user.id,'teamVote',{approve:false});
@@ -70,8 +70,8 @@ test('WebSocket inspection result is private; public early window has no actor I
     assert.deepEqual(v,await httpGame(f,c.id));assert.equal(v.self!.inspections.length,c.id===inspector?1:0);assert.equal('team' in v.lady!.inspections[0],false);assert.equal(v.revealedRoles,undefined);
   }
   clients[0].socket.send(JSON.stringify({type:'confirmInspection',payload:{},commandId:randomUUID(),expectedVersion:(await f.state()).version}));
-  await wait(()=>clients.every(c=>c.messages.some(m=>m.type==='snapshot'&&m.room.game!.phase==='early_window')));
-  for(const c of clients){const v=(c.messages.find(m=>m.type==='snapshot'&&m.room.game!.phase==='early_window') as {room:RoomView}).room.game!;const {self,...pub}=v;assert.deepEqual(pub,(await f.state()).game);}
+  await wait(()=>clients.every(c=>c.messages.some(m=>m.type==='snapshot'&&m.room.game!.phase==='proposing')));
+  for(const c of clients){const v=([...c.messages].reverse().find(m=>m.type==='snapshot'&&m.room.game!.phase==='proposing') as {room:RoomView}).room.game!;const {self,...pub}=v;assert.deepEqual(pub,(await f.state()).game);}
   const nonAssassin=await rolePlayer(f,'merlin');await assert.rejects(f.command(nonAssassin.user.id,'earlyAssassinationDecision',{attempt:true}),/NOT_ASSASSIN/);
-  assert.equal((await f.state()).game!.phase,'early_window');
+  assert.equal((await f.state()).game!.phase,'proposing');
 });

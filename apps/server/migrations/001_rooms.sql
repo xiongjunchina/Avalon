@@ -26,7 +26,7 @@ CREATE TABLE rooms (
 CREATE TABLE room_members (
   room_id uuid NOT NULL REFERENCES rooms(id),
   user_id uuid NOT NULL REFERENCES users(id),
-  seat integer NOT NULL CHECK (seat BETWEEN 1 AND 10),
+  seat integer NOT NULL CHECK (seat BETWEEN 1 AND 12),
   ready boolean NOT NULL DEFAULT false,
   joined_at timestamptz NOT NULL,
   join_order bigserial NOT NULL,

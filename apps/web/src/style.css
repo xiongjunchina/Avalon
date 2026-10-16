@@ -633,22 +633,22 @@ main.app-shell.is-table-viewport {
 
 .mp-shield-row {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 8px;
-  padding: 0 4px;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 6px;
+  padding: 0 2px;
 }
 
 .mp-shield-btn {
   margin: 0;
-  height: 58px;
-  min-height: 58px;
+  height: 52px;
+  min-height: 52px;
   padding: 0 0 6px;
   background: linear-gradient(135deg, #9aa3ad 0%, #6f7985 100%);
   color: #ffffff;
   border: 0;
   clip-path: polygon(0 0, 100% 0, 100% 74%, 50% 100%, 0 74%);
   font-family: Georgia, serif;
-  font-size: 22px;
+  font-size: 18px;
   font-weight: 700;
 }
 
@@ -1275,6 +1275,21 @@ main.app-shell.is-table-viewport {
 .table-seats-grid.grid-10 {
   grid-template-columns: repeat(5, minmax(0, 1fr));
   grid-auto-rows: minmax(84px, auto);
+}
+
+.table-seats-grid.grid-12 {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-auto-rows: minmax(80px, auto);
+  gap: 5px;
+}
+
+.table-seats-grid.grid-12 .seat-card-avatar {
+  width: 34px;
+  height: 34px;
+}
+
+.table-seats-grid.grid-12 .seat-card-name {
+  font-size: 10.5px;
 }
 
 /* Both Waiting Room and Active Game use the same compact seat grid below the Quest Board */
