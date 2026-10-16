@@ -96,6 +96,44 @@ export function GamePanel({
   const [choice, setChoice] = useState<boolean | null>(null);
   const [target, setTarget] = useState('');
   const [abortConfirm, setAbortConfirm] = useState(false);
+  const [revealLeft, setRevealLeft] = useState<number>(() => {
+    if (g.phase !== 'role_reveal') return 0;
+    try {
+      const key = `avalon_reveal_${g.id}`;
+      const existing = sessionStorage.getItem(key);
+      const startTs = existing ? Number(existing) : Date.now();
+      if (!existing) sessionStorage.setItem(key, String(startTs));
+      return Math.max(0, Math.ceil((3000 - (Date.now() - startTs)) / 1000));
+    } catch {
+      return 3;
+    }
+  });
+
+  useEffect(() => {
+    if (g.phase !== 'role_reveal') {
+      setRevealLeft(0);
+      return;
+    }
+    let startTs = Date.now();
+    try {
+      const key = `avalon_reveal_${g.id}`;
+      const existing = sessionStorage.getItem(key);
+      if (existing && Number.isFinite(Number(existing))) {
+        startTs = Number(existing);
+      } else {
+        sessionStorage.setItem(key, String(startTs));
+      }
+    } catch {
+      /* ignore sessionStorage errors */
+    }
+    const update = () => {
+      const rem = Math.max(0, Math.ceil((3000 - (Date.now() - startTs)) / 1000));
+      setRevealLeft(rem);
+    };
+    update();
+    const timer = setInterval(update, 250);
+    return () => clearInterval(timer);
+  }, [g.id, g.phase]);
 
   useEffect(() => {
     const hide = () => {
@@ -128,6 +166,9 @@ export function GamePanel({
   const successes = g.rounds.filter(r => r.result?.passed).length;
   const failures = g.rounds.filter(r => r.result && !r.result.passed).length;
   const redCount = (ROLE_CONFIG[g.players.length] ?? []).filter(r => roleTeam(r) === 'red').length;
+  const effectivePhase: GameView['phase'] =
+    g.phase === 'role_reveal' && revealLeft <= 0 ? 'proposing' : g.phase;
+  const assassinPlayer = g.assassinId ? g.players.find(p => p.id === g.assassinId) : undefined;
 
   const speakingOrder = () => {
     const start = g.players.findIndex(p => p.id === g.captainId);
@@ -142,7 +183,7 @@ export function GamePanel({
   const needsIdentityAction =
     !ended &&
     Boolean(
-      (g.phase === 'role_reveal' && !self?.confirmed) ||
+      effectivePhase === 'role_reveal' ||
         self?.canConfirmInspection
     );
 
@@ -150,7 +191,7 @@ export function GamePanel({
 
   function handleSeatTap(playerId: string) {
     if (disabled) return;
-    if (g.phase === 'proposing' && captain) {
+    if (effectivePhase === 'proposing' && captain) {
       setSelected(ids =>
         ids.includes(playerId)
           ? ids.filter(id => id !== playerId)
@@ -442,8 +483,25 @@ export function GamePanel({
               ? '刺客已发起提前刺杀！'
               : '蓝方已赢三轮 · 进入刺杀阶段！'}
           </h2>
+          {assassinPlayer && (
+            <div className="assassination-identity-reveal">
+              <div className="assassin-reveal-avatar">
+                <RolePortrait role="assassin" size="mini" />
+              </div>
+              <div className="assassin-reveal-info">
+                <span className="assassin-reveal-tag">🗡️ 本局刺客身份已公开</span>
+                <strong className="assassin-reveal-name">
+                  {assassinPlayer.seat}号 {assassinPlayer.nickname}
+                </strong>
+                <small>正在执行刺杀任务，锁定怀疑是「梅林」的目标…</small>
+              </div>
+            </div>
+          )}
           <p className="assassination-stage-desc">
-            刺客正在暗中锁定怀疑是<strong>「梅林」</strong>的玩家，一旦刺客确认目标，全员将立即揭晓本局最终胜负！
+            {assassinPlayer
+              ? `刺客（${assassinPlayer.seat}号 ${assassinPlayer.nickname}）正在选择怀疑是`
+              : '刺客正在暗中锁定怀疑是'}
+            <strong>「梅林」</strong>的玩家，一旦确认目标，全员将立即揭晓本局最终胜负！
           </p>
           <div className="assassination-stakes-grid">
             <div className="stake-card stake-blue">
@@ -457,7 +515,9 @@ export function GamePanel({
           </div>
           <div className="assassination-waiting-pill" role="status">
             <span className="waiting-dot" aria-hidden="true" />
-            正在等待刺客做出最终刺杀决定…
+            {assassinPlayer
+              ? `正在等待刺客（${assassinPlayer.seat}号 ${assassinPlayer.nickname}）做出最终刺杀决定…`
+              : '正在等待刺客做出最终刺杀决定…'}
           </div>
         </section>
       ) : g.phase === 'assassination' && self?.role === 'assassin' ? (
@@ -482,18 +542,21 @@ export function GamePanel({
       ) : (
         <div className="table-phase-banner">
           <div className="table-phase-head-row">
-            <h2 aria-live="polite">{phaseNames[g.phase]}</h2>
-            {g.phase !== 'role_reveal' &&
-              (['proposing', 'discussion', 'team_vote', 'mission'].includes(g.phase) ? (
-                <p>
-                  当前队长：<strong>{name(g.captainId)}</strong>
-                </p>
-              ) : ['early_window', 'lady', 'lady_reveal'].includes(g.phase) ? (
-                <p className="hint">
-                  下一轮队长：<strong>{name(g.captainId)}</strong>
-                  {captain ? '（你）' : ''}（待本阶段确认完成后开始选人组队）
-                </p>
-              ) : null)}
+            <h2 aria-live="polite">
+              {effectivePhase === 'role_reveal'
+                ? `身份已发放（${revealLeft}秒后选人）`
+                : phaseNames[effectivePhase]}
+            </h2>
+            {['role_reveal', 'proposing', 'discussion', 'team_vote', 'mission'].includes(effectivePhase) ? (
+              <p>
+                当前队长：<strong>{name(g.captainId)}</strong>
+              </p>
+            ) : ['early_window', 'lady', 'lady_reveal'].includes(effectivePhase) ? (
+              <p className="hint">
+                下一轮队长：<strong>{name(g.captainId)}</strong>
+                {captain ? '（你）' : ''}（待本阶段确认完成后开始选人组队）
+              </p>
+            ) : null}
           </div>
         </div>
       )}
@@ -509,18 +572,18 @@ export function GamePanel({
           {g.players.map(p => {
             const member = room.members.find(m => m.id === p.id);
             const isCaptain = !ended && g.phase !== 'assassination' && p.id === g.captainId;
-            const isNextCaptain = isCaptain && ['early_window', 'lady', 'lady_reveal'].includes(g.phase);
+            const isNextCaptain = isCaptain && ['early_window', 'lady', 'lady_reveal'].includes(effectivePhase);
             const isLadyHolder = !ended && g.phase !== 'assassination' && g.lady?.holderId === p.id;
             const isProposed =
               !ended &&
-              (g.phase === 'proposing'
+              (effectivePhase === 'proposing'
                 ? selected.includes(p.id)
-                : ['discussion', 'team_vote', 'mission'].includes(g.phase) && Boolean(round?.team.includes(p.id)));
+                : ['discussion', 'team_vote', 'mission'].includes(effectivePhase) && Boolean(round?.team.includes(p.id)));
             const isTargeted =
               (g.phase === 'lady' || g.phase === 'assassination') && target === p.id;
             const canTapSeat =
               !disabled &&
-              ((g.phase === 'proposing' && captain) ||
+              ((effectivePhase === 'proposing' && captain) ||
                 (g.phase === 'lady' && Boolean(self?.canInspect) && !g.lady?.holderIds.includes(p.id)) ||
                 (g.phase === 'assassination' && self?.role === 'assassin' && p.id !== userId));
             const lastBallot =
@@ -627,7 +690,7 @@ export function GamePanel({
                     </span>
                   ) : canTapSeat ? (
                     <span className="seat-chip chip-hint">
-                      {g.phase === 'proposing'
+                      {effectivePhase === 'proposing'
                         ? '点击上车'
                         : g.phase === 'lady'
                           ? '点击查验'
@@ -697,25 +760,15 @@ export function GamePanel({
           onSelectTarget={setTarget}
         />
 
-        {g.phase === 'role_reveal' && (
+        {effectivePhase === 'role_reveal' && (
           <div className="dock-panel">
             <p role="status">
-              {g.progress.confirmed} / {g.players.length} 人已确认身份。
-              {self?.confirmed ? '请等待其他朋友。' : '请查看身份并确认后开始组队。'}
+              身份底牌已发放！可随时点击上方「👁️ 私下查看我的身份」查看底牌，<strong>{revealLeft} 秒</strong>后队长即可开始选人…
             </p>
-            {!self?.confirmed && (
-              <button
-                type="button"
-                disabled={!connected}
-                onClick={() => setIdentityOpen(true)}
-              >
-                打开底牌并确认身份
-              </button>
-            )}
           </div>
         )}
 
-        {g.phase === 'proposing' &&
+        {effectivePhase === 'proposing' &&
           (captain ? (
             <form
               className="dock-panel"
@@ -1027,17 +1080,6 @@ export function GamePanel({
             <p className="hint">
               {self.team === 'blue' ? '任务只能提交成功。' : '任务可以提交成功或失败。'}切到其他页面或断线时会自动收起。
             </p>
-            {g.phase === 'role_reveal' && !self.confirmed && (
-              <button
-                disabled={disabled}
-                onClick={() => {
-                  setIdentityOpen(false);
-                  send({ type: 'confirmRole', payload: {} });
-                }}
-              >
-                我已记住身份
-              </button>
-            )}
             <PrivateExtensions
               game={g}
               disabled={disabled}

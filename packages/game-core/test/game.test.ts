@@ -33,7 +33,9 @@ test('confirmation, permission, exact unique team size and fixed shuffled captai
   let g=game(5,{captainMode:'random_order'});
   g=createGame(g.id,g.players,g.settings,values=>values.reverse());
   assert.deepEqual(g.captainOrder,g.players.map(p=>p.id).reverse());
-  assert.throws(()=>propose(g),/WRONG_PHASE/);g=ready(g);
+  // Captain can propose directly without waiting for manual confirmRole from all players
+  assert.equal(propose(g).phase,'team_vote');
+  g=ready(g);
   assert.throws(()=>act(g,g.players[0].id,'proposeTeam',{playerIds:g.players.slice(0,2).map(p=>p.id),direction:'clockwise'}),/NOT_CAPTAIN/);
   assert.throws(()=>act(g,captain(g),'proposeTeam',{playerIds:[g.players[0].id,g.players[0].id],direction:'clockwise'}),/INVALID_TEAM/);
   const order=[...g.captainOrder];g=vote(propose(g),0);assert.equal(captain(g),order[1]);assert.deepEqual(g.captainOrder,order);
@@ -80,6 +82,7 @@ test('three failed missions win red; three successes enter assassination with ex
     let g=ready(game());for(let i=0;i<3;i++)g=mission(g,0);
     assert.equal(g.phase,'assassination');assert.equal(projectGame(g).revealedRoles,undefined);
     const assassin=g.players.find(p=>g.roles[p.id]==='assassin')!.id;
+    assert.equal(projectGame(g).assassinId,assassin);
     const target=g.players.find(p=>g.roles[p.id]===(hit?'merlin':'loyal'))!.id;
     assert.throws(()=>act(g,target,'assassinate',{targetId:assassin}),/NOT_ASSASSIN/);
     g=act(g,assassin,'assassinate',{targetId:target});assert.equal(g.result?.winner,hit?'red':'blue');

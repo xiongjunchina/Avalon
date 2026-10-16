@@ -61,7 +61,7 @@ function HistoryPanel({favorites,onReplay}:{favorites:boolean;onReplay:(id:strin
     {error&&<p role="alert" className="error">{error}<button className="secondary" disabled={busy} onClick={()=>setRetry(n=>n+1)}>重新读取记录</button></p>}
     {!page&&busy&&<p role="status">正在读取记录…</p>}
     {page?.games.length===0&&<p className="empty-state">{favorites?'还没有收藏。在一局复盘中点击“收藏这局”，方便下次再看。':'还没有结束的对局。和朋友玩完一局后，战绩会出现在这里。'}</p>}
-    <div className="history-list">{page?.games.map(g=><article key={g.id}><div className="section-head"><h3>{outcome(g)} <small>{g.playerCount} 人局</small></h3><span className="status">{g.favorite?'已收藏':'已结束'}</span></div><p>{roleNames[g.self.role]} · {g.self.team==='blue'?'蓝方':'红方'} · {reasons[g.result.reason]}</p><p className="hint"><time dateTime={g.endedAt}>{date(g.endedAt)}</time> · 当时昵称：{g.self.nickname}</p><button className="secondary" onClick={()=>onReplay(g.id)}>查看复盘 · {date(g.endedAt)}</button></article>)}</div>
+    <div className="history-list">{page?.games.map(g=><article key={g.id}><div className="section-head"><h3>{outcome(g)} <small>{g.playerCount} 人局</small></h3><span className="status">{g.favorite?'已收藏':'已结束'}</span></div><p>{roleNames[g.self.role]} · {g.self.team==='blue'?'蓝方':'红方'} · {reasons[g.result.reason]}</p><p className="hint"><time dateTime={g.endedAt}>{date(g.endedAt)}</time> · 当时昵称：{g.self.nickname}</p><p className="hint game-uid-line">对局编号 ID：<span>{g.id}</span></p><button className="secondary" onClick={()=>onReplay(g.id)}>查看复盘 · {date(g.endedAt)}</button></article>)}</div>
     {page?.nextCursor&&<button className="secondary" disabled={busy} onClick={()=>void more()}>{busy?'正在读取…':'加载更多'}</button>}
   </>;
 }
@@ -69,7 +69,7 @@ function HistoryPanel({favorites,onReplay}:{favorites:boolean;onReplay:(id:strin
 export function ReplayView({replay:g}:{replay:Replay}) {
   const name=(id:string)=>{const p=g.players.find(p=>p.id===id);return p?`${p.seat} 号 ${p.nickname}`:'未知成员';};
   return <>
-    <div className="result-box"><h2>{g.result.winner===null?'本局中断':`${g.result.winner==='blue'?'蓝方':'红方'}获胜`}</h2><p>{reasons[g.result.reason]}{g.result.targetId?` · 刺杀目标：${name(g.result.targetId)}`:''}</p><p className="hint">开始 {date(g.startedAt)}<br/>结束 {date(g.endedAt)} · 你的结果：{outcome(g)}</p></div>
+    <div className="result-box"><h2>{g.result.winner===null?'本局中断':`${g.result.winner==='blue'?'蓝方':'红方'}获胜`}</h2><p>{reasons[g.result.reason]}{g.result.targetId?` · 刺杀目标：${name(g.result.targetId)}`:''}</p><p className="hint">开始 {date(g.startedAt)}<br/>结束 {date(g.endedAt)} · 你的结果：{outcome(g)}</p><p className="hint game-uid-line">对局编号 ID：<span>{g.id}</span></p></div>
     <p className="hint">{settingsText(g.settings)}<br/>规则版本：{g.rulesetVersion}</p>
     <p className="notice">仅本局参与者可看。{g.settings.anonymousTeamVote?'组队投票仅展示总数。':'组队投票展示当时公开的个人赞反。'}任务出牌始终不对应个人。</p>
     <h3>最终身份</h3><ul className="role-list">{g.players.map(p=><li key={p.id}><span>{name(p.id)}</span><strong className={`revealed-role allegiance-${roleTeam(g.roles[p.id])}`}><RolePortrait role={g.roles[p.id]} size="mini"/>{roleNames[g.roles[p.id]]}</strong></li>)}</ul>

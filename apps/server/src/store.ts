@@ -83,7 +83,11 @@ export class PostgresStore {
     return this.tx(async c => {
       await c.query('SELECT id FROM users WHERE id=$1 FOR NO KEY UPDATE', [user.id]);
       if ((await c.query('SELECT 1 FROM room_members WHERE user_id=$1', [user.id])).rowCount) throw new DomainError('ALREADY_IN_ROOM', 409);
-      const id = randomUUID(), code = randomBytes(6).toString('hex').toUpperCase(), invite = randomBytes(24).toString('base64url');
+      const id = randomUUID(), invite = randomBytes(24).toString('base64url');
+      let code = String(randomInt(100000, 1000000));
+      while ((await c.query('SELECT 1 FROM rooms WHERE code=$1', [code])).rowCount) {
+        code = String(randomInt(100000, 1000000));
+      }
       await c.query(`INSERT INTO rooms(id,code,invite,host_id,settings,offline_since,created_at) VALUES($1,$2,$3,$4,$5,$6,$6)`, [id,code,invite,user.id,initialSettings,this.date()]);
       await this.addMember(c,id,user.id,1);
       return this.view(c,await this.lock(c,id),await this.members(c,id),user.id);

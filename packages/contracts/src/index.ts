@@ -77,6 +77,7 @@ export interface GameView {
   lady?: { holderId: string; holderIds: string[]; inspections: Inspection[] };
   earlyAssassination?: { used: boolean; windows: EarlyWindow[] };
   assassinationMode?: 'normal' | 'early';
+  assassinId?: string;
   result?: GameResult; revealedRoles?: Record<string, Role>;
   abortPoll?: { requestedBy: string; approvals: number; required: number; voted: boolean };
   self?: { role: Role; team: Team; evilIds: string[]; merlinCandidates: string[];

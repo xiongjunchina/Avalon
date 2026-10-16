@@ -280,13 +280,7 @@ function App() {
       seat: i + 1,
       nickname: i === 0 ? user?.nickname ?? '我' : BOT_NAMES[i - 1],
     }));
-    let g = createGame('practice-game', players, s, shuffleArray);
-    // Auto-confirm all AI bots so the user only needs to confirm their own role or start proposing
-    for (const p of players) {
-      if (p.id !== 'p1') {
-        g = transition(g, p.id, { type: 'confirmRole', payload: {} }, players.map(x => x.id));
-      }
-    }
+    const g = createGame(`practice-game-${Date.now()}`, players, s, shuffleArray);
     setPracticeUserId('p1');
     setPracticeGame(g);
     setSetupOpen(false);
@@ -820,12 +814,12 @@ function App() {
                       });
                     }}
                   >
-                    <Label.Root htmlFor="room-key">输入房间号或粘贴邀请链接</Label.Root>
+                    <Label.Root htmlFor="room-key">输入 6 位数字房号或粘贴邀请链接</Label.Root>
                     <input
                       id="room-key"
                       value={key}
                       required
-                      placeholder="例如：1028264E 或完整邀请链接"
+                      placeholder="例如：6位数字房号（如 382910）或完整邀请链接"
                       onChange={e => setKey(e.target.value)}
                       autoComplete="off"
                     />

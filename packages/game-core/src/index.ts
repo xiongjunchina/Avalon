@@ -97,7 +97,7 @@ export function transition(state: GameState, userId: string, action: Pick<Comman
       if (g.confirmed.length === g.players.length) g.phase = 'proposing';
       break;
     case 'proposeTeam': {
-      requireRule(g.phase === 'proposing', 'WRONG_PHASE');
+      requireRule(g.phase === 'proposing' || g.phase === 'role_reveal', 'WRONG_PHASE');
       requireRule(userId === captain(g), 'NOT_CAPTAIN');
       const { playerIds, direction } = action.payload as { playerIds: string[]; direction: RoundView['direction'] };
       requireRule(playerIds.length === MISSION_SIZES[g.players.length][g.mission-1] && new Set(playerIds).size === playerIds.length && playerIds.every(id => g.players.some(p => p.id === id)), 'INVALID_TEAM');
@@ -219,6 +219,7 @@ export function projectGame(g: GameState, userId?: string): GameView {
       inspections: g.lady.inspections.map(i => ({ afterMission: i.afterMission, inspectorId: i.inspectorId, targetId: i.targetId })) } } : {}),
     ...(g.earlyAssassination ? { earlyAssassination: structuredClone(g.earlyAssassination) } : {}),
     ...(g.assassinationMode || g.phase === 'assassination' ? { assassinationMode: g.assassinationMode ?? 'normal' } : {}),
+    ...(g.phase === 'assassination' ? { assassinId: g.players.find(p => g.roles[p.id] === 'assassin')?.id } : {}),
     ...(g.result ? { result: { ...g.result }, revealedRoles: { ...g.roles } } : {}),
     ...(g.abortPoll ? { abortPoll: { requestedBy: g.abortPoll.requestedBy, approvals: g.abortPoll.approvals.length,
       required: g.abortPoll.electorate.length, voted: !!userId && g.abortPoll.approvals.includes(userId) } } : {}),
