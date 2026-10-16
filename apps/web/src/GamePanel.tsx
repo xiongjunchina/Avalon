@@ -2,9 +2,9 @@ import { PrivateExtensions, ExtensionStep, ExtensionHistory } from './Extensions
 import { useEffect, useState } from 'react';
 import type { Command, GameView, RoomView } from '@avalon/contracts';
 import { ROLE_CONFIG, failuresRequiredFor } from '@avalon/game-core';
-import { Emblem, roleTeam } from './Heraldry';
+import { Emblem, PlayerAvatar, WuYueBackdrop, roleTeam } from './Heraldry';
 import { IdentityCard, RolePortrait } from './RolePortrait';
-import { roleNames } from './roles';
+import { WUYUE_MISSIONS, roleNames } from './roles';
 import { DealCountdown } from './DealCountdown';
 export { roleNames } from './roles';
 
@@ -12,24 +12,24 @@ const phaseNames: Record<GameView['phase'], string> = {
   dealing: '即将发牌',
   role_reveal: '查看身份',
   proposing: '队长组队',
-  discussion: '围桌讨论',
+  discussion: '围桌论剑',
   team_vote: '组队表决',
-  mission: '执行任务',
+  mission: '五岳会盟',
   lady: '湖中女神查验',
   lady_reveal: '确认查验结果',
   early_window: '轮间确认中',
-  assassination: '刺杀梅林',
+  assassination: '刺杀风清扬',
   finished: '本局结束',
   aborted: '本局中断',
 };
 
 const reasons: Record<string, string> = {
-  three_failures: '三次任务失败',
+  three_failures: '三次会盟任务失败',
   five_rejections: '累计五次组队未通过',
-  merlin_found: '刺客找到了梅林',
-  merlin_survived: '梅林躲过了刺杀',
-  early_merlin_found: '提前刺杀命中梅林',
-  early_merlin_survived: '提前刺杀未命中梅林',
+  merlin_found: '林平之刺中了风清扬',
+  merlin_survived: '风清扬躲过了刺杀',
+  early_merlin_found: '提前刺杀命中风清扬',
+  early_merlin_survived: '提前刺杀未命中风清扬',
   unanimous_abort: '在线成员一致同意中断',
   offline_timeout: '全员离线超过 24 小时',
 };
@@ -192,12 +192,14 @@ export function GamePanel({
                 ? 'mission-current'
                 : 'mission-pending';
 
+            const wuyue = WUYUE_MISSIONS[i];
+
             return (
               <div
                 key={i}
                 role="button"
                 tabIndex={0}
-                aria-label={`查看任务 ${missionNum} 组队与投票详情`}
+                aria-label={`查看任务 ${missionNum}（${wuyue?.title ?? ''}）组队与投票详情`}
                 onClick={() => setInspectMission(missionNum)}
                 onKeyDown={e => {
                   if (e.key === 'Enter' || e.key === ' ') {
@@ -211,17 +213,18 @@ export function GamePanel({
                   <span className="quest-two-fails-arch">需要2张失败卡</span>
                 )}
                 <div className="quest-circle">
+                  <WuYueBackdrop mission={missionNum} />
                   {result ? (
                     <>
                       <QuestStarBadge kind={result.passed ? 'blue' : 'red'} />
-                      <span className="quest-circle-top">任务 {missionNum}</span>
+                      <span className="quest-circle-top">{wuyue?.shortLabel ?? `任务 ${missionNum}`}</span>
                       <strong className="quest-result-label">
                         {result.passed ? '成功' : '失败'}
                       </strong>
                     </>
                   ) : (
                     <>
-                      <span className="quest-circle-top">任务 {missionNum}</span>
+                      <span className="quest-circle-top">{wuyue?.shortLabel ?? `任务 ${missionNum}`}</span>
                       <strong className="quest-circle-num">{count}</strong>
                       <span className="sr-only">人</span>
                     </>
@@ -236,7 +239,7 @@ export function GamePanel({
                   className={`quest-token-socket ${isCurrent ? 'has-shield-token' : ''} ${
                     missionProposals.length > 0 ? 'has-records' : ''
                   }`}
-                  title={isCurrent ? '当前执行任务' : '点击查看本轮记录'}
+                  title={isCurrent ? '当前会盟场次' : '点击查看本场记录'}
                 >
                   {isCurrent ? '🛡️' : missionProposals.length > 0 ? `${missionProposals.length}次` : ''}
                 </span>
@@ -245,13 +248,16 @@ export function GamePanel({
           })}
         </div>
 
-        {/* Bottom Row of Quest Board: 5-Circle Vote Rejection Track + Player Composition Plaque */}
+        {/* Bottom Row of Quest Board: Compact Translucent Vote Track & Faction Pill */}
         <div className="quest-vote-track-zone">
           <div className="quest-vote-track-left">
             <div className="quest-track-head">
-              <span className="quest-track-badge">投票次数记录</span>
+              <span className="quest-track-badge">流局轨</span>
               <span className="quest-track-sub">
-                蓝胜 {successes} · 红胜 {failures} · {room.settings.rejectionScope === 'game' ? '全局' : '本轮'}流局 {g.rejectionCount} / 5（点击上方任务圆盘可查当轮票型）
+                蓝 {successes} : 红 {failures} · 流局 {g.rejectionCount}/5
+              </span>
+              <span className="sr-only">
+                投票次数记录（点击上方五岳会盟圆盘可查当轮票型）
               </span>
             </div>
             <div className="quest-vote-circles" aria-label="流局计数轨">
@@ -288,12 +294,12 @@ export function GamePanel({
 
           <div className="quest-faction-plaque">
             <strong>{g.players.length}位玩家</strong>
-            <span>{redCount}名莫德雷德爪牙</span>
+            <span>{redCount}名日月暗影</span>
           </div>
         </div>
       </div>
 
-      {/* 2. Phase & Captain Banner (or Dramatic Central Victory / Defeat Summary Banner when ended) */}
+      {/* 2. Hybrid Scheme A: Scheme 3 Ink Ribbon + Scheme 6 Captain & Team Formation Spotlight Banner */}
       {ended && g.result ? (
         (() => {
           const myRevealedRole = g.revealedRoles?.[userId] ?? self?.role;
@@ -434,12 +440,12 @@ export function GamePanel({
           <div className="assassination-stage-kicker">
             {g.assassinationMode === 'early'
               ? 'EARLY ASSASSINATION · 提前刺杀阶段'
-              : 'FINAL ASSASSINATION · 终局刺杀梅林'}
+              : 'FINAL ASSASSINATION · 终局刺杀风清扬'}
           </div>
           <h2 className="assassination-stage-title">
             {g.assassinationMode === 'early'
-              ? '刺客已发起提前刺杀！'
-              : '蓝方已赢三轮 · 进入刺杀阶段！'}
+              ? '林平之已发起提前刺杀！'
+              : '蓝方已赢三场会盟 · 进入刺杀阶段！'}
           </h2>
           {assassinPlayer && (
             <div className="assassination-identity-reveal">
@@ -447,35 +453,35 @@ export function GamePanel({
                 <RolePortrait role="assassin" size="mini" />
               </div>
               <div className="assassin-reveal-info">
-                <span className="assassin-reveal-tag">🗡️ 本局刺客身份已公开</span>
+                <span className="assassin-reveal-tag">🗡️ 本局刺客（林平之）身份已公开</span>
                 <strong className="assassin-reveal-name">
                   {assassinPlayer.seat}号 {assassinPlayer.nickname}
                 </strong>
-                <small>正在执行刺杀任务，锁定怀疑是「梅林」的目标…</small>
+                <small>正在拔出辟邪剑，锁定怀疑是「风清扬」的目标…</small>
               </div>
             </div>
           )}
           <p className="assassination-stage-desc">
             {assassinPlayer
-              ? `刺客（${assassinPlayer.seat}号 ${assassinPlayer.nickname}）正在选择怀疑是`
-              : '刺客正在暗中锁定怀疑是'}
-            <strong>「梅林」</strong>的玩家，一旦确认目标，全员将立即揭晓本局最终胜负！
+              ? `林平之（${assassinPlayer.seat}号 ${assassinPlayer.nickname}）正在选择怀疑是`
+              : '林平之正在暗中锁定怀疑是'}
+            <strong>「风清扬」</strong>的玩家，一旦确认目标，全员将立即揭晓本局最终胜负！
           </p>
           <div className="assassination-stakes-grid">
             <div className="stake-card stake-blue">
-              <strong>🛡️ 若梅林躲过刺杀</strong>
-              <span>蓝方（亚瑟忠臣）全员获胜</span>
+              <strong>🛡️ 若风清扬躲过刺杀</strong>
+              <span>蓝方（正道同盟）全员获胜</span>
             </div>
             <div className="stake-card stake-red">
-              <strong>🗡️ 若刺客命中梅林</strong>
-              <span>红方（莫德雷德爪牙）绝地翻盘</span>
+              <strong>🗡️ 若林平之刺中风清扬</strong>
+              <span>红方（日月暗影）绝地翻盘</span>
             </div>
           </div>
           <div className="assassination-waiting-pill" role="status">
             <span className="waiting-dot" aria-hidden="true" />
             {assassinPlayer
-              ? `正在等待刺客（${assassinPlayer.seat}号 ${assassinPlayer.nickname}）做出最终刺杀决定…`
-              : '正在等待刺客做出最终刺杀决定…'}
+              ? `正在等待林平之（${assassinPlayer.seat}号 ${assassinPlayer.nickname}）做出最终刺杀决定…`
+              : '正在等待林平之做出最终刺杀决定…'}
           </div>
         </section>
       ) : g.phase === 'assassination' && self?.role === 'assassin' ? (
@@ -488,34 +494,153 @@ export function GamePanel({
               <div className="assassin-banner-kicker">
                 {g.assassinationMode === 'early'
                   ? 'ASSASSIN TURN · 提前刺杀已启动'
-                  : 'ASSASSIN TURN · 蓝方已完成三轮任务'}
+                  : 'ASSASSIN TURN · 蓝方已完成三场会盟'}
               </div>
-              <h2 className="assassin-banner-title">你是刺客 · 请选择要刺杀的梅林目标</h2>
+              <h2 className="assassin-banner-title">你是林平之 · 请选择要刺杀的风清扬目标</h2>
             </div>
           </div>
           <p className="assassin-banner-sub">
-            点击下方玩家卡片锁定目标，再点底部<strong>「确认刺杀」</strong>：杀对梅林则红方全员胜利，杀错则蓝方全员胜利。
+            点击下方玩家卡片锁定目标，再点底部<strong>「确认刺杀」</strong>：刺中风清扬则红方全员胜利，刺错则蓝方全员胜利。
           </p>
         </section>
       ) : (
-        <div className="table-phase-banner">
-          <div className="table-phase-head-row">
-            <h2 aria-live="polite">{phaseNames[effectivePhase]}</h2>
-            {['proposing', 'discussion', 'team_vote', 'mission'].includes(effectivePhase) ? (
-              <p>
-                当前队长：<strong>{name(g.captainId)}</strong>
-              </p>
-            ) : ['early_window', 'lady', 'lady_reveal'].includes(effectivePhase) ? (
-              <p className="hint">
-                下一轮队长：<strong>{name(g.captainId)}</strong>
-                {captain ? '（你）' : ''}（待本阶段确认完成后开始选人组队）
-              </p>
-            ) : null}
-          </div>
-        </div>
+        (() => {
+          const captainPlayer = g.players.find(p => p.id === g.captainId);
+          const captainMember = room.members.find(m => m.id === g.captainId);
+          const activeTeamIds =
+            effectivePhase === 'proposing'
+              ? selected
+              : ['discussion', 'team_vote', 'mission'].includes(effectivePhase) && round
+                ? round.team
+                : [];
+          const slotBadges = ['⚔️', '🛡️', '🗡️', '🏹', '⚡', '🔥'];
+
+          return (
+            <div className="scheme3-middle-zone">
+              {/* Scheme 3 Floating Ink-and-Gold Calligraphy Ribbon */}
+              <div className="scheme3-ink-ribbon">
+                <h2 className="sr-only" aria-live="polite">
+                  {phaseNames[effectivePhase]}
+                </h2>
+                <span className="ink-ribbon-ornament" aria-hidden="true">
+                  〰
+                </span>
+                <p className="ink-ribbon-text">
+                  {effectivePhase === 'proposing' ? (
+                    <>
+                      盟主<strong>{captainPlayer?.nickname ?? ''}</strong> · 正在点将 ({activeTeamIds.length}/{size})
+                    </>
+                  ) : effectivePhase === 'discussion' ? (
+                    <>
+                      盟主<strong>{captainPlayer?.nickname ?? ''}</strong> · 围桌论剑 ({activeTeamIds.length}/{size})
+                    </>
+                  ) : effectivePhase === 'team_vote' ? (
+                    <>
+                      盟主<strong>{captainPlayer?.nickname ?? ''}</strong> · 组队表决 ({g.progress.teamVotes}/{g.players.length})
+                    </>
+                  ) : effectivePhase === 'mission' ? (
+                    <>
+                      <strong>{WUYUE_MISSIONS[g.mission - 1]?.title ?? '五岳会盟'}</strong> · 出征执行 ({g.progress.missionVotes}/{activeTeamIds.length})
+                    </>
+                  ) : (
+                    <>
+                      候任盟主<strong>{captainPlayer?.nickname ?? ''}</strong> · {phaseNames[effectivePhase]}
+                    </>
+                  )}
+                </p>
+                <span className="ink-ribbon-ornament" aria-hidden="true">
+                  〰
+                </span>
+              </div>
+
+              {/* Scheme 6 Horizontal Captain & Team Formation Spotlight Banner */}
+              <div className="scheme6-team-spotlight" aria-label="当前盟主与会盟出征阵位">
+                <div className="spotlight-captain-node">
+                  <div className="spotlight-captain-ring">
+                    <div className="spotlight-captain-avatar">
+                      <PlayerAvatar
+                        avatar={captainMember?.avatar}
+                        avatarUrl={captainMember?.avatarUrl}
+                        wechatAvatarUrl={captainMember?.wechatAvatarUrl}
+                        fallbackKind="crown"
+                      />
+                    </div>
+                    <span className="spotlight-captain-crest" aria-hidden="true">
+                      ⚔️
+                    </span>
+                    <span className="spotlight-captain-pill">
+                      {String(captainPlayer?.seat ?? 1).padStart(2, '0')}号 盟主
+                    </span>
+                  </div>
+                  <strong className="spotlight-captain-title">
+                    {captainPlayer?.nickname ?? '盟主'}
+                  </strong>
+                </div>
+
+                <div className="spotlight-slots-track">
+                  <div className="spotlight-energy-line" aria-hidden="true" />
+                  {Array.from({ length: size }, (_, slotIdx) => {
+                    const slotPlayerId = activeTeamIds[slotIdx];
+                    const slotPlayer = slotPlayerId
+                      ? g.players.find(p => p.id === slotPlayerId)
+                      : undefined;
+                    const slotMember = slotPlayerId
+                      ? room.members.find(m => m.id === slotPlayerId)
+                      : undefined;
+                    const canRemoveFromSlot =
+                      !disabled && effectivePhase === 'proposing' && captain && Boolean(slotPlayerId);
+
+                    return (
+                      <div
+                        key={slotIdx}
+                        role={canRemoveFromSlot ? 'button' : undefined}
+                        tabIndex={canRemoveFromSlot ? 0 : undefined}
+                        onClick={() => canRemoveFromSlot && slotPlayerId && handleSeatTap(slotPlayerId)}
+                        onKeyDown={e => {
+                          if (canRemoveFromSlot && slotPlayerId && (e.key === 'Enter' || e.key === ' ')) {
+                            e.preventDefault();
+                            handleSeatTap(slotPlayerId);
+                          }
+                        }}
+                        className={`spotlight-team-slot ${slotPlayer ? 'is-filled' : 'is-empty'} ${
+                          canRemoveFromSlot ? 'is-removable' : ''
+                        }`}
+                      >
+                        <div className="spotlight-slot-ring">
+                          {slotPlayer ? (
+                            <div className="spotlight-slot-avatar">
+                              <PlayerAvatar
+                                avatar={slotMember?.avatar}
+                                avatarUrl={slotMember?.avatarUrl}
+                                wechatAvatarUrl={slotMember?.wechatAvatarUrl}
+                                fallbackKind="cards"
+                              />
+                            </div>
+                          ) : (
+                            <span className="spotlight-slot-placeholder" aria-hidden="true">
+                              +
+                            </span>
+                          )}
+                          <span className="spotlight-slot-badge" aria-hidden="true">
+                            {slotBadges[slotIdx % slotBadges.length]}
+                          </span>
+                        </div>
+                        <span className="spotlight-slot-label">
+                          {slotPlayer
+                            ? `${String(slotPlayer.seat).padStart(2, '0')}号`
+                            : `阵位0${slotIdx + 1}`}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          );
+        })()
       )}
 
-      {/* 3. Compact, High-Visibility Player Seat Grid (Hidden for non-assassins during assassination phase) */}
+      {/* 3. Scheme 3 Floating Circular Player Avatar Grid (Hidden for non-assassins during assassination phase) */}
       {!(g.phase === 'assassination' && self?.role !== 'assassin') && (
         <div
           className={`table-seats-grid ${
@@ -584,7 +709,6 @@ export function GamePanel({
                   .join(' ')}
               >
                 <div className="seat-card-top">
-                  <span className="seat-num-badge">{String(p.seat).padStart(2, '0')}</span>
                   <div className="seat-top-badges">
                     {ended && revealedTeam ? (
                       <>
@@ -617,9 +741,19 @@ export function GamePanel({
                     {revealedRole ? (
                       <RolePortrait role={revealedRole} size="mini" />
                     ) : (
-                      <Emblem kind={member?.avatar ?? 'cards'} />
+                      <PlayerAvatar
+                        avatar={member?.avatar}
+                        avatarUrl={member?.avatarUrl}
+                        wechatAvatarUrl={member?.wechatAvatarUrl}
+                        fallbackKind="cards"
+                      />
                     )}
                   </div>
+                  <span
+                    className={`seat-online-dot ${member?.online === false ? 'is-offline' : 'is-online'}`}
+                    title={member?.online === false ? '离线' : '在线'}
+                  />
+                  <span className="seat-num-badge">{String(p.seat).padStart(2, '0')}</span>
                   {isProposed && (
                     <span className="seat-avatar-team-flag" title="已选入本轮任务车队">
                       🛡️
@@ -639,10 +773,10 @@ export function GamePanel({
                       {roleNames[revealedRole]}
                     </span>
                   ) : isProposed ? (
-                    <span className="seat-chip chip-team">🛡️ 车队队员</span>
+                    <span className="seat-chip chip-team">🛡️ 入阵</span>
                   ) : isTargeted ? (
                     <span className="seat-chip chip-target">
-                      {g.phase === 'lady' ? '🌊 待查验' : '🗡️ 刺杀目标'}
+                      {g.phase === 'lady' ? '🌊 查验' : '🗡️ 目标'}
                     </span>
                   ) : canTapSeat ? (
                     <span className="seat-chip chip-hint">
@@ -650,14 +784,14 @@ export function GamePanel({
                         ? '点击上车'
                         : g.phase === 'lady'
                           ? '点击查验'
-                          : '🎯 点击刺杀'}
+                          : '🎯 刺杀'}
                     </span>
                   ) : lastBallot !== undefined ? (
                     <span className={`seat-chip ${lastBallot ? 'chip-approve' : 'chip-reject'}`}>
                       {lastBallot ? '👍 赞成' : '👎 反对'}
                     </span>
                   ) : (
-                    <span className="seat-chip chip-status">
+                    <span className="sr-only">
                       {g.phase === 'assassination' && p.id === userId
                         ? '刺客本人'
                         : member?.online === false
@@ -1016,16 +1150,16 @@ export function GamePanel({
             </div>
             <IdentityCard role={self.role} />
             {self.merlinCandidates.length > 0 && (
-              <p>梅林与莫甘娜是：{names(self.merlinCandidates)}。你不知道谁是真正的梅林。</p>
+              <p>风清扬与东方不败是：{names(self.merlinCandidates)}。你不知道谁是真正的风清扬。</p>
             )}
             {(self.guinevereCandidates?.length ?? 0) > 0 && (
               <p>
-                你看到的两人是：{names(self.guinevereCandidates!)}。其中一人是莫德雷德，另一人是蓝方同伴，但你不知道具体对应关系。
+                你听闻的两道传闻指向：{names(self.guinevereCandidates!)}。其中一人是岳不群，另一人是蓝方同伴，但你不知道具体对应关系。
               </p>
             )}
             {self.evilIds.length > 0 && (
               <p>
-                {self.role === 'merlin' ? '你看到的红方成员（不含莫德雷德）' : '你看到的红方队友（不含奥伯伦）'}：
+                {self.role === 'merlin' ? '你看到的红方成员（不含岳不群）' : '你看到的红方队友（不含左冷禅）'}：
                 {names(self.evilIds)}。不显示具体角色。
               </p>
             )}
@@ -1060,7 +1194,7 @@ export function GamePanel({
           <div className="table-modal-sheet" onClick={e => e.stopPropagation()}>
             <div className="table-modal-head">
               <strong>
-                任务 {inspectMission} 详情（需 {g.missionSizes[inspectMission - 1]} 人
+                {WUYUE_MISSIONS[inspectMission - 1]?.shortLabel ?? `任务 ${inspectMission}`} 详情（需 {g.missionSizes[inspectMission - 1]} 人
                 {failuresRequiredFor(g.players.length, inspectMission) === 2
                   ? ' · 2张失败牌才失败'
                   : ' · 1张失败牌即失败'}）
@@ -1079,21 +1213,21 @@ export function GamePanel({
                   className={`secondary tool-pill ${inspectMission === idx + 1 ? 'pulse-action' : ''}`}
                   onClick={() => setInspectMission(idx + 1)}
                 >
-                  任务 {idx + 1}
+                  {WUYUE_MISSIONS[idx]?.shortLabel ?? `任务 ${idx + 1}`}
                 </button>
               ))}
             </div>
 
             {missionRounds.length === 0 ? (
               <p className="muted" style={{ marginTop: 12 }}>
-                任务 {inspectMission} 尚未产生组队提案记录。
+                {WUYUE_MISSIONS[inspectMission - 1]?.shortLabel ?? `任务 ${inspectMission}`} 尚未产生组队提案记录。
               </p>
             ) : (
               <div className="game-history-list" style={{ marginTop: 10 }}>
                 {missionRounds.map(r => (
                   <article key={r.number} className="history-round-card">
                     <h3>
-                      第 {r.number} 次组队提案（任务 {r.mission}）
+                      第 {r.number} 次组队提案（{WUYUE_MISSIONS[r.mission - 1]?.shortLabel ?? `任务 ${r.mission}`}）
                     </h3>
                     <p>
                       <strong>👑 队长：</strong>

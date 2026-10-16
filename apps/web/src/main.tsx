@@ -29,10 +29,10 @@ import { RoomConnection } from './room-connection';
 import { api, describe, errors } from './api';
 import { AccountPanel } from './AccountPanel';
 import { PresetsPanel, SettingsFields, settingsText } from './PresetsPanel';
-import { Emblem, roleTeam } from './Heraldry';
+import { Emblem, PlayerAvatar, WECHAT_SAMPLE_AVATARS, WuYueBackdrop, roleTeam } from './Heraldry';
 import { GuidePanel } from './GuidePanel';
 import { RolePortrait } from './RolePortrait';
-import { roleMottos, roleNames } from './roles';
+import { WUYUE_MISSIONS, roleMottos, roleNames, roleTitles } from './roles';
 
 const SHOWCASE_ROLES: Role[] = [
   'merlin',
@@ -45,18 +45,6 @@ const SHOWCASE_ROLES: Role[] = [
   'loyal',
   'minion',
 ];
-
-const ROLE_EN_NAMES: Record<Role, string> = {
-  merlin: 'MERLIN',
-  percival: 'PERCIVAL',
-  guinevere: 'GUINEVERE',
-  loyal: 'LOYAL SERVANT',
-  morgana: 'MORGANA',
-  assassin: 'ASSASSIN',
-  mordred: 'MORDRED',
-  oberon: 'OBERON',
-  minion: 'MINION',
-};
 
 const BOT_NAMES = ['星河', '阿青', '远山', '云舒', '沧海', '晓月', '林深', '北辰', '知秋', '南风', '清河'];
 
@@ -470,8 +458,8 @@ function App() {
         /* Guest Entry Screen */
         <div className="mp-home-screen">
           <div className="mp-logo-block">
-            <h1 className="mp-avalon-logo">AVALON</h1>
-            <p className="mp-avalon-sub">阿瓦隆线下面杀助手</p>
+            <h1 className="mp-avalon-logo">话 剑</h1>
+            <p className="mp-avalon-sub">以话为剑 · 国风武侠推理桌游</p>
           </div>
           <section className="panel guest-login-card">
             <h2>先让朋友认出你</h2>
@@ -582,8 +570,14 @@ function App() {
               phase: isEnded(practiceGame) ? 'finished' : 'playing',
               settings: practiceGame.settings,
               acceptingNewMembers: false,
-              members: practiceGame.players.map(p => ({
+              members: practiceGame.players.map((p, idx) => ({
                 ...p,
+                avatar: idx === 0 ? user.avatar : undefined,
+                avatarUrl: idx === 0 ? user.avatarUrl ?? null : null,
+                wechatAvatarUrl:
+                  idx === 0
+                    ? user.wechatAvatarUrl ?? WECHAT_SAMPLE_AVATARS[0]
+                    : WECHAT_SAMPLE_AVATARS[idx % WECHAT_SAMPLE_AVATARS.length],
                 ready: true,
                 online: true,
               })),
@@ -642,7 +636,7 @@ function App() {
 
             <div className="mp-factions-stack">
               <section className="mp-faction-panel is-blue">
-                <h3>蓝方阵营 ({setupBlueRoles.length}人)</h3>
+                <h3>蓝方 · 正道同盟 ({setupBlueRoles.length}人)</h3>
                 <div className="mp-role-card-row">
                   {groupedBlue.map(({ role, count }) => (
                     <div key={role} className="mp-portrait-card is-blue">
@@ -654,7 +648,7 @@ function App() {
                           {roleNames[role]}
                           {count > 1 && <span className="mp-count-tag">x{count}</span>}
                         </strong>
-                        <small>{ROLE_EN_NAMES[role]}</small>
+                        <small>{roleTitles[role]}</small>
                       </div>
                     </div>
                   ))}
@@ -662,7 +656,7 @@ function App() {
               </section>
 
               <section className="mp-faction-panel is-red">
-                <h3>红方阵营 ({setupRedRoles.length}人)</h3>
+                <h3>红方 · 日月暗影 ({setupRedRoles.length}人)</h3>
                 <div className="mp-role-card-row">
                   {groupedRed.map(({ role, count }) => (
                     <div key={role} className="mp-portrait-card is-red">
@@ -674,7 +668,7 @@ function App() {
                           {roleNames[role]}
                           {count > 1 && <span className="mp-count-tag">x{count}</span>}
                         </strong>
-                        <small>{ROLE_EN_NAMES[role]}</small>
+                        <small>{roleTitles[role]}</small>
                       </div>
                     </div>
                   ))}
@@ -723,7 +717,12 @@ function App() {
                 }}
               >
                 <span className="mp-avatar-ring">
-                  <Emblem kind={user.avatar ?? 'crown'} />
+                  <PlayerAvatar
+                    avatar={user.avatar}
+                    avatarUrl={user.avatarUrl}
+                    wechatAvatarUrl={user.wechatAvatarUrl}
+                    fallbackKind="crown"
+                  />
                 </span>
                 <span className="mp-avatar-name">{user.nickname}</span>
               </button>
@@ -741,8 +740,8 @@ function App() {
             </header>
 
             <div className="mp-logo-block">
-              <h1 className="mp-avalon-logo">AVALON</h1>
-              <p className="mp-avalon-sub">阿瓦隆线下面杀助手</p>
+              <h1 className="mp-avalon-logo">话 剑</h1>
+              <p className="mp-avalon-sub">以话为剑 · 国风武侠推理桌游</p>
             </div>
 
             {/* Center Single Role Medallion (Auto-rotates one role at a time, tap to switch next) */}
@@ -941,7 +940,8 @@ function App() {
                           <span className="quest-two-fails-arch">需要2张失败卡</span>
                         )}
                         <div className="quest-circle">
-                          <span className="quest-circle-top">任务 {i + 1}</span>
+                          <WuYueBackdrop mission={i + 1} />
+                          <span className="quest-circle-top">{WUYUE_MISSIONS[i]?.shortLabel ?? `任务 ${i + 1}`}</span>
                           <strong className="quest-circle-num">{count}</strong>
                         </div>
                         <span className={`quest-token-socket ${i === 0 ? 'has-shield-token' : ''}`}>
@@ -975,7 +975,7 @@ function App() {
                     <strong>{room.settings.playerCount}位玩家</strong>
                     <span>
                       {(ROLE_CONFIG[room.settings.playerCount] ?? []).filter(r => roleTeam(r) === 'red').length}
-                      名莫德雷德爪牙
+                      名日月暗影
                     </span>
                   </div>
                 </div>
@@ -1046,7 +1046,12 @@ function App() {
                       </div>
                       <div className="seat-card-avatar-wrap">
                         <div className="seat-card-avatar">
-                          <Emblem kind={m?.avatar ?? 'cards'} />
+                          <PlayerAvatar
+                            avatar={m?.avatar}
+                            avatarUrl={m?.avatarUrl}
+                            wechatAvatarUrl={m?.wechatAvatarUrl}
+                            fallbackKind="cards"
+                          />
                         </div>
                       </div>
                       <strong className="seat-card-name">

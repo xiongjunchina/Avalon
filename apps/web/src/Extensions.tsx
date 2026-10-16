@@ -13,7 +13,7 @@ export function PrivateExtensions({game:g,disabled,name,send}:Props) {
   return <>
     {!!g.self?.inspections?.length&&<section className="private-inspections"><h3>我的女神查验</h3>{g.self.inspections.map(i=><p key={i.afterMission}>任务 {i.afterMission} 后：{name(i.targetId)} 的阵营是 <strong>{i.team==='blue'?'蓝方':'红方'}</strong>。这条结果仅对你可见，不显示准确角色。</p>)}</section>}
     {g.self?.canConfirmInspection&&<button disabled={disabled} onClick={()=>send({type:'confirmInspection',payload:{}})}>我已记住查验结果，继续</button>}
-    {g.self?.canDecideEarly&&<section className="early-choice"><h3>🗡️ 提前刺杀能力（已满 2 轮任务解锁）</h3><p>仅刺客可见。对局正正常推进，你可随时在当前身份页启用「提前刺杀」：一旦启用，所有人的界面将立即停在「刺杀阶段」，由你选择要刺杀的人。杀对梅林则红方全员胜利，杀错则蓝方全员胜利。</p><div className="action-pair"><button disabled={disabled} onClick={()=>send({type:'earlyAssassinationDecision',payload:{attempt:true}})}>🗡️ 启用提前刺杀</button></div></section>}
+    {g.self?.canDecideEarly&&<section className="early-choice"><h3>🗡️ 提前刺杀能力（已满 2 轮任务解锁）</h3><p>仅林平之（刺客）可见。对局正正常推进，你可随时在当前身份页启用「提前刺杀」：一旦启用，所有人的界面将立即停在「刺杀阶段」，由你选择要刺杀的人。刺中风清扬则红方全员胜利，刺错则蓝方全员胜利。</p><div className="action-pair"><button disabled={disabled} onClick={()=>send({type:'earlyAssassinationDecision',payload:{attempt:true}})}>🗡️ 启用提前刺杀</button></div></section>}
   </>;
 }
 export function ExtensionStep({game:g,disabled,name,send,selectedTarget,onSelectTarget}:Props) {

@@ -28,9 +28,17 @@ const gameSelect=`SELECT g.*,to_char(g.ended_at AT TIME ZONE 'UTC','YYYY-MM-DD"T
 // Account queries never depend on current room membership and never return live game state.
 export class Accounts {
   constructor(private store:PostgresStore) {}
-  async updateProfile(userId:string,input:z.infer<typeof profileSchema>) {
-    return this.store.tx(async c=>(await c.query<User>(
-      'UPDATE users SET nickname=$2,avatar=$3 WHERE id=$1 RETURNING id,nickname,avatar',[userId,input.nickname,input.avatar])).rows[0]);
+  async updateProfile(userId:string,input:z.infer<typeof profileSchema>):Promise<User> {
+    return this.store.tx(async c=>{
+      const r=(await c.query<{id:string;nickname:string;avatar:User['avatar'];avatar_url:string|null;wechat_avatar_url:string|null}>(
+        `UPDATE users SET nickname=$2, avatar=$3,
+          avatar_url = CASE WHEN $4::boolean THEN $5 ELSE avatar_url END,
+          wechat_avatar_url = CASE WHEN $6::boolean THEN $7 ELSE wechat_avatar_url END
+         WHERE id=$1 RETURNING id,nickname,avatar,avatar_url,wechat_avatar_url`,
+        [userId,input.nickname,input.avatar,input.avatarUrl!==undefined,input.avatarUrl??null,input.wechatAvatarUrl!==undefined,input.wechatAvatarUrl??null]
+      )).rows[0];
+      return {id:r.id,nickname:r.nickname,avatar:r.avatar,...(r.avatar_url?{avatarUrl:r.avatar_url}:{}),...(r.wechat_avatar_url?{wechatAvatarUrl:r.wechat_avatar_url}:{})};
+    });
   }
   async history(userId:string,query:z.infer<typeof historyQuery>):Promise<HistoryPage> {
     const cursor=readCursor(query.cursor);

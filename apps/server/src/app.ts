@@ -13,7 +13,7 @@ export async function buildApp(options: { store: PostgresStore; origin?: string;
   const { store }=options;
   const accounts=new Accounts(store);
   const origin=options.origin??'http://localhost:5173';
-  const app=Fastify({logger:false,bodyLimit:8192,trustProxy:options.trustProxy ? (_address, hop) => hop === 0 : false});
+  const app=Fastify({logger:false,bodyLimit:131072,trustProxy:options.trustProxy ? (_address, hop) => hop === 0 : false});
   // One active server per database schema. Never rebuild presence underneath another server.
   const owner=await store.pool.connect();
   const lock=(await owner.query("SELECT pg_try_advisory_lock(hashtext(current_schema() || ':server')) AS acquired")).rows[0].acquired;

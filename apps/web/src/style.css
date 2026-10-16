@@ -27,7 +27,7 @@ p { line-height:1.75; text-wrap:pretty }
 .muted { color:var(--muted) }
 .hint { font-size:14px; color:var(--muted); line-height:1.8 }
 .eyebrow { font-size:11px; letter-spacing:2.2px; color:var(--accent); margin:0 0 10px; font-weight:500 }
-.realm-hero { position:relative; isolation:isolate; margin:28px 0; min-height:285px; display:flex; align-items:center; padding:38px; background:#12212b url('/art/avalon-moonlit.png') center 48%/cover; border:1px solid #4b5551; border-radius:4px 24px 4px 24px; overflow:hidden }
+.realm-hero { position:relative; isolation:isolate; margin:28px 0; min-height:285px; display:flex; align-items:center; padding:38px; background:#12212b url('/art/avalon-moonlit.png?v=huajian2') center 48%/cover; border:1px solid #4b5551; border-radius:4px 24px 4px 24px; overflow:hidden }
 .realm-hero:before { content:""; position:absolute; inset:0; background:#071016; opacity:.33; z-index:-1 }
 .realm-hero:after { content:""; position:absolute; inset:9px; border:1px solid #c6a57055; border-radius:1px 16px 1px 16px; pointer-events:none }
 .realm-hero>div { max-width:66%; text-shadow:0 2px 8px #060d12 }
@@ -175,7 +175,7 @@ footer small { margin-top:8px; color:#a0adb1 }
 /* Chronicle profile. */
 .account,.replay { max-width:960px; margin:28px auto 0 }
 .account { padding:0; background:transparent; border:0 }
-.account-banner { position:relative; height:180px; border:1px solid #556365; background:#162731 url('/art/avalon-moonlit.png') center 43%/cover; border-radius:6px 18px 0 0 }
+.account-banner { position:relative; height:180px; border:1px solid #556365; background:#162731 url('/art/avalon-moonlit.png?v=huajian2') center 43%/cover; border-radius:6px 18px 0 0 }
 .account-banner>span { position:absolute; left:24px; top:24px; font:11px Georgia,serif; letter-spacing:3px; color:#d9cba9; background:#101c27db; padding:9px 12px }
 .profile-bar { position:relative; border:1px solid var(--border); border-top:0; background:var(--surface); padding:0 26px 24px; border-radius:0 0 6px 6px }
 .profile-heading { display:flex; align-items:center; gap:20px; min-width:0; margin-top:-20px }
@@ -351,7 +351,17 @@ main.app-shell.is-table-viewport {
   padding: 5px 8px calc(12px + env(safe-area-inset-bottom, 0px));
   overflow-y: auto;
   overflow-x: hidden;
-  background: #081219;
+  background:
+    linear-gradient(180deg, rgba(6, 12, 22, 0.44) 0%, rgba(8, 16, 28, 0.2) 45%, rgba(5, 11, 20, 0.68) 100%),
+    url('/art/avalon-moonlit.png?v=huajian3') center 38% / cover no-repeat;
+}
+
+.player-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
 }
 
 .toast-stack {
@@ -387,8 +397,9 @@ main.app-shell.is-table-viewport {
   justify-content: space-between;
   align-items: center;
   background:
-    linear-gradient(180deg, rgba(0, 0, 0, 0.08) 0%, rgba(3, 8, 15, 0.72) 100%),
-    linear-gradient(90deg, #54080a 0%, #3d0608 49.9%, #04184b 50.1%, #031238 100%);
+    linear-gradient(180deg, rgba(6, 10, 16, 0.28) 0%, rgba(4, 9, 16, 0.78) 100%),
+    linear-gradient(90deg, rgba(92, 10, 14, 0.76) 0%, rgba(58, 7, 10, 0.68) 49.9%, rgba(6, 26, 78, 0.68) 50.1%, rgba(4, 18, 56, 0.78) 100%),
+    url('/art/avalon-moonlit.png?v=huajian3') center 38% / cover no-repeat;
   position: relative;
   overflow: hidden;
 }
@@ -428,6 +439,7 @@ main.app-shell.is-table-viewport {
   place-items: center;
   color: #e6c687;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
 }
 
 .mp-avatar-ring .emblem {
@@ -447,23 +459,25 @@ main.app-shell.is-table-viewport {
 }
 
 .mp-avalon-logo {
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(38px, 9vw, 48px);
-  font-weight: 700;
-  letter-spacing: 6px;
+  font-family: "STKaiti", "Kaiti SC", "Songti SC", "STSong", "Noto Serif SC", serif;
+  font-size: clamp(44px, 11vw, 58px);
+  font-weight: 800;
+  letter-spacing: 12px;
+  padding-left: 12px;
   margin: 0;
-  background: linear-gradient(180deg, #f7e3b5 0%, #c69d59 55%, #8f6830 100%);
+  background: linear-gradient(180deg, #fff3d1 0%, #e5be75 48%, #9e7130 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.75));
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.88));
 }
 
 .mp-avalon-sub {
   margin: 4px 0 0;
-  font-size: 14px;
-  letter-spacing: 3px;
-  color: #bda375;
+  font-size: 13.5px;
+  letter-spacing: 3.5px;
+  color: #dec492;
   font-weight: 600;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.85);
 }
 
 .mp-medallion-stage {
@@ -602,7 +616,9 @@ main.app-shell.is-table-viewport {
   flex-direction: column;
   justify-content: space-between;
   gap: 14px;
-  background: #040d14;
+  background:
+    linear-gradient(180deg, rgba(4, 12, 20, 0.84) 0%, rgba(5, 11, 18, 0.94) 100%),
+    url('/art/avalon-moonlit.png?v=huajian2') center 35% / cover no-repeat;
 }
 
 .mp-setup-topbar {
@@ -791,10 +807,11 @@ main.app-shell.is-table-viewport {
   align-items: center;
   justify-content: space-between;
   gap: 5px;
-  padding: 4px 6px;
-  background: #122029;
-  border: 1px solid #30444f;
-  border-radius: 10px;
+  padding: 4px 8px;
+  background: rgba(10, 18, 28, 0.58);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(214, 184, 124, 0.32);
+  border-radius: 12px;
   flex-shrink: 0;
   overflow: hidden;
 }
@@ -948,18 +965,17 @@ main.app-shell.is-table-viewport {
    ========================================================================== */
 .avalon-quest-board {
   position: relative;
-  padding: 13px 9px 8px;
-  border-radius: 12px;
-  border: 1.5px solid #8f7449;
-  background:
-    linear-gradient(180deg, rgba(44, 34, 21, 0.65) 0%, rgba(16, 22, 26, 0.88) 65%, rgba(12, 18, 22, 0.95) 100%),
-    url('/art/avalon-moonlit.png') center 38% / cover no-repeat;
+  padding: 12px 12px 7px;
+  border-radius: 22px;
+  border: 1px solid rgba(226, 194, 130, 0.42);
+  background: linear-gradient(180deg, rgba(14, 24, 38, 0.62) 0%, rgba(8, 15, 25, 0.72) 100%);
+  backdrop-filter: blur(12px);
   box-shadow:
-    inset 0 0 0 1px rgba(245, 216, 158, 0.22),
-    0 6px 18px rgba(0, 0, 0, 0.55);
+    inset 0 1px 0 rgba(255, 236, 190, 0.22),
+    0 8px 22px rgba(0, 0, 0, 0.45);
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   flex-shrink: 0;
 }
 
@@ -967,7 +983,7 @@ main.app-shell.is-table-viewport {
 .waiting-table-body .game-score.quest-circles-row {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 7px;
+  gap: 8px;
   align-items: center;
 }
 
@@ -990,14 +1006,14 @@ main.app-shell.is-table-viewport {
 
 .quest-two-fails-arch {
   position: absolute;
-  top: -13px;
+  top: -12px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 4;
-  font-size: 9px;
+  font-size: 8.5px;
   font-weight: 700;
   color: #ffe8b8;
-  background: rgba(34, 24, 14, 0.92);
+  background: rgba(24, 18, 12, 0.9);
   border: 1px solid #b58f4c;
   border-radius: 999px;
   padding: 1px 5px;
@@ -1010,11 +1026,11 @@ main.app-shell.is-table-viewport {
   width: 100%;
   aspect-ratio: 1;
   border-radius: 50%;
-  border: 2.5px solid rgba(220, 198, 156, 0.68);
-  background: radial-gradient(circle at 36% 30%, rgba(110, 96, 74, 0.85) 0%, rgba(36, 31, 25, 0.92) 72%, rgba(20, 17, 14, 0.98) 100%);
+  border: 2px solid rgba(220, 198, 156, 0.55);
+  background: radial-gradient(circle at 36% 30%, rgba(46, 62, 82, 0.72) 0%, rgba(18, 26, 38, 0.85) 75%, rgba(10, 16, 24, 0.94) 100%);
   box-shadow:
-    inset 0 2px 6px rgba(255, 244, 214, 0.25),
-    0 4px 10px rgba(0, 0, 0, 0.65);
+    inset 0 2px 6px rgba(255, 244, 214, 0.2),
+    0 4px 10px rgba(0, 0, 0, 0.55);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1023,23 +1039,23 @@ main.app-shell.is-table-viewport {
   transition: transform 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
 }
 
-/* Current Active Mission Circle */
+/* Current Active Mission Circle (Scheme 3 Cyan/Gold Glow) */
 .quest-medallion-wrap.mission-current .quest-circle {
-  border: 3px solid #ffd573;
-  background: radial-gradient(circle at 38% 30%, rgba(148, 120, 68, 0.92) 0%, rgba(48, 38, 22, 0.95) 100%);
+  border: 2.5px solid #6ef2ff;
+  background: radial-gradient(circle at 38% 30%, rgba(36, 98, 128, 0.85) 0%, rgba(16, 40, 58, 0.92) 100%);
   box-shadow:
-    0 0 14px rgba(255, 213, 115, 0.55),
-    inset 0 2px 8px rgba(255, 238, 186, 0.4);
+    0 0 16px rgba(110, 242, 255, 0.6),
+    inset 0 0 10px rgba(140, 248, 255, 0.35);
 }
 
-/* Succeeded Mission Circle (Blue Leather + Gold Star) */
+/* Succeeded Mission Circle */
 .quest-medallion-wrap.mission-success .quest-circle {
   border-color: #7cc5ff;
   background: radial-gradient(circle at 40% 35%, #234b8a 0%, #102447 85%);
   box-shadow: 0 0 12px rgba(78, 168, 255, 0.45);
 }
 
-/* Failed Mission Circle (Crimson Leather + Silver/Red Star) */
+/* Failed Mission Circle */
 .quest-medallion-wrap.mission-failure .quest-circle {
   border-color: #ff8e85;
   background: radial-gradient(circle at 40% 35%, #821d22 0%, #3d0b0e 85%);
@@ -1055,20 +1071,33 @@ main.app-shell.is-table-viewport {
   pointer-events: none;
 }
 
+.wuyue-bg-svg {
+  position: absolute;
+  inset: 6%;
+  width: 88%;
+  height: 88%;
+  color: #e8cfa0;
+  opacity: 0.85;
+  pointer-events: none;
+  z-index: 1;
+}
+
 .quest-circle-top {
   position: relative;
   z-index: 2;
-  font-size: 10px;
+  font-size: 8.5px;
   font-weight: 700;
-  color: #f5ebd4;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95);
+  letter-spacing: -0.2px;
+  white-space: nowrap;
+  color: #f7ecd2;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.98);
   margin-bottom: 1px;
 }
 
 .quest-circle-num {
   position: relative;
   z-index: 2;
-  font: 700 clamp(22px, 5.8vw, 30px)/1 Georgia, "Times New Roman", serif !important;
+  font: 700 clamp(20px, 5.2vw, 27px)/1 Georgia, "Times New Roman", serif !important;
   color: #f7f4ec;
   text-shadow: 0 2px 5px rgba(0, 0, 0, 0.95), 0 0 1px #fff;
 }
@@ -1076,7 +1105,7 @@ main.app-shell.is-table-viewport {
 .quest-result-label {
   position: relative;
   z-index: 2;
-  font-size: 13px !important;
+  font-size: 12px !important;
   font-weight: 800;
   color: #ffffff;
   background: rgba(8, 14, 22, 0.68);
@@ -1091,24 +1120,24 @@ main.app-shell.is-table-viewport {
   right: -2px;
   bottom: -3px;
   z-index: 3;
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   border: 1.5px solid rgba(205, 185, 145, 0.55);
-  background: radial-gradient(circle, rgba(66, 62, 52, 0.85), rgba(26, 24, 20, 0.95));
+  background: radial-gradient(circle, rgba(46, 56, 68, 0.88), rgba(16, 22, 30, 0.95));
   display: grid;
   place-items: center;
-  font-size: 9px;
+  font-size: 8.5px;
   color: #dfd3b8;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.65);
 }
 
 .quest-token-socket.has-shield-token {
-  width: 26px;
-  height: 26px;
-  border: 2px solid #ffe08c;
+  width: 22px;
+  height: 22px;
+  border: 1.5px solid #ffe08c;
   background: radial-gradient(circle at 40% 35%, #b56c24 0%, #5e310c 100%);
-  font-size: 14px;
+  font-size: 12px;
   box-shadow: 0 0 10px rgba(255, 212, 108, 0.7);
 }
 
@@ -1119,40 +1148,40 @@ main.app-shell.is-table-viewport {
   font-weight: 700;
 }
 
-/* Bottom Half of Quest Board: 5-Circle Vote Track + Player Count Plaque */
+/* Compact Single-Line Vote Track + Faction Pill */
 .quest-vote-track-zone {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
   gap: 8px;
   padding-top: 4px;
-  border-top: 1px solid rgba(223, 189, 125, 0.22);
+  border-top: 1px solid rgba(223, 189, 125, 0.18);
 }
 
 .quest-vote-track-left {
   flex: 1;
   min-width: 0;
   display: flex;
-  flex-direction: column;
-  gap: 5px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
 }
 
 .quest-track-head {
   display: flex;
   align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
+  gap: 5px;
+  white-space: nowrap;
 }
 
 .quest-track-badge {
-  font-size: 10px;
+  font-size: 9.5px;
   font-weight: 700;
   color: #f3e6cb;
-  background: rgba(16, 14, 12, 0.82);
-  border: 1px solid #8a734c;
-  border-radius: 4px;
+  background: rgba(16, 22, 30, 0.75);
+  border: 1px solid rgba(196, 166, 108, 0.5);
+  border-radius: 999px;
   padding: 1px 6px;
-  letter-spacing: 0.5px;
 }
 
 .quest-track-sub {
@@ -1163,19 +1192,18 @@ main.app-shell.is-table-viewport {
 .quest-vote-circles {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 5px;
 }
 
 .quest-vote-spot {
   position: relative;
-  width: 34px;
-  height: 34px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
-  border: 2px solid rgba(205, 186, 148, 0.65);
-  background: radial-gradient(circle at 35% 30%, rgba(78, 70, 56, 0.85), rgba(24, 22, 18, 0.92));
+  border: 1.5px solid rgba(205, 186, 148, 0.55);
+  background: radial-gradient(circle at 35% 30%, rgba(52, 64, 78, 0.75), rgba(16, 22, 30, 0.9));
   display: grid;
   place-items: center;
-  box-shadow: inset 0 1px 4px rgba(255, 255, 255, 0.18), 0 2px 5px rgba(0, 0, 0, 0.6);
 }
 
 .quest-vote-spot.is-danger-fifth {
@@ -1189,18 +1217,16 @@ main.app-shell.is-table-viewport {
 }
 
 .vote-spot-num {
-  font: 700 16px/1 Georgia, serif;
+  font: 700 11px/1 Georgia, serif;
   color: #f2ece0;
-  text-shadow: 0 1px 3px #000;
 }
 
 .vote-pouch-token {
   position: absolute;
   right: -4px;
   bottom: -4px;
-  font-size: 13px;
+  font-size: 10px;
   line-height: 1;
-  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.9));
 }
 
 .vote-pouch-token.is-zero-ready {
@@ -1209,32 +1235,284 @@ main.app-shell.is-table-viewport {
 
 .quest-faction-plaque {
   flex-shrink: 0;
-  padding: 5px 8px;
-  border-radius: 6px;
-  background: rgba(14, 13, 12, 0.85);
-  border: 1px solid #7a6848;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  line-height: 1.3;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(12, 18, 26, 0.75);
+  border: 1px solid rgba(196, 166, 108, 0.45);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  line-height: 1.2;
 }
 
 .quest-faction-plaque strong {
-  font-size: 11px;
+  font-size: 10px;
   color: #f3e6cb;
 }
 
 .quest-faction-plaque span {
-  font-size: 10px;
-  color: #e09b8b;
+  font-size: 9.5px;
+  color: #ff9c8f;
 }
 
-/* Phase & Captain Banner */
+/* ==========================================================================
+   Hybrid Scheme A Middle Zone:
+   1) Scheme 3 Floating Ink-and-Gold Calligraphy Ribbon
+   2) Scheme 6 Horizontal Captain & Team Formation Spotlight Banner
+   ========================================================================== */
+.scheme3-middle-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin: 2px 0;
+  flex-shrink: 0;
+}
+
+.scheme3-ink-ribbon {
+  width: 94%;
+  padding: 5px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: linear-gradient(90deg, transparent 0%, rgba(10, 20, 32, 0.72) 18%, rgba(14, 28, 44, 0.82) 50%, rgba(10, 20, 32, 0.72) 82%, transparent 100%);
+  border-top: 1px solid rgba(235, 198, 120, 0.45);
+  border-bottom: 1px solid rgba(235, 198, 120, 0.45);
+  backdrop-filter: blur(6px);
+}
+
+.ink-ribbon-ornament {
+  color: rgba(235, 198, 120, 0.75);
+  font-size: 13px;
+  letter-spacing: -1px;
+}
+
+.ink-ribbon-text {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: #f4dfba;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9);
+}
+
+.ink-ribbon-text strong {
+  color: #6ef2ff;
+  font-weight: 800;
+  margin: 0 3px;
+  text-shadow: 0 0 10px rgba(110, 242, 255, 0.45);
+}
+
+/* Scheme 6 Horizontal Captain & Team Formation Spotlight Banner */
+.scheme6-team-spotlight {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 16px;
+  background: linear-gradient(90deg, rgba(18, 30, 46, 0.84) 0%, rgba(14, 25, 40, 0.72) 60%, rgba(10, 18, 30, 0.52) 100%);
+  backdrop-filter: blur(10px);
+  border-top: 1.5px solid rgba(245, 205, 118, 0.65);
+  border-bottom: 1.5px solid rgba(245, 205, 118, 0.55);
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.5),
+    inset 0 0 22px rgba(245, 205, 118, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.spotlight-captain-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.spotlight-captain-ring {
+  position: relative;
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  padding: 3px;
+  background: linear-gradient(135deg, #fff0b3 0%, #e0a838 50%, #9c6814 100%);
+  box-shadow:
+    0 0 18px rgba(255, 210, 102, 0.65),
+    0 0 0 3px rgba(255, 214, 112, 0.22);
+  display: grid;
+  place-items: center;
+}
+
+.spotlight-captain-avatar {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: #0d1824;
+  border: 2px solid #162436;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+}
+
+.spotlight-captain-avatar .emblem {
+  width: 34px;
+  height: 34px;
+  color: #ffd875;
+}
+
+.spotlight-captain-crest {
+  position: absolute;
+  right: -4px;
+  bottom: 8px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #382810 0%, #1c1306 100%);
+  border: 1.5px solid #ffd875;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
+}
+
+.spotlight-captain-pill {
+  position: absolute;
+  bottom: -7px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(180deg, #2b2112 0%, #140f08 100%);
+  border: 1px solid #e6b85c;
+  border-radius: 999px;
+  padding: 1px 7px;
+  font-size: 9.5px;
+  font-weight: 800;
+  color: #ffe8b3;
+  white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.85);
+}
+
+.spotlight-captain-title {
+  margin-top: 5px;
+  font-size: 11.5px;
+  font-weight: 800;
+  color: #ffd97d;
+  letter-spacing: 0.5px;
+  max-width: 82px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.spotlight-slots-track {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  gap: 6px;
+  padding: 2px 0;
+}
+
+.spotlight-energy-line {
+  position: absolute;
+  top: 42%;
+  left: -8px;
+  right: 12px;
+  height: 2px;
+  background: linear-gradient(90deg, rgba(255, 214, 112, 0.75) 0%, rgba(94, 242, 255, 0.65) 50%, rgba(94, 242, 255, 0.15) 100%);
+  box-shadow: 0 0 8px rgba(94, 242, 255, 0.55);
+  z-index: 0;
+  pointer-events: none;
+}
+
+.spotlight-team-slot {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.spotlight-team-slot.is-removable {
+  cursor: pointer;
+}
+
+.spotlight-slot-ring {
+  position: relative;
+  width: clamp(42px, 11.5vw, 52px);
+  height: clamp(42px, 11.5vw, 52px);
+  border-radius: 50%;
+  border: 2px solid rgba(98, 232, 255, 0.75);
+  background: radial-gradient(circle at 50% 35%, rgba(24, 58, 78, 0.82), rgba(10, 22, 34, 0.94));
+  box-shadow:
+    0 0 12px rgba(82, 225, 255, 0.42),
+    inset 0 0 8px rgba(110, 242, 255, 0.25);
+  display: grid;
+  place-items: center;
+  transition: transform 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
+}
+
+.spotlight-team-slot.is-empty .spotlight-slot-ring {
+  border-style: dashed;
+  border-color: rgba(110, 225, 245, 0.48);
+  background: radial-gradient(circle, rgba(16, 38, 54, 0.58), rgba(8, 18, 28, 0.75));
+}
+
+.spotlight-slot-avatar {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+}
+
+.spotlight-slot-avatar .emblem {
+  width: 24px;
+  height: 24px;
+  color: #8ceeff;
+}
+
+.spotlight-slot-placeholder {
+  font-size: 18px;
+  font-weight: 600;
+  color: rgba(130, 235, 255, 0.65);
+}
+
+.spotlight-slot-badge {
+  position: absolute;
+  right: -3px;
+  bottom: -2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #0d2838;
+  border: 1.5px solid #6ef2ff;
+  display: grid;
+  place-items: center;
+  font-size: 9.5px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.75);
+}
+
+.spotlight-slot-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #e4f4ff;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.95);
+  white-space: nowrap;
+}
+
+/* Phase & Captain Banner (Waiting Room fallback) */
 .table-phase-banner {
   padding: 5px 10px;
-  background: #14242f;
-  border: 1px solid #354b58;
-  border-radius: 8px;
+  background: rgba(14, 26, 38, 0.68);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(214, 184, 124, 0.3);
+  border-radius: 10px;
   flex-shrink: 0;
 }
 
@@ -1259,40 +1537,44 @@ main.app-shell.is-table-viewport {
 }
 
 /* ==========================================================================
-   Compact, Balanced Player Seat Grid with Large Captain & Team Badges
+   Scheme 3 Floating Circular Player Avatar Grid (.table-seats-grid)
    ========================================================================== */
 .table-seats-grid {
   flex: 0 0 auto;
   display: grid;
-  gap: 6px;
+  gap: 8px 6px;
+  padding: 6px 8px;
+  border-radius: 18px;
+  background: rgba(8, 16, 26, 0.34);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(216, 190, 138, 0.18);
 }
 
 .table-seats-grid.grid-8 {
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  grid-auto-rows: minmax(86px, auto);
+  grid-auto-rows: minmax(82px, auto);
 }
 
 .table-seats-grid.grid-10 {
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  grid-auto-rows: minmax(84px, auto);
+  grid-auto-rows: minmax(80px, auto);
 }
 
 .table-seats-grid.grid-12 {
   grid-template-columns: repeat(6, minmax(0, 1fr));
-  grid-auto-rows: minmax(80px, auto);
-  gap: 5px;
+  grid-auto-rows: minmax(76px, auto);
+  gap: 6px 4px;
 }
 
 .table-seats-grid.grid-12 .seat-card-avatar {
-  width: 34px;
-  height: 34px;
+  width: 44px;
+  height: 44px;
 }
 
 .table-seats-grid.grid-12 .seat-card-name {
   font-size: 10.5px;
 }
 
-/* Both Waiting Room and Active Game use the same compact seat grid below the Quest Board */
 .waiting-table-body .table-seats-grid {
   flex: 0 0 auto;
 }
@@ -1300,65 +1582,62 @@ main.app-shell.is-table-viewport {
 .table-seat-card {
   position: relative;
   min-width: 0;
-  padding: 5px 4px 6px;
+  padding: 2px 2px 4px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  gap: 2px;
+  justify-content: flex-start;
+  gap: 3px;
   text-align: center;
-  background: #16252f;
-  border: 1.5px solid #334854;
-  border-radius: 10px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 12px;
   user-select: none;
-  transition: border-color 120ms ease, background 120ms ease, transform 120ms ease;
+  transition: transform 140ms ease, filter 140ms ease;
 }
 
 .table-seat-card.is-empty {
-  background: rgba(22, 32, 40, 0.65);
-  border-color: #2c3d47;
   cursor: pointer;
 }
 
-.table-seat-card.is-me {
-  background: #1b2f3d;
-  border-color: #6b8fa3;
+.table-seat-card.is-me .seat-card-name {
+  color: #79f2ff;
+  font-weight: 800;
 }
 
-.table-seat-card.is-ready {
+.table-seat-card.is-ready .seat-card-avatar {
   border-color: #5cb88a;
 }
 
-/* Prominent Captain Highlight */
-.table-seat-card.is-captain {
-  border: 2px solid #f7ca65;
-  background: linear-gradient(180deg, #2e2616 0%, #17252f 100%);
+/* Prominent Captain Highlight on Circular Avatar */
+.table-seat-card.is-captain .seat-card-avatar {
+  border: 2.5px solid #ffd56b;
   box-shadow:
-    0 0 12px rgba(247, 202, 101, 0.38),
-    inset 0 0 0 1px rgba(255, 226, 150, 0.35);
+    0 0 0 2px rgba(255, 213, 107, 0.25),
+    0 0 14px rgba(255, 213, 107, 0.65);
 }
 
-/* Prominent Selected Team Member Highlight */
-.table-seat-card.is-on-team {
-  background: linear-gradient(180deg, #164857 0%, #102d38 100%);
-  border: 2px solid #59f0ff;
+/* Prominent Selected Team Member Highlight (Scheme 3 Glowing Cyan Aura Ring) */
+.table-seat-card.is-on-team .seat-card-avatar {
+  border: 2.5px solid #5ef2ff;
   box-shadow:
-    0 0 14px rgba(89, 240, 255, 0.42),
-    inset 0 0 0 1px rgba(173, 248, 255, 0.35);
+    0 0 0 3px rgba(94, 242, 255, 0.32),
+    0 0 18px rgba(94, 242, 255, 0.85);
 }
 
 /* If both Captain and On Team, show gold-cyan dual glow */
-.table-seat-card.is-captain.is-on-team {
-  border: 2px solid #59f0ff;
+.table-seat-card.is-captain.is-on-team .seat-card-avatar {
+  border: 2.5px solid #5ef2ff;
   box-shadow:
     0 0 0 2px #f7ca65,
-    0 0 14px rgba(89, 240, 255, 0.5);
+    0 0 18px rgba(94, 242, 255, 0.85);
 }
 
-.table-seat-card.is-targeted {
-  background: #3d2224;
-  border: 2px solid #ff8577;
-  box-shadow: 0 0 12px rgba(255, 133, 119, 0.45);
+.table-seat-card.is-targeted .seat-card-avatar {
+  border: 2.5px solid #ff7566;
+  box-shadow:
+    0 0 0 3px rgba(255, 117, 102, 0.32),
+    0 0 16px rgba(255, 117, 102, 0.75);
 }
 
 .table-seat-card.is-interactive {
@@ -1366,39 +1645,34 @@ main.app-shell.is-table-viewport {
 }
 
 .table-seat-card.is-interactive:active {
-  transform: scale(0.96);
+  transform: scale(0.95);
 }
 
 .table-seat-card.is-offline {
-  opacity: 0.65;
+  opacity: 0.6;
 }
 
 .seat-card-top {
   width: 100%;
+  min-height: 14px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: 2px;
-}
-
-.seat-num-badge {
-  font: 700 11px/1 Georgia, serif;
-  color: #c7b083;
-  padding: 1px 3px;
 }
 
 .seat-top-badges {
   display: flex;
   gap: 2px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
+  flex-wrap: nowrap;
+  justify-content: center;
 }
 
 .seat-badge {
-  font-size: 10px;
-  line-height: 1.15;
-  padding: 2px 5px;
-  border-radius: 5px;
+  font-size: 9px;
+  line-height: 1.1;
+  padding: 1px 5px;
+  border-radius: 999px;
   font-weight: 800;
   white-space: nowrap;
 }
@@ -1407,11 +1681,11 @@ main.app-shell.is-table-viewport {
   background: linear-gradient(180deg, #ffe184 0%, #c98f24 100%);
   color: #1f1300;
   border: 1px solid #fff3bf;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.55);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.65);
 }
 
 .badge-next-captain {
-  background: #333d45;
+  background: rgba(36, 46, 56, 0.9);
   color: #f0d799;
   border: 1px dashed #b89b5e;
 }
@@ -1430,51 +1704,90 @@ main.app-shell.is-table-viewport {
 }
 
 .seat-card-avatar {
-  width: 38px;
-  height: 38px;
+  width: 50px;
+  height: 50px;
   border-radius: 50%;
-  border: 2px solid #8a734c;
-  background: #101c24;
+  border: 2px solid rgba(214, 188, 136, 0.78);
+  background: radial-gradient(circle at 50% 35%, #1e3244 0%, #0d1822 100%);
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.65),
+    inset 0 0 0 1.5px rgba(10, 18, 28, 0.85);
   display: grid;
   place-items: center;
   overflow: hidden;
   flex-shrink: 0;
-}
-
-.table-seat-card.is-captain .seat-card-avatar {
-  border-color: #ffd56b;
-  box-shadow: 0 0 8px rgba(255, 213, 107, 0.45);
-}
-
-.table-seat-card.is-on-team .seat-card-avatar {
-  border-color: #6df2ff;
+  transition: border-color 140ms ease, box-shadow 140ms ease;
 }
 
 .seat-card-avatar .emblem {
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   color: var(--accent);
+}
+
+/* Scheme 3 Bottom-Right Seat Number Capsule Pill */
+.seat-num-badge {
+  position: absolute;
+  right: -5px;
+  bottom: -2px;
+  z-index: 3;
+  font: 700 9.5px/1.1 Georgia, "Times New Roman", serif;
+  color: #f4e6c8;
+  background: linear-gradient(180deg, #283f52 0%, #12202c 100%);
+  border: 1px solid rgba(218, 192, 138, 0.75);
+  border-radius: 999px;
+  padding: 1px 5px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.table-seat-card.is-on-team .seat-num-badge {
+  background: linear-gradient(180deg, #165e70 0%, #0c3542 100%);
+  border-color: #6ef2ff;
+  color: #ffffff;
+}
+
+/* Top-Right Online Status Emerald Dot */
+.seat-online-dot {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  z-index: 3;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1.5px solid #0a141e;
+}
+
+.seat-online-dot.is-online {
+  background: #4ade80;
+  box-shadow: 0 0 6px rgba(74, 222, 128, 0.8);
+}
+
+.seat-online-dot.is-offline {
+  background: #64748b;
 }
 
 .seat-avatar-team-flag {
   position: absolute;
-  right: -6px;
-  bottom: -3px;
-  width: 20px;
-  height: 20px;
+  left: -5px;
+  bottom: -2px;
+  z-index: 3;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   background: #0d4b59;
   border: 1.5px solid #75f4ff;
   display: grid;
   place-items: center;
-  font-size: 12px;
+  font-size: 10px;
   line-height: 1;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.75);
 }
 
 .table-seat-card.is-empty .seat-card-avatar {
-  border-color: #5b5344;
-  background: #16222a;
+  border-color: rgba(160, 145, 118, 0.42);
+  border-style: dashed;
+  background: rgba(16, 26, 36, 0.55);
 }
 
 .table-seat-card.is-empty .seat-card-avatar .emblem {
@@ -1491,7 +1804,8 @@ main.app-shell.is-table-viewport {
 .seat-card-name {
   font-size: 11px;
   font-weight: 600;
-  color: #f0e2c4;
+  color: #f3e6cb;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.95);
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1500,14 +1814,15 @@ main.app-shell.is-table-viewport {
 
 .seat-card-bottom {
   width: 100%;
+  min-height: 15px;
   display: flex;
   justify-content: center;
 }
 
 .seat-chip {
-  font-size: 10px;
-  line-height: 1.15;
-  padding: 2px 6px;
+  font-size: 9.5px;
+  line-height: 1.1;
+  padding: 1px 6px;
   border-radius: 999px;
   white-space: nowrap;
   max-width: 100%;
@@ -1531,25 +1846,25 @@ main.app-shell.is-table-viewport {
 }
 
 .chip-hint {
-  background: rgba(223, 189, 125, 0.16);
+  background: rgba(18, 34, 48, 0.72);
   color: #f5d593;
-  border: 1px dashed rgba(223, 189, 125, 0.6);
+  border: 1px dashed rgba(223, 189, 125, 0.55);
 }
 
 .chip-approve {
-  background: rgba(38, 102, 72, 0.65);
+  background: rgba(38, 102, 72, 0.75);
   color: #b4f5cd;
   border: 1px solid #52b37f;
 }
 
 .chip-reject {
-  background: rgba(112, 44, 40, 0.65);
+  background: rgba(112, 44, 40, 0.75);
   color: #ffc5bf;
   border: 1px solid #c46a60;
 }
 
 .chip-status {
-  color: #7d8f96;
+  color: #9fb0b8;
 }
 
 .seat-card-bottom .revealed-role {
@@ -1573,15 +1888,16 @@ main.app-shell.is-table-viewport {
   align-items: center;
   justify-content: flex-start;
   gap: 6px;
-  background: #14222b;
+  background: rgba(14, 26, 36, 0.68);
+  backdrop-filter: blur(8px);
   color: #b7c6cc;
-  border: 1px solid #324652;
+  border: 1px solid rgba(214, 184, 124, 0.28);
   border-radius: 10px;
   text-align: left;
 }
 
 .waiting-ext-orb.is-enabled {
-  background: #1b3847;
+  background: rgba(24, 54, 70, 0.82);
   color: #fff2d5;
   border-color: var(--accent);
 }
@@ -1610,13 +1926,15 @@ main.app-shell.is-table-viewport {
   color: var(--accent);
 }
 
-/* Bottom Dynamic Action Dock */
+/* Bottom Translucent Glass Action Dock */
 .table-action-dock {
   flex-shrink: 0;
   padding: 8px 10px;
-  background: #13212b;
-  border: 1px solid #354954;
-  border-radius: 12px;
+  background: rgba(10, 18, 28, 0.68);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(218, 190, 134, 0.34);
+  border-radius: 16px;
+  box-shadow: 0 -4px 18px rgba(0, 0, 0, 0.42);
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -1628,6 +1946,80 @@ main.app-shell.is-table-viewport {
   gap: 6px;
   padding-bottom: 6px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Personal Center WeChat & Custom Avatar Manager (.profile-avatar-manager) */
+.profile-avatar-manager {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  margin-bottom: 10px;
+  border-radius: 12px;
+  background: rgba(12, 22, 32, 0.72);
+  border: 1px solid rgba(218, 190, 134, 0.32);
+}
+
+.profile-avatar-preview-box {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.profile-avatar-large {
+  width: 64px !important;
+  height: 64px !important;
+  border-radius: 50% !important;
+  border: 2.5px solid #e0b868 !important;
+  overflow: hidden;
+  flex-shrink: 0;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
+}
+
+.profile-heading .avatar {
+  overflow: hidden;
+}
+
+.profile-avatar-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.avatar-source-tag {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #79f2ff;
+  background: rgba(20, 62, 78, 0.65);
+  border: 1px solid rgba(110, 242, 255, 0.45);
+}
+
+.profile-avatar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.profile-avatar-actions .compact-button {
+  flex: 1 1 auto;
+  min-height: 36px;
+  font-size: 12.5px;
+}
+
+.wechat-sync-btn {
+  border-color: rgba(82, 214, 138, 0.55) !important;
+  color: #b8f7d0 !important;
+}
+
+.upload-avatar-btn {
+  border-color: rgba(235, 198, 120, 0.65) !important;
+  color: #ffe8b3 !important;
 }
 
 .dock-utility-row .identity-box {

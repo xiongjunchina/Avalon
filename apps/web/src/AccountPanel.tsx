@@ -1,25 +1,57 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Avatar, User, Statistics, Score, HistoryPage, GameSummary, Replay, GameResult } from '@avalon/contracts';
 import { roleNames } from './roles';
 import { RolePortrait } from './RolePortrait';
 import { api, describe } from './api';
 import { PresetsPanel, settingsText } from './PresetsPanel';
-import { Emblem, roleTeam } from './Heraldry';
+import { Emblem, PlayerAvatar, WECHAT_SAMPLE_AVATARS, roleTeam } from './Heraldry';
 
 export const avatarNames:Record<Avatar,{symbol:string;name:string}>={leaf:{symbol:'❧',name:'绿叶'},moon:{symbol:'☾',name:'月亮'},sun:{symbol:'☀',name:'太阳'},mountain:{symbol:'△',name:'山峰'},wave:{symbol:'≋',name:'海浪'},star:{symbol:'✦',name:'星星'}};
-const reasons:Record<GameResult['reason'],string>={three_failures:'三次任务失败',five_rejections:'五次组队未通过',merlin_found:'刺杀命中梅林',merlin_survived:'梅林躲过刺杀',early_merlin_found:'提前刺杀命中梅林',early_merlin_survived:'提前刺杀未命中梅林',unanimous_abort:'在线成员一致同意中断',offline_timeout:'全员离线超过 24 小时'};
+const reasons:Record<GameResult['reason'],string>={three_failures:'三次会盟任务失败',five_rejections:'五次组队未通过',merlin_found:'林平之刺中风清扬',merlin_survived:'风清扬躲过刺杀',early_merlin_found:'提前刺杀命中风清扬',early_merlin_survived:'提前刺杀未命中风清扬',unanimous_abort:'在线成员一致同意中断',offline_timeout:'全员离线超过 24 小时'};
 const date=(s:string)=>new Date(s).toLocaleString('zh-CN',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false});
 export const rate=(s:Score)=>s.winRate===null?'—':`${Math.round(s.winRate*100)}%`;
 const outcome=(g:GameSummary)=>g.result.winner===null?'中断':g.result.winner===g.self.team?'胜利':'失败';
+
+async function cropImageToSquareDataUrl(file: File, size = 160): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('读取图片失败'));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('解析图片格式失败'));
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error('浏览器不支持画布裁剪'));
+          return;
+        }
+        const side = Math.min(img.width, img.height);
+        const sx = Math.floor((img.width - side) / 2);
+        const sy = Math.floor((img.height - side) / 2);
+        ctx.drawImage(img, sx, sy, side, side, 0, 0, size, size);
+        let dataUrl = canvas.toDataURL('image/webp', 0.82);
+        if (!dataUrl.startsWith('data:image/webp')) {
+          dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+        }
+        resolve(dataUrl);
+      };
+      img.src = String(reader.result);
+    };
+    reader.readAsDataURL(file);
+  });
+}
 
 export function StatisticsView({stats}:{stats:Statistics}) {
   return <>
     <div className="stat-grid" aria-label="我的战绩"><div><strong>{stats.completed}</strong><span>完成对局</span></div><div><strong>{stats.wins}</strong><span>胜利</span></div><div><strong>{stats.losses}</strong><span>失败</span></div><div><strong>{rate(stats)}</strong><span>总胜率</span></div></div>
     <p className="hint">另有 {stats.aborted} 局中断，不计入胜负与胜率。统计以最终获胜阵营为准，包含提前刺杀。</p>
     <section className="stats-section" aria-labelledby="faction-stats-title">
-      <div className="ornament-heading"><div><p className="eyebrow">ALLEGIANCE</p><h2 id="faction-stats-title">阵营战绩</h2></div><span>忠诚，或是背叛</span></div>
+      <div className="ornament-heading"><div><p className="eyebrow">ALLEGIANCE</p><h2 id="faction-stats-title">阵营战绩</h2></div><span>正道，或是魔教</span></div>
       <div className="faction-grid">{(['blue','red'] as const).map(team=>{const s=stats.byTeam[team];return <article className={`faction-card allegiance-${team}`} key={team} aria-label={`${team==='blue'?'蓝方':'红方'}战绩`}>
-        <Emblem kind={team}/><p className="faction-motto">{team==='blue'?'守护光明':'潜伏暗影'}</p><h3>{team==='blue'?'蓝方阵营':'红方阵营'}</h3>
+        <Emblem kind={team}/><p className="faction-motto">{team==='blue'?'正道同盟':'日月暗影'}</p><h3>{team==='blue'?'蓝方阵营':'红方阵营'}</h3>
         <div className="faction-rate"><strong>{rate(s)}</strong><span>胜率</span></div>
         <dl className="score-pair"><div><dt>胜利</dt><dd>{s.wins}</dd></div><div><dt>失败</dt><dd>{s.losses}</dd></div></dl>
         <p className="card-foot">{s.completed} 局完成 · {s.aborted} 局中断</p>
@@ -41,11 +73,77 @@ function StatisticsPanel() {
   return error?<p role="alert" className="error">{error}<button className="secondary" onClick={()=>setRetry(n=>n+1)}>重新读取战绩</button></p>:stats?<StatisticsView stats={stats}/>:<p role="status">正在统计战绩…</p>;
 }
 function ProfileEditor({user,onUser}:{user:User;onUser:(u:User)=>void}) {
-  const [nickname,setNickname]=useState(user.nickname),[avatar,setAvatar]=useState<Avatar>(user.avatar??'leaf');
+  const [nickname,setNickname]=useState(user.nickname);
+  const [avatar,setAvatar]=useState<Avatar>(user.avatar??'leaf');
+  const [avatarUrl,setAvatarUrl]=useState<string|null>(user.avatarUrl??null);
+  const [wechatAvatarUrl,setWechatAvatarUrl]=useState<string|null>(user.wechatAvatarUrl??null);
   const [busy,setBusy]=useState(false),[error,setError]=useState(''),[saved,setSaved]=useState(false);
-  return <details className="profile-editor"><summary>修改昵称与头像</summary><form onSubmit={e=>{e.preventDefault();setBusy(true);setError('');setSaved(false);void api<{user:User}>('/me',{nickname,avatar},'PATCH').then(r=>{onUser(r.user);setNickname(r.user.nickname);setSaved(true);}).catch(e=>setError(describe(e))).finally(()=>setBusy(false));}}>
-    <fieldset disabled={busy}><legend className="sr-only">编辑资料</legend><label htmlFor="profile-nickname">昵称</label><input id="profile-nickname" maxLength={20} required value={nickname} onChange={e=>{setNickname(e.target.value);setSaved(false);}}/>
-      <label htmlFor="profile-avatar">预置头像</label><select id="profile-avatar" value={avatar} onChange={e=>{setAvatar(e.target.value as Avatar);setSaved(false);}}>{Object.entries(avatarNames).map(([id,a])=><option value={id} key={id}>{a.symbol} {a.name}</option>)}</select>
+  const fileInputRef=useRef<HTMLInputElement|null>(null);
+
+  const activeSource = avatarUrl ? '自定义上传头像' : wechatAvatarUrl ? '微信认证头像（默认）' : `预置徽章（${avatarNames[avatar].name}）`;
+
+  function handleSyncWechatAvatar() {
+    setError('');
+    setSaved(false);
+    const currentIdx = wechatAvatarUrl ? WECHAT_SAMPLE_AVATARS.indexOf(wechatAvatarUrl) : -1;
+    const hash = Array.from(user.id).reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+    const nextIdx = currentIdx >= 0 ? (currentIdx + 1) % WECHAT_SAMPLE_AVATARS.length : hash % WECHAT_SAMPLE_AVATARS.length;
+    setWechatAvatarUrl(WECHAT_SAMPLE_AVATARS[nextIdx]);
+    setAvatarUrl(null);
+  }
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (file.size > 8 * 1024 * 1024) {
+      setError('请选择 8MB 以内的头像图片。');
+      return;
+    }
+    try {
+      setError('');
+      setSaved(false);
+      const cropped = await cropImageToSquareDataUrl(file, 160);
+      setAvatarUrl(cropped);
+    } catch (err) {
+      setError(describe(err));
+    }
+  }
+
+  return <details className="profile-editor" open><summary>修改昵称与头像</summary><form onSubmit={e=>{e.preventDefault();setBusy(true);setError('');setSaved(false);void api<{user:User}>('/me',{nickname,avatar,avatarUrl,wechatAvatarUrl},'PATCH').then(r=>{onUser(r.user);setNickname(r.user.nickname);setAvatarUrl(r.user.avatarUrl??null);setWechatAvatarUrl(r.user.wechatAvatarUrl??null);setSaved(true);}).catch(e=>setError(describe(e))).finally(()=>setBusy(false));}}>
+    <fieldset disabled={busy}><legend className="sr-only">编辑资料</legend>
+      <div className="profile-avatar-manager">
+        <div className="profile-avatar-preview-box">
+          <span className="avatar profile-avatar-large">
+            <PlayerAvatar avatar={avatar} avatarUrl={avatarUrl} wechatAvatarUrl={wechatAvatarUrl} fallbackKind="leaf" />
+          </span>
+          <div className="profile-avatar-meta">
+            <span className="avatar-source-tag">当前生效：{activeSource}</span>
+            <small className="hint">绑定微信认证后默认展示微信头像，亦支持随时上传自定义头像覆盖。</small>
+          </div>
+        </div>
+        <div className="profile-avatar-actions">
+          <button type="button" className="secondary compact-button wechat-sync-btn" onClick={handleSyncWechatAvatar}>
+            💬 {wechatAvatarUrl ? '切换/刷新微信认证头像' : '同步微信认证头像（默认）'}
+          </button>
+          <button type="button" className="secondary compact-button upload-avatar-btn" onClick={()=>fileInputRef.current?.click()}>
+            📷 上传自定义头像
+          </button>
+          {avatarUrl && wechatAvatarUrl && (
+            <button type="button" className="secondary compact-button" onClick={()=>{setAvatarUrl(null);setSaved(false);}}>
+              ↩ 恢复使用微信头像
+            </button>
+          )}
+          {(avatarUrl || wechatAvatarUrl) && (
+            <button type="button" className="secondary compact-button" onClick={()=>{setAvatarUrl(null);setWechatAvatarUrl(null);setSaved(false);}}>
+              ✦ 改用预置符号
+            </button>
+          )}
+          <input ref={fileInputRef} type="file" accept="image/*" className="sr-only" aria-label="上传自定义头像文件" onChange={e=>void handleFileChange(e)} />
+        </div>
+      </div>
+      <label htmlFor="profile-nickname">昵称</label><input id="profile-nickname" maxLength={20} required value={nickname} onChange={e=>{setNickname(e.target.value);setSaved(false);}}/>
+      <label htmlFor="profile-avatar">预置头像（未设置微信/自定义头像时生效）</label><select id="profile-avatar" value={avatar} onChange={e=>{setAvatar(e.target.value as Avatar);setSaved(false);}}>{Object.entries(avatarNames).map(([id,a])=><option value={id} key={id}>{a.symbol} {a.name}</option>)}</select>
       <button disabled={!nickname.trim()}>保存资料</button>
     </fieldset>
     <p className="hint">旧对局保留当时昵称。浏览器身份连续 30 天未使用会失效；清除数据或换设备无法找回，无密码或恢复码。</p>
@@ -97,7 +195,7 @@ export function AccountPanel({user,onUser,initialReplay,onBack}:{user:User;onUse
   const [tab,setTab]=useState<'stats'|'history'|'favorites'|'presets'>('stats'),[replay,setReplay]=useState(initialReplay);
   const avatar=avatarNames[user.avatar??'leaf'];
   if(replay)return <ReplayPanel key={replay} id={replay} onBack={()=>{setReplay(null);if(initialReplay)setTab('history');}}/>;
-  return <section className="panel account"><div className="account-banner" aria-hidden="true"><span>THE CHRONICLES OF AVALON</span></div><div className="section-head profile-bar"><div className="profile-heading"><span className="avatar" aria-label={`${avatar.name}头像`}><Emblem kind={user.avatar??'leaf'}/></span><div><p className="eyebrow">圆桌旅人 / 个人中心</p><h1>{user.nickname}</h1></div></div><button className="secondary compact-button" onClick={onBack}>回到朋友桌</button></div>
+  return <section className="panel account"><div className="account-banner" aria-hidden="true"><span>SWORD OF WORDS · 话剑江湖录</span></div><div className="section-head profile-bar"><div className="profile-heading"><span className="avatar" aria-label={`${avatar.name}头像`}><PlayerAvatar avatar={user.avatar??'leaf'} avatarUrl={user.avatarUrl} wechatAvatarUrl={user.wechatAvatarUrl} fallbackKind="leaf"/></span><div><p className="eyebrow">江湖剑客 / 个人中心</p><h1>{user.nickname}</h1></div></div><button className="secondary compact-button" onClick={onBack}>回到朋友桌</button></div>
     <ProfileEditor user={user} onUser={onUser}/>
     <nav className="account-tabs" aria-label="个人中心栏目">{([['stats','我的战绩'],['history','历史对局'],['favorites','我的收藏'],['presets','常用设置']] as const).map(([id,label])=><button className="secondary" key={id} aria-current={id===tab?'page':undefined} onClick={()=>setTab(id)}>{label}</button>)}</nav>
     {tab==='stats'?<StatisticsPanel/>:tab==='presets'?<PresetsPanel/>:<HistoryPanel key={tab} favorites={tab==='favorites'} onReplay={setReplay}/>}

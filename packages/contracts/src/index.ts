@@ -34,9 +34,19 @@ export const commandSchema = z.discriminatedUnion('type', [
 export type Command = z.infer<typeof commandSchema>;
 export const avatarSchema = z.enum(['leaf','moon','sun','mountain','wave','star']);
 export type Avatar = z.infer<typeof avatarSchema>;
-export const profileSchema = z.object({nickname:nicknameSchema,avatar:avatarSchema}).strict();
+export const avatarImageUrlSchema = z
+  .string()
+  .trim()
+  .max(65536)
+  .regex(/^(data:image\/(webp|png|jpeg);base64,[A-Za-z0-9+/=]+|https?:\/\/[^\s"'<>]+|\/art\/[^\s"'<>]+)$/);
+export const profileSchema = z.object({
+  nickname: nicknameSchema,
+  avatar: avatarSchema,
+  avatarUrl: avatarImageUrlSchema.nullable().optional(),
+  wechatAvatarUrl: avatarImageUrlSchema.nullable().optional(),
+}).strict();
 export const presetSchema = z.object({name:z.string().trim().min(1).max(24),settings:settingsSchema}).strict();
-export interface User { id: string; nickname: string; avatar?: Avatar }
+export interface User { id: string; nickname: string; avatar?: Avatar; avatarUrl?: string | null; wechatAvatarUrl?: string | null }
 export interface Member extends User { seat: number; ready: boolean; online: boolean }
 export interface RoomView {
   id: string; code: string; hostId: string; version: number;
