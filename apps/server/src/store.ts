@@ -164,7 +164,7 @@ export class PostgresStore {
       const prior=(await c.query('SELECT command_body,command_fingerprint,result FROM command_receipts WHERE room_id=$1 AND user_id=$2 AND command_id=$3',[roomId,userId,command.commandId])).rows[0];
       if (prior) {
         if (prior.command_fingerprint ? prior.command_fingerprint !== fingerprint(command) : !isDeepStrictEqual(prior.command_body,command)) throw new DomainError('COMMAND_ID_REUSED',409);
-        return { result:prior.result as ServerMessage,left:command.type==='leaveRoom',dealEndsAt:undefined };
+        return { result:prior.result as ServerMessage,left:command.type==='leaveRoom',kickedUserId:undefined,dealEndsAt:undefined };
       }
       const members=await this.assertMember(c,r,userId);
       const self=members.find(m=>m.user_id===userId)!;
@@ -190,6 +190,14 @@ export class PostgresStore {
           if (r.host_id===userId) await c.query('UPDATE rooms SET host_id=$2 WHERE id=$1',[roomId,(remaining.find(m=>m.connection_id)??remaining[0]).user_id]);
           if (!remaining.some(m=>m.connection_id)) await c.query('UPDATE rooms SET offline_since=COALESCE(offline_since,$2) WHERE id=$1',[roomId,this.date()]);
         }
+      } else if (command.type==='kickMember') {
+        if (r.phase==='playing') throw new DomainError('GAME_IN_PROGRESS',409);
+        if (r.host_id!==userId) throw new DomainError('FORBIDDEN',403);
+        const targetUserId=command.payload.userId;
+        if (targetUserId===userId || !members.some(m=>m.user_id===targetUserId)) throw new DomainError('INVALID_TARGET');
+        await c.query('DELETE FROM room_members WHERE room_id=$1 AND user_id=$2',[roomId,targetUserId]);
+        const remaining=members.filter(m=>m.user_id!==targetUserId);
+        if (!remaining.some(m=>m.connection_id)) await c.query('UPDATE rooms SET offline_since=COALESCE(offline_since,$2) WHERE id=$1',[roomId,this.date()]);
       }
       let dealEndsAt:string|undefined;
       if (command.type==='startGame') {
@@ -219,7 +227,7 @@ export class PostgresStore {
         if(r.phase!=='finished') throw new DomainError('WRONG_PHASE',409);
         await c.query("UPDATE rooms SET phase='waiting',current_game_id=NULL WHERE id=$1",[roomId]);
         await c.query('UPDATE room_members SET ready=false WHERE room_id=$1',[roomId]);
-      } else if(!['setReady','updateSettings','setAdmission','leaveRoom'].includes(command.type)) {
+      } else if(!['setReady','updateSettings','setAdmission','leaveRoom','kickMember'].includes(command.type)) {
         const game=await this.game(c,r);
         if(!game) throw new DomainError('WRONG_PHASE',409);
         await this.saveGame(c,roomId,transition(game,userId,command,members.filter(m=>m.connection_id).map(m=>m.user_id)));
@@ -227,7 +235,7 @@ export class PostgresStore {
       await c.query('UPDATE rooms SET version=version+1 WHERE id=$1',[roomId]);
       const result: ServerMessage={type:'commandResult',commandId:command.commandId,ok:true};
       await c.query('INSERT INTO command_receipts(room_id,user_id,command_id,command_fingerprint,result,created_at) VALUES($1,$2,$3,$4,$5,$6)',[roomId,userId,command.commandId,fingerprint(command),result,this.date()]);
-      return { result,left:command.type==='leaveRoom',dealEndsAt };
+      return { result,left:command.type==='leaveRoom',kickedUserId:command.type==='kickMember'?command.payload.userId:undefined,dealEndsAt };
     });
   }
   private async closeRoom(c:PoolClient,id:string) {

@@ -160,6 +160,10 @@ export async function buildApp(options: { store: PostgresStore; origin?: string;
           if(result.dealEndsAt)scheduleDeal(c.roomId,result.dealEndsAt);
           send(socket,result.result);
           if(result.left){connections.delete(user.id);send(socket,{type:'left'});socket.close(1000,'Left');}
+          if(result.kickedUserId){
+            const kicked=connections.get(result.kickedUserId);
+            if(kicked&&kicked.roomId===c.roomId){connections.delete(result.kickedUserId);send(kicked.socket,{type:'left'});kicked.socket.close(1000,'Kicked');}
+          }
           publish(c.roomId);
         }catch(err){
           const error=err instanceof DomainError?err.code:'INVALID_INPUT';

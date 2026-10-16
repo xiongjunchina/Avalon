@@ -129,3 +129,29 @@ test('WebSocket upgrade requires membership and allowed origin', async t => {
   await assert.rejects(app.injectWS(`/api/rooms/${room.id}/socket`, { socket: localSocket(), headers: { cookie: other.cookie, origin } }));
   await assert.rejects(app.injectWS(`/api/rooms/${room.id}/socket`, { socket: localSocket(), headers: { cookie: owner.cookie, origin: 'https://evil.example' } }));
 });
+
+test('host can kick another member in waiting room, closing their socket and freeing their seat', async t => {
+  const { app, guest, create, connect } = await fixture(t);
+  const host = await guest('房主'), player = await guest('卡死玩家'), replacement = await guest('替补玩家');
+  const room = await create(host.cookie);
+  await app.inject({ method: 'POST', url: '/api/rooms/join', headers: { ...headers, cookie: player.cookie }, payload: { key: room.code } });
+  const a = await connect(host.cookie, room.id), b = await connect(player.cookie, room.id);
+  const current = (await b.next(m => m.type === 'snapshot')).room as RoomView;
+  // Non-host cannot kick
+  b.send({ type: 'kickMember', commandId: randomUUID(), expectedVersion: current.version, payload: { userId: host.user.id } });
+  assert.equal((await b.next(m => m.type === 'commandResult')).error, 'FORBIDDEN');
+  // Host cannot kick self
+  a.send({ type: 'kickMember', commandId: randomUUID(), expectedVersion: current.version, payload: { userId: host.user.id } });
+  assert.equal((await a.next(m => m.type === 'commandResult')).error, 'INVALID_TARGET');
+  // Host kicks player
+  a.send({ type: 'kickMember', commandId: randomUUID(), expectedVersion: current.version, payload: { userId: player.user.id } });
+  assert.equal((await a.next(m => m.type === 'commandResult')).ok, true);
+  await b.next(m => m.type === 'left');
+  const afterKick = (await a.next(m => m.type === 'snapshot' && m.room.members.length === 1)).room as RoomView;
+  assert.equal(afterKick.members.length, 1);
+  // Replacement player can now join and take seat 2
+  const joined = await app.inject({ method: 'POST', url: '/api/rooms/join', headers: { ...headers, cookie: replacement.cookie }, payload: { key: room.code } });
+  assert.equal(joined.statusCode, 200);
+  assert.equal(joined.json().room.members.find((m: { id: string }) => m.id === replacement.user.id).seat, 2);
+});
+

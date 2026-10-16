@@ -29,6 +29,7 @@ export const commandSchema = z.discriminatedUnion('type', [
   z.object({ ...base, type: z.literal('assassinate'), payload: z.object({ targetId: z.string().uuid() }).strict() }).strict(),
   z.object({ ...base, type: z.literal('voteAbort'), payload: z.object({ approve: z.boolean() }).strict() }).strict(),
   z.object({ ...base, type: z.literal('leaveRoom'), payload: z.object({}).strict() }).strict(),
+  z.object({ ...base, type: z.literal('kickMember'), payload: z.object({ userId: z.string().uuid() }).strict() }).strict(),
 ]);
 export type Command = z.infer<typeof commandSchema>;
 export const avatarSchema = z.enum(['leaf','moon','sun','mountain','wave','star']);

@@ -4,6 +4,7 @@ import * as Label from '@radix-ui/react-label';
 import {
   defaultSettings,
   type Command,
+  type Member,
   type Player,
   type Role,
   type RoomView,
@@ -96,6 +97,7 @@ function App() {
   }));
   const pendingSettingsRef = useRef<Settings | null>(null);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
+  const [kickTarget, setKickTarget] = useState<Member | null>(null);
   const [showcaseIndex, setShowcaseIndex] = useState(0);
   const [invite, setInvite] = useState('');
   const [loading, setLoading] = useState(true);
@@ -1025,6 +1027,21 @@ function App() {
                         <span className="seat-num-badge">{String(i + 1).padStart(2, '0')}</span>
                         <div className="seat-top-badges">
                           {isRoomHost && <span className="seat-badge badge-captain">👑 房主</span>}
+                          {host && m && m.id !== user.id && (
+                            <button
+                              type="button"
+                              className="seat-kick-btn"
+                              disabled={disabled}
+                              title={`将 ${m.nickname} 移出房间`}
+                              aria-label={`踢出 ${m.nickname}`}
+                              onClick={e => {
+                                e.stopPropagation();
+                                setKickTarget(m);
+                              }}
+                            >
+                              踢出
+                            </button>
+                          )}
                         </div>
                       </div>
                       <div className="seat-card-avatar-wrap">
@@ -1131,6 +1148,49 @@ function App() {
             </div>
           )}
 
+          {/* Host Kick Confirmation Modal */}
+          {kickTarget && (
+            <div className="table-modal-backdrop" role="dialog" aria-modal="true" aria-label="确认踢出玩家">
+              <div className="table-modal-sheet">
+                <div className="table-modal-head">
+                  <strong>移出房间成员</strong>
+                  <button
+                    type="button"
+                    className="secondary tool-pill"
+                    onClick={() => setKickTarget(null)}
+                  >
+                    取消
+                  </button>
+                </div>
+                <p>
+                  确认将 <strong>{String(kickTarget.seat).padStart(2, '0')}号 · {kickTarget.nickname}</strong> 移出当前房间吗？移出后该座位将立即空出。
+                </p>
+                <div className="dock-inline-controls" style={{ marginTop: 14 }}>
+                  <button
+                    type="button"
+                    className="secondary"
+                    onClick={() => setKickTarget(null)}
+                  >
+                    保留座位
+                  </button>
+                  <button
+                    type="button"
+                    className="assassin-execute-btn"
+                    disabled={disabled}
+                    onClick={() => {
+                      const target = kickTarget;
+                      setKickTarget(null);
+                      command({ type: 'kickMember', payload: { userId: target.id } });
+                      setNotice(`已将 ${target.nickname} 移出房间`);
+                    }}
+                  >
+                    确认踢出
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Room Settings Modal */}
           {settingsModalOpen && (
             <div className="table-modal-backdrop" role="dialog" aria-modal="true" aria-label="房间设置">
@@ -1171,6 +1231,34 @@ function App() {
                   <legend className="sr-only">房间规则设置</legend>
                   <SettingsFields settings={settings!} onChange={updateSettings} />
                 </fieldset>
+                {host && room.phase !== 'playing' && room.members.some(m => m.id !== user.id) && (
+                  <div className="settings-member-list">
+                    <strong>房间成员管理</strong>
+                    <div className="settings-member-rows">
+                      {room.members
+                        .filter(m => m.id !== user.id)
+                        .map(m => (
+                          <div key={m.id} className="settings-member-row">
+                            <span>
+                              {String(m.seat).padStart(2, '0')}号 · {m.nickname}{' '}
+                              <small className="hint">({m.online ? '在线' : '离线'})</small>
+                            </span>
+                            <button
+                              type="button"
+                              className="seat-kick-btn"
+                              disabled={disabled}
+                              onClick={() => {
+                                setSettingsModalOpen(false);
+                                setKickTarget(m);
+                              }}
+                            >
+                              踢出房间
+                            </button>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                )}
                 {room.phase === 'waiting' && (
                   <details className="preset-details">
                     <summary>常用设置 · 保存与应用</summary>

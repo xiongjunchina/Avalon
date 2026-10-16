@@ -2525,3 +2525,56 @@ main.app-shell.is-table-viewport {
   user-select: all;
 }
 
+.seat-kick-btn {
+  width: auto !important;
+  min-height: 20px !important;
+  margin: 0 !important;
+  padding: 1px 6px !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  line-height: 1.2 !important;
+  border-radius: 5px !important;
+  background: rgba(145, 28, 34, 0.72) !important;
+  border: 1px solid rgba(255, 130, 130, 0.55) !important;
+  color: #ffe3e3 !important;
+  cursor: pointer;
+}
+
+.seat-kick-btn:hover:not(:disabled) {
+  background: rgba(185, 36, 44, 0.9) !important;
+  border-color: #ff9e9e !important;
+}
+
+.settings-member-list {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.settings-member-list > strong {
+  font-size: 13px;
+  color: var(--accent);
+}
+
+.settings-member-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.settings-member-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: rgba(12, 22, 30, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 12.5px;
+}
+
+
