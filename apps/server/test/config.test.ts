@@ -21,8 +21,9 @@ test('deployment migrations cannot run under an active server; pause releases th
   const f=await database({after:fn=>cleanups.push(fn)});
   const {app}=await buildApp({store:f.store});
   t.after(async()=>{await app.close();for(const fn of cleanups)await fn();});
+  const applied=await f.pool.query('SELECT version FROM schema_migrations ORDER BY version');
   await assert.rejects(migrate(f.pool,{exclusive:true}),/Stop the active server/);
-  assert.equal((await f.pool.query('SELECT count(*) FROM schema_migrations')).rows[0].count,'3');
+  assert.deepEqual((await f.pool.query('SELECT version FROM schema_migrations ORDER BY version')).rows,applied.rows);
   await app.close();await migrate(f.pool,{exclusive:true});
 });
 
