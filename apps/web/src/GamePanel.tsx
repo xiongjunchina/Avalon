@@ -96,44 +96,6 @@ export function GamePanel({
   const [choice, setChoice] = useState<boolean | null>(null);
   const [target, setTarget] = useState('');
   const [abortConfirm, setAbortConfirm] = useState(false);
-  const [revealLeft, setRevealLeft] = useState<number>(() => {
-    if (g.phase !== 'role_reveal') return 0;
-    try {
-      const key = `avalon_reveal_${g.id}`;
-      const existing = sessionStorage.getItem(key);
-      const startTs = existing ? Number(existing) : Date.now();
-      if (!existing) sessionStorage.setItem(key, String(startTs));
-      return Math.max(0, Math.ceil((3000 - (Date.now() - startTs)) / 1000));
-    } catch {
-      return 3;
-    }
-  });
-
-  useEffect(() => {
-    if (g.phase !== 'role_reveal') {
-      setRevealLeft(0);
-      return;
-    }
-    let startTs = Date.now();
-    try {
-      const key = `avalon_reveal_${g.id}`;
-      const existing = sessionStorage.getItem(key);
-      if (existing && Number.isFinite(Number(existing))) {
-        startTs = Number(existing);
-      } else {
-        sessionStorage.setItem(key, String(startTs));
-      }
-    } catch {
-      /* ignore sessionStorage errors */
-    }
-    const update = () => {
-      const rem = Math.max(0, Math.ceil((3000 - (Date.now() - startTs)) / 1000));
-      setRevealLeft(rem);
-    };
-    update();
-    const timer = setInterval(update, 250);
-    return () => clearInterval(timer);
-  }, [g.id, g.phase]);
 
   useEffect(() => {
     const hide = () => {
@@ -167,7 +129,7 @@ export function GamePanel({
   const failures = g.rounds.filter(r => r.result && !r.result.passed).length;
   const redCount = (ROLE_CONFIG[g.players.length] ?? []).filter(r => roleTeam(r) === 'red').length;
   const effectivePhase: GameView['phase'] =
-    g.phase === 'role_reveal' && revealLeft <= 0 ? 'proposing' : g.phase;
+    g.phase === 'role_reveal' ? 'proposing' : g.phase;
   const assassinPlayer = g.assassinId ? g.players.find(p => p.id === g.assassinId) : undefined;
 
   const speakingOrder = () => {
@@ -181,11 +143,7 @@ export function GamePanel({
   }
 
   const needsIdentityAction =
-    !ended &&
-    Boolean(
-      effectivePhase === 'role_reveal' ||
-        self?.canConfirmInspection
-    );
+    !ended && Boolean(self?.canConfirmInspection);
 
   const lastVotedRound = [...g.rounds].reverse().find(r => r.vote?.ballots);
 
@@ -542,12 +500,8 @@ export function GamePanel({
       ) : (
         <div className="table-phase-banner">
           <div className="table-phase-head-row">
-            <h2 aria-live="polite">
-              {effectivePhase === 'role_reveal'
-                ? `身份已发放（${revealLeft}秒后选人）`
-                : phaseNames[effectivePhase]}
-            </h2>
-            {['role_reveal', 'proposing', 'discussion', 'team_vote', 'mission'].includes(effectivePhase) ? (
+            <h2 aria-live="polite">{phaseNames[effectivePhase]}</h2>
+            {['proposing', 'discussion', 'team_vote', 'mission'].includes(effectivePhase) ? (
               <p>
                 当前队长：<strong>{name(g.captainId)}</strong>
               </p>
@@ -759,14 +713,6 @@ export function GamePanel({
           selectedTarget={target}
           onSelectTarget={setTarget}
         />
-
-        {effectivePhase === 'role_reveal' && (
-          <div className="dock-panel">
-            <p role="status">
-              身份底牌已发放！可随时点击上方「👁️ 私下查看我的身份」查看底牌，<strong>{revealLeft} 秒</strong>后队长即可开始选人…
-            </p>
-          </div>
-        )}
 
         {effectivePhase === 'proposing' &&
           (captain ? (
