@@ -57,7 +57,7 @@ const ROLE_EN_NAMES: Record<Role, string> = {
   minion: 'MINION',
 };
 
-const BOT_NAMES = ['子容', '阿青', '大熊', '云舒', '老周', '晓月', '林深', '北辰', '知秋', '南风', '清河'];
+const BOT_NAMES = ['星河', '阿青', '远山', '云舒', '沧海', '晓月', '林深', '北辰', '知秋', '南风', '清河'];
 
 function groupRoles(roles: Role[]): Array<{ role: Role; count: number }> {
   const counts = new Map<Role, number>();
