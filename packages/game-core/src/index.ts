@@ -2,7 +2,7 @@ import type { Command, GameResult, GameView, Player, Role, RoundView, Settings, 
 export const RULESET_VERSION = 'standard-no-lancelot-v2';
 export const MISSION_SIZES: Record<number, number[]> = {
   5: [2,3,2,3,3], 6: [2,3,4,3,4], 7: [2,3,3,4,4],
-  8: [3,4,4,5,5], 9: [3,4,4,5,5], 10: [3,4,4,5,5],
+  8: [3,4,4,5,5], 9: [3,4,4,5,4], 10: [3,4,4,5,5],
   11: [3,4,5,6,5], 12: [3,4,5,6,6],
 };
 export const ROLE_CONFIG: Record<number, Role[]> = {
@@ -10,7 +10,7 @@ export const ROLE_CONFIG: Record<number, Role[]> = {
   6: ['merlin','percival','loyal','loyal','morgana','assassin'],
   7: ['merlin','percival','loyal','loyal','morgana','assassin','oberon'],
   8: ['merlin','percival','loyal','loyal','loyal','morgana','assassin','minion'],
-  9: ['merlin','percival','guinevere','loyal','loyal','loyal','morgana','assassin','mordred'],
+  9: ['merlin','percival','guinevere','loyal','loyal','morgana','assassin','mordred','oberon'],
   10: ['merlin','percival','guinevere','loyal','loyal','loyal','morgana','assassin','mordred','oberon'],
   11: ['merlin','percival','guinevere','loyal','loyal','loyal','loyal','morgana','assassin','mordred','minion'],
   12: ['merlin','percival','guinevere','loyal','loyal','loyal','loyal','morgana','assassin','mordred','minion','oberon'],
@@ -78,7 +78,7 @@ export function createGame(
 export const isEnded = (g: GameState) => g.phase === 'finished' || g.phase === 'aborted';
 export const captain = (g: GameState) => g.captainOrder[g.captainIndex];
 export const failuresRequiredFor = (playerCount: number, mission: number): number =>
-  (playerCount >= 7 && mission === 4) || (playerCount === 12 && mission === 3) ? 2 : 1;
+  (playerCount >= 7 && mission === 4) || ((playerCount === 9 || playerCount === 12) && mission === 3) ? 2 : 1;
 export const failuresRequired = (g: GameState) => failuresRequiredFor(g.players.length, g.mission);
 export function finish(g: GameState, result: GameResult) {
   g.result = result; g.phase = result.winner ? 'finished' : 'aborted';

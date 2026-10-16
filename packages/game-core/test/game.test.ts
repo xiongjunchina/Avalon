@@ -87,12 +87,12 @@ test('only chosen players can play; blue cannot fail; failed commands do not mut
   assert.equal(projectGame(g).rounds[0].result,undefined);
   g=act(g,g.players[1].id,'missionVote',{success:true});assert.equal(g.mission,2);assert.deepEqual(g.missionVotes,{});
 });
-test('7–12 fourth mission and 12 third mission take two fails, all others take one',()=>{
+test('7–12 fourth mission and 9/12 third mission take two fails, all others take one',()=>{
   for(let n=5;n<=12;n++) for(const failures of [1,2]){
     let g=ready(game(n));g=mission(g,0);g=mission(g,1);
     assert.equal(g.mission,3);
     const g3=mission(structuredClone(g),failures);
-    assert.equal(g3.rounds.at(-1)!.result?.passed,n===12&&failures===1);
+    assert.equal(g3.rounds.at(-1)!.result?.passed,(n===9||n===12)&&failures===1);
     g=mission(g,0);assert.equal(g.mission,4);
     g=mission(g,failures);assert.equal(g.rounds.at(-1)!.result?.passed,n>=7&&failures===1);
   }
