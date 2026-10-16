@@ -360,12 +360,12 @@ main.app-shell {
 main.app-shell.is-table-viewport {
   height: 100dvh;
   max-height: 100dvh;
-  padding: 5px 8px calc(12px + env(safe-area-inset-bottom, 0px));
+  padding: 6px 10px calc(12px + env(safe-area-inset-bottom, 0px));
   overflow-y: auto;
   overflow-x: hidden;
   background:
-    linear-gradient(180deg, rgba(6, 12, 22, 0.44) 0%, rgba(8, 16, 28, 0.2) 45%, rgba(5, 11, 20, 0.68) 100%),
-    url('/art/avalon-moonlit.png?v=huajian3') center 38% / cover no-repeat;
+    linear-gradient(180deg, rgba(6, 12, 22, 0.25) 0%, rgba(8, 16, 28, 0.06) 45%, rgba(5, 11, 20, 0.55) 100%),
+    url('/art/avalon-sword-bg.webp?v=sword1') center 34% / cover no-repeat;
 }
 
 .player-avatar-img {
@@ -410,8 +410,8 @@ main.app-shell.is-table-viewport {
   align-items: center;
   background:
     linear-gradient(180deg, rgba(6, 10, 16, 0.28) 0%, rgba(4, 9, 16, 0.78) 100%),
-    linear-gradient(90deg, rgba(92, 10, 14, 0.76) 0%, rgba(58, 7, 10, 0.68) 49.9%, rgba(6, 26, 78, 0.68) 50.1%, rgba(4, 18, 56, 0.78) 100%),
-    url('/art/avalon-moonlit.png?v=huajian3') center 38% / cover no-repeat;
+    linear-gradient(90deg, rgba(92, 10, 14, 0.72) 0%, rgba(58, 7, 10, 0.64) 49.9%, rgba(6, 26, 78, 0.64) 50.1%, rgba(4, 18, 56, 0.74) 100%),
+    url('/art/avalon-sword-bg.webp?v=sword1') center 36% / cover no-repeat;
   position: relative;
   overflow: hidden;
 }
@@ -954,8 +954,8 @@ main.app-shell.is-table-viewport {
   border: 0;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  gap: 5px;
+  justify-content: flex-start;
+  gap: 8px;
 }
 
 .waiting-rule-banner {
@@ -976,296 +976,108 @@ main.app-shell.is-table-viewport {
    Physical Board-Game Inspired Avalon Quest Board (.avalon-quest-board)
    ========================================================================== */
 .avalon-quest-board {
-  position: relative;
-  padding: 12px 12px 7px;
-  border-radius: 22px;
-  border: 1px solid rgba(226, 194, 130, 0.42);
-  background: linear-gradient(180deg, rgba(14, 24, 38, 0.62) 0%, rgba(8, 15, 25, 0.72) 100%);
-  backdrop-filter: blur(12px);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 236, 190, 0.22),
-    0 8px 22px rgba(0, 0, 0, 0.45);
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  flex-shrink: 0;
+  flex: 0 0 auto;
+  padding: 12px 10px 8px;
+  border-radius: 28px;
+  border: 1px solid #b6a58580;
+  background: linear-gradient(160deg, #e1e5df24, #14263970 70%);
+  box-shadow: inset 0 1px 2px #fff3d62e, 0 4px 18px #03091430;
 }
-
 .table-game-screen .game-score.quest-circles-row,
 .waiting-table-body .game-score.quest-circles-row {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 8px;
-  align-items: center;
-}
-
-.quest-medallion-wrap {
-  position: relative;
-  border: 0 !important;
-  background: transparent !important;
-  padding: 0 !important;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  cursor: pointer;
-  user-select: none;
-  outline: none !important;
-}
-
-.quest-medallion-wrap:active .quest-circle {
-  transform: scale(0.95);
-}
-
-.quest-two-fails-arch {
-  position: absolute;
-  top: -12px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 4;
-  font-size: 8.5px;
-  font-weight: 700;
-  color: #ffe8b8;
-  background: rgba(24, 18, 12, 0.9);
-  border: 1px solid #b58f4c;
-  border-radius: 999px;
-  padding: 1px 5px;
-  white-space: nowrap;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
-}
-
-.quest-circle {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 1;
-  border-radius: 50%;
-  border: 2px solid rgba(220, 198, 156, 0.55);
-  background: radial-gradient(circle at 36% 30%, rgba(46, 62, 82, 0.72) 0%, rgba(18, 26, 38, 0.85) 75%, rgba(10, 16, 24, 0.94) 100%);
-  box-shadow:
-    inset 0 2px 6px rgba(255, 244, 214, 0.2),
-    0 4px 10px rgba(0, 0, 0, 0.55);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  transition: transform 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
-}
-
-/* Current Active Mission Circle (Scheme 3 Cyan/Gold Glow) */
-.quest-medallion-wrap.mission-current .quest-circle {
-  border: 2.5px solid #6ef2ff;
-  background: radial-gradient(circle at 38% 30%, rgba(36, 98, 128, 0.85) 0%, rgba(16, 40, 58, 0.92) 100%);
-  box-shadow:
-    0 0 16px rgba(110, 242, 255, 0.6),
-    inset 0 0 10px rgba(140, 248, 255, 0.35);
-}
-
-/* Succeeded Mission Circle */
-.quest-medallion-wrap.mission-success .quest-circle {
-  border-color: #7cc5ff;
-  background: radial-gradient(circle at 40% 35%, #234b8a 0%, #102447 85%);
-  box-shadow: 0 0 12px rgba(78, 168, 255, 0.45);
-}
-
-/* Failed Mission Circle */
-.quest-medallion-wrap.mission-failure .quest-circle {
-  border-color: #ff8e85;
-  background: radial-gradient(circle at 40% 35%, #821d22 0%, #3d0b0e 85%);
-  box-shadow: 0 0 12px rgba(235, 88, 78, 0.45);
-}
-
-.quest-star-svg {
-  position: absolute;
-  inset: 4%;
-  width: 92%;
-  height: 92%;
-  opacity: 0.92;
-  pointer-events: none;
-}
-
-.wuyue-bg-svg {
-  position: absolute;
-  inset: 6%;
-  width: 88%;
-  height: 88%;
-  color: #e8cfa0;
-  opacity: 0.85;
-  pointer-events: none;
-  z-index: 1;
-}
-
-.quest-circle-top {
-  position: relative;
-  z-index: 2;
-  font-size: 8.5px;
-  font-weight: 700;
-  letter-spacing: -0.2px;
-  white-space: nowrap;
-  color: #f7ecd2;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.98);
-  margin-bottom: 1px;
-}
-
-.quest-circle-num {
-  position: relative;
-  z-index: 2;
-  font: 700 clamp(20px, 5.2vw, 27px)/1 var(--display) !important;
-  color: #f7f4ec;
-  text-shadow: 0 2px 5px rgba(0, 0, 0, 0.95), 0 0 1px #fff;
-}
-
-.quest-result-label {
-  position: relative;
-  z-index: 2;
-  font-size: 12px !important;
-  font-weight: 800;
-  color: #ffffff;
-  background: rgba(8, 14, 22, 0.68);
-  padding: 1px 6px;
-  border-radius: 999px;
-  text-shadow: 0 1px 3px #000;
-}
-
-/* Bottom-Right Quest Shield Marker Socket */
-.quest-token-socket {
-  position: absolute;
-  right: -2px;
-  bottom: -3px;
-  z-index: 3;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  border: 1.5px solid rgba(205, 185, 145, 0.55);
-  background: radial-gradient(circle, rgba(46, 56, 68, 0.88), rgba(16, 22, 30, 0.95));
-  display: grid;
-  place-items: center;
-  font-size: 8.5px;
-  color: #dfd3b8;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.65);
-}
-
-.quest-token-socket.has-shield-token {
-  width: 22px;
-  height: 22px;
-  border: 1.5px solid #ffe08c;
-  background: radial-gradient(circle at 40% 35%, #b56c24 0%, #5e310c 100%);
-  font-size: 12px;
-  box-shadow: 0 0 10px rgba(255, 212, 108, 0.7);
-}
-
-.quest-token-socket.has-records:not(.has-shield-token) {
-  border-color: #7cc5ff;
-  background: #17344a;
-  color: #bfe6ff;
-  font-weight: 700;
-}
-
-/* Compact Single-Line Vote Track + Faction Pill */
-.quest-vote-track-zone {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding-top: 4px;
-  border-top: 1px solid rgba(223, 189, 125, 0.18);
-}
-
-.quest-vote-track-left {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  align-items: start;
   gap: 6px;
 }
-
-.quest-track-head {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  white-space: nowrap;
-}
-
-.quest-track-badge {
-  font-size: 9.5px;
-  font-weight: 700;
-  color: #f3e6cb;
-  background: rgba(16, 22, 30, 0.75);
-  border: 1px solid rgba(196, 166, 108, 0.5);
-  border-radius: 999px;
-  padding: 1px 6px;
-}
-
-.quest-track-sub {
-  font-size: 10px;
-  color: #d6cbb3;
-}
-
-.quest-vote-circles {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.quest-vote-spot {
+.game-score > .quest-medallion-wrap {
   position: relative;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  border: 1.5px solid rgba(205, 186, 148, 0.55);
-  background: radial-gradient(circle at 35% 30%, rgba(52, 64, 78, 0.75), rgba(16, 22, 30, 0.9));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #f0e4c9;
+  box-shadow: none;
+  font-weight: 500;
+  outline: none;
+}
+button.quest-medallion-wrap:hover:not(:disabled) { background: #e5c98b12; filter: none }
+.game-score > .quest-medallion-wrap:focus-visible,
+.table-seat-card:focus-visible { outline: 2px solid #f9e1ab; outline-offset: 3px }
+.quest-circle {
   display: grid;
   place-items: center;
+  position: relative;
+  width: min(100%, 58px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 1.5px solid #ccbe9c99;
+  background: #b7c9d014;
+  box-shadow: inset 0 1px 5px #ffffff17;
 }
-
-.quest-vote-spot.is-danger-fifth {
-  border-color: #e87a5d;
-  background: radial-gradient(circle at 38% 32%, #b53f24 0%, #5c190c 90%);
+.mission-current .quest-circle {
+  border-color: #adf6f1;
+  box-shadow: 0 0 0 3px #72e6e118, 0 0 13px #72e6e161, inset 0 0 10px #7ce8e526;
 }
-
-.quest-vote-spot.is-rejected-step {
-  border-color: #d49bff;
-  box-shadow: 0 0 8px rgba(190, 120, 255, 0.55);
-}
-
-.vote-spot-num {
-  font: 700 11px/1 var(--display);
-  color: #f2ece0;
-}
-
-.vote-pouch-token {
+.mission-current .quest-caption { color: #b7fffb }
+.mission-success .quest-circle { border-color: #9fe4ff; background: #16496380 }
+.mission-failure .quest-circle { border-color: #ffafa2; background: #6c273180 }
+.wuyue-bg-svg { width: 82%; height: 82%; pointer-events: none }
+.game-score .quest-result-mark {
   position: absolute;
-  right: -4px;
-  bottom: -4px;
-  font-size: 10px;
-  line-height: 1;
+  font: 700 26px/1 var(--sans);
+  color: #e1faff;
+  text-shadow: 0 2px 4px #071a25;
 }
-
-.vote-pouch-token.is-zero-ready {
-  opacity: 0.45;
+.mission-failure .quest-result-mark { color: #ffe1da }
+.mission-success .wuyue-bg-svg,
+.mission-failure .wuyue-bg-svg { opacity: .22 }
+.game-score .quest-party-size {
+  position: absolute;
+  right: -3px;
+  bottom: -2px;
+  min-width: 28px;
+  padding: 2px 5px;
+  border-radius: 10px;
+  border: 1px solid #c9bb9680;
+  background: #263e51;
+  color: #fff4df;
+  font: 600 12px/1.1 var(--sans);
+  font-variant-numeric: tabular-nums;
 }
-
-.quest-faction-plaque {
-  flex-shrink: 0;
-  padding: 2px 7px;
-  border-radius: 999px;
-  background: rgba(12, 18, 26, 0.75);
-  border: 1px solid rgba(196, 166, 108, 0.45);
-  display: inline-flex;
+.quest-party-size small { font-size: 9px; color: inherit; margin-left: 1px }
+.game-score .quest-mountain-name { font: 16px/1.4 var(--display); margin-top: 3px; color: #f4e5c7 }
+.game-score .quest-caption { font: 10px/1.2 var(--sans); color: #d0dce6 }
+.game-score .quest-caption.requires-two { color: #ffdc9b }
+.quest-vote-track-zone {
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 5px;
-  line-height: 1.2;
+  justify-content: space-between;
+  gap: 5px 8px;
+  margin-top: 8px;
+  padding-top: 7px;
+  border-top: 1px solid #ddcba324;
 }
-
-.quest-faction-plaque strong {
-  font-size: 10px;
-  color: #f3e6cb;
-}
-
-.quest-faction-plaque span {
-  font-size: 9.5px;
-  color: #ff9c8f;
-}
+.quest-vote-track-left { display: flex; align-items: center; flex-wrap: wrap; gap: 5px 8px; min-width: 0; flex: 1 }
+.quest-track-head { min-width: 0; line-height: 1.3 }
+.quest-track-badge { display: none }
+.quest-track-sub { font-size: 11px; color: #d9e1e8; font-variant-numeric: tabular-nums }
+.quest-vote-circles { display: flex; gap: 4px; align-items: center }
+.quest-vote-spot { width: 7px; height: 7px; border-radius: 50%; border: 1px solid #c4baa0a8; background: #a7bec323 }
+.quest-vote-spot.is-rejected-step { background: #f5bb7c; border-color: #ffdab1 }
+.quest-vote-spot.is-danger-fifth { border-color: #df9680 }
+.vote-spot-num { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%) }
+.vote-pouch-token { display: none }
+.quest-faction-plaque { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex-shrink: 0 }
+.quest-faction-plaque strong { font-size: 10px; color: #e8deca; font-weight: 500 }
+.quest-faction-plaque span { font-size: 10px; color: #ffb7a5 }
 
 /* ==========================================================================
    Hybrid Scheme A Middle Zone:
@@ -1282,8 +1094,8 @@ main.app-shell.is-table-viewport {
 }
 
 .scheme3-ink-ribbon {
-  width: 94%;
-  padding: 5px 14px;
+  width: 100%;
+  padding: 5px 6px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1291,7 +1103,6 @@ main.app-shell.is-table-viewport {
   background: linear-gradient(90deg, transparent 0%, rgba(10, 20, 32, 0.72) 18%, rgba(14, 28, 44, 0.82) 50%, rgba(10, 20, 32, 0.72) 82%, transparent 100%);
   border-top: 1px solid rgba(235, 198, 120, 0.45);
   border-bottom: 1px solid rgba(235, 198, 120, 0.45);
-  backdrop-filter: blur(6px);
 }
 
 .ink-ribbon-ornament {
@@ -1302,9 +1113,9 @@ main.app-shell.is-table-viewport {
 
 .ink-ribbon-text {
   margin: 0;
-  font-size: 14px;
-  font-weight: 600;
-  letter-spacing: 1px;
+  font: 17px/1.5 var(--display);
+  text-align: center;
+  overflow-wrap: anywhere;
   color: #f4dfba;
   text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9);
 }
@@ -1314,208 +1125,6 @@ main.app-shell.is-table-viewport {
   font-weight: 800;
   margin: 0 3px;
   text-shadow: 0 0 10px rgba(110, 242, 255, 0.45);
-}
-
-/* Scheme 6 Horizontal Captain & Team Formation Spotlight Banner */
-.scheme6-team-spotlight {
-  width: 100%;
-  padding: 10px 12px;
-  border-radius: 16px;
-  background: linear-gradient(90deg, rgba(18, 30, 46, 0.84) 0%, rgba(14, 25, 40, 0.72) 60%, rgba(10, 18, 30, 0.52) 100%);
-  backdrop-filter: blur(10px);
-  border-top: 1.5px solid rgba(245, 205, 118, 0.65);
-  border-bottom: 1.5px solid rgba(245, 205, 118, 0.55);
-  box-shadow:
-    0 8px 24px rgba(0, 0, 0, 0.5),
-    inset 0 0 22px rgba(245, 205, 118, 0.1);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.spotlight-captain-node {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  flex-shrink: 0;
-}
-
-.spotlight-captain-ring {
-  position: relative;
-  width: 68px;
-  height: 68px;
-  border-radius: 50%;
-  padding: 3px;
-  background: linear-gradient(135deg, #fff0b3 0%, #e0a838 50%, #9c6814 100%);
-  box-shadow:
-    0 0 18px rgba(255, 210, 102, 0.65),
-    0 0 0 3px rgba(255, 214, 112, 0.22);
-  display: grid;
-  place-items: center;
-}
-
-.spotlight-captain-avatar {
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  background: #0d1824;
-  border: 2px solid #162436;
-  overflow: hidden;
-  display: grid;
-  place-items: center;
-}
-
-.spotlight-captain-avatar .emblem {
-  width: 34px;
-  height: 34px;
-  color: #ffd875;
-}
-
-.spotlight-captain-crest {
-  position: absolute;
-  right: -4px;
-  bottom: 8px;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: radial-gradient(circle, #382810 0%, #1c1306 100%);
-  border: 1.5px solid #ffd875;
-  display: grid;
-  place-items: center;
-  font-size: 11px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
-}
-
-.spotlight-captain-pill {
-  position: absolute;
-  bottom: -7px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: linear-gradient(180deg, #2b2112 0%, #140f08 100%);
-  border: 1px solid #e6b85c;
-  border-radius: 999px;
-  padding: 1px 7px;
-  font-size: 9.5px;
-  font-weight: 800;
-  color: #ffe8b3;
-  white-space: nowrap;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.85);
-}
-
-.spotlight-captain-title {
-  margin-top: 5px;
-  font-size: 11.5px;
-  font-weight: 800;
-  color: #ffd97d;
-  letter-spacing: 0.5px;
-  max-width: 82px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.spotlight-slots-track {
-  position: relative;
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-around;
-  gap: 6px;
-  padding: 2px 0;
-}
-
-.spotlight-energy-line {
-  position: absolute;
-  top: 42%;
-  left: -8px;
-  right: 12px;
-  height: 2px;
-  background: linear-gradient(90deg, rgba(255, 214, 112, 0.75) 0%, rgba(94, 242, 255, 0.65) 50%, rgba(94, 242, 255, 0.15) 100%);
-  box-shadow: 0 0 8px rgba(94, 242, 255, 0.55);
-  z-index: 0;
-  pointer-events: none;
-}
-
-.spotlight-team-slot {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  min-width: 0;
-}
-
-.spotlight-team-slot.is-removable {
-  cursor: pointer;
-}
-
-.spotlight-slot-ring {
-  position: relative;
-  width: clamp(42px, 11.5vw, 52px);
-  height: clamp(42px, 11.5vw, 52px);
-  border-radius: 50%;
-  border: 2px solid rgba(98, 232, 255, 0.75);
-  background: radial-gradient(circle at 50% 35%, rgba(24, 58, 78, 0.82), rgba(10, 22, 34, 0.94));
-  box-shadow:
-    0 0 12px rgba(82, 225, 255, 0.42),
-    inset 0 0 8px rgba(110, 242, 255, 0.25);
-  display: grid;
-  place-items: center;
-  transition: transform 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
-}
-
-.spotlight-team-slot.is-empty .spotlight-slot-ring {
-  border-style: dashed;
-  border-color: rgba(110, 225, 245, 0.48);
-  background: radial-gradient(circle, rgba(16, 38, 54, 0.58), rgba(8, 18, 28, 0.75));
-}
-
-.spotlight-slot-avatar {
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  overflow: hidden;
-  display: grid;
-  place-items: center;
-}
-
-.spotlight-slot-avatar .emblem {
-  width: 24px;
-  height: 24px;
-  color: #8ceeff;
-}
-
-.spotlight-slot-placeholder {
-  font-size: 18px;
-  font-weight: 600;
-  color: rgba(130, 235, 255, 0.65);
-}
-
-.spotlight-slot-badge {
-  position: absolute;
-  right: -3px;
-  bottom: -2px;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: #0d2838;
-  border: 1.5px solid #6ef2ff;
-  display: grid;
-  place-items: center;
-  font-size: 9.5px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.75);
-}
-
-.spotlight-slot-label {
-  font-size: 10.5px;
-  font-weight: 700;
-  color: #e4f4ff;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.95);
-  white-space: nowrap;
 }
 
 /* Phase & Captain Banner (Waiting Room fallback) */
@@ -1552,44 +1161,23 @@ main.app-shell.is-table-viewport {
    Scheme 3 Floating Circular Player Avatar Grid (.table-seats-grid)
    ========================================================================== */
 .table-seats-grid {
+  --seat-columns: 4;
   flex: 0 0 auto;
-  display: grid;
-  gap: 8px 6px;
-  padding: 6px 8px;
-  border-radius: 18px;
-  background: rgba(8, 16, 26, 0.34);
-  backdrop-filter: blur(6px);
-  border: 1px solid rgba(216, 190, 138, 0.18);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 12px 0;
+  padding: 8px 0;
+  background: transparent;
+  border: 0;
 }
-
-.table-seats-grid.grid-8 {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  grid-auto-rows: minmax(82px, auto);
-}
-
-.table-seats-grid.grid-10 {
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  grid-auto-rows: minmax(80px, auto);
-}
-
-.table-seats-grid.grid-12 {
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  grid-auto-rows: minmax(76px, auto);
-  gap: 6px 4px;
-}
-
-.table-seats-grid.grid-12 .seat-card-avatar {
-  width: 44px;
-  height: 44px;
-}
-
-.table-seats-grid.grid-12 .seat-card-name {
-  font-size: 10.5px;
-}
-
-.waiting-table-body .table-seats-grid {
-  flex: 0 0 auto;
-}
+.table-seats-grid.grid-10 { --seat-columns: 5 }
+.table-seats-grid.grid-12 { --seat-columns: 6 }
+.table-seats-grid[data-player-count="5"] { --seat-columns: 5 }
+.table-seats-grid[data-player-count="6"] { --seat-columns: 3 }
+.table-seats-grid > .table-seat-card { flex: 0 0 calc(100% / var(--seat-columns)); max-width: calc(100% / var(--seat-columns)) }
+.sword-moon-vista-spacer { flex: 1 1 clamp(80px, 18dvh, 230px); min-height: 80px; pointer-events: none }
 
 .table-seat-card {
   position: relative;
@@ -1716,8 +1304,8 @@ main.app-shell.is-table-viewport {
 }
 
 .seat-card-avatar {
-  width: 50px;
-  height: 50px;
+  width: clamp(40px, calc((100vw - 32px) / var(--seat-columns) - 16px), 60px);
+  aspect-ratio: 1;
   border-radius: 50%;
   border: 2px solid rgba(214, 188, 136, 0.78);
   background: radial-gradient(circle at 50% 35%, #1e3244 0%, #0d1822 100%);
@@ -1743,7 +1331,7 @@ main.app-shell.is-table-viewport {
   right: -5px;
   bottom: -2px;
   z-index: 3;
-  font: 700 9.5px/1.1 var(--sans);
+  font: 600 12px/1.1 var(--sans);
   color: #f4e6c8;
   background: linear-gradient(180deg, #283f52 0%, #12202c 100%);
   border: 1px solid rgba(218, 192, 138, 0.75);
@@ -1814,7 +1402,7 @@ main.app-shell.is-table-viewport {
 }
 
 .seat-card-name {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   color: #f3e6cb;
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.95);
@@ -2318,13 +1906,6 @@ main.app-shell.is-table-viewport {
 @media (max-width: 400px) {
   .mp-portrait-card {
     width: 82px;
-  }
-  .quest-vote-spot {
-    width: 29px;
-    height: 29px;
-  }
-  .vote-spot-num {
-    font-size: 14px;
   }
 }
 
@@ -2982,3 +2563,43 @@ main.app-shell.is-table-viewport {
 }
 
 
+
+/* Sword-and-moon table: the scenic space contracts before controls do. */
+.seat-aura-ring {
+  position: absolute;
+  inset: -5px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  pointer-events: none;
+  color: #f4cf80;
+  box-shadow: 0 0 8px #f4cf8033;
+}
+.seat-aura-ring.aura-cyan { color: #91f1ec; box-shadow: 0 0 10px #91f1ec55 }
+.seat-aura-ring::before,
+.seat-aura-ring::after { content: ''; position: absolute; width: 4px; height: 4px; background: currentColor; border-radius: 50%; top: -2px; left: calc(50% - 2px) }
+.seat-aura-ring::after { top: auto; bottom: -2px }
+.table-seats-grid .seat-card-avatar { box-shadow: 0 3px 8px #04101c66, inset 0 0 0 2px #06121e80 }
+.table-seats-grid .is-on-team .seat-card-avatar { border-color: #9cfff7; box-shadow: 0 0 0 2px #0e657c99 }
+.table-seats-grid .is-captain .seat-card-avatar { border-color: #f4d587 }
+.table-seats-grid .is-captain.is-on-team .seat-card-avatar { border-color: #9cfff7; box-shadow: 0 0 0 2px #e8bf6c }
+.table-seats-grid .is-targeted .seat-card-avatar { border-color: #ffafa1; box-shadow: 0 0 0 3px #ba493c80 }
+.table-seats-grid .seat-card-bottom { align-items: flex-start }
+.table-game-screen > .table-action-dock,
+.waiting-table-body > .table-action-dock { backdrop-filter: none; background: #0b1928d9 }
+.waiting-ext-orb { backdrop-filter: none }
+@media (max-width: 350px) {
+  .room-top-bar:has(.practice-seat-select) { flex-wrap: wrap }
+  .room-top-bar:has(.practice-seat-select) .room-top-left { flex-basis: 100% }
+  .room-top-bar:has(.practice-seat-select) .room-top-right { margin-left: auto }
+  .quest-vote-track-zone { gap: 5px }
+  .quest-vote-track-left { gap: 4px }
+  .quest-vote-circles { gap: 3px }
+  .quest-track-sub { font-size: 10px }
+  .table-seats-grid.grid-10,
+  .table-seats-grid.grid-12 { --seat-columns: 4 }
+  .dock-utility-row { flex-wrap: wrap }
+  .ink-ribbon-text { font-size: 16px }
+}
+@media (prefers-reduced-motion: reduce) {
+  .table-seat-card { transition: none }
+}

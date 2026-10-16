@@ -4,7 +4,7 @@ import { api, describe } from './api';
 
 export function SettingsFields({settings,onChange,prefix='room'}:{settings:Settings;onChange:(patch:Partial<Settings>)=>void;prefix?:string}) {
   return <>
-    <label htmlFor={`${prefix}-count`}>人数</label><select id={`${prefix}-count`} value={settings.playerCount} onChange={e=>onChange({playerCount:Number(e.target.value)})}>{[5,6,7,8,9,10,11,12].map(n=><option key={n} value={n}>{n} 人</option>)}</select>
+    <fieldset className="player-count-field"><legend>对局人数</legend><div className="count-medallions">{[5,6,7,8,9,10,11,12].map(n=><label key={n}><input type="radio" name={`${prefix}-count`} value={n} checked={settings.playerCount===n} onChange={()=>onChange({playerCount:n})}/><span>{n}<small className="sr-only">人</small></span></label>)}</div></fieldset>
     <label htmlFor={`${prefix}-captain`}>队长分配</label><select id={`${prefix}-captain`} value={settings.captainMode} onChange={e=>onChange({captainMode:e.target.value as Settings['captainMode']})}><option value="seat_order">按座位循环</option><option value="random_order">开局打乱一次，整局循环</option></select>
     <label htmlFor={`${prefix}-rejections`}>流局计数</label><select id={`${prefix}-rejections`} value={settings.rejectionScope} onChange={e=>onChange({rejectionScope:e.target.value as Settings['rejectionScope']})}><option value="game">全局累计，5 次判负</option><option value="mission">单次任务累计，5 次判负</option></select>
     {([['anonymousTeamVote','匿名组队投票'],['ladyEnabled','少林明镜'],['earlyAssassinationEnabled','提前刺杀']] as const).map(([key,label])=><div className="check" key={key}><label htmlFor={`${prefix}-${key}`}>{label}</label><input id={`${prefix}-${key}`} type="checkbox" checked={settings[key]} onChange={e=>onChange({[key]:e.target.checked})}/></div>)}

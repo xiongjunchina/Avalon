@@ -1,0 +1,55 @@
+async (page) => {
+  const results = [];
+  const viewports = [{width:320,height:568},{width:375,height:553},{width:320,height:667},{width:390,height:844},{width:430,height:932}];
+  async function audit(count, stage) {
+    for (const viewport of viewports) {
+      await page.setViewportSize(viewport);
+      await page.evaluate(async () => { await document.fonts.ready; window.scrollTo(0,0); document.querySelector('main').scrollTop=0; await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))); });
+      const data = await page.evaluate(() => {
+        const main=document.querySelector('main');
+        const controls=[...document.querySelectorAll('.room-top-bar button,.room-top-bar select,.quest-medallion-wrap,.table-seat-card[role=button],.party-slot.filled,.table-action-dock button,.dock-inline-controls select,.vote-card')];
+        const boxes=controls.map(e=>{const b=e.getBoundingClientRect();return {label:e.getAttribute('aria-label')||e.textContent.trim().slice(0,30),x:b.x,y:b.y,w:b.width,h:b.height,right:b.right,bottom:b.bottom};}).filter(b=>b.w>1&&b.h>1);
+        const out=boxes.filter(b=>b.x<-.5||b.y<-.5||b.right>innerWidth+.5||b.bottom>innerHeight+.5);
+        const labels=[...document.querySelectorAll('.seat-card-name')].map(e=>({label:e.textContent,height:e.clientHeight,required:parseFloat(getComputedStyle(e).lineHeight)}));
+        const clippedNames=labels.filter(e=>e.height<e.required);
+        const regions=['.avalon-quest-board','.scheme3-middle-zone','.table-seats-grid','.table-action-dock'].map(s=>{const b=document.querySelector(s).getBoundingClientRect();return {y:b.y,h:b.height,bottom:b.bottom};});
+        const gaps=regions.slice(1).map((r,i)=>r.y-regions[i].bottom);
+        const small=boxes.filter(b=>b.w<24||b.h<24);
+        return {viewport:[innerWidth,innerHeight],main:[main.clientHeight,main.scrollHeight],document:[document.documentElement.scrollWidth,document.documentElement.scrollHeight],phase:document.querySelector('.table-game-screen').dataset.phase,seats:document.querySelectorAll('.table-seat-card').length,controls:boxes.length,out,small,clippedNames,gaps,regions,publicRoleImages:document.querySelectorAll('.table-seats-grid img[src*="/roles/"]').length};
+      });
+      const pass=data.main[1]<=data.main[0]+1&&data.document[0]<=viewport.width&&data.document[1]<=viewport.height+1&&data.seats===count&&!data.out.length&&!data.small.length&&!data.publicRoleImages&&!data.clippedNames.length&&data.gaps.every(g=>g>=0&&g<=10);
+      results.push({count,stage,pass,...data});
+      if ((count===6 || count===12) && viewport.width===390 && (stage==='empty-party' || stage==='mission')) {
+        await page.screenshot({path:`/Users/xjun/Gitrepo/Avalon/docs/lunjian-balanced-ui/game-${count}-${stage}-390.png`});
+      }
+
+    }
+  }
+  try {
+    for(let count=5;count<=12;count++) {
+      await page.getByRole('button',{name:'创建房间',exact:true}).click();
+      await page.getByRole('radio',{name:String(count),exact:true}).click();
+      await page.getByRole('button',{name:`单人演练 ${count} 人对局画面 ›`,exact:true}).click();
+      const captain=Number((await page.locator('.party-captain .token-seat').textContent()).replace('号',''));
+      await page.getByRole('button',{name:'切换试玩视角',exact:true}).click();
+      await page.locator('[data-player-id="p'+captain+'"]').click();
+      const size=Number(await page.locator('.party-slots').getAttribute('data-size'));
+      await audit(count,'empty-party');
+      const indices=[captain-1,...Array.from({length:count},(_,i)=>i).filter(i=>i!==captain-1)].slice(0,size);
+      for(const index of indices)await page.locator('.table-seat-card').nth(index).click();
+      await audit(count,'selected-party');
+      await page.getByRole('button',{name:`确认出征（${size}/${size}）`,exact:true}).click();
+      await audit(count,'discussion');
+      await page.getByRole('button',{name:'讨论结束，开始表决',exact:true}).click();
+      await audit(count,'team-vote');
+      await page.locator('.vote-card').first().click();
+      await page.getByRole('button',{name:'确认提交表决',exact:true}).click();
+      await page.getByRole('button',{name:'确认提交任务牌',exact:true}).waitFor();
+      await audit(count,'mission');
+      await page.getByRole('button',{name:'← 退出试玩',exact:true}).click();
+    }
+  } finally {
+    await page.evaluate(rows => { window.__balancedAudit = rows; }, results);
+  }
+  return {failures:results.filter(r=>!r.pass),cases:results.length,passed:results.filter(r=>r.pass).length,counts:[5,6,7,8,9,10,11,12],viewports};
+}

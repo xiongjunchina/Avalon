@@ -1,3 +1,4 @@
+import { QuestMedallion } from './QuestMedallion';
 import React, { useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import * as Label from '@radix-ui/react-label';
@@ -24,12 +25,15 @@ import {
   type GameState,
 } from '@avalon/game-core';
 import './style.css';
+import './scenes.css';
+import { Modal } from './Modal';
 import { GamePanel } from './GamePanel';
+import { PracticeSeatPicker } from './PracticeSeatPicker';
 import { RoomConnection } from './room-connection';
 import { api, describe, errors } from './api';
 import { AccountPanel } from './AccountPanel';
 import { PresetsPanel, SettingsFields, settingsText } from './PresetsPanel';
-import { Emblem, PlayerAvatar, WECHAT_SAMPLE_AVATARS, WuYueBackdrop, roleTeam } from './Heraldry';
+import { Emblem, PlayerAvatar, WECHAT_SAMPLE_AVATARS, roleTeam } from './Heraldry';
 import { GuidePanel } from './GuidePanel';
 import { RolePortrait } from './RolePortrait';
 import { WUYUE_MISSIONS, roleMottos, roleNames, roleTitles } from './roles';
@@ -431,9 +435,11 @@ function App() {
   const groupedRed = groupRoles(setupRedRoles);
 
   const inTableViewport = Boolean((roomId || practiceGame) && page === 'table');
+  const activeGame = practiceGame ?? room?.game;
+  const scene = page === 'guide' || setupOpen ? 'library' : page === 'account' ? 'dawn' : activeGame ? (activeGame.result ? 'dawn' : 'sword') : roomId ? 'pavilion' : 'gate';
 
   return (
-    <main className={`app-shell ${inTableViewport ? 'is-table-viewport' : ''}`}>
+    <main data-scene={scene} className={`app-shell ${inTableViewport ? 'is-table-viewport' : ''} ${inTableViewport && !activeGame?.result ? 'is-live-table' : ''}`}>
       {/* Toast Alerts */}
       {(error || notice) && (
         <div className="toast-stack">
@@ -458,8 +464,8 @@ function App() {
         /* Guest Entry Screen */
         <div className="mp-home-screen">
           <div className="mp-logo-block">
-            <h1 className="mp-avalon-logo">话 剑</h1>
-            <p className="mp-avalon-sub">以话为剑 · 国风武侠推理桌游</p>
+            <h1 className="mp-avalon-logo">论剑</h1>
+            <p className="mp-avalon-sub">国风武侠推理桌游</p>
           </div>
           <section className="panel guest-login-card">
             <h2>先让朋友认出你</h2>
@@ -523,31 +529,23 @@ function App() {
               <button
                 type="button"
                 className="secondary tool-pill"
+                aria-label="← 退出试玩"
                 onClick={() => setPracticeGame(null)}
               >
-                ← 退出试玩
+                ← 退出
               </button>
-              <select
-                aria-label="切换试玩视角"
-                className="practice-seat-select"
-                value={practiceUserId}
-                onChange={e => setPracticeUserId(e.target.value)}
-              >
-                {practiceGame.players.map(p => (
-                  <option key={p.id} value={p.id}>
-                    视角: {p.seat}号 {p.nickname} ({roleNames[practiceGame.roles[p.id]]})
-                  </option>
-                ))}
-              </select>
+              <PracticeSeatPicker players={practiceGame.players} roles={practiceGame.roles}
+                value={practiceUserId} onChange={setPracticeUserId} />
             </div>
             <div className="room-top-right">
               {!isEnded(practiceGame) && (
                 <button
                   type="button"
                   className="secondary tool-pill pulse-action"
+                  aria-label="⚡ 电脑代操下一步"
                   onClick={stepPracticeBot}
                 >
-                  ⚡ 电脑代操下一步
+                  ⚡ 代操
                 </button>
               )}
               <button
@@ -740,55 +738,34 @@ function App() {
             </header>
 
             <div className="mp-logo-block">
-              <h1 className="mp-avalon-logo">话 剑</h1>
-              <p className="mp-avalon-sub">以话为剑 · 国风武侠推理桌游</p>
+              <h1 className="mp-avalon-logo">论剑</h1>
+              <p className="mp-avalon-sub">国风武侠推理桌游</p>
             </div>
 
             {/* Center Single Role Medallion (Auto-rotates one role at a time, tap to switch next) */}
             <section
               className="mp-medallion-stage"
               aria-label="角色展示"
-              onClick={() => setShowcaseIndex(i => (i + 1) % SHOWCASE_ROLES.length)}
             >
-              <div className={`mp-medallion-circle allegiance-${roleTeam(showcaseRole)}`}>
+              <button type="button" className={`mp-medallion-circle allegiance-${roleTeam(showcaseRole)}`} onClick={() => setShowcaseIndex(i => (i + 1) % SHOWCASE_ROLES.length)} aria-label="展示下一位江湖角色">
                 <RolePortrait role={showcaseRole} size="card" />
-              </div>
+              </button>
               <h2 className="mp-medallion-name">{roleNames[showcaseRole]}</h2>
               <p className="mp-medallion-motto">{roleMottos[showcaseRole]}</p>
             </section>
 
-            {/* Bottom Actions */}
             <footer className="mp-home-footer">
-              <button
-                type="button"
-                className="mp-cyan-pill"
-                disabled={busy}
-                onClick={() => setSetupOpen(true)}
-              >
-                创建房间
-              </button>
-              <div className="mp-home-subactions">
-                <button
-                  type="button"
-                  className="mp-subtle-link"
-                  onClick={() => setJoinOpen(true)}
-                >
-                  输入房号加入房间
-                </button>
-                <span>·</span>
-                <button
-                  type="button"
-                  className="mp-subtle-link"
-                  onClick={() => startPracticeGame(setupSettings)}
-                >
-                  单人试玩对局桌
-                </button>
+              <div className="lobby-primary-actions">
+                <button type="button" className="mp-cyan-pill" disabled={busy} onClick={() => setSetupOpen(true)}><Emblem kind="mountain"/>创建房间</button>
+                <button type="button" className="secondary lobby-join" onClick={() => setJoinOpen(true)}><Emblem kind="crown"/>加入朋友房间</button>
               </div>
+              <button type="button" className="secondary practice-entry" onClick={() => startPracticeGame(setupSettings)}>单人试玩 ›</button>
+              <div className="lobby-personal-links"><button type="button" className="text-button" onClick={() => { setReplayId(null); setPage('account'); }}><Emblem kind="chronicle"/>我的战绩与资料</button></div>
             </footer>
 
             {/* Join Room Modal */}
             {joinOpen && (
-              <div className="table-modal-backdrop" role="dialog" aria-modal="true" aria-label="加入朋友房间">
+              <Modal label="加入朋友房间" scene="gate" onClose={() => setJoinOpen(false)}>
                 <div className="table-modal-sheet">
                   <div className="table-modal-head">
                     <strong>加入朋友的房间</strong>
@@ -832,7 +809,7 @@ function App() {
                     </button>
                   </form>
                 </div>
-              </div>
+              </Modal>
             )}
           </div>
         )
@@ -932,22 +909,7 @@ function App() {
                   {(MISSION_SIZES[room.settings.playerCount] ?? MISSION_SIZES[6]).map((count, i) => {
                     const twoFailsRequired = failuresRequiredFor(room.settings.playerCount, i + 1) === 2;
                     return (
-                      <div
-                        key={i}
-                        className={`quest-medallion-wrap ${i === 0 ? 'mission-current' : 'mission-pending'}`}
-                      >
-                        {twoFailsRequired && (
-                          <span className="quest-two-fails-arch">需要2张失败卡</span>
-                        )}
-                        <div className="quest-circle">
-                          <WuYueBackdrop mission={i + 1} />
-                          <span className="quest-circle-top">{WUYUE_MISSIONS[i]?.shortLabel ?? `任务 ${i + 1}`}</span>
-                          <strong className="quest-circle-num">{count}</strong>
-                        </div>
-                        <span className={`quest-token-socket ${i === 0 ? 'has-shield-token' : ''}`}>
-                          {i === 0 ? '🛡️' : ''}
-                        </span>
-                      </div>
+                      <QuestMedallion key={i} mission={i + 1} count={count} twoFailsRequired={twoFailsRequired} />
                     );
                   })}
                 </div>
@@ -955,20 +917,9 @@ function App() {
                 <div className="quest-vote-track-zone">
                   <div className="quest-vote-track-left">
                     <div className="quest-track-head">
-                      <span className="quest-track-badge">投票次数记录</span>
                       <span className="quest-track-sub">{settingsText(room.settings)}</span>
                     </div>
-                    <div className="quest-vote-circles" aria-label="流局计数轨">
-                      {[1, 2, 3, 4, 5].map(step => (
-                        <div
-                          key={step}
-                          className={`quest-vote-spot ${step === 5 ? 'is-danger-fifth' : ''}`}
-                        >
-                          <span className="vote-spot-num">{step}</span>
-                          {step === 1 && <span className="vote-pouch-token is-zero-ready">🟣</span>}
-                        </div>
-                      ))}
-                    </div>
+
                   </div>
 
                   <div className="quest-faction-plaque">
@@ -982,12 +933,13 @@ function App() {
               </div>
 
               {/* Phase & Host Hint Banner */}
-              <div className="table-phase-banner">
-                <div className="table-phase-head-row">
-                  <h2>等待玩家入座 ({room.members.length} / {room.settings.playerCount})</h2>
-                  <p className="hint">
-                    点击空位可复制邀请链接；人齐准备后发牌，也可点底部「补满电脑试玩」直接体验
+              <div className="scheme3-middle-zone">
+                <div className="scheme3-ink-ribbon">
+                  <span className="ink-ribbon-ornament" aria-hidden="true">〰</span>
+                  <p className="ink-ribbon-text">
+                    等待群豪入座 <strong>{room.members.length}/{room.settings.playerCount}</strong>
                   </p>
+                  <span className="ink-ribbon-ornament" aria-hidden="true">〰</span>
                 </div>
               </div>
 
@@ -1000,6 +952,7 @@ function App() {
                       ? 'grid-10'
                       : 'grid-8'
                 }`}
+                data-player-count={room.settings.playerCount}
                 aria-label="房间座位"
               >
                 {Array.from({ length: room.settings.playerCount }, (_, i) => {
@@ -1010,6 +963,13 @@ function App() {
                       key={i}
                       role={!m ? 'button' : undefined}
                       tabIndex={!m ? 0 : undefined}
+                      aria-label={!m ? `${i + 1}号空位，复制邀请链接` : undefined}
+                      onKeyDown={e => {
+                        if (!m && (e.key === 'Enter' || e.key === ' ')) {
+                          e.preventDefault();
+                          copyInviteLink();
+                        }
+                      }}
                       onClick={() => {
                         if (!m) copyInviteLink();
                       }}
@@ -1024,7 +984,6 @@ function App() {
                         .join(' ')}
                     >
                       <div className="seat-card-top">
-                        <span className="seat-num-badge">{String(i + 1).padStart(2, '0')}</span>
                         <div className="seat-top-badges">
                           {isRoomHost && <span className="seat-badge badge-captain">👑 房主</span>}
                           {host && m && m.id !== user.id && (
@@ -1045,6 +1004,9 @@ function App() {
                         </div>
                       </div>
                       <div className="seat-card-avatar-wrap">
+                        {isRoomHost && (
+                          <span className="seat-aura-ring aura-gold" aria-hidden="true" />
+                        )}
                         <div className="seat-card-avatar">
                           <PlayerAvatar
                             avatar={m?.avatar}
@@ -1053,6 +1015,7 @@ function App() {
                             fallbackKind="cards"
                           />
                         </div>
+                        <span className="seat-num-badge">{i + 1}</span>
                       </div>
                       <strong className="seat-card-name">
                         {m ? `${m.nickname}${m.id === user.id ? '（你）' : ''}` : '邀请好友'}
@@ -1155,7 +1118,7 @@ function App() {
 
           {/* Host Kick Confirmation Modal */}
           {kickTarget && (
-            <div className="table-modal-backdrop" role="dialog" aria-modal="true" aria-label="确认踢出玩家">
+            <Modal label="确认踢出玩家" scene="pavilion" onClose={() => setKickTarget(null)}>
               <div className="table-modal-sheet">
                 <div className="table-modal-head">
                   <strong>移出房间成员</strong>
@@ -1193,12 +1156,12 @@ function App() {
                   </button>
                 </div>
               </div>
-            </div>
+            </Modal>
           )}
 
           {/* Room Settings Modal */}
           {settingsModalOpen && (
-            <div className="table-modal-backdrop" role="dialog" aria-modal="true" aria-label="房间设置">
+            <Modal label="房间设置" scene="library" onClose={() => setSettingsModalOpen(false)}>
               <div className="table-modal-sheet">
                 <div className="table-modal-head">
                   <strong>本局房间设置</strong>
@@ -1275,8 +1238,9 @@ function App() {
                     />
                   </details>
                 )}
+                <button type="button" onClick={() => setSettingsModalOpen(false)}>返回房间</button>
               </div>
-            </div>
+            </Modal>
           )}
         </div>
       )}

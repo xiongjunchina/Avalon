@@ -1,3 +1,4 @@
+import { useId, useState } from 'react';
 import type { Avatar, Role, Team } from '@avalon/contracts';
 
 type Mark = Role | Avatar | 'blue' | 'red' | 'crown' | 'cards' | 'chronicle';
@@ -25,8 +26,18 @@ export function Emblem({kind,className=''}:{kind:Mark;className?:string}) {
   </svg>;
 }
 
-// Five Sacred Mountains (五岳会盟) decorative silhouette backdrop for Mission 1-5 medallions.
+// Five Sacred Mountains (五岳会盟) golden peak emblem inside the 5 quest circles.
 export function WuYueBackdrop({ mission }: { mission: number }) {
+  const uniqueId = useId();
+  const gold = `wuyue-gold-${uniqueId}`;
+  const shadow = `wuyue-shadow-${uniqueId}`;
+  const peaks = [
+    [[14,76,31,42,44,76],[56,76,69,42,86,76],[28,76,50,23,72,76]],
+    [[8,76,26,32,43,76],[49,76,70,27,92,76],[25,76,48,43,71,76]],
+    [[11,76,28,50,46,76],[53,76,72,47,89,76],[24,76,49,19,76,76]],
+    [[8,76,30,24,49,76],[54,76,73,36,92,76],[27,76,49,30,72,76]],
+    [[10,76,27,36,44,76],[56,76,74,28,91,76],[25,76,50,17,74,76]],
+  ][(mission - 1) % 5];
   return (
     <svg
       className="wuyue-bg-svg"
@@ -35,42 +46,21 @@ export function WuYueBackdrop({ mission }: { mission: number }) {
       aria-hidden="true"
       focusable="false"
     >
-      {mission === 1 ? (
-        /* 1·嵩山会盟: Central twin peaks + ancient temple pagoda roof & cloud waves */
-        <>
-          <path d="M8 86 L30 42 L48 64 L68 32 L92 86 Z" fill="currentColor" opacity="0.22" />
-          <path d="M36 34 L50 22 L64 34 M40 34 H60 M44 27 H56" stroke="currentColor" strokeWidth="2.2" opacity="0.45" />
-          <path d="M14 76 Q35 68 52 76 T88 74" stroke="currentColor" strokeWidth="1.8" opacity="0.35" />
-        </>
-      ) : mission === 2 ? (
-        /* 2·衡山会盟: Graceful Southern Peaks + flying crane & zither soundwave mist */
-        <>
-          <path d="M6 86 Q26 38 46 58 Q68 26 94 86 Z" fill="currentColor" opacity="0.22" />
-          <path d="M28 30 Q40 20 50 32 Q60 20 72 30" stroke="currentColor" strokeWidth="2" opacity="0.42" />
-          <path d="M18 72 C36 64 64 80 84 70" stroke="currentColor" strokeWidth="1.8" opacity="0.38" />
-        </>
-      ) : mission === 3 ? (
-        /* 3·泰山会盟: Majestic Jade Emperor Peak + rising sun & stone steps */
-        <>
-          <circle cx="50" cy="34" r="15" stroke="currentColor" strokeWidth="2" opacity="0.38" />
-          <path d="M6 88 L28 46 L50 26 L72 46 L94 88 Z" fill="currentColor" opacity="0.24" />
-          <path d="M44 58 H56 M42 66 H58 M40 74 H60" stroke="currentColor" strokeWidth="2" opacity="0.4" />
-        </>
-      ) : mission === 4 ? (
-        /* 4·恒山会盟: Sheer Northern Cliff + Hanging Temple pavilion silhouette */
-        <>
-          <path d="M10 88 L26 24 L56 54 L78 30 L92 88 Z" fill="currentColor" opacity="0.22" />
-          <path d="M24 44 H44 M28 40 L34 33 L40 40 M28 44 V54 M38 44 V54" stroke="currentColor" strokeWidth="2" opacity="0.45" />
-          <path d="M14 76 Q50 66 86 78" stroke="currentColor" strokeWidth="1.8" opacity="0.35" />
-        </>
-      ) : (
-        /* 5·华山会盟: Razor-steep Huashan sword peaks + crossed swords at the summit */
-        <>
-          <path d="M8 88 L26 36 L44 66 L52 18 L68 62 L82 32 L94 88 Z" fill="currentColor" opacity="0.24" />
-          <path d="M36 24 L64 52 M64 24 L36 52" stroke="currentColor" strokeWidth="2.2" opacity="0.45" />
-          <path d="M16 78 Q50 68 86 78" stroke="currentColor" strokeWidth="1.8" opacity="0.36" />
-        </>
-      )}
+      <defs>
+        <linearGradient id={gold} x1="0" y1="20" x2="0" y2="82" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#fff2cf" />
+          <stop offset="55%" stopColor="#e5be78" />
+          <stop offset="100%" stopColor="#a87b38" />
+        </linearGradient>
+        <linearGradient id={shadow} x1="0" y1="25" x2="0" y2="82" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#cfa45c" />
+          <stop offset="100%" stopColor="#6e4b1c" />
+        </linearGradient>
+      </defs>
+      {peaks.map(([x,y,tipX,tipY,rightX,rightY],i) => <g key={i}>
+        <polygon points={`${x},${y} ${tipX},${tipY} ${rightX},${rightY}`} fill={`url(#${shadow})`} />
+        <polygon points={`${x},${y} ${tipX},${tipY} ${tipX - 2},${y}`} fill={`url(#${gold})`} />
+      </g>)}
     </svg>
   );
 }
@@ -96,11 +86,13 @@ export function PlayerAvatar({
   className?: string;
 }) {
   const src = avatarUrl || wechatAvatarUrl || null;
-  if (src) {
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+  if (src && src !== failedSrc) {
     return (
       <img
         className={`player-avatar-img ${className}`.trim()}
         src={src}
+        onError={() => setFailedSrc(src)}
         alt=""
         loading="lazy"
         decoding="async"

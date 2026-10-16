@@ -6,6 +6,8 @@ dist/
 coverage/
 *.log
 .DS_Store
+/tmp/
+/.playwright-mcp/
 deploy/backups/
 deploy/certs/
 deploy/evidence/

@@ -1,0 +1,366 @@
+{
+  "date": "2026-10-17",
+  "cases": 24,
+  "results": [
+    {
+      "stage": "selected",
+      "viewport": [
+        320,
+        568
+      ],
+      "main": [
+        568,
+        568
+      ],
+      "slots": 6,
+      "seats": 12,
+      "dockBottom": 564,
+      "offscreen": 0
+    },
+    {
+      "stage": "selected",
+      "viewport": [
+        375,
+        553
+      ],
+      "main": [
+        553,
+        553
+      ],
+      "slots": 6,
+      "seats": 12,
+      "dockBottom": 549,
+      "offscreen": 0
+    },
+    {
+      "stage": "selected",
+      "viewport": [
+        320,
+        667
+      ],
+      "main": [
+        667,
+        667
+      ],
+      "slots": 6,
+      "seats": 12,
+      "dockBottom": 663,
+      "offscreen": 0
+    },
+    {
+      "stage": "selected",
+      "viewport": [
+        390,
+        844
+      ],
+      "main": [
+        844,
+        844
+      ],
+      "slots": 6,
+      "seats": 12,
+      "dockBottom": 840,
+      "offscreen": 0
+    },
+    {
+      "stage": "selected",
+      "viewport": [
+        430,
+        932
+      ],
+      "main": [
+        932,
+        932
+      ],
+      "slots": 6,
+      "seats": 12,
+      "dockBottom": 928,
+      "offscreen": 0
+    },
+    {
+      "stage": "selected",
+      "viewport": [
+        1280,
+        800
+      ],
+      "main": [
+        800,
+        800
+      ],
+      "slots": 6,
+      "seats": 12,
+      "dockBottom": 796,
+      "offscreen": 0
+    },
+    {
+      "stage": "discussion",
+      "viewport": [
+        320,
+        568
+      ],
+      "main": [
+        568,
+        568
+      ],
+      "slots": 6,
+      "seats": 12,
+      "dockBottom": 564,
+      "offscreen": 0
+    },
+    {
+      "stage": "discussion",
+      "viewport": [
+        375,
+        553
+      ],
+      "main": [
+        553,
+        553
+      ],
+      "slots": 6,
+      "seats": 12,
+      "dockBottom": 549,
+      "offscreen": 0
+    },
+    {
+      "stage": "discussion",
+      "viewport": [
+        320,
+        667
+      ],
+      "main": [
+        667,
+        667
+      ],
+      "slots": 6,
+      "seats": 12,
+      "dockBottom": 663,
+      "offscreen": 0
+    },
+    {
+      "stage": "discussion",
+      "viewport": [
+        390,
+        844
+      ],
+      "main": [
+        844,
+        844
+      ],
+      "slots": 6,
+      "seats": 12,
+      "dockBottom": 840,
+      "offscreen": 0
+    },
+    {
+      "stage": "discussion",
+      "viewport": [
+        430,
+        932
+      ],
+      "main": [
+        932,
+        932
+      ],
+      "slots": 6,
+      "seats": 12,
+      "dockBottom": 928,
+      "offscreen": 0
+    },
+    {
+      "stage": "discussion",
+      "viewport": [
+        1280,
+        800
+      ],
+      "main": [
+        800,
+        800
+      ],
+      "slots": 6,
+      "seats": 12,
+      "dockBottom": 796,
+      "offscreen": 0
+    },
+    {
+      "stage": "team-vote",
+      "viewport": [
+        320,
+        568
+      ],
+      "main": [
+        568,
+        568
+      ],
+      "slots": 6,
+      "seats": 12,
+      "dockBottom": 564,
+      "offscreen": 0
+    },
+    {
+      "stage": "team-vote",
+      "viewport": [
+        375,
+        553
+      ],
+      "main": [
+        553,
+        553
+      ],
+      "slots": 6,
+      "seats": 12,
+      "dockBottom": 549,
+      "offscreen": 0
+    },
+    {
+      "stage": "team-vote",
+      "viewport": [
+        320,
+        667
+      ],
+      "main": [
+        667,
+        667
+      ],
+      "slots": 6,
+      "seats": 12,
+      "dockBottom": 663,
+      "offscreen": 0
+    },
+    {
+      "stage": "team-vote",
+      "viewport": [
+        390,
+        844
+      ],
+      "main": [
+        844,
+        844
+      ],
+      "slots": 6,
+      "seats": 12,
+      "dockBottom": 840,
+      "offscreen": 0
+    },
+    {
+      "stage": "team-vote",
+      "viewport": [
+        430,
+        932
+      ],
+      "main": [
+        932,
+        932
+      ],
+      "slots": 6,
+      "seats": 12,
+      "dockBottom": 928,
+      "offscreen": 0
+    },
+    {
+      "stage": "team-vote",
+      "viewport": [
+        1280,
+        800
+      ],
+      "main": [
+        800,
+        800
+      ],
+      "slots": 6,
+      "seats": 12,
+      "dockBottom": 796,
+      "offscreen": 0
+    },
+    {
+      "stage": "mission",
+      "viewport": [
+        320,
+        568
+      ],
+      "main": [
+        568,
+        568
+      ],
+      "slots": 6,
+      "seats": 12,
+      "dockBottom": 564,
+      "offscreen": 0
+    },
+    {
+      "stage": "mission",
+      "viewport": [
+        375,
+        553
+      ],
+      "main": [
+        553,
+        553
+      ],
+      "slots": 6,
+      "seats": 12,
+      "dockBottom": 549,
+      "offscreen": 0
+    },
+    {
+      "stage": "mission",
+      "viewport": [
+        320,
+        667
+      ],
+      "main": [
+        667,
+        667
+      ],
+      "slots": 6,
+      "seats": 12,
+      "dockBottom": 663,
+      "offscreen": 0
+    },
+    {
+      "stage": "mission",
+      "viewport": [
+        390,
+        844
+      ],
+      "main": [
+        844,
+        844
+      ],
+      "slots": 6,
+      "seats": 12,
+      "dockBottom": 840,
+      "offscreen": 0
+    },
+    {
+      "stage": "mission",
+      "viewport": [
+        430,
+        932
+      ],
+      "main": [
+        932,
+        932
+      ],
+      "slots": 6,
+      "seats": 12,
+      "dockBottom": 928,
+      "offscreen": 0
+    },
+    {
+      "stage": "mission",
+      "viewport": [
+        1280,
+        800
+      ],
+      "main": [
+        800,
+        800
+      ],
+      "slots": 6,
+      "seats": 12,
+      "dockBottom": 796,
+      "offscreen": 0
+    }
+  ]
+}

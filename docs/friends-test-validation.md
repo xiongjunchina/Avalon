@@ -112,3 +112,9 @@
   - 镜像标签升级为 `friends-20261015-early-window-fix`，完成构建并以 `npm run deploy -- friends up` 重新部署；
   - 本地与公网健康检查 `https://uncrushed-sled-liberty.ngrok-free.dev/api/health` 均返回 HTTP 200，PostgreSQL 持久化健康。
 
+## 2026-10-16 23:35：话剑剑景界面更新
+
+按用户授权，将本地 8088 与朋友内测 8089 两套实例更新到 `huajian-sword-20261016t152755`，保留原数据库并在切换前备份。公网地址不变：<https://uncrushed-sled-liberty.ngrok-free.dev/>。
+
+本地及公网健康、构建素材一致性、双访客入房和准备广播、会话续期与 WebSocket 重连恢复均通过。公网浏览器确认新剑景、五岳徽章、悬浮头像已生效，390 × 844 下无横向溢出。手机微信与真实朋友实局仍单独验收，不以本次接口或桌面浏览器检查替代。完整记录及公网截图见[剑景界面验证记录](huajian-sword-ui-validation.md#2026-10-16-2335docker-与公网更新)。
+

@@ -1,3 +1,4 @@
+import { BattleRound } from './BattleRound';
 import { useEffect, useRef, useState } from 'react';
 import type { Avatar, User, Statistics, Score, HistoryPage, GameSummary, Replay, GameResult } from '@avalon/contracts';
 import { roleNames } from './roles';
@@ -45,6 +46,7 @@ async function cropImageToSquareDataUrl(file: File, size = 160): Promise<string>
 }
 
 export function StatisticsView({stats}:{stats:Statistics}) {
+  const [allRoles, setAllRoles] = useState(false);
   return <>
     <div className="stat-grid" aria-label="我的战绩"><div><strong>{stats.completed}</strong><span>完成对局</span></div><div><strong>{stats.wins}</strong><span>胜利</span></div><div><strong>{stats.losses}</strong><span>失败</span></div><div><strong>{rate(stats)}</strong><span>总胜率</span></div></div>
     <p className="hint">另有 {stats.aborted} 局中断，不计入胜负与胜率。统计以最终获胜阵营为准，包含提前刺杀。</p>
@@ -59,11 +61,12 @@ export function StatisticsView({stats}:{stats:Statistics}) {
     </section>
     <section className="stats-section" aria-labelledby="role-stats-title">
       <div className="ornament-heading"><div><p className="eyebrow">IDENTITIES</p><h2 id="role-stats-title">角色战绩</h2></div><span>你的每一重身份</span></div>
-      <div className="role-grid">{Object.entries(roleNames).map(([key,label])=>{const role=key as keyof typeof roleNames,s=stats.byRole[role],team=roleTeam(role);return <article key={role} className={`role-card allegiance-${team}`} aria-label={`${label}战绩`}>
+      <div className="role-grid">{Object.entries(roleNames).slice(0, allRoles ? undefined : 2).map(([key,label])=>{const role=key as keyof typeof roleNames,s=stats.byRole[role],team=roleTeam(role);return <article key={role} className={`role-card allegiance-${team}`} aria-label={`${label}战绩`}>
         <span className="role-team">{team==='blue'?'蓝方':'红方'}</span><RolePortrait role={role}/><h3>{label}</h3>
         <p className="role-rate"><strong>{rate(s)}</strong><span>胜率</span></p>
         <p className="role-record"><span>{s.wins} 胜</span><span>{s.losses} 负</span></p><p className="card-foot">{s.completed} 局完成 · {s.aborted} 局中断</p>
       </article>;})}</div>
+      <button type="button" className="secondary" aria-expanded={allRoles} onClick={() => setAllRoles(v => !v)}>{allRoles ? '收起角色战绩 ↑' : '更多角色战绩 ↓'}</button>
     </section>
   </>;
 }
@@ -80,7 +83,7 @@ function ProfileEditor({user,onUser}:{user:User;onUser:(u:User)=>void}) {
   const [busy,setBusy]=useState(false),[error,setError]=useState(''),[saved,setSaved]=useState(false);
   const fileInputRef=useRef<HTMLInputElement|null>(null);
 
-  const activeSource = avatarUrl ? '自定义上传头像' : wechatAvatarUrl ? '微信认证头像（默认）' : `预置徽章（${avatarNames[avatar].name}）`;
+  const activeSource = avatarUrl ? '自定义上传头像' : wechatAvatarUrl ? '江湖人物头像' : `预置徽章（${avatarNames[avatar].name}）`;
 
   function handleSyncWechatAvatar() {
     setError('');
@@ -110,7 +113,7 @@ function ProfileEditor({user,onUser}:{user:User;onUser:(u:User)=>void}) {
     }
   }
 
-  return <details className="profile-editor" open><summary>修改昵称与头像</summary><form onSubmit={e=>{e.preventDefault();setBusy(true);setError('');setSaved(false);void api<{user:User}>('/me',{nickname,avatar,avatarUrl,wechatAvatarUrl},'PATCH').then(r=>{onUser(r.user);setNickname(r.user.nickname);setAvatarUrl(r.user.avatarUrl??null);setWechatAvatarUrl(r.user.wechatAvatarUrl??null);setSaved(true);}).catch(e=>setError(describe(e))).finally(()=>setBusy(false));}}>
+  return <details className="profile-editor"><summary>修改昵称与头像</summary><form onSubmit={e=>{e.preventDefault();setBusy(true);setError('');setSaved(false);void api<{user:User}>('/me',{nickname,avatar,avatarUrl,wechatAvatarUrl},'PATCH').then(r=>{onUser(r.user);setNickname(r.user.nickname);setAvatarUrl(r.user.avatarUrl??null);setWechatAvatarUrl(r.user.wechatAvatarUrl??null);setSaved(true);}).catch(e=>setError(describe(e))).finally(()=>setBusy(false));}}>
     <fieldset disabled={busy}><legend className="sr-only">编辑资料</legend>
       <div className="profile-avatar-manager">
         <div className="profile-avatar-preview-box">
@@ -119,19 +122,19 @@ function ProfileEditor({user,onUser}:{user:User;onUser:(u:User)=>void}) {
           </span>
           <div className="profile-avatar-meta">
             <span className="avatar-source-tag">当前生效：{activeSource}</span>
-            <small className="hint">绑定微信认证后默认展示微信头像，亦支持随时上传自定义头像覆盖。</small>
+            <small className="hint">选择江湖人物头像，或上传自己的照片；头像只用于朋友之间辨认。</small>
           </div>
         </div>
         <div className="profile-avatar-actions">
           <button type="button" className="secondary compact-button wechat-sync-btn" onClick={handleSyncWechatAvatar}>
-            💬 {wechatAvatarUrl ? '切换/刷新微信认证头像' : '同步微信认证头像（默认）'}
+            {wechatAvatarUrl ? '换一张江湖头像' : '选择江湖人物头像'}
           </button>
           <button type="button" className="secondary compact-button upload-avatar-btn" onClick={()=>fileInputRef.current?.click()}>
-            📷 上传自定义头像
+            上传自定义头像
           </button>
           {avatarUrl && wechatAvatarUrl && (
             <button type="button" className="secondary compact-button" onClick={()=>{setAvatarUrl(null);setSaved(false);}}>
-              ↩ 恢复使用微信头像
+              恢复江湖人物头像
             </button>
           )}
           {(avatarUrl || wechatAvatarUrl) && (
@@ -172,15 +175,11 @@ export function ReplayView({replay:g}:{replay:Replay}) {
     <p className="notice">仅本局参与者可看。{g.settings.anonymousTeamVote?'组队投票仅展示总数。':'组队投票展示当时公开的个人赞反。'}任务出牌始终不对应个人。</p>
     <h3>最终身份</h3><ul className="role-list">{g.players.map(p=><li key={p.id}><span>{name(p.id)}</span><strong className={`revealed-role allegiance-${roleTeam(g.roles[p.id])}`}><RolePortrait role={g.roles[p.id]} size="mini"/>{roleNames[g.roles[p.id]]}</strong></li>)}</ul>
     <h3>逐轮记录</h3>{!g.rounds.length&&<p className="muted">本局在第一次组队前结束。</p>}
-    <div className="replay-rounds">{g.rounds.map(r=><article key={r.number}>
-      <h4>提案 {r.number} · 任务 {r.mission}{r.result?` · ${r.result.passed?'成功':'失败'}`:r.vote&&!r.vote.passed?' · 流局':' · 未完成'}</h4>
-      <p>队长：{name(r.captainId)} · {r.direction==='clockwise'?'顺时针':'逆时针'}发言<br/>队伍：{r.team.map(name).join('、')}</p>
-      {r.vote?<><p>表决：{r.vote.approvals} 赞成 / {r.vote.rejections} 反对 · {r.vote.passed?'通过':'否决'}</p>
-        {!g.settings.anonymousTeamVote&&r.vote.ballots&&<p className="hint">{Object.entries(r.vote.ballots).map(([id,yes])=>`${name(id)}：${yes?'赞成':'反对'}`).join('；')}</p>}</>:<p className="hint">本次表决未完成，不展示未收齐的个人选择。</p>}
-      {r.result&&<p>任务：{r.result.successes} 成功 / {r.result.failures} 失败（匿名）</p>}
+    <div className="replay-rounds">{g.rounds.map(r=><div key={r.number}>
+      <BattleRound round={r} players={g.players} anonymous={g.settings.anonymousTeamVote}/>
       {g.inspections.filter(i=>i.afterMission===r.mission&&r.result).map(i=><p key={i.afterMission} className="hint">少林明镜：{name(i.inspectorId)} 查验 {name(i.targetId)}，随后交接给被查验者。</p>)}
       {g.earlyWindows.filter(w=>w.afterProposal===r.number).map((w,i)=><p className="hint" key={i}>轮间窗口：{w.decision==='skip'?'跳过提前刺杀':'发起提前刺杀'}（完成任务 {w.afterMission} 后）。</p>)}
-    </article>)}</div>
+    </div>)}</div>
   </>;
 }
 function ReplayPanel({id,onBack}:{id:string;onBack:()=>void}) {
@@ -195,7 +194,7 @@ export function AccountPanel({user,onUser,initialReplay,onBack}:{user:User;onUse
   const [tab,setTab]=useState<'stats'|'history'|'favorites'|'presets'>('stats'),[replay,setReplay]=useState(initialReplay);
   const avatar=avatarNames[user.avatar??'leaf'];
   if(replay)return <ReplayPanel key={replay} id={replay} onBack={()=>{setReplay(null);if(initialReplay)setTab('history');}}/>;
-  return <section className="panel account"><div className="account-banner" aria-hidden="true"><span>SWORD OF WORDS · 话剑江湖录</span></div><div className="section-head profile-bar"><div className="profile-heading"><span className="avatar" aria-label={`${avatar.name}头像`}><PlayerAvatar avatar={user.avatar??'leaf'} avatarUrl={user.avatarUrl} wechatAvatarUrl={user.wechatAvatarUrl} fallbackKind="leaf"/></span><div><p className="eyebrow">江湖剑客 / 个人中心</p><h1>{user.nickname}</h1></div></div><button className="secondary compact-button" onClick={onBack}>回到朋友桌</button></div>
+  return <section className="panel account"><div className="account-banner" aria-hidden="true"><span>江湖战绩</span></div><div className="section-head profile-bar"><div className="profile-heading"><span className="avatar" aria-label={`${avatar.name}头像`}><PlayerAvatar avatar={user.avatar??'leaf'} avatarUrl={user.avatarUrl} wechatAvatarUrl={user.wechatAvatarUrl} fallbackKind="leaf"/></span><div><p className="eyebrow">江湖剑客 / 个人中心</p><h1>{user.nickname}</h1></div></div><button className="secondary compact-button" onClick={onBack}>回到朋友桌</button></div>
     <ProfileEditor user={user} onUser={onUser}/>
     <nav className="account-tabs" aria-label="个人中心栏目">{([['stats','我的战绩'],['history','历史对局'],['favorites','我的收藏'],['presets','常用设置']] as const).map(([id,label])=><button className="secondary" key={id} aria-current={id===tab?'page':undefined} onClick={()=>setTab(id)}>{label}</button>)}</nav>
     {tab==='stats'?<StatisticsPanel/>:tab==='presets'?<PresetsPanel/>:<HistoryPanel key={tab} favorites={tab==='favorites'} onReplay={setReplay}/>}

@@ -11,9 +11,9 @@ type Props = {
 // Render these controls only inside the collapsible private identity panel.
 export function PrivateExtensions({game:g,disabled,name,send}:Props) {
   return <>
-    {!!g.self?.inspections?.length&&<section className="private-inspections"><h3>我的明镜查验</h3>{g.self.inspections.map(i=><p key={i.afterMission}>任务 {i.afterMission} 后：{name(i.targetId)} 的阵营是 <strong>{i.team==='blue'?'蓝方':'红方'}</strong>。这条结果仅对你可见，不显示准确角色。</p>)}</section>}
+    {!!g.self?.inspections?.length&&<section className="private-inspections"><h3>我的明镜查验</h3>{g.self.inspections.map(i=><p key={i.afterMission}>任务 {i.afterMission} 后：{name(i.targetId)} 的阵营是 <strong>{i.team==='blue'?'蓝方':'红方'}</strong>。</p>)}</section>}
     {g.self?.canConfirmInspection&&<button disabled={disabled} onClick={()=>send({type:'confirmInspection',payload:{}})}>我已记住查验结果，继续</button>}
-    {g.self?.canDecideEarly&&<section className="early-choice"><h3>🗡️ 提前刺杀能力（已满 2 轮任务解锁）</h3><p>仅林平之（刺客）可见。对局正正常推进，你可随时在当前身份页启用「提前刺杀」：一旦启用，所有人的界面将立即停在「刺杀阶段」，由你选择要刺杀的人。刺中风清扬则红方全员胜利，刺错则蓝方全员胜利。</p><div className="action-pair"><button disabled={disabled} onClick={()=>send({type:'earlyAssassinationDecision',payload:{attempt:true}})}>🗡️ 启用提前刺杀</button></div></section>}
+    {g.self?.canDecideEarly&&<section className="early-choice"><h3>提前刺杀 · 已解锁</h3><p>立即进入刺杀：命中风清扬，暗影胜；刺错，正道胜。</p><div className="action-pair"><button disabled={disabled} onClick={()=>send({type:'earlyAssassinationDecision',payload:{attempt:true}})}>启用提前刺杀</button></div></section>}
   </>;
 }
 export function ExtensionStep({game:g,disabled,name,send,selectedTarget,onSelectTarget}:Props) {
@@ -26,8 +26,8 @@ export function ExtensionStep({game:g,disabled,name,send,selectedTarget,onSelect
   }
   if(g.phase!=='lady')return null;
   const lady=g.lady!;
-  return <div className="extension-step"><p>任务 {g.mission-1} 已结束。由 <strong>{name(lady.holderId)}</strong> 执掌少林明镜。</p><p className="hint">可直接点击上方座位表选择从未执掌明镜令的玩家，结果仅查验者可见，目标将成为下一位执令人。</p>
-    {g.self?.canInspect?<form onSubmit={e=>{e.preventDefault();if(target)send({type:'inspectAlignment',payload:{targetId:target}});}}><fieldset disabled={disabled}><label htmlFor="lady-target">选择查验对象</label><select id="lady-target" value={target} onChange={e=>setTarget(e.target.value)}><option value="">请点击座位或下拉选择玩家</option>{g.players.filter(p=>!lady.holderIds.includes(p.id)).map(p=><option value={p.id} key={p.id}>{name(p.id)}</option>)}</select><button disabled={!target}>确认查验{target?`：${name(target)}`:''}</button></fieldset></form>:<p role="status">等待明镜令持有人选择查验对象。</p>}
+  return <div className="extension-step"><p>任务 {g.mission-1} 已结束。由 <strong>{name(lady.holderId)}</strong> 执掌少林明镜。</p><p className="hint">点选未执掌过明镜的玩家，查验后将明镜交给对方。</p>
+    {g.self?.canInspect?<form onSubmit={e=>{e.preventDefault();if(target)send({type:'inspectAlignment',payload:{targetId:target}});}}><fieldset disabled={disabled}><label htmlFor="lady-target">选择查验对象</label><select id="lady-target" value={target} onChange={e=>setTarget(e.target.value)}><option value="">请点击座位或下拉选择玩家</option>{g.players.filter(p=>!lady.holderIds.includes(p.id)).map(p=><option value={p.id} key={p.id}>{name(p.id)}</option>)}</select><button disabled={!target}>确认查验</button></fieldset></form>:<p role="status">等待明镜令持有人选择查验对象。</p>}
   </div>;
 }
 export function ExtensionHistory({game:g,name}:Pick<Props,'game'|'name'>) {
