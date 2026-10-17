@@ -120,15 +120,18 @@ test('three failed missions win red; three successes enter assassination with ex
     assert.throws(()=>act(g,assassin,'requestAbort'),/GAME_ENDED/);
   }
 });
-test('abort requires online unanimity, cancels on progress or electorate change',()=>{
-  let g=ready(game());g=act(g,g.players[0].id,'requestAbort');
-  assert.equal(g.abortPoll?.approvals.length,1);
-  g=act(g,g.players[1].id,'voteAbort',{approve:false});assert.equal(g.abortPoll,undefined);
-  g=act(g,g.players[0].id,'requestAbort');g=propose(g);assert.equal(g.abortPoll,undefined);
-  g=act(g,g.players[0].id,'requestAbort');
-  assert.throws(()=>transition(g,g.players[1].id,{type:'voteAbort',payload:{approve:true}},g.players.slice(1).map(p=>p.id)),/NO_ABORT_POLL/);
-  for(const p of g.players.slice(1))g=act(g,p.id,'voteAbort',{approve:true});
-  assert.equal(g.phase,'aborted');assert.equal(g.result?.winner,null);
+test('only the room host can end a game or approve an interruption; progress preserves requests',()=>{
+  let g=ready(game()), host=g.players[0].id, requester=g.players[1].id;
+  g=act(g,requester,'requestAbort');
+  assert.equal(g.abortPoll?.requestedBy,requester);
+  assert.throws(()=>act(g,requester,'endGame'),/FORBIDDEN/);
+  assert.throws(()=>act(g,requester,'voteAbort',{approve:true}),/FORBIDDEN/);
+  g=act(g,host,'voteAbort',{approve:false});assert.equal(g.abortPoll,undefined);
+  g=act(g,requester,'requestAbort');g=propose(g);assert.ok(g.abortPoll);
+  g=transition(g,host,{type:'voteAbort',payload:{approve:true}},[host]);
+  assert.equal(g.phase,'aborted');assert.equal(g.result?.reason,'host_ended');
+  let dealing=game();dealing.phase='dealing';
+  dealing=act(dealing,dealing.players[0].id,'endGame');assert.equal(dealing.phase,'aborted');
 });
 test('strict protocol rejects forged fields and wrong ballot types',()=>{
   for(const [type,payload] of [['teamVote',{approve:'yes'}],['missionVote',{success:true,role:'red'}],['startGame',{roles:[]}]] as const)

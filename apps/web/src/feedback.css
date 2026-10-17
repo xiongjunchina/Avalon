@@ -1,0 +1,135 @@
+/* Friends-test feedback: compact information with clear, separate status markers. */
+.game-score .quest-party-size { position: static; display: block; min-width: 0; padding: 0; margin: 0; border: 0; border-radius: 0; background: none; font: 600 11px/1.1 var(--sans); }
+.is-live-table .game-score .quest-party-size { padding: 0; }
+.game-score .mission-success .quest-circle { border-color: #91f0af; background: #146339; box-shadow: inset 0 0 0 2px #caffd12b; }
+.game-score .mission-failure .quest-circle { border-color: #ffb1ab; background: #922c36; box-shadow: inset 0 0 0 2px #ffd2cb24; }
+.game-score .quest-result-mark { font-size: clamp(25px, 4.5dvh, 34px); text-shadow: none; }
+.game-score .mission-success .quest-result-mark { color: #d9ffe2; }
+.game-score .mission-failure .quest-result-mark { color: #fff1ef; }
+.game-score .mission-success .quest-caption { color: #a6f7be; }
+.game-score .mission-failure .quest-caption { color: #ffc2bb; }
+.game-score .mission-success .wuyue-bg-svg, .game-score .mission-failure .wuyue-bg-svg { opacity: 0; }
+.is-live-table .game-score .quest-circle { width: clamp(34px, 5.8dvh, 48px); }
+.is-live-table .game-score .quest-caption:not(.requires-two) { display: none; }
+.account .profile-editor, .account .account-sound-settings { padding: 10px 14px; margin: 12px 0; background: #16344edb; border: 1px solid var(--border); border-radius: 18px; }
+.account .profile-editor > summary, .account .account-sound-settings > summary { font: 400 15px/1.5 var(--sans); min-height: 44px; padding: 11px 0; color: #fbe1ad; }
+/* Ready status is persistent, rather than disappearing into the portrait badge area. */
+.waiting-table-body .seat-card-bottom { position: static; min-height: 18px; margin: 0; }
+.waiting-table-body .seat-chip { font-size: 11px; padding: 1px 6px; }
+
+/* All proposals remain available by scrolling; each card fits a phone screen. */
+.table-modal-sheet.battle-sheet { padding: 12px; width: min(100%, 600px); }
+.battle-sheet .table-modal-head { gap: 8px; margin-bottom: 8px; padding-bottom: 8px; }
+.battle-sheet .table-modal-head strong { font: 600 16px/1.4 var(--sans); letter-spacing: 0; }
+.battle-sheet .tool-pill { font-size: 13px; padding: 5px 12px; min-height: 36px; }
+.battle-sheet .mission-modal-tabs button { padding: 4px 2px; gap: 2px; font-size: 11px; min-height: 44px; }
+.battle-sheet .mission-modal-tabs .wuyue-bg-svg { width: 24px; height: 24px; }
+.battle-history { display: grid; gap: 14px; }
+.battle-history > .battle-round + .battle-round { padding-top: 8px; border-top: 1px solid #d1b77e70; }
+.battle-round { margin: 0; font-size: 13px; line-height: 1.4; }
+.battle-round > h3 { margin: 6px 0; font: 600 16px/1.35 var(--sans); letter-spacing: 0; }
+.battle-round .battle-section { padding: 8px; margin: 6px 0; border-radius: 12px; }
+.battle-round .battle-section h4 { font-size: 13px; margin: 0 0 5px; padding-bottom: 4px; gap: 5px; }
+.battle-round .battle-section h4 .emblem { width: 16px; height: 16px; }
+.battle-round .battle-captain { margin: 0; gap: 10px; }
+.battle-round .battle-captain .player-token { flex-direction: row; gap: 6px; }
+.battle-round .battle-captain .token-portrait { width: 30px; }
+.battle-round .battle-captain .token-crown { display: none; }
+.battle-round .battle-captain p, .battle-round .battle-captain p span { margin: 0; font-size: 11px; line-height: 1.3; }
+.battle-round .battle-section-label { margin: 4px 0; padding: 3px; font-size: 11px; }
+.battle-round .battle-party-grid, .battle-round .battle-party-grid[data-count] { grid-template-columns: repeat(6,minmax(0,1fr)); gap: 4px; }
+.battle-round .battle-party-grid[data-count="2"] { grid-template-columns: repeat(2,minmax(0,1fr)); }
+.battle-round .battle-party-grid[data-count="3"] { grid-template-columns: repeat(3,minmax(0,1fr)); }
+.battle-round .battle-party-grid[data-count="4"] { grid-template-columns: repeat(4,minmax(0,1fr)); }
+.battle-round .token-portrait { width: clamp(30px,8vw,42px); padding: 1px; }
+.battle-round .token-caption { display: block; max-width: 100%; font-size: 11px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.battle-round .token-caption small { display: none; }
+.battle-round .player-token { gap: 3px; min-width: 0; }
+.battle-round .battle-vote-totals { gap: 4px 10px; padding: 4px; border-radius: 8px; font-size: 12px; }
+.battle-round .battle-voters { grid-template-columns: repeat(6,minmax(0,1fr)); gap: 8px 4px; margin: 10px 0 5px; }
+.battle-round .token-vote { width: 16px; height: 16px; right: -3px; bottom: -2px; font: 700 12px/1 var(--sans); }
+.battle-round .token-vote-caption { font-size: 10px; line-height: 1; }
+.battle-round .battle-result-title { font: 600 17px/1.3 var(--sans); margin: 4px 0; }
+.battle-round .battle-card-counts { gap: 14px; }
+.battle-round .battle-card-counts > span { gap: 4px; font-size: 12px; }
+.battle-round .battle-card-counts .emblem { width: 18px; height: 22px; padding: 2px; }
+.battle-round .battle-section > .hint { font-size: 11px; line-height: 1.3; margin: 5px 0 0; }
+.abstain { color: #f5d991; }
+.token-vote.abstain { background: #6f562c; border-color: #f5d991; color: #fff1ca; }
+
+/* Voting is a focused, dismissible dialog; the dock always allows reopening it. */
+.table-modal-sheet.team-vote-sheet { width: min(100%, 560px); padding: 14px; font-size: 14px; line-height: 1.4; }
+.team-vote-sheet .table-modal-head { margin-bottom: 8px; padding-bottom: 8px; }
+.team-vote-sheet .table-modal-head strong { font-size: 22px; }
+.team-vote-sheet .tool-pill { font-size: 13px; padding: 5px 10px; min-height: 36px; }
+.team-vote-sheet p { margin: 6px 0; }
+.team-vote-sheet .vote-rule { font-size: 12px; color: #ecdfc5; }
+.vote-proposal { display: flex; justify-content: center; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.team-vote-sheet .player-token { min-width: 0; gap: 4px; }
+.team-vote-sheet .token-portrait { width: clamp(32px,9vw,46px); padding: 2px; }
+.team-vote-sheet .token-caption { display: block; font-size: 11px; line-height: 1.3; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.team-vote-sheet .token-caption small { display: none; }
+.team-vote-sheet .token-vote-caption { font-size: 11px; }
+.team-vote-sheet .token-vote { width: 18px; height: 18px; font-size: 14px; }
+.team-vote-choices { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 8px; margin-top: 10px; }
+.vote-option { position: relative; display: grid; justify-items: center; align-content: center; gap: 2px; min-height: 76px; padding: 6px; border: 2px solid #738899; border-radius: 14px; background: #142b42; cursor: pointer; }
+.vote-option > input { position: absolute; top: 6px; left: 6px; width: 14px; height: 14px; margin: 0; }
+.vote-option > span { font: 700 28px/1 var(--sans); }
+.vote-option > strong { font-size: 16px; }
+.vote-option.selected { border-color: currentColor; outline: 1px solid currentColor; outline-offset: 2px; }
+.vote-option.approve.selected { background: #15543b; }
+.vote-option.reject.selected { background: #692d37; }
+.vote-option.abstain.selected { background: #54472e; }
+.vote-option:focus-within { outline: 2px solid #fff0ba; outline-offset: 3px; }
+.team-vote-sheet fieldset { padding: 0; margin: 0; }
+.team-vote-sheet .vote-submit { width: 100%; margin: 10px 0 0; min-height: 44px; padding: 7px; font-size: 16px; }
+.team-vote-sheet h3 { margin: 12px 0 8px; font: 600 14px/1.3 var(--sans); }
+.team-vote-sheet h3 > span { color: var(--jade); }
+.live-voters { display: grid; grid-template-columns: repeat(6,minmax(0,1fr)); gap: 8px 3px; }
+.live-voters > div { display: grid; justify-items: center; align-content: start; padding: 4px 1px; min-width: 0; border: 1px solid transparent; border-radius: 10px; }
+.live-voters > .awaiting-vote { background: #734d2b55; border-color: #e8b765; }
+.live-voters small { font-size: 10px; margin-top: 3px; }
+.live-voters .voted { color: #a4efbf; }
+.pending-vote { color: #ffdb9c; }
+.team-vote-sheet .vote-waiting { min-height: 32px; margin-top: 10px; font-size: 12px; color: #ffe0a4; }
+.vote-submitted { padding: 14px 6px; color: #b0f2d0; text-align: center; }
+.ready-reminder { text-align: center; }
+.ready-reminder h2 { font-size: 22px; }
+.ready-reminder p { font-size: 15px; }
+
+/* Reading pages keep the same artwork but lose oversized headings and line gaps. */
+.guide { font-size: 14px; line-height: 1.5; }
+.guide .panel { padding: 12px; margin: 10px 0; }
+.guide-heading { padding: 12px; }
+.guide-heading h1 { font-size: 22px; }
+.guide-rules h2 { font-size: 20px; margin: 8px 0; }
+.guide-rules p, .guide-rules dd, .guide-rules li { font-size: 14px; line-height: 1.5; }
+.guide-victories > div { padding: 10px; }
+.guide-victories h3 { font-size: 17px; margin: 6px 0; }
+.guide-steps summary { padding: 9px 0; gap: 8px; }
+.guide-steps summary::before { font-size: 20px; }
+.guide-steps summary .emblem { width: 30px; height: 30px; padding: 4px; }
+.guide-steps summary span { font: 600 16px/1.4 var(--sans); }
+.guide-steps summary small { font-size: 12px; margin-top: 2px; line-height: 1.3; }
+.guide-disclosure > summary { font: 600 16px/1.4 var(--sans); }
+.guide-disclosure[open] > summary { padding-bottom: 10px; }
+.guide-role { padding: 12px; }
+.guide-role-heading { grid-template-columns: 56px minmax(0,1fr); gap: 10px; margin-bottom: 10px; }
+.guide-role-heading .role-portrait { width: 56px; height: 56px; }
+.guide-role-heading h3 { font-size: 22px; }
+.guide-role-dl { gap: 6px; }
+.guide-role-detail dd, .guide-role-more p { font-size: 14px; line-height: 1.5; }
+.guide-role-detail dt { font-size: 12px; }
+.guide-role-more { padding-top: 6px; margin-top: 8px; }
+@media (max-width: 360px), (max-height: 620px) {
+  .table-modal-sheet.team-vote-sheet { padding: 10px; }
+  .vote-option { min-height: 62px; }
+  .team-vote-sheet .token-portrait { width: 30px; }
+  .team-vote-sheet h3 { margin: 8px 0 4px; }
+  .battle-round .token-portrait { width: 28px; }
+  .battle-round .battle-section { padding: 6px; margin: 4px 0; }
+  .battle-round .battle-voters { gap: 5px 3px; margin: 6px 0; }
+}
+/* The team portraits and result title already name these sections. */
+.battle-party > h4, .battle-party > .battle-section-label, .battle-result > h4 { display: none; }
+.battle-party-grid { margin-top: 6px; }

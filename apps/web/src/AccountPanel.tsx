@@ -10,7 +10,7 @@ import { SoundControls } from './SoundSettings';
 import { usePageSound } from './audio-interactions';
 
 export const avatarNames:Record<Avatar,{symbol:string;name:string}>={leaf:{symbol:'❧',name:'绿叶'},moon:{symbol:'☾',name:'月亮'},sun:{symbol:'☀',name:'太阳'},mountain:{symbol:'△',name:'山峰'},wave:{symbol:'≋',name:'海浪'},star:{symbol:'✦',name:'星星'}};
-const reasons:Record<GameResult['reason'],string>={three_failures:'三次会盟任务失败',five_rejections:'五次组队未通过',merlin_found:'林平之刺中风清扬',merlin_survived:'风清扬躲过刺杀',early_merlin_found:'提前刺杀命中风清扬',early_merlin_survived:'提前刺杀未命中风清扬',unanimous_abort:'在线成员一致同意中断',offline_timeout:'全员离线超过 24 小时'};
+const reasons:Record<GameResult['reason'],string>={three_failures:'三次会盟任务失败',five_rejections:'五次组队未通过',merlin_found:'林平之刺中风清扬',merlin_survived:'风清扬躲过刺杀',early_merlin_found:'提前刺杀命中风清扬',early_merlin_survived:'提前刺杀未命中风清扬',unanimous_abort:'在线成员一致同意中断',host_ended:'房主结束游戏',offline_timeout:'全员离线超过 24 小时'};
 const date=(s:string)=>new Date(s).toLocaleString('zh-CN',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false});
 export const rate=(s:Score)=>s.winRate===null?'—':`${Math.round(s.winRate*100)}%`;
 const outcome=(g:GameSummary)=>g.result.winner===null?'中断':g.result.winner===g.self.team?'胜利':'失败';

@@ -10,19 +10,22 @@ export const settingsSchema = z.object({
 }).strict();
 export type Settings = z.infer<typeof settingsSchema>;
 export const defaultSettings: Settings = {
-  playerCount: 6, captainMode: 'seat_order', anonymousTeamVote: false,
+  playerCount: 6, captainMode: 'seat_order', anonymousTeamVote: true,
   rejectionScope: 'game', ladyEnabled: false, earlyAssassinationEnabled: false,
 };
+export const defaultAnonymousTeamVote = (playerCount: number) => playerCount < 8;
+export type TeamBallot = boolean | 'abstain';
 export const nicknameSchema = z.string().trim().min(1).max(20);
 const base = { commandId: z.string().uuid(), expectedVersion: z.number().int().min(1) };
 export const commandSchema = z.discriminatedUnion('type', [
   z.object({ ...base, type: z.literal('setReady'), payload: z.object({ ready: z.boolean() }).strict() }).strict(),
   z.object({ ...base, type: z.literal('updateSettings'), payload: settingsSchema }).strict(),
   z.object({ ...base, type: z.literal('setAdmission'), payload: z.object({ acceptingNewMembers: z.boolean() }).strict() }).strict(),
-  ...(['startGame', 'confirmRole', 'startTeamVote', 'returnToLobby', 'requestAbort', 'confirmInspection'] as const).map(type =>
+  ...(['startGame', 'confirmRole', 'startTeamVote', 'returnToLobby', 'requestAbort', 'endGame', 'confirmInspection'] as const).map(type =>
     z.object({ ...base, type: z.literal(type), payload: z.object({}).strict() }).strict()),
   z.object({ ...base, type: z.literal('proposeTeam'), payload: z.object({ playerIds: z.array(z.string().uuid()).min(2).max(6), direction: z.enum(['clockwise', 'counterclockwise']) }).strict() }).strict(),
-  z.object({ ...base, type: z.literal('teamVote'), payload: z.object({ approve: z.boolean() }).strict() }).strict(),
+  z.object({ ...base, type: z.literal('updateTeamDraft'), payload: z.object({ playerIds: z.array(z.string().uuid()).max(6), direction: z.enum(['clockwise', 'counterclockwise']) }).strict() }).strict(),
+  z.object({ ...base, type: z.literal('teamVote'), payload: z.object({ approve: z.union([z.boolean(), z.literal('abstain')]) }).strict() }).strict(),
   z.object({ ...base, type: z.literal('missionVote'), payload: z.object({ success: z.boolean() }).strict() }).strict(),
   z.object({ ...base, type: z.literal('inspectAlignment'), payload: z.object({ targetId: z.string().uuid() }).strict() }).strict(),
   z.object({ ...base, type: z.literal('earlyAssassinationDecision'), payload: z.object({ attempt: z.boolean() }).strict() }).strict(),
@@ -68,12 +71,12 @@ export type Player = User & { seat: number };
 export interface RoundView {
   number: number; mission: number; captainId: string; team: string[];
   direction: 'clockwise' | 'counterclockwise';
-  vote?: { approvals: number; rejections: number; passed: boolean; ballots?: Record<string, boolean> };
+  vote?: { approvals: number; rejections: number; abstentions?: number; passed: boolean; ballots?: Record<string, TeamBallot> };
   result?: { successes: number; failures: number; passed: boolean };
 }
 export interface GameResult {
   winner: Team | null;
-  reason: 'three_failures' | 'five_rejections' | 'merlin_found' | 'merlin_survived' | 'early_merlin_found' | 'early_merlin_survived' | 'unanimous_abort' | 'offline_timeout';
+  reason: 'three_failures' | 'five_rejections' | 'merlin_found' | 'merlin_survived' | 'early_merlin_found' | 'early_merlin_survived' | 'unanimous_abort' | 'host_ended' | 'offline_timeout';
   targetId?: string;
 }
 export interface Inspection { afterMission: number; inspectorId: string; targetId: string }
@@ -84,6 +87,8 @@ export interface GameView {
   dealEndsAt?: string;
   mission: number; missionSizes: number[]; failuresRequired: number; rejectionCount: number;
   captainId: string; captainOrder: string[]; rounds: RoundView[];
+  draftTeam?: { playerIds: string[]; direction: RoundView['direction'] };
+  teamVote?: { startedAt?: string; votedIds: string[]; ballots?: Record<string, TeamBallot> };
   progress: { confirmed: number; teamVotes: number; missionVotes: number };
   lady?: { holderId: string; holderIds: string[]; inspections: Inspection[] };
   earlyAssassination?: { used: boolean; windows: EarlyWindow[] };

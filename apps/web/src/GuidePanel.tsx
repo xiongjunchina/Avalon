@@ -31,17 +31,17 @@ export function GuideRules() {
     </section>
     <section className="panel"><p className="eyebrow">02 / 五岳会盟流程</p><h2>从入席，到亮剑</h2><ol className="guide-steps">
       <li><details><summary><Emblem kind="cards"/><span>准备与发牌<small>全员准备，倒计时5秒</small></span></summary><p>5–12位江湖群豪入座且全员准备后，由房主点击开始发牌。所有人同步倒计时5秒，结束后各自在手机上私下查看底牌身份，首任盟主（队长）即可开始点将组队。</p><p className="hint">点击开局后设置与席位锁定。刷新或重连继续原局、原身份和原倒计时；不会重新计时或重新洗牌。</p></details></li>
-      <li><details><summary><Emblem kind="crown"/><span>队长组队，围桌论剑<small>选定队伍，依次讨论</small></span></summary><p>每局共设 1–5 五场武林大会（依次为：1·嵩山会盟、2·衡山会盟、3·泰山会盟、4·恒山会盟、5·华山会盟）。队长按本场会盟要求选人（可选自己），并指定顺时针或逆时针发言。众人唇枪舌剑讨论后，队长点击“讨论结束，开始表决”进入投票。</p></details></li>
-      <li><details><summary><Emblem kind="chronicle"/><span>全员表决<small>严格超过半数赞成才通过</small></span></summary><p>每人提交赞成或反对，收齐后结算。必须严格超过半数赞成才通过，平票不通过。未通过记一次流局，换下一位队长重新组队，不推进会盟场次编号。</p></details></li>
+      <li><details><summary><Emblem kind="crown"/><span>队长组队，围桌论剑<small>预选实时同步，投票前可修改</small></span></summary><p>每局共设 1–5 五场武林大会（依次为：1·嵩山会盟、2·衡山会盟、3·泰山会盟、4·恒山会盟、5·华山会盟）。队长按本场会盟要求选人（可选自己），并指定顺时针或逆时针发言。众人唇枪舌剑讨论及总结时仍可调整阵容，预选与修改实时展示给全员；队长点击“总结完毕，锁定阵容并投票”后不可再改。</p></details></li>
+      <li><details><summary><Emblem kind="chronicle"/><span>全员表决<small>赞成多于反对即通过</small></span></summary><p>每人提交赞成、反对或弃权，收齐后结算。赞成票多于反对票即通过；弃权不参与比较，平票或全员弃权不通过。未通过记一次流局，换下一位队长重新组队，不推进会盟场次编号。</p></details></li>
       <li><details><summary><Emblem kind="blue"/><span>大侠出征执行会盟<small>任务出牌始终匿名</small></span></summary><p>只有入选队员提交任务牌。蓝方正道只能提交成功；红方暗影可以提交成功或失败。任务牌始终匿名，只公布成功、失败的数量。</p><p>通常出现一张失败牌即会盟失败。唯独7–12人局的第四场（4·恒山会盟），以及9人局、12人局的第三场（3·泰山会盟），需要至少两张失败牌才算失败。</p></details></li>
       <li><details><summary><Emblem kind="assassin"/><span>轮换与辟邪刺杀<small>三次成功后，仍须守护风清扬</small></span></summary><p>每场会盟结束后换下一位队长。三场会盟失败立即红方胜；三场会盟成功则进入终局刺杀，红方可当面商议，由林平之确认刺杀目标。命中风清扬红方翻盘获胜，否则蓝方正道获胜。</p></details></li>
-    </ol><p className="hint">投票提交成功后不可修改。断线不代投、不自动判负；重连后可继续。确实无法继续时，可由当前在线成员一致同意中断。</p></section>
+    </ol><p className="hint">投票提交成功后不可修改。断线不代投、不自动判负；重连后可继续。确实无法继续时，可向房主申请中止；房主同意或主动结束后关闭房间，全员返回大厅，不计胜负。</p></section>
     <details className="panel guide-disclosure"><summary>人数、角色与五岳会盟</summary><div className="guide-configs">
       {Object.entries(ROLE_CONFIG).map(([count,roles])=><article key={count} className="guide-config"><h3>{count} 人局</h3><p><strong>蓝方</strong> {composition(roles.filter(r=>roleTeam(r)==='blue'))}</p><p><strong>红方</strong> {composition(roles.filter(r=>roleTeam(r)==='red'))}</p><p className="hint">五岳会盟（1–5）出征人数</p><ol aria-label={`${count}人局各任务人数`} className="guide-missions">{MISSION_SIZES[Number(count)].map((size,i)=><li key={i}><span>{WUYUE_MISSIONS[i]?.shortLabel ?? `第${i+1}次`}</span><strong>{size}人</strong></li>)}</ol></article>)}
     </div></details>
     <details className="panel guide-disclosure"><summary>开局前，约定江湖规矩</summary><dl className="guide-options">
       <dt>队长顺序</dt><dd>默认按座位循环；也可开局打乱一次，此后整局按该顺序循环。房主与当轮队长是两个概念。</dd>
-      <dt>组队投票是否匿名</dt><dd>默认收齐后公开每人赞反；开启匿名后只显示总票数。任务出牌在两种设置下都始终匿名。</dd>
+      <dt>组队投票是否匿名</dt><dd>5–7人默认匿名，8–12人默认公开；房主开局前可修改。公开模式实时显示已提交的赞成、反对或弃权；匿名模式只展示是否已投和最终总票数。任务出牌在两种设置下都始终匿名。</dd>
       <dt>五次流局</dt><dd>默认全局累计，达到五次红方胜；也可只累计当前任务，实际任务结束后清零。一次组队表决未通过计一次流局。</dd>
       <dt>新成员加入</dt><dd>等待时房主可关闭新成员加入，已有成员仍可重连。开局后锁定席位。修改玩法会清除准备状态，切换接纳开关不会。</dd>
     </dl></details>

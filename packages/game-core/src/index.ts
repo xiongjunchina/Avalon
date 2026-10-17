@@ -1,5 +1,5 @@
-import type { Command, GameResult, GameView, Player, Role, RoundView, Settings, Team, PrivateInspection, EarlyWindow } from '@avalon/contracts';
-export const RULESET_VERSION = 'standard-no-lancelot-v2';
+import type { Command, GameResult, GameView, Player, Role, RoundView, Settings, Team, PrivateInspection, EarlyWindow, TeamBallot } from '@avalon/contracts';
+export const RULESET_VERSION = 'standard-no-lancelot-v3';
 export const MISSION_SIZES: Record<number, number[]> = {
   5: [2,3,2,3,3], 6: [2,3,4,3,4], 7: [2,3,3,4,4],
   8: [3,4,4,5,5], 9: [3,4,4,5,4], 10: [3,4,4,5,5],
@@ -22,7 +22,9 @@ export interface GameState {
   id: string; rulesetVersion: string; settings: Settings; players: Player[]; roles: Record<string, Role>;
   dealEndsAt?: string;
   phase: GameView['phase']; mission: number; rejectionCount: number; captainOrder: string[]; captainIndex: number;
-  confirmed: string[]; teamVotes: Record<string, boolean>; missionVotes: Record<string, boolean>; rounds: RoundView[];
+  confirmed: string[]; teamVotes: Record<string, TeamBallot>; missionVotes: Record<string, boolean>; rounds: RoundView[];
+  draftTeam?: { playerIds: string[]; direction: RoundView['direction'] };
+  teamVoteStartedAt?: string;
   guinevereCandidates?: string[];
   lady?: { holderId: string; holderIds: string[]; inspections: PrivateInspection[] };
   earlyAssassination?: { used: boolean; windows: EarlyWindow[] };
@@ -99,34 +101,28 @@ function canUseEarlyAssassination(g: GameState): boolean {
 function openEarlyWindowOrPropose(g: GameState) {
   g.phase = 'proposing';
 }
-const sortedIds = (ids: string[]) => [...ids].sort().join(',');
-export function syncAbortElectorate(g: GameState, onlineIds: string[]) {
-  if (g.abortPoll && sortedIds(g.abortPoll.electorate) !== sortedIds(onlineIds)) delete g.abortPoll;
-}
-// Returns a new state. Rejected commands cannot leave partial state mutations behind.
-export function transition(state: GameState, userId: string, action: Pick<Command, 'type' | 'payload'>, onlineIds: string[]): GameState {
+// Room ownership, not presence or unanimous voting, controls interruption.
+export function transition(state: GameState, userId: string, action: Pick<Command, 'type' | 'payload'>, onlineIds: string[], context = { hostId: state.players[0].id, now: Date.now() }): GameState {
   const g = structuredClone(state);
   requireRule(g.players.some(p => p.id === userId), 'FORBIDDEN');
   requireRule(!isEnded(g), 'GAME_ENDED');
-  requireRule(g.phase !== 'dealing', 'DEAL_PENDING');
-  syncAbortElectorate(g, onlineIds);
-  if (action.type === 'requestAbort') {
-    requireRule(onlineIds.includes(userId), 'FORBIDDEN');
-    requireRule(!g.abortPoll, 'ABORT_PENDING');
-    g.abortPoll = { requestedBy: userId, electorate: [...onlineIds], approvals: [userId] };
-    if (onlineIds.length === 1) finish(g, { winner: null, reason: 'unanimous_abort' });
-    return g;
-  }
-  if (action.type === 'voteAbort') {
-    requireRule(g.abortPoll && g.abortPoll.electorate.includes(userId), 'NO_ABORT_POLL');
-    requireRule(!g.abortPoll.approvals.includes(userId), 'ALREADY_SUBMITTED');
-    if (!(action.payload as { approve: boolean }).approve) delete g.abortPoll;
-    else {
-      g.abortPoll.approvals.push(userId);
-      if (g.abortPoll.approvals.length === g.abortPoll.electorate.length) finish(g, { winner: null, reason: 'unanimous_abort' });
+  if (action.type === 'endGame' || action.type === 'requestAbort' || action.type === 'voteAbort') {
+    if (action.type === 'endGame' || (action.type === 'requestAbort' && userId === context.hostId)) {
+      requireRule(userId === context.hostId, 'FORBIDDEN');
+      finish(g, { winner: null, reason: 'host_ended' });
+    } else if (action.type === 'requestAbort') {
+      requireRule(onlineIds.includes(userId), 'FORBIDDEN');
+      requireRule(!g.abortPoll, 'ABORT_PENDING');
+      g.abortPoll = { requestedBy: userId, electorate: [context.hostId], approvals: [] };
+    } else {
+      requireRule(userId === context.hostId, 'FORBIDDEN');
+      requireRule(g.abortPoll, 'NO_ABORT_POLL');
+      if ((action.payload as { approve: boolean }).approve) finish(g, { winner: null, reason: 'host_ended' });
+      else delete g.abortPoll;
     }
     return g;
   }
+  requireRule(g.phase !== 'dealing', 'DEAL_PENDING');
   switch (action.type) {
     case 'confirmRole':
       requireRule(g.phase === 'role_reveal', 'WRONG_PHASE');
@@ -134,6 +130,18 @@ export function transition(state: GameState, userId: string, action: Pick<Comman
       g.confirmed.push(userId);
       if (g.confirmed.length === g.players.length) g.phase = 'proposing';
       break;
+    case 'updateTeamDraft': {
+      requireRule(['role_reveal','proposing','discussion'].includes(g.phase), 'WRONG_PHASE');
+      requireRule(userId === captain(g), 'NOT_CAPTAIN');
+      const { playerIds, direction } = action.payload as { playerIds: string[]; direction: RoundView['direction'] };
+      requireRule(playerIds.length <= MISSION_SIZES[g.players.length][g.mission-1] && new Set(playerIds).size === playerIds.length && playerIds.every(id => g.players.some(p => p.id === id)), 'INVALID_TEAM');
+      g.draftTeam = { playerIds: [...playerIds], direction };
+      if (g.phase === 'discussion') {
+        g.rounds.at(-1)!.team = [...playerIds];
+        g.rounds.at(-1)!.direction = direction;
+      }
+      break;
+    }
     case 'proposeTeam': {
       requireRule(g.phase === 'proposing' || g.phase === 'role_reveal', 'WRONG_PHASE');
       requireRule(userId === captain(g), 'NOT_CAPTAIN');
@@ -141,20 +149,25 @@ export function transition(state: GameState, userId: string, action: Pick<Comman
       requireRule(playerIds.length === MISSION_SIZES[g.players.length][g.mission-1] && new Set(playerIds).size === playerIds.length && playerIds.every(id => g.players.some(p => p.id === id)), 'INVALID_TEAM');
       g.rounds.push({ number: g.rounds.length+1, mission: g.mission, captainId: userId,
         team: g.players.filter(p => playerIds.includes(p.id)).map(p => p.id), direction });
+      delete g.draftTeam;
       g.phase = 'discussion'; g.teamVotes = {}; g.missionVotes = {};
       break;
     }
     case 'startTeamVote':
       requireRule(g.phase === 'discussion', 'WRONG_PHASE');
       requireRule(userId === captain(g), 'NOT_CAPTAIN');
+      requireRule(g.rounds.at(-1)!.team.length === MISSION_SIZES[g.players.length][g.mission-1], 'INVALID_TEAM');
+      delete g.draftTeam;
+      g.teamVoteStartedAt = new Date(context.now).toISOString();
       g.phase = 'team_vote'; break;
     case 'teamVote': {
       requireRule(g.phase === 'team_vote', 'WRONG_PHASE');
       requireRule(!(userId in g.teamVotes), 'ALREADY_SUBMITTED');
-      g.teamVotes[userId] = (action.payload as { approve: boolean }).approve;
+      g.teamVotes[userId] = (action.payload as { approve: TeamBallot }).approve;
       if (Object.keys(g.teamVotes).length === g.players.length) {
-        const approvals = Object.values(g.teamVotes).filter(Boolean).length, passed = approvals > g.players.length/2;
-        g.rounds.at(-1)!.vote = { approvals, rejections: g.players.length-approvals, passed,
+        const values = Object.values(g.teamVotes), approvals = values.filter(v => v === true).length, rejections = values.filter(v => v === false).length, abstentions = values.filter(v => v === 'abstain').length;
+        const passed = approvals > rejections;
+        g.rounds.at(-1)!.vote = { approvals, rejections, abstentions, passed,
           ...(!g.settings.anonymousTeamVote ? { ballots: { ...g.teamVotes } } : {}) };
         g.teamVotes = {};
         if (passed) g.phase = 'mission';
@@ -237,8 +250,6 @@ export function transition(state: GameState, userId: string, action: Pick<Comman
     }
     default: throw new RuleError('WRONG_PHASE');
   }
-  // Any progress invalidates an interruption request made against an older state.
-  delete g.abortPoll;
   return g;
 }
 export function projectGame(g: GameState, userId?: string): GameView {
@@ -251,6 +262,8 @@ export function projectGame(g: GameState, userId?: string): GameView {
     ...(g.phase === 'dealing' ? { dealEndsAt: g.dealEndsAt } : {}),
     missionSizes: [...MISSION_SIZES[g.players.length]], failuresRequired: failuresRequired(g), rejectionCount: g.rejectionCount,
     captainId: captain(g), captainOrder: [...g.captainOrder], rounds: structuredClone(g.rounds),
+    ...(['role_reveal','proposing','discussion'].includes(g.phase) && g.draftTeam ? { draftTeam: structuredClone(g.draftTeam) } : {}),
+    ...(g.phase === 'team_vote' ? { teamVote: { startedAt: g.teamVoteStartedAt, votedIds: Object.keys(g.teamVotes), ...(!g.settings.anonymousTeamVote ? { ballots: { ...g.teamVotes } } : {}) } } : {}),
     progress: { confirmed: g.confirmed.length, teamVotes: Object.keys(g.teamVotes).length, missionVotes: Object.keys(g.missionVotes).length },
     ...(g.lady ? { lady: { holderId: g.lady.holderId, holderIds: [...g.lady.holderIds],
       // Explicit whitelist; private team results must never enter a shared snapshot.

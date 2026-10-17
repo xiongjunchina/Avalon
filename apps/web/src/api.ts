@@ -3,7 +3,7 @@ export const errors: Record<string, string> = {
   GAME_NOT_FOUND: '这局尚未结束，或你没有查看权限。只有参与过的对局才会出现在历史中。', PRESET_LIMIT: '最多保存 10 个预设，请先删除不用的预设。',
   NOT_LADY_HOLDER: '本次只能由少林明镜的执令人选择查验对象。', NOT_INSPECTOR: '本次只能由刚才的查验者确认结果。', INVALID_INSPECTION_TARGET: '不能查验自己或曾经执掌明镜令的玩家，请重新选择。',
   NOT_READY: '需要人数到齐且所有人准备后，房主才能开局。',
-  GAME_IN_PROGRESS: '本局已开始，人数、设置与席位已锁定。请先完成或一致同意中断本局。',
+  GAME_IN_PROGRESS: '本局已开始，人数、设置与席位已锁定。请先完成本局，或请房主结束游戏。',
   WRONG_PHASE: '当前已进入其他步骤，请查看最新对局进度。', GAME_ENDED: '本局已经结束。',
   NOT_CAPTAIN: '此操作需要当前队长完成。', NOT_ASSASSIN: '只有刺客能提交刺杀目标。',
   INVALID_TEAM: '请选择正确数量且不重复的任务成员。', INVALID_TARGET: '请选择有效的刺杀目标。',

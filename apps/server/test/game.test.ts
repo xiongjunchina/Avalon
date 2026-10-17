@@ -70,15 +70,9 @@ test('game transaction failure rolls back state, version and receipt; retry succ
   await f.pool.query('DROP TRIGGER fail_game_write ON games');await f.store.execute(team[1],f.room.id,action);
   assert.equal((await f.state()).game!.mission,2);
 });
-test('online unanimity abort cancels on presence changes; 24h expiry persists interrupted game without winner',async t=>{
-  const f=await gameFixture(t),host=f.people[0].user.id;
-  await f.command(host,'requestAbort');assert.equal((await f.state()).game!.abortPoll?.required,5);
-  const connection=(await f.pool.query('SELECT connection_id FROM room_members WHERE user_id=$1',[f.people[1].user.id])).rows[0].connection_id;
-  await f.store.disconnect(f.people[1].user.id,f.room.id,connection);assert.equal((await f.state()).game!.abortPoll,undefined);
-  await f.command(host,'requestAbort');for(const p of f.people.slice(2))await f.command(p.user.id,'voteAbort',{approve:true});
-  assert.equal((await f.state()).game!.result!.winner,null);assert.equal((await f.state()).phase,'finished');
-  await f.command(host,'returnToLobby');for(const p of f.people)await f.command(p.user.id,'setReady',{ready:true});await f.command(host,'startGame');
-  const id=(await f.state()).game!.id;await f.restart();f.advance(ROOM_TTL_MS+1);await f.store.maintain();
+test('24h expiry persists interrupted game without winner',async t=>{
+  const f=await gameFixture(t), id=(await f.state()).game!.id;
+  await f.restart();f.advance(ROOM_TTL_MS+1);await f.store.maintain();
   assert.equal(await f.store.snapshot(f.room.id),null);
   const game=(await f.pool.query('SELECT state FROM games WHERE id=$1',[id])).rows[0].state;
   assert.equal(game.phase,'aborted');assert.deepEqual(game.result,{winner:null,reason:'offline_timeout'});

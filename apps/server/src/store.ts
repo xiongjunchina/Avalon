@@ -1,5 +1,5 @@
 import { createHash, randomBytes, randomUUID, randomInt } from 'node:crypto';
-import { createGame, transition, projectGame, isEnded, finish, syncAbortElectorate, RuleError, type GameState } from '@avalon/game-core';
+import { createGame, transition, projectGame, isEnded, finish, RuleError, type GameState } from '@avalon/game-core';
 import { isDeepStrictEqual } from 'node:util';
 import type { Pool, PoolClient } from 'pg';
 import { defaultSettings, type Command, type RoomView, type Settings, type User, type ServerMessage } from '@avalon/contracts';
@@ -152,15 +152,6 @@ export class PostgresStore {
       [game.id,game,isEnded(game),this.date()]);
     await c.query('UPDATE rooms SET phase=$2 WHERE id=$1',[roomId,isEnded(game)?'finished':'playing']);
   }
-  private async updateAbortPresence(c: PoolClient, r: RoomRow) {
-    const game=await this.game(c,r);
-    if (!game?.abortPoll) return;
-    syncAbortElectorate(game,(await this.members(c,r.id)).filter(m=>m.connection_id).map(m=>m.user_id));
-    if (!game.abortPoll) {
-      await this.saveGame(c,r.id,game);
-      await c.query('UPDATE rooms SET version=version+1 WHERE id=$1',[r.id]);
-    }
-  }
   async pendingDeals(): Promise<{roomId:string;deadline:string}[]> {
     return this.tx(async c => (await c.query(`SELECT r.id AS "roomId",g.state->>'dealEndsAt' AS deadline
       FROM rooms r JOIN games g ON g.id=r.current_game_id WHERE r.phase='playing' AND g.state->>'phase'='dealing'`)).rows);
@@ -249,7 +240,9 @@ export class PostgresStore {
       } else if(!['setReady','updateSettings','setAdmission','leaveRoom','kickMember'].includes(command.type)) {
         const game=await this.game(c,r);
         if(!game) throw new DomainError('WRONG_PHASE',409);
-        await this.saveGame(c,roomId,transition(game,userId,command,members.filter(m=>m.connection_id).map(m=>m.user_id)));
+        const next = transition(game,userId,command,members.filter(m=>m.connection_id).map(m=>m.user_id), { hostId: r.host_id, now: this.now() });
+        await this.saveGame(c,roomId,next);
+        if (next.result?.reason === 'host_ended') await this.closeRoom(c,roomId);
       }
       await c.query('UPDATE rooms SET version=version+1 WHERE id=$1',[roomId]);
       const result: ServerMessage={type:'commandResult',commandId:command.commandId,ok:true};
@@ -268,7 +261,6 @@ export class PostgresStore {
       const r=await this.lock(c,roomId); await this.assertMember(c,r,userId);
       await c.query('UPDATE room_members SET connection_id=$3,last_seen_at=$4,disconnected_at=NULL WHERE room_id=$1 AND user_id=$2',[roomId,userId,connectionId,this.date()]);
       await c.query('UPDATE rooms SET offline_since=NULL WHERE id=$1',[roomId]);
-      await this.updateAbortPresence(c,r);
       await this.handover(c,r,await this.members(c,roomId));
     });
   }
@@ -276,7 +268,6 @@ export class PostgresStore {
     return this.tx(async c=>{
       const r=await this.lock(c,roomId); if(r.phase==='closed') return;
       const changed=await c.query('UPDATE room_members SET connection_id=NULL,disconnected_at=$4,last_seen_at=$4 WHERE room_id=$1 AND user_id=$2 AND connection_id=$3',[roomId,userId,connectionId,this.date()]);
-      if(changed.rowCount) await this.updateAbortPresence(c,r);
       if(changed.rowCount && !(await this.members(c,roomId)).some(m=>m.connection_id)) {
         await c.query('UPDATE rooms SET offline_since=COALESCE(offline_since,$2) WHERE id=$1',[roomId,this.date()]);
       }
@@ -310,7 +301,6 @@ export class PostgresStore {
       const updated=await this.tx(async c=>{
         const r=await this.lock(c,id); if(r.phase==='closed') return false;
         const expired=await c.query('UPDATE room_members SET connection_id=NULL,disconnected_at=last_seen_at WHERE room_id=$1 AND connection_id IS NOT NULL AND last_seen_at<=$2',[id,new Date(this.now()-LEASE_MS)]);
-        if(expired.rowCount) await this.updateAbortPresence(c,r);
         const members=await this.members(c,id);
         if(!members.some(m=>m.connection_id)) {
           if(!r.offline_since) {

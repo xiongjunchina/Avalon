@@ -21,7 +21,7 @@ test('five-second deal hides every identity over HTTP; repeat starts, early comm
     const joined=await f.store.join(p.user,room.code);assert.equal(joined.game!.self,undefined);
     await assert.rejects(f.command(p.user.id,'confirmRole'),/DEAL_PENDING/);
   }
-  await assert.rejects(f.command(host.user.id,'requestAbort'),/DEAL_PENDING/);
+  await assert.rejects(f.command(host.user.id,'updateTeamDraft',{playerIds:[],direction:'clockwise'}),/DEAL_PENDING/);
   await assert.rejects(f.command(host.user.id,'updateSettings',room.settings),/GAME_IN_PROGRESS/);
   f.advance(2000);await f.store.execute(host.user.id,room.id,start);
   const repeated=(await f.state()).game!;assert.equal(repeated.id,game.id);assert.equal(repeated.dealEndsAt,game.dealEndsAt);

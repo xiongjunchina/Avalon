@@ -7,7 +7,8 @@ import { RolePortrait } from './RolePortrait';
 import { WUYUE_MISSIONS, roleNames } from './roles';
 import { DealCountdown } from './DealCountdown';
 import { QuestMedallion } from './QuestMedallion';
-import { BattleRound } from './BattleRound';
+import { BattleHistory } from './BattleRound';
+import { TeamVoteDialog } from './TeamVoteDialog';
 import { PartyBanner } from './PlayerToken';
 import { Modal } from './Modal';
 import { IdentityDetails } from './IdentityDetails';
@@ -37,6 +38,7 @@ const reasons: Record<string, string> = {
   early_merlin_found: '提前刺杀命中风清扬',
   early_merlin_survived: '提前刺杀未命中风清扬',
   unanimous_abort: '在线成员一致同意中断',
+  host_ended: '房主结束游戏',
   offline_timeout: '全员离线超过 24 小时',
 };
 
@@ -66,8 +68,11 @@ export function GamePanel({
   const [identityOpen, setIdentityOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [inspectMission, setInspectMission] = useState<number | null>(null);
-  const [selected, setSelected] = useState<string[]>([]);
-  const [direction, setDirection] = useState<'clockwise' | 'counterclockwise'>('clockwise');
+  const selected = g.phase === 'discussion' ? round?.team ?? [] : g.draftTeam?.playerIds ?? [];
+  const direction = g.phase === 'discussion' ? round?.direction ?? 'clockwise' : g.draftTeam?.direction ?? 'clockwise';
+  const setSelected = (update: (ids: string[]) => string[]) => send({ type: 'updateTeamDraft', payload: { playerIds: update(selected), direction } });
+  const setDirection = (value: 'clockwise' | 'counterclockwise') => send({ type: 'updateTeamDraft', payload: { playerIds: selected, direction: value } });
+  const [voteDismissed, setVoteDismissed] = useState(false);
   const [choice, setChoice] = useState<boolean | null>(null);
   const [target, setTarget] = useState('');
   const [abortConfirm, setAbortConfirm] = useState(false);
@@ -85,22 +90,21 @@ export function GamePanel({
   }, [connected]);
 
   useEffect(() => {
-    setSelected([]);
+    setVoteDismissed(false);
     setChoice(null);
     setTarget('');
-    setAbortConfirm(false);
     setIdentityOpen(false);
   }, [g.id, g.phase, round?.number]);
 
-  const hasAbortPoll = Boolean(g.abortPoll);
+  const abortRequester = g.abortPoll?.requestedBy;
   useEffect(() => {
-    setAbortConfirm(hasAbortPoll);
-    if (hasAbortPoll) {
+    setAbortConfirm(Boolean(abortRequester));
+    if (abortRequester) {
       setIdentityOpen(false);
       setHistoryOpen(false);
       setInspectMission(null);
     }
-  }, [hasAbortPoll]);
+  }, [g.id, abortRequester, room.hostId, userId]);
 
   const name = (id: string) => {
     const p = g.players.find(p => p.id === id);
@@ -135,7 +139,7 @@ export function GamePanel({
 
   function handleSeatTap(playerId: string) {
     if (disabled) return;
-    if (effectivePhase === 'proposing' && captain) {
+    if (['proposing', 'discussion'].includes(effectivePhase) && captain) {
       setSelected(ids =>
         ids.includes(playerId)
           ? ids.filter(id => id !== playerId)
@@ -479,7 +483,7 @@ export function GamePanel({
               </div>
               {['proposing', 'discussion', 'team_vote', 'mission'].includes(effectivePhase) && (
                 <PartyBanner players={publicPlayers} captainId={g.captainId} team={activeTeamIds} size={size}
-                  canRemove={effectivePhase === 'proposing' && captain && !disabled} onRemove={handleSeatTap} />
+                  canRemove={['proposing', 'discussion'].includes(effectivePhase) && captain && !disabled} onRemove={handleSeatTap} />
               )}
             </div>
           );
@@ -511,7 +515,7 @@ export function GamePanel({
               (g.phase === 'lady' || g.phase === 'assassination') && target === p.id;
             const canTapSeat =
               !disabled &&
-              ((effectivePhase === 'proposing' && captain) ||
+              ((['proposing', 'discussion'].includes(effectivePhase) && captain) ||
                 (g.phase === 'lady' && Boolean(self?.canInspect) && !g.lady?.holderIds.includes(p.id)) ||
                 (g.phase === 'assassination' && self?.role === 'assassin' && p.id !== userId));
             const lastBallot =
@@ -637,8 +641,8 @@ export function GamePanel({
                           : '🎯 刺杀'}
                     </span>
                   ) : lastBallot !== undefined ? (
-                    <span className={`seat-chip ${lastBallot ? 'chip-approve' : 'chip-reject'}`}>
-                      {lastBallot ? '👍 赞成' : '👎 反对'}
+                    <span className={`seat-chip ${lastBallot === 'abstain' ? 'chip-status' : lastBallot ? 'chip-approve' : 'chip-reject'}`}>
+                      {lastBallot === 'abstain' ? '− 弃权' : lastBallot ? '✓ 赞成' : '× 反对'}
                     </span>
                   ) : (
                     <span className="sr-only">
@@ -691,9 +695,9 @@ export function GamePanel({
             </button>
           )}
           {!ended && <button type="button" className="secondary tool-pill" disabled={disabled}
-            aria-label={g.abortPoll ? '查看中断表决' : '无法继续？请求中断本局'}
+            aria-label={room.hostId === userId ? '结束游戏' : '申请中止游戏'}
             onClick={() => setAbortConfirm(true)}>
-            {g.abortPoll ? '中断表决' : '中断'}
+            {room.hostId === userId ? '结束游戏' : '申请中止'}
           </button>}
         </div>
 
@@ -754,61 +758,21 @@ export function GamePanel({
 
         {g.phase === 'discussion' && (
           <div className="dock-panel">
+            {captain && <p className="dock-rule-hint">点击头像可修改阵容；发起投票后锁定</p>}
             <p className="dock-compact-text" aria-label={`发言顺序：${names(speakingOrder())}`}>
               发言：{speakingOrder().map(id => g.players.find(p => p.id === id)?.seat).join('→')}
             </p>
             {captain ? (
-              <button disabled={disabled} onClick={() => send({ type: 'startTeamVote', payload: {} })}>
-                讨论结束，开始表决
+              <button disabled={disabled || selected.length !== size} onClick={() => send({ type: 'startTeamVote', payload: {} })}>
+                总结完毕，锁定阵容并投票
               </button>
             ) : (
-              <p role="status">等待队长结束讨论。</p>
+              <p role="status">盟主总结前可调整阵容，方案实时同步。</p>
             )}
           </div>
         )}
 
-        {g.phase === 'team_vote' && (
-          <div className="dock-panel">
-            <p className="dock-rule-hint" role="status">
-              赞成须过半，平票不通过 · 提交后不可更改
-            </p>
-            {self?.teamVoted ? (
-              <p className="notice">你已提交，请等待其余玩家。</p>
-            ) : (
-              <form
-                onSubmit={e => {
-                  e.preventDefault();
-                  if (choice !== null) send({ type: 'teamVote', payload: { approve: choice } });
-                }}
-              >
-                <fieldset disabled={disabled} className="ballot-controls">
-                  <legend className="sr-only">是否赞成这支队伍？提交后不可更改</legend>
-                  <div className="vote-card-pair">
-                    <label className={`choice vote-card ${choice === true ? 'is-selected-approve' : ''}`}>
-                      <input
-                        type="radio"
-                        name="team-choice"
-                        checked={choice === true}
-                        onChange={() => setChoice(true)}
-                      />
-                      <span>👍 赞成</span>
-                    </label>
-                    <label className={`choice vote-card ${choice === false ? 'is-selected-reject' : ''}`}>
-                      <input
-                        type="radio"
-                        name="team-choice"
-                        checked={choice === false}
-                        onChange={() => setChoice(false)}
-                      />
-                      <span>👎 反对</span>
-                    </label>
-                  </div>
-                  <button disabled={choice === null} aria-label="确认提交表决">确认表决</button>
-                </fieldset>
-              </form>
-            )}
-          </div>
-        )}
+        {g.phase === 'team_vote' && <div className="dock-panel"><button onClick={() => setVoteDismissed(false)}>打开组队表决 · {g.progress.teamVotes}/{g.players.length} 已投</button></div>}
 
         {g.phase === 'mission' && (
           <div className="dock-panel">
@@ -931,23 +895,19 @@ export function GamePanel({
 
       </div>
 
+      {g.phase === 'team_vote' && !voteDismissed && <TeamVoteDialog game={g} players={publicPlayers} anonymous={room.settings.anonymousTeamVote} userId={userId} serverTime={room.serverTime} disabled={disabled} send={send} onClose={() => setVoteDismissed(true)} />}
       {!ended && abortConfirm && (
-        <Modal label={g.abortPoll ? '中断表决' : '确认请求中断'} scene="sword" onClose={() => setAbortConfirm(false)}>
+        <Modal label={room.hostId === userId ? '结束游戏' : '申请中止游戏'} scene="sword" onClose={() => setAbortConfirm(false)}>
           <div className="table-modal-sheet">
-            <div className="table-modal-head"><strong>中断本局</strong><button type="button" className="secondary tool-pill" onClick={() => setAbortConfirm(false)}>返回对局</button></div>
-            {g.abortPoll ? <>
-              <p role="status">中断请求：{g.abortPoll.approvals} / {g.abortPoll.required} 同意</p>
-              {!g.abortPoll.voted ? <div className="action-pair">
-                <button className="secondary" disabled={disabled} onClick={() => send({ type: 'voteAbort', payload: { approve: false } })}>继续对局</button>
-                <button disabled={disabled} onClick={() => send({ type: 'voteAbort', payload: { approve: true } })}>同意中断</button>
-              </div> : <p>你已表态，等待其余在线玩家。</p>}
-            </> : <>
-              <p>确认发起中断本局请求？需在线成员全员同意，本局不计胜负。</p>
+            <div className="table-modal-head"><strong>{room.hostId === userId ? '结束游戏' : '申请中止游戏'}</strong><button type="button" className="secondary tool-pill" onClick={() => setAbortConfirm(false)}>返回对局</button></div>
+            <p>结束后关闭本房间，所有玩家返回大厅；本局不计胜负。</p>
+            {room.hostId === userId ? <>
+              {g.abortPoll && <p role="status">{name(g.abortPoll.requestedBy)} 申请中止，请房主处理。</p>}
               <div className="action-pair">
-                <button className="secondary" onClick={() => setAbortConfirm(false)}>取消</button>
-                <button disabled={disabled} onClick={() => { setAbortConfirm(false); send({ type: 'requestAbort', payload: {} }); }}>发起中断</button>
+                <button className="secondary" disabled={disabled} onClick={() => { if (g.abortPoll) send({type:'voteAbort',payload:{approve:false}}); setAbortConfirm(false); }}>继续游戏</button>
+                <button disabled={disabled} onClick={() => send(g.abortPoll ? {type:'voteAbort',payload:{approve:true}} : {type:'endGame',payload:{}})}>{g.abortPoll ? '同意结束' : '结束游戏并关闭房间'}</button>
               </div>
-            </>}
+            </> : g.abortPoll ? <p role="status">已提出中止申请，等待房主决定。</p> : <button disabled={disabled} onClick={() => send({type:'requestAbort',payload:{}})}>向房主申请中止</button>}
           </div>
         </Modal>
       )}
@@ -1018,9 +978,7 @@ export function GamePanel({
                 {WUYUE_MISSIONS[inspectMission - 1]?.shortLabel ?? `任务 ${inspectMission}`} 尚未产生组队提案记录。
               </p>
             ) : (
-              <div className="game-history-list" style={{ marginTop: 10 }}>
-                {missionRounds.map(r => <BattleRound key={r.number} round={r} players={publicPlayers} anonymous={room.settings.anonymousTeamVote} userId={userId} />)}
-              </div>
+              <BattleHistory rounds={missionRounds} players={publicPlayers} anonymous={room.settings.anonymousTeamVote} userId={userId} />
             )}
           </div>
         </Modal>
@@ -1039,9 +997,7 @@ export function GamePanel({
             {g.rounds.length === 0 ? (
               <p className="muted">尚无已完成的组队提案。</p>
             ) : (
-              <div className="game-history-list">
-                {g.rounds.map(r => <BattleRound key={r.number} round={r} players={publicPlayers} anonymous={room.settings.anonymousTeamVote} userId={userId} />)}
-              </div>
+              <BattleHistory rounds={g.rounds} players={publicPlayers} anonymous={room.settings.anonymousTeamVote} userId={userId} />
             )}
             <ExtensionHistory game={g} name={name} />
           </div>

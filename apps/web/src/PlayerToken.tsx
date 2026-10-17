@@ -1,18 +1,18 @@
-import type { Player } from '@avalon/contracts';
+import type { Player, TeamBallot } from '@avalon/contracts';
 import { Emblem, PlayerAvatar } from './Heraldry';
 
 /** Public player identity only. Never pass a secret role to this component. */
 export function PlayerToken({ player, captain = false, vote, self = false }: {
-  player: Player; captain?: boolean; vote?: boolean; self?: boolean;
+  player: Player; captain?: boolean; vote?: TeamBallot; self?: boolean;
 }) {
   return <span className={`player-token ${captain ? 'is-captain' : ''}`}>
     <span className="token-portrait">
       <PlayerAvatar avatar={player.avatar} avatarUrl={player.avatarUrl} wechatAvatarUrl={player.wechatAvatarUrl} fallbackKind="cards" />
       {captain && <span className="token-crown"><Emblem kind="crown" /></span>}
-      {vote !== undefined && <span className={`token-vote ${vote ? 'approve' : 'reject'}`} aria-label={vote ? '赞成' : '反对'}>{vote ? '✓' : '×'}</span>}
+      {vote !== undefined && <span className={`token-vote ${vote === 'abstain' ? 'abstain' : vote ? 'approve' : 'reject'}`} aria-label={vote === 'abstain' ? '弃权' : vote ? '赞成' : '反对'}>{vote === 'abstain' ? '−' : vote ? '✓' : '×'}</span>}
     </span>
     <span className="token-caption" title={`${player.seat}号 ${player.nickname}`}><span className="token-seat">{player.seat}号</span> <span>{player.nickname}</span>{self && <small>（你）</small>}</span>
-    {vote !== undefined && <span className={`token-vote-caption ${vote ? 'approve' : 'reject'}`}>{vote ? '赞成' : '反对'}</span>}
+    {vote !== undefined && <span className={`token-vote-caption ${vote === 'abstain' ? 'abstain' : vote ? 'approve' : 'reject'}`}>{vote === 'abstain' ? '弃权' : vote ? '赞成' : '反对'}</span>}
   </span>;
 }
 

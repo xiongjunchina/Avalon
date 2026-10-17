@@ -8,9 +8,11 @@ import { ROOM_TTL_MS } from '../src/store.js';
 import { migrate } from '../src/db.js';
 const cookie=(token:string)=>({cookie:`avalon_session=${token}`});
 async function abort(f:Awaited<ReturnType<typeof gameFixture>>) {
-  await f.command(f.people[0].user.id,'requestAbort');
-  for(const p of f.people.slice(1))await f.command(p.user.id,'voteAbort',{approve:true});
-  return (await f.state()).game!.id;
+  const game=(await f.pool.query('SELECT state FROM games WHERE id=$1',[(await f.state()).game!.id])).rows[0].state;
+  game.phase='aborted';game.result={winner:null,reason:'host_ended'};
+  await f.pool.query('UPDATE games SET state=$2,ended_at=$3 WHERE id=$1',[game.id,game,new Date(f.now())]);
+  await f.pool.query("UPDATE rooms SET phase='finished' WHERE id=$1",[f.room.id]);
+  return game.id as string;
 }
 
 test('account endpoints authenticate, enforce CSRF/origin and strict profile input; zero games have no win rate',async t=>{

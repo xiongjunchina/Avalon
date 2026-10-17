@@ -4,6 +4,7 @@ import { createRoot } from 'react-dom/client';
 import * as Label from '@radix-ui/react-label';
 import {
   defaultSettings,
+  defaultAnonymousTeamVote,
   type Command,
   type Member,
   type Player,
@@ -27,6 +28,8 @@ import {
 import './style.css';
 import './scenes.css';
 import './sound.css';
+import { ReadyReminder } from './ReadyReminder';
+import './feedback.css';
 import { Modal } from './Modal';
 import { GamePanel } from './GamePanel';
 import { PracticeSeatPicker } from './PracticeSeatPicker';
@@ -127,6 +130,12 @@ function App() {
   }, [notice]);
 
   useEffect(() => {
+    if (!error) return;
+    const timer = setTimeout(() => setError(''), 2000);
+    return () => clearTimeout(timer);
+  }, [error]);
+
+  useEffect(() => {
     let active = true;
     api<{ user: User; roomId: string | null }>('/me')
       .then(data => {
@@ -199,12 +208,17 @@ function App() {
         ended: reason => {
           setRoomId(null);
           setRoom(null);
+          setPage('table');
+          setSettingsModalOpen(false);
+          setKickTarget(null);
+          setSetupOpen(false);
+          setJoinOpen(false);
           setInvite('');
           setBusy(false);
           if (reason === 'expired') {
             setUser(null);
             setError(errors.UNAUTHENTICATED);
-          } else if (reason === 'closed') setError(errors.ROOM_CLOSED);
+          } else if (reason === 'closed') { setError(''); setNotice('房间已关闭，已返回游戏大厅。'); }
         },
       },
     });
@@ -308,6 +322,7 @@ function App() {
       }
       if (next.phase === 'team_vote') {
         for (const p of next.players) {
+          if (next.phase !== 'team_vote') break;
           if (p.id !== practiceUserId && !(p.id in next.teamVotes)) {
             next = transition(next, p.id, { type: 'teamVote', payload: { approve: true } }, onlineIds);
           }
@@ -316,6 +331,7 @@ function App() {
       if (next.phase === 'mission') {
         const round = next.rounds.at(-1)!;
         for (const pid of round.team) {
+          if (next.phase !== 'mission') break;
           if (pid !== practiceUserId && !(pid in next.missionVotes)) {
             const isEvil = teamOf(next.roles[pid]) === 'red';
             next = transition(
@@ -327,7 +343,7 @@ function App() {
           }
         }
       }
-      setPracticeGame(next);
+      setPracticeGame(next.result?.reason === 'host_ended' ? null : next);
       setError('');
     } catch (err) {
       setError(describe(err));
@@ -360,6 +376,7 @@ function App() {
         next = transition(next, cap, { type: 'startTeamVote', payload: {} }, onlineIds);
       } else if (next.phase === 'team_vote') {
         for (const p of next.players) {
+          if (next.phase !== 'team_vote') break;
           if (!(p.id in next.teamVotes)) {
             next = transition(next, p.id, { type: 'teamVote', payload: { approve: true } }, onlineIds);
           }
@@ -367,6 +384,7 @@ function App() {
       } else if (next.phase === 'mission') {
         const round = next.rounds.at(-1)!;
         for (const pid of round.team) {
+          if (next.phase !== 'mission') break;
           if (!(pid in next.missionVotes)) {
             const isEvil = teamOf(next.roles[pid]) === 'red';
             next = transition(
@@ -447,6 +465,7 @@ function App() {
   return (
     <main data-scene={scene} data-sound="tap" className={`app-shell ${inTableViewport ? 'is-table-viewport' : ''} ${inTableViewport && !activeGame?.result ? 'is-live-table' : ''}`}>
       {/* Toast Alerts */}
+      {room?.phase === 'waiting' && user && <ReadyReminder room={room} userId={user.id} disabled={busy || connection !== '已连接'} onReady={() => command({type:'setReady',payload:{ready:true}})} />}
       {(error || notice) && (
         <div className="toast-stack">
           {error && (
@@ -570,7 +589,7 @@ function App() {
             room={{
               id: 'practice-room',
               code: '演练桌',
-              hostId: practiceUserId,
+              hostId: practiceGame.players[0].id,
               version: 1,
               phase: isEnded(practiceGame) ? 'finished' : 'playing',
               settings: practiceGame.settings,
@@ -633,7 +652,7 @@ function App() {
                   role="radio"
                   aria-checked={setupSettings.playerCount === count}
                   className={`mp-shield-btn ${setupSettings.playerCount === count ? 'is-active' : ''}`}
-                  onClick={() => setSetupSettings(s => ({ ...s, playerCount: count }))}
+                  onClick={() => setSetupSettings(s => ({ ...s, playerCount: count, anonymousTeamVote: defaultAnonymousTeamVote(count) }))}
                 >
                   <span>{count}</span>
                 </button>

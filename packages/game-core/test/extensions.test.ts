@@ -30,7 +30,7 @@ test('initial lady holder is physical predecessor of first captain, not predeces
     const g=createGame(randomUUID(),players,{...defaultSettings,playerCount:n,ladyEnabled:true,captainMode:'random_order'},values=>++shuffles===1?values:[values[2],...values.filter((_,i)=>i!==2)]);
     assert.equal(captain(g),players[2].id);assert.equal(g.lady!.holderId,players[1].id);
     assert.notEqual(g.lady!.holderId,g.captainOrder.at(-1));assert.equal(g.lady!.inspections.length,0);
-    assert.equal(g.rulesetVersion,'standard-no-lancelot-v2');
+    assert.equal(g.rulesetVersion,'standard-no-lancelot-v3');
   }
 });
 test('lady runs after missions 2,3,4 only; historical holders excluded; results remain inspector-private after handoff',()=>{

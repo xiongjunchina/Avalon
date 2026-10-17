@@ -20,8 +20,8 @@ export function QuestMedallion({
     <span className="quest-circle" aria-hidden="true">
       <WuYueBackdrop mission={mission} />
       {passed !== undefined && <span className="quest-result-mark">{passed ? '✓' : '×'}</span>}
-      <span className="quest-party-size">{count}<small>人</small></span>
     </span>
+    <span className="quest-party-size">{count}<small>人</small></span>
     <span className="quest-mountain-name">{mission} {mountain?.title.replace('会盟', '') ?? '会盟'}</span>
     <span className={`quest-caption ${twoFailsRequired ? 'requires-two' : ''}`}>
       {passed !== undefined ? status : twoFailsRequired ? '需2败' : current ? '当前' : `第${mission}轮`}
