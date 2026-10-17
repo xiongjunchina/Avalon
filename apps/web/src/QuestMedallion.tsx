@@ -14,17 +14,17 @@ export function QuestMedallion({
   onInspect?: () => void;
 }) {
   const mountain = WUYUE_MISSIONS[mission - 1];
-  const status = passed === undefined ? (current ? '当前会盟' : '尚未完成') : passed ? '成功' : '失败';
-  const label = `任务 ${mission}（${mountain?.title ?? '会盟'}），${count} 人，${status}，需要${twoFailsRequired ? 2 : 1}张失败牌${attempts ? `，已组队${attempts}次` : ''}`;
+  const status = passed === undefined ? (current ? '当前西行' : '尚未完成') : passed ? '成功' : '失败';
+  const label = `任务 ${mission}（${mountain?.title ?? '西行'}），${count} 人，${status}，需要${twoFailsRequired ? 2 : 1}张失败牌${attempts ? `，已组队${attempts}次` : ''}`;
   const content = <>
     <span className="quest-circle" aria-hidden="true">
       <WuYueBackdrop mission={mission} />
       {passed !== undefined && <span className="quest-result-mark">{passed ? '✓' : '×'}</span>}
     </span>
     <span className="quest-party-size">{count}<small>人</small></span>
-    <span className="quest-mountain-name">{mission} {mountain?.title.replace('会盟', '') ?? '会盟'}</span>
+    <span className="quest-mountain-name">{mountain?.title ?? `${mission}·西行`}</span>
     <span className={`quest-caption ${twoFailsRequired ? 'requires-two' : ''}`}>
-      {passed !== undefined ? status : twoFailsRequired ? '需2败' : current ? '当前' : `第${mission}轮`}
+      {passed !== undefined ? status : twoFailsRequired ? '需2败' : current ? '当前' : `第${mission}难`}
     </span>
   </>;
   const className = `quest-medallion-wrap ${passed === undefined ? current ? 'mission-current' : 'mission-pending' : passed ? 'mission-success' : 'mission-failure'}`;

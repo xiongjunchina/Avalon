@@ -13,10 +13,10 @@ test('guide covers all retained roles, asymmetric vision and standard/extension 
   const roles=renderToStaticMarkup(createElement(GuideRoles)),rules=renderToStaticMarkup(createElement(GuideRules));
   assert.equal(Object.keys(roleDescriptions).length,9);assert.equal((roles.match(/角色图案/g)??[]).length,9);
   assert.doesNotMatch(roles+rules,/兰斯洛特|兰斯特洛|Lancelot|连续两局|保底/i);
-  assert.match(roleDescriptions.merlin.ability,/除岳不群/);assert.match(roleDescriptions.oberon.ability,/红方队友也看不见你/);
+  assert.match(roleDescriptions.merlin.ability,/除黄眉老怪/);assert.match(roleDescriptions.oberon.ability,/红方队友也看不见你/);
   assert.match(roleDescriptions.percival.ability,/不知道谁对应哪个身份/);
-  assert.match(roleDescriptions.guinevere.ability,/岳不群/);
-  for(const text of ['倒计时5秒','赞成多于反对','平票或全员弃权不通过','两张失败牌','少林明镜','提前刺杀','匿名','全局累计'])assert.ok(rules.includes(text),text);
+  assert.match(roleDescriptions.guinevere.ability,/黄眉老怪/);
+  for(const text of ['倒计时5秒','赞成多于反对','平票或全员弃权不通过','两张失败牌','照妖宝镜','提前刺杀','匿名','全局累计'])assert.ok(rules.includes(text),text);
   for(let n=5;n<=12;n++)assert.ok(rules.includes(`${n}人局各任务人数`));
 });
 

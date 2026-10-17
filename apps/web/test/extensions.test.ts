@@ -35,10 +35,10 @@ test('early decision buttons appear only inside the opened assassin private pane
 test('inspection details and acknowledgement stay private and are hidden until the inspector opens identity',()=>{
   const g=fixture(),inspector=g.lady!.holderId,target=g.players[0].id;
   g.phase='lady_reveal';g.lady!.inspections=[{afterMission:2,inspectorId:inspector,targetId:target,team:'blue'}];g.lady!.holderId=target;g.lady!.holderIds.push(target);
-  assert.doesNotMatch(renderPanel(g,inspector),/我的明镜查验|我已记住查验结果，继续/);
+  assert.doesNotMatch(renderPanel(g,inspector),/我的宝镜查验|我已记住查验结果，继续/);
   const inspectorPanel=renderToStaticMarkup(createElement(PrivateExtensions,{game:projectGame(g,inspector),disabled:false,name,send}));
-  assert.match(inspectorPanel,/我的明镜查验/);assert.match(inspectorPanel,/<strong>蓝方<\/strong>/);assert.match(inspectorPanel,/我已记住查验结果，继续/);assert.doesNotMatch(inspectorPanel,/梅林/);
-  assert.doesNotMatch(renderToStaticMarkup(createElement(PrivateExtensions,{game:projectGame(g,target),disabled:false,name,send})),/我的明镜查验|我已记住查验结果/);
+  assert.match(inspectorPanel,/我的宝镜查验/);assert.match(inspectorPanel,/<strong>蓝方<\/strong>/);assert.match(inspectorPanel,/我已记住查验结果，继续/);assert.doesNotMatch(inspectorPanel,/孙悟空|梅林/);
+  assert.doesNotMatch(renderToStaticMarkup(createElement(PrivateExtensions,{game:projectGame(g,target),disabled:false,name,send})),/我的宝镜查验|我已记住查验结果/);
 });
 test('single-screen game table renders all 5-10 seats with captain crown, lady holder badge, and interactive seat prompts',()=>{
   const g7=fixture();g7.phase='proposing';
@@ -46,7 +46,7 @@ test('single-screen game table renders all 5-10 seats with captain crown, lady h
   assert.match(html7,/table-seats-grid grid-8/);
   assert.equal((html7.match(/table-seat-card/g)??[]).length,7);
   assert.match(html7,/👑 队长/);
-  assert.match(html7,/☯️ 明镜/);
+  assert.match(html7,/☯️ 宝镜/);
   assert.match(html7,/点击上车/);
 
   const players10=Array.from({length:10},(_,i)=>({id:randomUUID(),seat:i+1,nickname:`十人局${i+1}`}));

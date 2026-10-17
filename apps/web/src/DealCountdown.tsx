@@ -15,9 +15,9 @@ export function DealCountdown({deadline,serverTime,connected,onTick}:{deadline?:
     previousSecond.current=seconds;
   },[seconds,connected,onTick]);
   return <section className="deal-countdown" aria-label="发牌倒计时">
-    <p className="eyebrow">THE DEAL / 命运将启</p>
+    <p className="eyebrow">DESTINY AWAKENS / 灵山降旨 · 仙魔入局</p>
     <div className="deal-card-back" aria-hidden="true"><Emblem kind="cards"/><strong>{connected&&seconds>0?seconds:'·'}</strong></div>
     <p className="deal-message" role="status" aria-live="polite" aria-atomic="true">{!connected?'连接恢复后继续同步发牌':seconds>0?`${seconds} 秒后揭晓身份`:'正在同步身份牌…'}</p>
-    <p className="hint">请拿好自己的手机，避开旁人视线。倒计时结束后，私下翻开身份牌。</p>
+    <p className="hint">请拿好自己的手机，避开旁人视线。倒计时结束后，私下翻开真身身份牌。</p>
   </section>;
 }

@@ -25,6 +25,8 @@ test('compact identity keeps exactly the permitted vision and uses neutral playe
     }
   }
   assert.equal(seen.size, 9);
+  const loyalGuardians = new Set(players.map(p => projectGame(game, p.id).self!).filter(s => s.role === 'loyal').map(s => s.loyalGuardian));
+  assert.deepEqual([...loyalGuardians].sort(), ['bailong', 'jingang', 'shawujing', 'zhubajie']);
 });
 
 test('Merlin identity only mentions Mordred when this game configuration includes him',()=>{
@@ -32,7 +34,7 @@ test('Merlin identity only mentions Mordred when this game configuration include
     const players=Array.from({length:count},(_,i)=>({id:`p${i}`,seat:i+1,nickname:`同伴${i}`}));
     const game=createGame('vision',players,{...defaultSettings,playerCount:count},a=>a);
     const html=renderToStaticMarkup(createElement(IdentityDetails,{self:projectGame(game,'p0').self!,players}));
-    assert.equal(html.includes('本局含岳不群'),count>=9);
-    if(count<9)assert.match(html,/本局全部暗影成员/);
+    assert.equal(html.includes('本局含黄眉老怪'),count>=9);
+    if(count<9)assert.match(html,/本局全部群妖成员/);
   }
 });

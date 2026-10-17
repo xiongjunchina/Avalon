@@ -7,11 +7,11 @@ export function SettingsFields({settings,onChange,prefix='room'}:{settings:Setti
     <fieldset className="player-count-field"><legend>对局人数</legend><div className="count-medallions">{[5,6,7,8,9,10,11,12].map(n=><label key={n}><input type="radio" name={`${prefix}-count`} value={n} checked={settings.playerCount===n} onChange={()=>onChange({playerCount:n,anonymousTeamVote:defaultAnonymousTeamVote(n)})}/><span>{n}<small className="sr-only">人</small></span></label>)}</div></fieldset>
     <label htmlFor={`${prefix}-captain`}>队长分配</label><select id={`${prefix}-captain`} value={settings.captainMode} onChange={e=>onChange({captainMode:e.target.value as Settings['captainMode']})}><option value="seat_order">按座位循环</option><option value="random_order">开局打乱一次，整局循环</option></select>
     <label htmlFor={`${prefix}-rejections`}>流局计数</label><select id={`${prefix}-rejections`} value={settings.rejectionScope} onChange={e=>onChange({rejectionScope:e.target.value as Settings['rejectionScope']})}><option value="game">全局累计，5 次判负</option><option value="mission">单次任务累计，5 次判负</option></select>
-    {([['anonymousTeamVote','匿名组队投票'],['ladyEnabled','少林明镜'],['earlyAssassinationEnabled','提前刺杀']] as const).map(([key,label])=><div className="check" key={key}><label htmlFor={`${prefix}-${key}`}>{label}</label><input id={`${prefix}-${key}`} type="checkbox" checked={settings[key]} onChange={e=>onChange({[key]:e.target.checked})}/></div>)}
+    {([['anonymousTeamVote','匿名组队投票'],['ladyEnabled','照妖宝镜'],['earlyAssassinationEnabled','提前刺杀']] as const).map(([key,label])=><div className="check" key={key}><label htmlFor={`${prefix}-${key}`}>{label}</label><input id={`${prefix}-${key}`} type="checkbox" checked={settings[key]} onChange={e=>onChange({[key]:e.target.checked})}/></div>)}
   </>;
 }
 export function settingsText(s:Settings) {
-  return `${s.playerCount} 人 · ${s.anonymousTeamVote?'匿名':'实名'}表决 · ${s.captainMode==='seat_order'?'座位队长':'随机队长'} · ${s.rejectionScope==='game'?'全局':'任务'}流局${s.ladyEnabled?' · 明镜':''}${s.earlyAssassinationEnabled?' · 提前刺杀':''}`;
+  return `${s.playerCount} 人 · ${s.anonymousTeamVote?'匿名':'实名'}表决 · ${s.captainMode==='seat_order'?'座位队长':'随机队长'} · ${s.rejectionScope==='game'?'全局':'任务'}流局${s.ladyEnabled?' · 宝镜':''}${s.earlyAssassinationEnabled?' · 提前刺杀':''}`;
 }
 export function PresetsPanel({currentSettings,disabled=false,canApply=false,onApply}:{currentSettings?:Settings;disabled?:boolean;canApply?:boolean;onApply?:(s:Settings)=>void}) {
   const [presets,setPresets]=useState<SettingPreset[]>([]),[settings,setSettings]=useState<Settings>(defaultSettings);
@@ -26,7 +26,7 @@ export function PresetsPanel({currentSettings,disabled=false,canApply=false,onAp
     {notice&&<p className="notice" role="status">{notice}</p>}
     <form onSubmit={e=>{e.preventDefault();void run(async()=>{const {preset}=await api<{preset:SettingPreset}>('/me/presets',{name,settings:currentSettings??settings});setPresets(p=>[preset,...p.filter(x=>x.id!==preset.id)]);setName('');setNotice(`已保存“${preset.name}”。`);});}}>
       <fieldset disabled={locked}><legend className="sr-only">保存常用设置</legend>
-        <label htmlFor="preset-name">预设名称</label><input id="preset-name" value={name} onChange={e=>setName(e.target.value)} maxLength={24} required placeholder="例如：七人明镜局"/>
+        <label htmlFor="preset-name">预设名称</label><input id="preset-name" value={name} onChange={e=>setName(e.target.value)} maxLength={24} required placeholder="例如：七人宝镜局"/>
         {currentSettings?<p className="hint">将保存：{settingsText(currentSettings)}</p>:<SettingsFields prefix="preset" settings={settings} onChange={patch=>setSettings(s=>({...s,...patch}))}/>}
         <button disabled={!name.trim()}>{currentSettings?'保存当前房间设置':'保存预设'}</button>
       </fieldset>

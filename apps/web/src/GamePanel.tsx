@@ -1,10 +1,10 @@
 import { PrivateExtensions, ExtensionStep, ExtensionHistory } from './Extensions';
 import { useEffect, useState } from 'react';
 import type { Command, GameView, RoomView } from '@avalon/contracts';
-import { ROLE_CONFIG, failuresRequiredFor } from '@avalon/game-core';
+import { ROLE_CONFIG, assignLoyalGuardians, failuresRequiredFor } from '@avalon/game-core';
 import { Emblem, PlayerAvatar, WuYueBackdrop, roleTeam } from './Heraldry';
 import { RolePortrait } from './RolePortrait';
-import { WUYUE_MISSIONS, roleNames } from './roles';
+import { WUYUE_MISSIONS, formatRoleName, roleNames } from './roles';
 import { DealCountdown } from './DealCountdown';
 import { QuestMedallion } from './QuestMedallion';
 import { BattleHistory } from './BattleRound';
@@ -19,24 +19,24 @@ const phaseNames: Record<GameView['phase'], string> = {
   dealing: '即将发牌',
   role_reveal: '查看身份',
   proposing: '队长组队',
-  discussion: '围桌论剑',
+  discussion: '真假论道',
   team_vote: '组队表决',
-  mission: '五岳会盟',
-  lady: '少林明镜查验',
+  mission: '西行出征',
+  lady: '照妖宝镜查验',
   lady_reveal: '确认查验结果',
   early_window: '轮间确认中',
-  assassination: '刺杀风清扬',
+  assassination: '刺杀孙悟空',
   finished: '本局结束',
   aborted: '本局中断',
 };
 
 const reasons: Record<string, string> = {
-  three_failures: '三次会盟任务失败',
+  three_failures: '三次西行任务失败',
   five_rejections: '累计五次组队未通过',
-  merlin_found: '林平之刺中了风清扬',
-  merlin_survived: '风清扬躲过了刺杀',
-  early_merlin_found: '提前刺杀命中风清扬',
-  early_merlin_survived: '提前刺杀未命中风清扬',
+  merlin_found: '红孩儿刺中了孙悟空',
+  merlin_survived: '孙悟空躲过了刺杀',
+  early_merlin_found: '提前刺杀命中孙悟空',
+  early_merlin_survived: '提前刺杀未命中孙悟空',
   unanimous_abort: '在线成员一致同意中断',
   host_ended: '房主结束游戏',
   offline_timeout: '全员离线超过 24 小时',
@@ -161,6 +161,9 @@ export function GamePanel({
   const missionRounds = inspectMission
     ? g.rounds.filter(r => r.mission === inspectMission)
     : [];
+  const revealedLoyalGuardians = g.revealedRoles
+    ? assignLoyalGuardians(g.id, g.players, g.revealedRoles)
+    : {};
 
   return (
     <div className="game table-game-screen" data-sound="tap" data-phase={effectivePhase} data-player-count={g.players.length}>
@@ -195,10 +198,10 @@ export function GamePanel({
             <div className="quest-track-head">
               <span className="quest-track-badge">流局轨</span>
               <span className="quest-track-sub">
-                正道 {successes} : 暗影 {failures} · 流局 {g.rejectionCount}/5
+                护经 {successes} : 群妖 {failures} · 流局 {g.rejectionCount}/5
               </span>
               <span className="sr-only">
-                投票次数记录（点击上方五岳会盟圆盘可查当轮票型）
+                投票次数记录（点击上方西行五难圆盘可查当轮票型）
               </span>
             </div>
             <div className="quest-vote-circles" aria-label={`流局计数轨：${g.rejectionCount}/5`}>
@@ -225,7 +228,7 @@ export function GamePanel({
 
           <div className="quest-faction-plaque">
             <strong>{g.players.length}位玩家</strong>
-            <span>{redCount}名日月暗影</span>
+            <span>{redCount}名群妖乱道</span>
           </div>
         </div>
       </div>
@@ -234,11 +237,13 @@ export function GamePanel({
       {ended && g.result ? (
         (() => {
           const myRevealedRole = g.revealedRoles?.[userId] ?? self?.role;
+          const myLoyalGuardian = revealedLoyalGuardians[userId] ?? self?.loyalGuardian;
           const myTeam = myRevealedRole ? roleTeam(myRevealedRole) : self?.team;
           const winnerTeam = g.result.winner;
           const isPersonalWin = winnerTeam && myTeam ? winnerTeam === myTeam : null;
           const targetRole =
             g.result.targetId && g.revealedRoles ? g.revealedRoles[g.result.targetId] : undefined;
+          const targetLoyalGuardian = g.result.targetId ? revealedLoyalGuardians[g.result.targetId] : undefined;
           const bluePlayers = g.players.filter(
             p => g.revealedRoles?.[p.id] && roleTeam(g.revealedRoles[p.id]) === 'blue'
           );
@@ -289,7 +294,7 @@ export function GamePanel({
                   <div className={`ended-my-role-pill team-${myTeam}`}>
                     <span>我的底牌</span>
                     <strong>
-                      {roleNames[myRevealedRole]}（{myTeam === 'blue' ? '蓝方' : '红方'}）
+                      {formatRoleName(myRevealedRole, myLoyalGuardian)}（{myTeam === 'blue' ? '蓝方' : '红方'}）
                     </strong>
                   </div>
                 )}
@@ -315,7 +320,7 @@ export function GamePanel({
                   {reasons[g.result.reason]}
                   {g.result.targetId
                     ? `，刺杀目标为 ${name(g.result.targetId)}${
-                        targetRole ? `（${roleNames[targetRole]}）` : ''
+                        targetRole ? `（${formatRoleName(targetRole, targetLoyalGuardian)}）` : ''
                       }`
                     : ''}
                   。
@@ -336,7 +341,7 @@ export function GamePanel({
                             g.result?.targetId === p.id ? 'is-target' : ''
                           }`}
                         >
-                          {p.seat}号 {p.nickname} · <strong>{roleNames[g.revealedRoles![p.id]]}</strong>
+                          {p.seat}号 {p.nickname} · <strong>{formatRoleName(g.revealedRoles![p.id], revealedLoyalGuardians[p.id])}</strong>
                           {g.result?.targetId === p.id ? ' 🎯' : ''}
                         </span>
                       ))}
@@ -352,7 +357,7 @@ export function GamePanel({
                           key={p.id}
                           className={`faction-player-chip ${p.id === userId ? 'is-self' : ''}`}
                         >
-                          {p.seat}号 {p.nickname} · <strong>{roleNames[g.revealedRoles![p.id]]}</strong>
+                          {p.seat}号 {p.nickname} · <strong>{formatRoleName(g.revealedRoles![p.id], revealedLoyalGuardians[p.id])}</strong>
                         </span>
                       ))}
                     </div>
@@ -371,12 +376,12 @@ export function GamePanel({
           <div className="assassination-stage-kicker">
             {g.assassinationMode === 'early'
               ? 'EARLY ASSASSINATION · 提前刺杀阶段'
-              : 'FINAL ASSASSINATION · 终局刺杀风清扬'}
+              : 'FINAL ASSASSINATION · 终局刺杀孙悟空'}
           </div>
           <h2 className="assassination-stage-title">
             {g.assassinationMode === 'early'
-              ? '林平之已发起提前刺杀！'
-              : '蓝方已赢三场会盟 · 进入刺杀阶段！'}
+              ? '红孩儿已发起提前刺杀！'
+              : '蓝方已赢三场西行 · 进入刺杀阶段！'}
           </h2>
           {assassinPlayer && (
             <div className="assassination-identity-reveal">
@@ -384,35 +389,35 @@ export function GamePanel({
                 <RolePortrait role="assassin" size="mini" />
               </div>
               <div className="assassin-reveal-info">
-                <span className="assassin-reveal-tag">🗡️ 本局刺客（林平之）身份已公开</span>
+                <span className="assassin-reveal-tag">🗡️ 本局刺客（红孩儿）身份已公开</span>
                 <strong className="assassin-reveal-name">
                   {assassinPlayer.seat}号 {assassinPlayer.nickname}
                 </strong>
-                <small>正在拔出辟邪剑，锁定怀疑是「风清扬」的目标…</small>
+                <small>正在催动三昧真火，锁定怀疑是「孙悟空」的目标…</small>
               </div>
             </div>
           )}
           <p className="assassination-stage-desc">
             {assassinPlayer
-              ? `林平之（${assassinPlayer.seat}号 ${assassinPlayer.nickname}）正在选择怀疑是`
-              : '林平之正在暗中锁定怀疑是'}
-            <strong>「风清扬」</strong>的玩家，一旦确认目标，全员将立即揭晓本局最终胜负！
+              ? `红孩儿（${assassinPlayer.seat}号 ${assassinPlayer.nickname}）正在选择怀疑是`
+              : '红孩儿正在暗中锁定怀疑是'}
+            <strong>「孙悟空」</strong>的玩家，一旦确认目标，全员将立即揭晓本局最终胜负！
           </p>
           <div className="assassination-stakes-grid">
             <div className="stake-card stake-blue">
-              <strong>🛡️ 若风清扬躲过刺杀</strong>
-              <span>蓝方（正道同盟）全员获胜</span>
+              <strong>🛡️ 若孙悟空躲过刺杀</strong>
+              <span>蓝方（取经正果）全员获胜</span>
             </div>
             <div className="stake-card stake-red">
-              <strong>🗡️ 若林平之刺中风清扬</strong>
-              <span>红方（日月暗影）绝地翻盘</span>
+              <strong>🗡️ 若红孩儿刺中孙悟空</strong>
+              <span>红方（群妖乱道）绝地翻盘</span>
             </div>
           </div>
           <div className="assassination-waiting-pill" role="status">
             <span className="waiting-dot" aria-hidden="true" />
             {assassinPlayer
-              ? `正在等待林平之（${assassinPlayer.seat}号 ${assassinPlayer.nickname}）做出最终刺杀决定…`
-              : '正在等待林平之做出最终刺杀决定…'}
+              ? `正在等待红孩儿（${assassinPlayer.seat}号 ${assassinPlayer.nickname}）做出最终刺杀决定…`
+              : '正在等待红孩儿做出最终刺杀决定…'}
           </div>
         </section>
       ) : g.phase === 'assassination' && self?.role === 'assassin' ? (
@@ -425,13 +430,13 @@ export function GamePanel({
               <div className="assassin-banner-kicker">
                 {g.assassinationMode === 'early'
                   ? 'ASSASSIN TURN · 提前刺杀已启动'
-                  : 'ASSASSIN TURN · 蓝方已完成三场会盟'}
+                  : 'ASSASSIN TURN · 蓝方已完成三场西行'}
               </div>
-              <h2 className="assassin-banner-title">你是林平之 · 请选择要刺杀的风清扬目标</h2>
+              <h2 className="assassin-banner-title">你是红孩儿 · 请选择要刺杀的孙悟空目标</h2>
             </div>
           </div>
           <p className="assassin-banner-sub">
-            点击下方玩家卡片锁定目标，再点底部<strong>「确认刺杀」</strong>：刺中风清扬则红方全员胜利，刺错则蓝方全员胜利。
+            点击下方玩家卡片锁定目标，再点底部<strong>「确认刺杀」</strong>：刺中孙悟空则红方全员胜利，刺错则蓝方全员胜利。
           </p>
         </section>
       ) : (
@@ -457,23 +462,23 @@ export function GamePanel({
                 <p className="ink-ribbon-text" role="status">
                   {effectivePhase === 'proposing' ? (
                     <>
-                      盟主<strong>{captainPlayer?.nickname ?? ''}</strong> · 正在点将 ({activeTeamIds.length}/{size})
+                      领队<strong>{captainPlayer?.nickname ?? ''}</strong> · 正在点将 ({activeTeamIds.length}/{size})
                     </>
                   ) : effectivePhase === 'discussion' ? (
                     <>
-                      盟主<strong>{captainPlayer?.nickname ?? ''}</strong> · 围桌论剑 ({activeTeamIds.length}/{size})
+                      领队<strong>{captainPlayer?.nickname ?? ''}</strong> · 真假论道 ({activeTeamIds.length}/{size})
                     </>
                   ) : effectivePhase === 'team_vote' ? (
                     <>
-                      盟主<strong>{captainPlayer?.nickname ?? ''}</strong> · 组队表决 ({g.progress.teamVotes}/{g.players.length})
+                      领队<strong>{captainPlayer?.nickname ?? ''}</strong> · 组队表决 ({g.progress.teamVotes}/{g.players.length})
                     </>
                   ) : effectivePhase === 'mission' ? (
                     <>
-                      <strong>{WUYUE_MISSIONS[g.mission - 1]?.title ?? '五岳会盟'}</strong> · 出征执行 ({g.progress.missionVotes}/{activeTeamIds.length})
+                      <strong>{WUYUE_MISSIONS[g.mission - 1]?.title ?? '西行出征'}</strong> · 出征执行 ({g.progress.missionVotes}/{activeTeamIds.length})
                     </>
                   ) : (
                     <>
-                      候任盟主<strong>{captainPlayer?.nickname ?? ''}</strong> · {phaseNames[effectivePhase]}
+                      候任领队<strong>{captainPlayer?.nickname ?? ''}</strong> · {phaseNames[effectivePhase]}
                     </>
                   )}
                 </p>
@@ -583,7 +588,7 @@ export function GamePanel({
                             {isNextCaptain ? '👑 候任' : '👑 队长'}
                           </span>
                         )}
-                        {isLadyHolder && <span className="seat-badge badge-lady">☯️ 明镜</span>}
+                        {isLadyHolder && <span className="seat-badge badge-lady">☯️ 宝镜</span>}
                       </>
                     )}
                   </div>
@@ -598,7 +603,7 @@ export function GamePanel({
                   )}
                   <div className="seat-card-avatar">
                     {revealedRole ? (
-                      <RolePortrait role={revealedRole} size="mini" />
+                      <RolePortrait role={revealedRole} loyalGuardian={revealedLoyalGuardians[p.id]} size="mini" />
                     ) : (
                       <PlayerAvatar
                         avatar={member?.avatar}
@@ -624,7 +629,7 @@ export function GamePanel({
                   {revealedRole ? (
                     <span className={`revealed-role allegiance-${roleTeam(revealedRole)}`}>
                       {roleTeam(revealedRole) === 'blue' ? '🛡️ ' : '🗡️ '}
-                      {roleNames[revealedRole]}
+                      {formatRoleName(revealedRole, revealedLoyalGuardians[p.id])}
                     </span>
                   ) : isProposed ? (
                     <span className="seat-chip chip-team sr-only">已入阵</span>
@@ -674,10 +679,10 @@ export function GamePanel({
                 onClick={() => setIdentityOpen(v => !v)}
               >
                 {identityVisible
-                  ? '收起身份'
+                  ? '收起真身'
                   : self?.canConfirmInspection
-                    ? '查验结果'
-                    : '查看身份'}
+                    ? '☯️ 查验结果'
+                    : '🔮 查看真身'}
               </button>
             </section>
           )}
@@ -687,11 +692,11 @@ export function GamePanel({
             data-sound="page"
             onClick={() => setHistoryOpen(v => !v)}
           >
-            战况 ({g.rounds.length})
+            📜 西行录 ({g.rounds.length})
           </button>
           {onOpenGuide && (
             <button type="button" className="secondary tool-pill" onClick={onOpenGuide}>
-              规则
+              📖 识妖谱
             </button>
           )}
           {!ended && <button type="button" className="secondary tool-pill" disabled={disabled}
@@ -722,7 +727,7 @@ export function GamePanel({
             >
               <fieldset disabled={disabled}>
                 <legend className="dock-rule-hint">
-                  点击头像点将，可选自己
+                  点击头像钦点同行人，可选自己
                 </legend>
                 <div className="team-picker sr-only">
                   {g.players.map(p => (
@@ -746,33 +751,33 @@ export function GamePanel({
                     <button type="button" aria-pressed={direction === 'clockwise'} onClick={() => setDirection('clockwise')}>顺时针</button>
                     <button type="button" aria-pressed={direction === 'counterclockwise'} onClick={() => setDirection('counterclockwise')}>逆时针</button>
                   </div>
-                  <button data-sound="confirm" disabled={selected.length !== size}>确认出征（{selected.length}/{size}）</button>
+                  <button data-sound="confirm" disabled={selected.length !== size}>🚩 钦点启程（{selected.length}/{size}）</button>
                 </div>
               </fieldset>
             </form>
           ) : (
             <div className="dock-panel">
-              <p>等待队长选择 {size} 位玩家执行任务。</p>
+              <p>等待领队钦点 {size} 位同行人踏上本难西行路。</p>
             </div>
           ))}
 
         {g.phase === 'discussion' && (
           <div className="dock-panel">
-            {captain && <p className="dock-rule-hint">点击头像可修改阵容；发起投票后锁定</p>}
+            {captain && <p className="dock-rule-hint">点击头像可调整阵容；发起表决后锁定</p>}
             <p className="dock-compact-text" aria-label={`发言顺序：${names(speakingOrder())}`}>
-              发言：{speakingOrder().map(id => g.players.find(p => p.id === id)?.seat).join('→')}
+              论道：{speakingOrder().map(id => g.players.find(p => p.id === id)?.seat).join('→')}
             </p>
             {captain ? (
               <button disabled={disabled || selected.length !== size} onClick={() => send({ type: 'startTeamVote', payload: {} })}>
-                总结完毕，锁定阵容并投票
+                🔔 论道完毕，锁定阵容开启表决
               </button>
             ) : (
-              <p role="status">盟主总结前可调整阵容，方案实时同步。</p>
+              <p role="status">领队总结前可调整阵容，方案实时同步。</p>
             )}
           </div>
         )}
 
-        {g.phase === 'team_vote' && <div className="dock-panel"><button onClick={() => setVoteDismissed(false)}>打开组队表决 · {g.progress.teamVotes}/{g.players.length} 已投</button></div>}
+        {g.phase === 'team_vote' && <div className="dock-panel"><button onClick={() => setVoteDismissed(false)}>🗳️ 打开组队表决 · {g.progress.teamVotes}/{g.players.length} 已投</button></div>}
 
         {g.phase === 'mission' && (
           <div className="dock-panel">
@@ -780,9 +785,9 @@ export function GamePanel({
               {g.failuresRequired === 2 ? '至少 2 张失败牌，任务才失败。' : '1 张失败牌，任务即失败。'}
             </p>
             {!round!.team.includes(userId) ? (
-              <p>你不在任务队伍中，请等待任务结果。</p>
+              <p>你未入本难西行队伍，请静候护经结果。</p>
             ) : self?.missionVoted ? (
-              <p className="notice">任务牌已提交，请等待结果。</p>
+              <p className="notice">西行任务牌已暗中落定，请静候开牌结果。</p>
             ) : (
               <form
                 onSubmit={e => {
@@ -800,7 +805,7 @@ export function GamePanel({
                         checked={choice === true}
                         onChange={() => setChoice(true)}
                       />
-                      <span>⚔️ 成功</span>
+                      <span>🪷 护经（成功）</span>
                     </label>
                     <label className={`choice vote-card ${choice === false ? 'is-selected-reject' : ''}`}>
                       <input
@@ -809,10 +814,10 @@ export function GamePanel({
                         checked={choice === false}
                         onChange={() => setChoice(false)}
                       />
-                      <span>🔥 失败</span>
+                      <span>🔥 作祟（失败）</span>
                     </label>
                   </div>
-                  <button disabled={choice === null} aria-label="确认提交任务牌">确认出牌</button>
+                  <button disabled={choice === null} aria-label="确认提交任务牌">✨ 确认出牌</button>
                 </fieldset>
               </form>
             )}
@@ -847,7 +852,7 @@ export function GamePanel({
                       ))}
                   </select>
                   <button className="assassin-execute-btn" disabled={!target}>
-                    🗡️ 确认刺杀{target ? `：${name(target)}` : ''}
+                    🔥 三昧真火 · 确认刺杀{target ? `：${name(target)}` : ''}
                   </button>
                 </div>
               </fieldset>
@@ -883,7 +888,7 @@ export function GamePanel({
                 )}
                 {room.hostId === userId ? (
                   <button disabled={disabled} onClick={() => send({ type: 'returnToLobby', payload: {} })}>
-                    回到等待区，再开一局
+                    回到仙境等待区，再开一局
                   </button>
                 ) : (
                   <span className="hint">等待房主返回等待区</span>
@@ -917,7 +922,7 @@ export function GamePanel({
         <Modal label="我的私密身份详情" scene="mirror" onClose={() => setIdentityOpen(false)}>
           <div className="table-modal-sheet identity-content">
             <div className="table-modal-head">
-              <strong>私密身份底牌</strong>
+              <strong>真身法相底牌</strong>
               <button type="button" className="secondary tool-pill" onClick={() => setIdentityOpen(false)}>
                 关闭底牌
               </button>
@@ -935,8 +940,8 @@ export function GamePanel({
             />
             </div>
             <footer className="identity-footer">
-              <p title="身份仅你可见，切换页面或断线时会自动收起">任务：{self.team === 'blue' ? '仅成功' : '成功 / 失败'} · 离页自动收起</p>
-              {!self.canConfirmInspection && <button type="button" onClick={() => setIdentityOpen(false)}>收起身份，返回对局</button>}
+              <p title="身份仅你可见，切换页面或断线时会自动收起">出牌权限：{self.team === 'blue' ? '仅能护经（成功）' : '可护经（成功）/ 作祟（失败）'} · 离页自动收起</p>
+              {!self.canConfirmInspection && <button type="button" onClick={() => setIdentityOpen(false)}>收起真身，返回对局</button>}
             </footer>
           </div>
         </Modal>
@@ -948,7 +953,7 @@ export function GamePanel({
           <div className="table-modal-sheet battle-sheet" onClick={e => e.stopPropagation()}>
             <div className="table-modal-head">
               <strong>
-                {WUYUE_MISSIONS[inspectMission - 1]?.shortLabel ?? `任务 ${inspectMission}`} 详情（需 {g.missionSizes[inspectMission - 1]} 人
+                {WUYUE_MISSIONS[inspectMission - 1]?.title ?? `任务 ${inspectMission}`} 详情（需 {g.missionSizes[inspectMission - 1]} 人
                 {failuresRequiredFor(g.players.length, inspectMission) === 2
                   ? ' · 2张失败牌才失败'
                   : ' · 1张失败牌即失败'}）
@@ -968,14 +973,14 @@ export function GamePanel({
                   aria-pressed={inspectMission === idx + 1}
                   onClick={() => setInspectMission(idx + 1)}
                 >
-                  <WuYueBackdrop mission={idx + 1} />{WUYUE_MISSIONS[idx]?.shortLabel.replace('会盟', '') ?? `任务 ${idx + 1}`}
+                  <WuYueBackdrop mission={idx + 1} />{WUYUE_MISSIONS[idx]?.shortLabel ?? `第${idx + 1}难`}
                 </button>
               ))}
             </div>
 
             {missionRounds.length === 0 ? (
               <p className="muted" style={{ marginTop: 12 }}>
-                {WUYUE_MISSIONS[inspectMission - 1]?.shortLabel ?? `任务 ${inspectMission}`} 尚未产生组队提案记录。
+                {WUYUE_MISSIONS[inspectMission - 1]?.title ?? `任务 ${inspectMission}`} 尚未产生组队提案记录。
               </p>
             ) : (
               <BattleHistory rounds={missionRounds} players={publicPlayers} anonymous={room.settings.anonymousTeamVote} userId={userId} />
@@ -989,7 +994,7 @@ export function GamePanel({
         <Modal label="战况与提案记录" scene={ended ? 'dawn' : 'sword'} onClose={() => setHistoryOpen(false)}>
           <div className="table-modal-sheet battle-sheet" onClick={e => e.stopPropagation()}>
             <div className="table-modal-head">
-              <strong>全部战况记录（共 {g.rounds.length} 次提案）</strong>
+              <strong>西行劫难全录（共 {g.rounds.length} 次提案）</strong>
               <button type="button" className="secondary tool-pill" onClick={() => setHistoryOpen(false)}>
                 关闭
               </button>

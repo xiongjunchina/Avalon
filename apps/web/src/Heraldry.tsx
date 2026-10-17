@@ -26,18 +26,12 @@ export function Emblem({kind,className=''}:{kind:Mark;className?:string}) {
   </svg>;
 }
 
-// Five Sacred Mountains (五岳会盟) golden peak emblem inside the 5 quest circles.
+// Five Journey to the West Quests (西行五难) golden mythic emblems inside the 5 quest circles.
 export function WuYueBackdrop({ mission }: { mission: number }) {
   const uniqueId = useId();
   const gold = `wuyue-gold-${uniqueId}`;
   const shadow = `wuyue-shadow-${uniqueId}`;
-  const peaks = [
-    [[14,76,31,42,44,76],[56,76,69,42,86,76],[28,76,50,23,72,76]],
-    [[8,76,26,32,43,76],[49,76,70,27,92,76],[25,76,48,43,71,76]],
-    [[11,76,28,50,46,76],[53,76,72,47,89,76],[24,76,49,19,76,76]],
-    [[8,76,30,24,49,76],[54,76,73,36,92,76],[27,76,49,30,72,76]],
-    [[10,76,27,36,44,76],[56,76,74,28,91,76],[25,76,50,17,74,76]],
-  ][(mission - 1) % 5];
+  const idx = (mission - 1) % 5;
   return (
     <svg
       className="wuyue-bg-svg"
@@ -47,20 +41,62 @@ export function WuYueBackdrop({ mission }: { mission: number }) {
       focusable="false"
     >
       <defs>
-        <linearGradient id={gold} x1="0" y1="20" x2="0" y2="82" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#fff2cf" />
-          <stop offset="55%" stopColor="#e5be78" />
-          <stop offset="100%" stopColor="#a87b38" />
+        <linearGradient id={gold} x1="0" y1="16" x2="0" y2="84" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#fff4d2" />
+          <stop offset="55%" stopColor="#eab965" />
+          <stop offset="100%" stopColor="#9c6b26" />
         </linearGradient>
-        <linearGradient id={shadow} x1="0" y1="25" x2="0" y2="82" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#cfa45c" />
-          <stop offset="100%" stopColor="#6e4b1c" />
+        <linearGradient id={shadow} x1="0" y1="22" x2="0" y2="84" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#d4a352" />
+          <stop offset="100%" stopColor="#5e3d14" />
         </linearGradient>
       </defs>
-      {peaks.map(([x,y,tipX,tipY,rightX,rightY],i) => <g key={i}>
-        <polygon points={`${x},${y} ${tipX},${tipY} ${rightX},${rightY}`} fill={`url(#${shadow})`} />
-        <polygon points={`${x},${y} ${tipX},${tipY} ${tipX - 2},${y}`} fill={`url(#${gold})`} />
-      </g>)}
+      {idx === 0 ? (
+        /* 1·五行揭帖: Five-Elements Mountain & Golden Talisman Seal */
+        <g>
+          <polygon points="14,78 33,44 48,78" fill={`url(#${shadow})`} />
+          <polygon points="52,78 68,42 86,78" fill={`url(#${shadow})`} />
+          <polygon points="24,78 50,28 76,78" fill={`url(#${shadow})`} />
+          <polygon points="24,78 50,28 48,78" fill={`url(#${gold})`} />
+          <rect x="44" y="14" width="12" height="19" rx="2" fill={`url(#${gold})`} stroke="#fff5d6" strokeWidth="1.4" />
+          <path d="M50 17v13M47 21h6M47 26h6" stroke="#7a4510" strokeWidth="1.4" strokeLinecap="round" />
+        </g>
+      ) : idx === 1 ? (
+        /* 2·流沙收徒: Flowing Sand River Waves & Crescent Monk Spade */
+        <g>
+          <path d="M18 66c10-9 20 9 32 0s22-9 32 0v12H18Z" fill={`url(#${shadow})`} />
+          <path d="M14 74c12-8 24 8 36 0s24-8 36 0" stroke={`url(#${gold})`} strokeWidth="3.2" strokeLinecap="round" />
+          <path d="M50 20v52" stroke={`url(#${gold})`} strokeWidth="4" strokeLinecap="round" />
+          <path d="M36 24c4 10 24 10 28 0-6 4-22 4-28 0Z" fill={`url(#${gold})`} stroke="#fff4d2" strokeWidth="1.5" />
+          <circle cx="50" cy="46" r="5" fill={`url(#${gold})`} />
+        </g>
+      ) : idx === 2 ? (
+        /* 3·三打白骨: Golden Warding Circle & Ruyi Jingu Bang */
+        <g>
+          <circle cx="50" cy="52" r="26" stroke={`url(#${gold})`} strokeWidth="2.6" strokeDasharray="6 4" />
+          <circle cx="50" cy="52" r="19" stroke={`url(#${shadow})`} strokeWidth="1.8" />
+          <path d="M32 72 68 24" stroke={`url(#${gold})`} strokeWidth="5.5" strokeLinecap="round" />
+          <path d="M30 74 36 66M64 32 70 22" stroke="#fff6db" strokeWidth="6.5" strokeLinecap="round" />
+        </g>
+      ) : idx === 3 ? (
+        /* 4·真假雷音: Small Leiyin Pagoda Eaves & Golden Cymbal Halo */
+        <g>
+          <circle cx="50" cy="46" r="24" stroke={`url(#${shadow})`} strokeWidth="2" />
+          <polygon points="22,48 50,24 78,48" fill={`url(#${gold})`} />
+          <polygon points="18,62 50,42 82,62" fill={`url(#${shadow})`} />
+          <rect x="32" y="60" width="36" height="18" rx="2" fill={`url(#${gold})`} />
+          <rect x="45" y="65" width="10" height="13" rx="3" fill="#5e3d14" />
+        </g>
+      ) : (
+        /* 5·灵山取经: Lingshan Sacred Golden Lotus & Radiant Aura */
+        <g>
+          <circle cx="50" cy="44" r="23" stroke={`url(#${gold})`} strokeWidth="1.8" opacity=".75" />
+          <path d="M50 22C42 36 40 50 50 64 60 50 58 36 50 22Z" fill={`url(#${gold})`} />
+          <path d="M30 36C28 50 36 60 48 64 40 52 38 42 30 36Z" fill={`url(#${shadow})`} />
+          <path d="M70 36C72 50 64 60 52 64 60 52 62 42 70 36Z" fill={`url(#${shadow})`} />
+          <path d="M22 68c16 8 40 8 56 0-12 10-44 10-56 0Z" fill={`url(#${gold})`} />
+        </g>
+      )}
     </svg>
   );
 }
@@ -69,7 +105,7 @@ export const roleTeam=(role:Role):Team=>['merlin','percival','guinevere','loyal'
 
 export const WECHAT_SAMPLE_AVATARS = Array.from(
   { length: 12 },
-  (_, i) => `/art/avatars/wx-${i + 1}.webp`
+  (_, i) => `/art/avatars/wx-${i + 1}.webp?v=xiyou2`
 );
 
 export function PlayerAvatar({
@@ -85,7 +121,11 @@ export function PlayerAvatar({
   fallbackKind?: Mark;
   className?: string;
 }) {
-  const src = avatarUrl || wechatAvatarUrl || null;
+  const rawSrc = avatarUrl || wechatAvatarUrl || null;
+  const src =
+    rawSrc && rawSrc.startsWith('/art/avatars/wx-')
+      ? `${rawSrc.split('?')[0]}?v=xiyou2`
+      : rawSrc;
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
   if (src && src !== failedSrc) {
     return (

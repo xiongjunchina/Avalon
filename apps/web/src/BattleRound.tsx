@@ -15,7 +15,7 @@ export function BattleRound({ round: r, players, anonymous, userId }: {
     <h3>第 {r.number} 次提案 · {WUYUE_MISSIONS[r.mission - 1]?.title ?? `任务 ${r.mission}`}</h3>
     <section className="battle-section battle-party" aria-label="组队方案">
       <h4><Emblem kind="crown" />组队方案</h4>
-      <div className="battle-captain">{captain && <PlayerToken player={captain} captain self={captain.id === userId} />}<p>本轮队长<br /><span>{r.direction === 'clockwise' ? '↻ 顺时针' : '↺ 逆时针'}发言</span></p></div>
+      <div className="battle-captain">{captain && <PlayerToken player={captain} captain self={captain.id === userId} />}<p className="battle-captain-meta"><strong>本轮领队</strong><span>{r.direction === 'clockwise' ? '↻ 顺时针' : '↺ 逆时针'}发言</span></p></div>
       <p className="battle-section-label">本次出征队员（{r.team.length}人）</p>
       <div className="battle-party-grid" data-count={r.team.length}>{r.team.map(id => <PlayerToken key={id} player={playerById(id)} self={id === userId} />)}</div>
     </section>

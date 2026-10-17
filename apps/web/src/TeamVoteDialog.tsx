@@ -21,19 +21,19 @@ export function TeamVoteDialog({ game, players, anonymous, userId, serverTime, d
   const submitted = Boolean(game.self?.teamVoted);
   return <Modal label="组队投票" scene="sword" onClose={onClose}>
     <section className="table-modal-sheet team-vote-sheet">
-      <header className="table-modal-head"><strong>组队表决</strong><button className="secondary tool-pill" onClick={onClose}>查看对局</button></header>
+      <header className="table-modal-head"><strong>西行组队表决</strong><button className="secondary tool-pill" onClick={onClose}>查看牌桌</button></header>
       <p className="vote-rule">赞成多于反对即通过；弃权不参与比较，平票不通过。</p>
       <div className="vote-proposal" aria-label="本次组队方案">{round.team.map(id => {
         const player = players.find(p => p.id === id)!;
         return <PlayerToken key={id} player={player} self={id === userId} />;
       })}</div>
-      {submitted ? <p className="vote-submitted" role="status">已提交表决，等待其他玩家。</p> : <form onSubmit={e => { e.preventDefault(); if (choice !== null) send({type:'teamVote',payload:{approve:choice}}); }}>
+      {submitted ? <p className="vote-submitted" role="status">已提交表决，等待其他仙友。</p> : <form onSubmit={e => { e.preventDefault(); if (choice !== null) send({type:'teamVote',payload:{approve:choice}}); }}>
         <fieldset disabled={disabled}>
           <legend className="sr-only">选择你的表决，确认提交后不可更改</legend>
           <div className="team-vote-choices">{([{value:true,label:'赞成',icon:'✓',style:'approve'}, {value:false,label:'反对',icon:'×',style:'reject'}, {value:'abstain',label:'弃权',icon:'−',style:'abstain'}] as const).map(option => <label key={option.label} className={`vote-option ${option.style} ${choice === option.value ? 'selected' : ''}`}>
             <input type="radio" name="team-ballot" checked={choice === option.value} onChange={() => setChoice(option.value)} /><span aria-hidden="true">{option.icon}</span><strong>{option.label}</strong>
           </label>)}</div>
-          <button className="vote-submit" disabled={choice === null}>确认表决</button>
+          <button className="vote-submit" disabled={choice === null}>📜 落印表决</button>
         </fieldset>
       </form>}
       <h3>投票进度 <span>{voted.length} / {players.length}</span></h3>

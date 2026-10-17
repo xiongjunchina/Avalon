@@ -29,7 +29,7 @@ p { line-height:1.75; text-wrap:pretty }
 .muted { color:var(--muted) }
 .hint { font-size:14px; color:var(--muted); line-height:1.8 }
 .eyebrow { font-size:11px; letter-spacing:2.2px; color:var(--accent); margin:0 0 10px; font-weight:600 }
-.realm-hero { position:relative; isolation:isolate; margin:28px 0; min-height:285px; display:flex; align-items:center; padding:38px; background:#12212b url('/art/avalon-moonlit.png?v=huajian2') center 48%/cover; border:1px solid #4b5551; border-radius:4px 24px 4px 24px; overflow:hidden }
+.realm-hero { position:relative; isolation:isolate; margin:28px 0; min-height:285px; display:flex; align-items:center; padding:38px; background:#12212b url('/art/avalon-moonlit.png?v=xiyou3') center 48%/cover; border:1px solid #4b5551; border-radius:4px 24px 4px 24px; overflow:hidden }
 .realm-hero:before { content:""; position:absolute; inset:0; background:#071016; opacity:.33; z-index:-1 }
 .realm-hero:after { content:""; position:absolute; inset:9px; border:1px solid #c6a57055; border-radius:1px 16px 1px 16px; pointer-events:none }
 .realm-hero>div { max-width:66%; text-shadow:0 2px 8px #060d12 }
@@ -187,7 +187,7 @@ footer small { margin-top:8px; color:#a0adb1 }
 /* Chronicle profile. */
 .account,.replay { max-width:960px; margin:28px auto 0 }
 .account { padding:0; background:transparent; border:0 }
-.account-banner { position:relative; height:180px; border:1px solid #556365; background:#162731 url('/art/avalon-moonlit.png?v=huajian2') center 43%/cover; border-radius:6px 18px 0 0 }
+.account-banner { position:relative; height:180px; border:1px solid #556365; background:#162731 url('/art/avalon-moonlit.png?v=xiyou3') center 43%/cover; border-radius:6px 18px 0 0 }
 .account-banner>span { position:absolute; left:24px; top:24px; font:11px var(--display); letter-spacing:3px; color:#d9cba9; background:#101c27db; padding:9px 12px }
 .profile-bar { position:relative; border:1px solid var(--border); border-top:0; background:var(--surface); padding:0 26px 24px; border-radius:0 0 6px 6px }
 .profile-heading { display:flex; align-items:center; gap:20px; min-width:0; margin-top:-20px }
@@ -365,7 +365,7 @@ main.app-shell.is-table-viewport {
   overflow-x: hidden;
   background:
     linear-gradient(180deg, rgba(6, 12, 22, 0.25) 0%, rgba(8, 16, 28, 0.06) 45%, rgba(5, 11, 20, 0.55) 100%),
-    url('/art/avalon-sword-bg.webp?v=sword1') center 34% / cover no-repeat;
+    url('/art/avalon-sword-bg.webp?v=xiyou3') center 34% / cover no-repeat;
 }
 
 .player-avatar-img {
@@ -411,7 +411,7 @@ main.app-shell.is-table-viewport {
   background:
     linear-gradient(180deg, rgba(6, 10, 16, 0.28) 0%, rgba(4, 9, 16, 0.78) 100%),
     linear-gradient(90deg, rgba(92, 10, 14, 0.72) 0%, rgba(58, 7, 10, 0.64) 49.9%, rgba(6, 26, 78, 0.64) 50.1%, rgba(4, 18, 56, 0.74) 100%),
-    url('/art/avalon-sword-bg.webp?v=sword1') center 36% / cover no-repeat;
+    url('/art/avalon-sword-bg.webp?v=xiyou3') center 36% / cover no-repeat;
   position: relative;
   overflow: hidden;
 }
@@ -630,7 +630,7 @@ main.app-shell.is-table-viewport {
   gap: 14px;
   background:
     linear-gradient(180deg, rgba(4, 12, 20, 0.84) 0%, rgba(5, 11, 18, 0.94) 100%),
-    url('/art/avalon-moonlit.png?v=huajian2') center 35% / cover no-repeat;
+    url('/art/avalon-moonlit.png?v=xiyou3') center 35% / cover no-repeat;
 }
 
 .mp-setup-topbar {

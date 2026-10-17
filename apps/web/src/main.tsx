@@ -55,7 +55,7 @@ const SHOWCASE_ROLES: Role[] = [
   'minion',
 ];
 
-const BOT_NAMES = ['星河', '阿青', '远山', '云舒', '沧海', '晓月', '林深', '北辰', '知秋', '南风', '清河'];
+const BOT_NAMES = ['二郎真君', '哪吒太子', '镇元大仙', '嫦娥仙子', '太上老君', '托塔天王', '东海龙王', '铁扇公主', '菩提祖师', '玉兔仙子', '赤脚大仙'];
 
 function groupRoles(roles: Role[]): Array<{ role: Role; count: number }> {
   const counts = new Map<Role, number>();
@@ -489,11 +489,11 @@ function App() {
         /* Guest Entry Screen */
         <div className="mp-home-screen">
           <div className="mp-logo-block">
-            <h1 className="mp-avalon-logo">论剑</h1>
-            <p className="mp-avalon-sub">国风武侠推理桌游</p>
+            <h1 className="mp-avalon-logo">西游 · 真假猴王</h1>
+            <p className="mp-avalon-sub">一念佛魔皆幻相，谁是西行取经人</p>
           </div>
           <section className="panel guest-login-card">
-            <h2>先让朋友认出你</h2>
+            <h2>请留西行尊号</h2>
             <form
               onSubmit={e => {
                 e.preventDefault();
@@ -504,9 +504,9 @@ function App() {
               }}
             >
               <p className="muted" id="nickname-next-step">
-                输入昵称即可进入大厅创建房间或加入朋友牌局。
+                输入尊号昵称即可踏入仙境，开启或加入真假猴王西行之局。
               </p>
-              <Label.Root htmlFor="nickname">你的昵称</Label.Root>
+              <Label.Root htmlFor="nickname">你的尊号（昵称）</Label.Root>
               <input
                 id="nickname"
                 value={nickname}
@@ -521,7 +521,7 @@ function App() {
                 访客身份保存在当前浏览器中，无广告与会员限制。
               </p>
               <button className="mp-cyan-pill" disabled={busy || !nickname.trim()} type="submit">
-                {busy ? '正在进入…' : '进入大厅'}
+                {busy ? '正在踏入仙境…' : '踏入西行大厅'}
               </button>
             </form>
             {error && (
@@ -559,7 +559,7 @@ function App() {
               >
                 ← 退出
               </button>
-              <PracticeSeatPicker players={practiceGame.players} roles={practiceGame.roles}
+              <PracticeSeatPicker gameId={practiceGame.id} players={practiceGame.players} roles={practiceGame.roles}
                 value={practiceUserId} onChange={setPracticeUserId} />
             </div>
             <div className="room-top-right">
@@ -661,7 +661,7 @@ function App() {
 
             <div className="mp-factions-stack">
               <section className="mp-faction-panel is-blue">
-                <h3>蓝方 · 正道同盟 ({setupBlueRoles.length}人)</h3>
+                <h3>蓝方 · 取经正果 ({setupBlueRoles.length}人)</h3>
                 <div className="mp-role-card-row">
                   {groupedBlue.map(({ role, count }) => (
                     <div key={role} className="mp-portrait-card is-blue">
@@ -681,7 +681,7 @@ function App() {
               </section>
 
               <section className="mp-faction-panel is-red">
-                <h3>红方 · 日月暗影 ({setupRedRoles.length}人)</h3>
+                <h3>红方 · 群妖乱道 ({setupRedRoles.length}人)</h3>
                 <div className="mp-role-card-row">
                   {groupedRed.map(({ role, count }) => (
                     <div key={role} className="mp-portrait-card is-red">
@@ -716,14 +716,14 @@ function App() {
                   })
                 }
               >
-                {busy ? '创建中…' : '完成'}
+                {busy ? '正在开启仙境…' : '开启西行房间'}
               </button>
               <button
                 type="button"
                 className="mp-subtle-link"
                 onClick={() => startPracticeGame(setupSettings)}
               >
-                单人演练 {setupSettings.playerCount} 人对局画面 ›
+                幻境单人演练 {setupSettings.playerCount} 人西行牌局 ›
               </button>
             </footer>
           </div>
@@ -760,13 +760,13 @@ function App() {
                   setPage('guide');
                 }}
               >
-                玩法指南
+                西游识妖谱
               </button></div>
             </header>
 
             <div className="mp-logo-block">
-              <h1 className="mp-avalon-logo">论剑</h1>
-              <p className="mp-avalon-sub">国风武侠推理桌游</p>
+              <h1 className="mp-avalon-logo">西游 · 真假猴王</h1>
+              <p className="mp-avalon-sub">一念佛魔皆幻相，谁是西行取经人</p>
             </div>
 
             {/* Center Single Role Medallion (Auto-rotates one role at a time, tap to switch next) */}
@@ -774,7 +774,7 @@ function App() {
               className="mp-medallion-stage"
               aria-label="角色展示"
             >
-              <button type="button" className={`mp-medallion-circle allegiance-${roleTeam(showcaseRole)}`} onClick={() => setShowcaseIndex(i => (i + 1) % SHOWCASE_ROLES.length)} aria-label="展示下一位江湖角色">
+              <button type="button" className={`mp-medallion-circle allegiance-${roleTeam(showcaseRole)}`} onClick={() => setShowcaseIndex(i => (i + 1) % SHOWCASE_ROLES.length)} aria-label="展示下一位西游角色">
                 <RolePortrait role={showcaseRole} size="card" />
               </button>
               <h2 className="mp-medallion-name">{roleNames[showcaseRole]}</h2>
@@ -783,11 +783,11 @@ function App() {
 
             <footer className="mp-home-footer">
               <div className="lobby-primary-actions">
-                <button type="button" className="mp-cyan-pill" disabled={busy} onClick={() => setSetupOpen(true)}><Emblem kind="mountain"/>创建房间</button>
-                <button type="button" className="secondary lobby-join" onClick={() => setJoinOpen(true)}><Emblem kind="crown"/>加入朋友房间</button>
+                <button type="button" className="mp-cyan-pill" disabled={busy} onClick={() => setSetupOpen(true)}><Emblem kind="mountain"/>开坛建房</button>
+                <button type="button" className="secondary lobby-join" onClick={() => setJoinOpen(true)}><Emblem kind="crown"/>入席寻友</button>
               </div>
-              <button type="button" className="secondary practice-entry" onClick={() => startPracticeGame(setupSettings)}>单人试玩 ›</button>
-              <div className="lobby-personal-links"><button type="button" className="text-button" onClick={() => { setReplayId(null); setPage('account'); }}><Emblem kind="chronicle"/>我的战绩与资料</button></div>
+              <button type="button" className="secondary practice-entry" onClick={() => startPracticeGame(setupSettings)}>🐒 幻境单人试玩 ›</button>
+              <div className="lobby-personal-links"><button type="button" className="text-button" onClick={() => { setReplayId(null); setPage('account'); }}><Emblem kind="chronicle"/>西行功果簿（战绩与资料）</button></div>
             </footer>
 
             {/* Join Room Modal */}
@@ -955,7 +955,7 @@ function App() {
                     <strong>{room.settings.playerCount}位玩家</strong>
                     <span>
                       {(ROLE_CONFIG[room.settings.playerCount] ?? []).filter(r => roleTeam(r) === 'red').length}
-                      名日月暗影
+                      名群妖乱道
                     </span>
                   </div>
                 </div>
@@ -966,7 +966,7 @@ function App() {
                 <div className="scheme3-ink-ribbon">
                   <span className="ink-ribbon-ornament" aria-hidden="true">〰</span>
                   <p className="ink-ribbon-text">
-                    等待群豪入座 <strong>{room.members.length}/{room.settings.playerCount}</strong>
+                    等待仙友入座 <strong>{room.members.length}/{room.settings.playerCount}</strong>
                   </p>
                   <span className="ink-ribbon-ornament" aria-hidden="true">〰</span>
                 </div>
@@ -1073,7 +1073,7 @@ function App() {
                 >
                   <span className="orb-icon">☯️</span>
                   <span className="orb-text">
-                    <strong>少林明镜</strong>
+                    <strong>照妖宝镜</strong>
                     <small>{room.settings.ladyEnabled ? '已开启' : '点击开启'}</small>
                   </span>
                 </button>
@@ -1117,7 +1117,7 @@ function App() {
                     disabled={disabled}
                     onClick={() => command({ type: 'setReady', payload: { ready: !me?.ready } })}
                   >
-                    {me?.ready ? '取消准备' : '准备'}
+                    {me?.ready ? '取消准备' : '✋ 准备西行'}
                   </button>
                   {host &&
                   room.members.length === room.settings.playerCount &&
@@ -1128,7 +1128,7 @@ function App() {
                       disabled={disabled}
                       onClick={() => command({ type: 'startGame', payload: {} })}
                     >
-                      人已到齐，开始发牌
+                      📜 仙友齐聚 · 敕令发牌
                     </button>
                   ) : (
                     <button
@@ -1137,7 +1137,7 @@ function App() {
                       style={{ flex: 1, minHeight: 46 }}
                       onClick={() => startPracticeGame(room.settings)}
                     >
-                      🤖 补满电脑试玩 ({room.settings.playerCount}人局)
+                      🐒 幻化分身试玩 ({room.settings.playerCount}人局)
                     </button>
                   )}
                 </div>

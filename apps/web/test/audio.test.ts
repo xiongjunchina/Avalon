@@ -4,9 +4,10 @@ import { readdirSync, existsSync } from 'node:fs';
 import { createGame, projectGame, transition } from '@avalon/game-core';
 import { defaultSettings, type GameView } from '@avalon/contracts';
 import { AudioEventTracker, EFFECT_CUES, effectFile, gameAudioCues, parseSoundPreferences } from '../src/audio-events';
+import { BACKGROUND_MUSIC } from '../src/audio-catalog';
 import { SoundEngine } from '../src/audio-engine';
 
-const players = Array.from({ length: 5 }, (_, i) => ({ id: `p${i}`, seat: i + 1, nickname: `侠客${i}` }));
+const players = Array.from({ length: 5 }, (_, i) => ({ id: `p${i}`, seat: i + 1, nickname: `仙友${i}` }));
 const fresh = () => createGame('audio-game', players, { ...defaultSettings, playerCount: 5, anonymousTeamVote: true }, a => a);
 const view = () => projectGame(fresh(), 'p0');
 test('sound settings default off and reject malformed or truthy string values', () => {
@@ -73,6 +74,7 @@ test('assassination plays one sword draw and does not replay when restored', () 
   assert.deepEqual(tracker.update(assassination, true), []);
 });
 test('every non-vocal effect is packaged and all rejected narration/loops are removed', () => {
+  assert.ok(existsSync(`apps/web/public${BACKGROUND_MUSIC.file}`), BACKGROUND_MUSIC.file);
   for (const cue of EFFECT_CUES) assert.ok(existsSync(`apps/web/public${effectFile(cue)}`), cue);
   const files = readdirSync('apps/web/public/audio', { recursive: true }).map(String);
   assert.ok(!files.some(file => /voice-|lobby\.mp3|table\.mp3|tension\.mp3/.test(file)));

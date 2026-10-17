@@ -24,16 +24,16 @@ export function PartyBanner({ players, captainId, team, size, canRemove, onRemov
   return <section className="party-banner" aria-label="队长与出征队伍">
     <div className="party-captain">
       {captain && <PlayerToken player={captain} captain />}
-      <strong aria-label="盟主，本轮队长">盟主</strong>
+      <strong aria-label="取经领队，本轮队长">领队</strong>
     </div>
     <div className="party-formation">
-      <p>出征阵容 <span>{team.length} / {size}</span></p>
+      <p>西行阵容 <span>{team.length} / {size}</span></p>
       <div className="party-slots" data-size={size}>
         {Array.from({ length: size }, (_, i) => {
           const player = players.find(p => p.id === team[i]);
           return player ? <button type="button" key={i} className="party-slot filled" disabled={!canRemove} onClick={() => onRemove(player.id)} aria-label={`${player.seat}号 ${player.nickname}，已入选${canRemove ? '，点击移出队伍' : ''}`}>
             <PlayerToken player={player} />
-          </button> : <div key={i} className="party-slot empty" aria-label={`第${i + 1}个出征席位待选`}><span>＋</span><small>待点将</small></div>;
+          </button> : <div key={i} className="party-slot empty" aria-label={`第${i + 1}个出征席位待选`}><span>＋</span><small>待同行</small></div>;
         })}
       </div>
     </div>
