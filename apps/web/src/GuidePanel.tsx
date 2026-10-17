@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { usePageSound } from './audio-interactions';
 import type { Role } from '@avalon/contracts';
 import { ROLE_CONFIG, MISSION_SIZES } from '@avalon/game-core';
 import { Emblem, roleTeam } from './Heraldry';
@@ -78,6 +79,7 @@ export function GuideRoles() {
 }
 export function GuidePanel({onBack}:{onBack:()=>void}) {
   const [section,setSection]=useState<'rules'|'roles'>('rules');
+  usePageSound(section);
   return <section className="guide"><div className="guide-heading"><div><p className="eyebrow">SWORD OF WORDS / 论剑秘卷</p><h1>《论剑》江湖谱</h1><p className="muted">围桌论剑，辨忠奸，定五岳。</p></div><button className="secondary" onClick={onBack}>返回原页面</button></div>
     <nav className="guide-nav" aria-label="说明分类"><button className="secondary" aria-pressed={section==='rules'} onClick={()=>setSection('rules')}>游戏规则</button><button className="secondary" aria-pressed={section==='roles'} onClick={()=>setSection('roles')}>角色介绍</button></nav>
     {section==='rules'?<GuideRules/>:<GuideRoles/>}

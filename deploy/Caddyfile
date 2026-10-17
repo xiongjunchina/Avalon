@@ -25,9 +25,9 @@
   }
   handle {
     root * /srv
-    @assets path /assets/* /art/*
+    @assets path /assets/* /art/* /audio/*
     header @assets Cache-Control "public, max-age=86400"
-    @page not path /assets/* /art/*
+    @page not path /assets/* /art/* /audio/*
     header @page Cache-Control "no-cache"
     try_files {path} /index.html
     file_server

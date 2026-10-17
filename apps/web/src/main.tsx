@@ -26,6 +26,7 @@ import {
 } from '@avalon/game-core';
 import './style.css';
 import './scenes.css';
+import './sound.css';
 import { Modal } from './Modal';
 import { GamePanel } from './GamePanel';
 import { PracticeSeatPicker } from './PracticeSeatPicker';
@@ -37,6 +38,7 @@ import { Emblem, PlayerAvatar, WECHAT_SAMPLE_AVATARS, roleTeam } from './Heraldr
 import { GuidePanel } from './GuidePanel';
 import { RolePortrait } from './RolePortrait';
 import { WUYUE_MISSIONS, roleMottos, roleNames, roleTitles } from './roles';
+import { SoundProvider, SoundButton, useSound, useGameSound, useNavigationSound } from './SoundSettings';
 
 const SHOWCASE_ROLES: Role[] = [
   'merlin',
@@ -103,6 +105,10 @@ function App() {
   // Single-player interactive practice game state
   const [practiceGame, setPracticeGame] = useState<GameState | null>(null);
   const [practiceUserId, setPracticeUserId] = useState<string>('p1');
+  const sound = useSound();
+  useGameSound(practiceGame ? projectGame(practiceGame, practiceUserId) : room?.game ?? null,
+    page === 'table' && !loading && !!user, !!practiceGame || !roomId || connection === '已连接');
+  useNavigationSound(`${page}:${!!user}:${roomId ?? ''}:${practiceGame?.id ?? ''}:${setupOpen}:${joinOpen}`, !loading);
 
   // Auto-rotate home role showcase every 3.8s
   useEffect(() => {
@@ -439,7 +445,7 @@ function App() {
   const scene = page === 'guide' || setupOpen ? 'library' : page === 'account' ? 'dawn' : activeGame ? (activeGame.result ? 'dawn' : 'sword') : roomId ? 'pavilion' : 'gate';
 
   return (
-    <main data-scene={scene} className={`app-shell ${inTableViewport ? 'is-table-viewport' : ''} ${inTableViewport && !activeGame?.result ? 'is-live-table' : ''}`}>
+    <main data-scene={scene} data-sound="tap" className={`app-shell ${inTableViewport ? 'is-table-viewport' : ''} ${inTableViewport && !activeGame?.result ? 'is-live-table' : ''}`}>
       {/* Toast Alerts */}
       {(error || notice) && (
         <div className="toast-stack">
@@ -538,6 +544,7 @@ function App() {
                 value={practiceUserId} onChange={setPracticeUserId} />
             </div>
             <div className="room-top-right">
+              <SoundButton />
               {!isEnded(practiceGame) && (
                 <button
                   type="button"
@@ -584,6 +591,7 @@ function App() {
             userId={practiceUserId}
             disabled={false}
             connected={true}
+            onSound={cue => void sound.engine.effect(cue)}
             send={handlePracticeCommand}
             onOpenGuide={() => {
               guideReturn.current = 'table';
@@ -605,7 +613,7 @@ function App() {
                 ‹
               </button>
               <span className="mp-setup-title">选择人数</span>
-              <button
+              <div className="home-tools"><SoundButton /><button
                 type="button"
                 className="secondary tool-pill"
                 onClick={() => {
@@ -614,7 +622,7 @@ function App() {
                 }}
               >
                 规则
-              </button>
+              </button></div>
             </header>
 
             <div className="mp-shield-row" role="radiogroup" aria-label="选择游戏人数">
@@ -725,7 +733,7 @@ function App() {
                 <span className="mp-avatar-name">{user.nickname}</span>
               </button>
 
-              <button
+              <div className="home-tools"><SoundButton /><button
                 type="button"
                 className="secondary tool-pill"
                 onClick={() => {
@@ -734,7 +742,7 @@ function App() {
                 }}
               >
                 玩法指南
-              </button>
+              </button></div>
             </header>
 
             <div className="mp-logo-block">
@@ -851,6 +859,7 @@ function App() {
             </div>
 
             <div className="room-top-right">
+              <SoundButton />
               {connection !== '已连接' && (
                 <button
                   type="button"
@@ -890,6 +899,7 @@ function App() {
               userId={user.id}
               disabled={disabled}
               connected={connection === '已连接'}
+              onSound={cue => void sound.engine.effect(cue)}
               send={command}
               onOpenGuide={() => {
                 guideReturn.current = 'table';
@@ -1248,4 +1258,4 @@ function App() {
   );
 }
 
-createRoot(document.getElementById('root')!).render(<App />);
+createRoot(document.getElementById('root')!).render(<SoundProvider><App /></SoundProvider>);

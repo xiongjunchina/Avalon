@@ -30,7 +30,14 @@ select option { background: #16324b; }
 .mp-home-screen, .mp-setup-screen { background: none; padding: 18px 20px calc(24px + env(safe-area-inset-bottom)); gap: 24px; overflow: visible; }
 .mp-home-topbar, .mp-setup-topbar { border: 0; padding: 0; }
 .mp-logo-block { margin: 4px 0 22px; }
-.mp-avalon-logo { font-size: clamp(60px, 16vw, 84px); }
+.mp-avalon-logo {
+  font-size: clamp(60px, 16vw, 84px);
+  color: #7d231f; background: none; -webkit-text-fill-color: currentColor;
+  -webkit-text-stroke: .6px #f8e4b7;
+  paint-order: stroke fill;
+  filter: none;
+  text-shadow: 0 2px 0 #fff0cc, 0 4px 12px #f9e7bf90;
+}
 .mp-avalon-sub { width: 100%; text-align: center; color: #fff2d6; font-size: 15px; letter-spacing: 2px; }
 .mp-avatar-ring, .avatar { border-radius: 50%; border: 2px solid #e7dcb6; box-shadow: 0 0 0 3px #58c7d94d; }
 .mp-avatar-btn { box-shadow: none; }
@@ -175,8 +182,6 @@ main.app-shell.is-live-table {
 .is-live-table .party-formation > p { margin: 0 0 10px; font-size: 14px; line-height: 18px; }
 .is-live-table .party-slots { --party-size: min(16cqw, 100cqh - 60px, 66px); gap: 10px 6px; }
 .is-live-table .party-slots:is([data-size="4"], [data-size="5"], [data-size="6"]) { --party-size: min(14cqw, (100cqh - 76px) / 2, 56px); }
-.is-live-table .party-slots::before { top: calc(var(--party-size) / 2); }
-.is-live-table .party-slots[data-size]::after { top: calc(50% + var(--party-size) / 2 + 5px); }
 .is-live-table .party-slot { min-height: 44px; }
 .is-live-table .party-slot .token-portrait, .is-live-table .party-slot.empty > span { width: var(--party-size); min-width: 24px; }
 .is-live-table .party-slot.empty > span { margin-bottom: 5px; }
@@ -423,8 +428,6 @@ dialog.table-modal-backdrop::backdrop { background: #081b2d55; }
 .lobby-primary-actions .lobby-join { font-size: clamp(16px, 4.5vw, 20px); }
 .lobby-primary-actions .lobby-join .emblem { display: none; }
 .party-slots { position: relative; }
-.party-slots::before, .party-slots[data-size="4"]::after, .party-slots[data-size="5"]::after, .party-slots[data-size="6"]::after { content: ''; position: absolute; top: 30px; left: 12%; right: 12%; border-top: 1px solid #7fefe8a8; pointer-events: none; }
-.party-slots[data-size="4"]::after, .party-slots[data-size="5"]::after, .party-slots[data-size="6"]::after { top: calc(50% + 30px); }
 .party-slots > * { position: relative; }
 .guide-steps summary small { display: block; font: 14px/1.6 var(--sans); margin-top: 6px; color: #e5edf6; }
 

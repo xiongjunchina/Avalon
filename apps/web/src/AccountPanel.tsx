@@ -6,6 +6,8 @@ import { RolePortrait } from './RolePortrait';
 import { api, describe } from './api';
 import { PresetsPanel, settingsText } from './PresetsPanel';
 import { Emblem, PlayerAvatar, WECHAT_SAMPLE_AVATARS, roleTeam } from './Heraldry';
+import { SoundControls } from './SoundSettings';
+import { usePageSound } from './audio-interactions';
 
 export const avatarNames:Record<Avatar,{symbol:string;name:string}>={leaf:{symbol:'❧',name:'绿叶'},moon:{symbol:'☾',name:'月亮'},sun:{symbol:'☀',name:'太阳'},mountain:{symbol:'△',name:'山峰'},wave:{symbol:'≋',name:'海浪'},star:{symbol:'✦',name:'星星'}};
 const reasons:Record<GameResult['reason'],string>={three_failures:'三次会盟任务失败',five_rejections:'五次组队未通过',merlin_found:'林平之刺中风清扬',merlin_survived:'风清扬躲过刺杀',early_merlin_found:'提前刺杀命中风清扬',early_merlin_survived:'提前刺杀未命中风清扬',unanimous_abort:'在线成员一致同意中断',offline_timeout:'全员离线超过 24 小时'};
@@ -192,10 +194,12 @@ function ReplayPanel({id,onBack}:{id:string;onBack:()=>void}) {
 }
 export function AccountPanel({user,onUser,initialReplay,onBack}:{user:User;onUser:(u:User)=>void;initialReplay:string|null;onBack:()=>void}) {
   const [tab,setTab]=useState<'stats'|'history'|'favorites'|'presets'>('stats'),[replay,setReplay]=useState(initialReplay);
+  usePageSound(`${tab}:${replay ?? ''}`);
   const avatar=avatarNames[user.avatar??'leaf'];
   if(replay)return <ReplayPanel key={replay} id={replay} onBack={()=>{setReplay(null);if(initialReplay)setTab('history');}}/>;
   return <section className="panel account"><div className="account-banner" aria-hidden="true"><span>江湖战绩</span></div><div className="section-head profile-bar"><div className="profile-heading"><span className="avatar" aria-label={`${avatar.name}头像`}><PlayerAvatar avatar={user.avatar??'leaf'} avatarUrl={user.avatarUrl} wechatAvatarUrl={user.wechatAvatarUrl} fallbackKind="leaf"/></span><div><p className="eyebrow">江湖剑客 / 个人中心</p><h1>{user.nickname}</h1></div></div><button className="secondary compact-button" onClick={onBack}>回到朋友桌</button></div>
     <ProfileEditor user={user} onUser={onUser}/>
+    <details className="account-sound-settings"><summary>声音设置</summary><SoundControls /></details>
     <nav className="account-tabs" aria-label="个人中心栏目">{([['stats','我的战绩'],['history','历史对局'],['favorites','我的收藏'],['presets','常用设置']] as const).map(([id,label])=><button className="secondary" key={id} aria-current={id===tab?'page':undefined} onClick={()=>setTab(id)}>{label}</button>)}</nav>
     {tab==='stats'?<StatisticsPanel/>:tab==='presets'?<PresetsPanel/>:<HistoryPanel key={tab} favorites={tab==='favorites'} onReplay={setReplay}/>}
   </section>;

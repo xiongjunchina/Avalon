@@ -11,6 +11,7 @@ import { BattleRound } from './BattleRound';
 import { PartyBanner } from './PlayerToken';
 import { Modal } from './Modal';
 import { IdentityDetails } from './IdentityDetails';
+import type { EffectCue } from './audio-events';
 export { roleNames } from './roles';
 
 const phaseNames: Record<GameView['phase'], string> = {
@@ -47,6 +48,7 @@ export function GamePanel({
   send,
   onOpenGuide,
   onOpenReplay,
+  onSound,
 }: {
   room: RoomView;
   userId: string;
@@ -55,6 +57,7 @@ export function GamePanel({
   send: (action: Pick<Command, 'type' | 'payload'>) => void;
   onOpenGuide?: () => void;
   onOpenReplay?: (gameId: string) => void;
+  onSound?: (cue: EffectCue) => void;
 }) {
   const g = room.game!;
   const self = g.self;
@@ -122,7 +125,7 @@ export function GamePanel({
   };
 
   if (g.phase === 'dealing') {
-    return <DealCountdown deadline={g.dealEndsAt} serverTime={room.serverTime} connected={connected} />;
+    return <DealCountdown deadline={g.dealEndsAt} serverTime={room.serverTime} connected={connected} onTick={() => onSound?.('tick')} />;
   }
 
   const needsIdentityAction =
@@ -156,9 +159,9 @@ export function GamePanel({
     : [];
 
   return (
-    <div className="game table-game-screen" data-phase={effectivePhase} data-player-count={g.players.length}>
+    <div className="game table-game-screen" data-sound="tap" data-phase={effectivePhase} data-player-count={g.players.length}>
       {/* 1. Physical Board-Game Style Quest & Vote Track Board */}
-      <div className="avalon-quest-board">
+      <div className="avalon-quest-board" data-sound="page">
         {/* Top Row: 5 Large Circular Quest Medallions (Clickable to inspect that mission's team & vote history) */}
         <div className="game-score quest-circles-row" aria-label="任务进度（点击对应任务查看组队与投票记录）">
           {g.missionSizes.map((count, i) => {
@@ -677,6 +680,7 @@ export function GamePanel({
           <button
             type="button"
             className="secondary tool-pill"
+            data-sound="page"
             onClick={() => setHistoryOpen(v => !v)}
           >
             战况 ({g.rounds.length})
@@ -734,11 +738,11 @@ export function GamePanel({
                   ))}
                 </div>
                 <div className="dock-inline-controls">
-                  <div className="direction-choice" role="group" aria-label="发言方向">
+                  <div className="direction-choice" data-sound="tap" role="group" aria-label="发言方向">
                     <button type="button" aria-pressed={direction === 'clockwise'} onClick={() => setDirection('clockwise')}>顺时针</button>
                     <button type="button" aria-pressed={direction === 'counterclockwise'} onClick={() => setDirection('counterclockwise')}>逆时针</button>
                   </div>
-                  <button disabled={selected.length !== size}>确认出征（{selected.length}/{size}）</button>
+                  <button data-sound="confirm" disabled={selected.length !== size}>确认出征（{selected.length}/{size}）</button>
                 </div>
               </fieldset>
             </form>
@@ -995,7 +999,7 @@ export function GamePanel({
             </div>
 
             {/* Quick switcher between Mission 1..5 inside the modal */}
-            <div className="mission-modal-tabs">
+            <div className="mission-modal-tabs" data-sound="page">
               {g.missionSizes.map((_, idx) => (
                 <button
                   key={idx}
