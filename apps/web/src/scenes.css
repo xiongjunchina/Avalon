@@ -121,8 +121,8 @@ select option { background: #26100e; }
 .guest-login-card form { width: 100%; }
 .guest-login-card p { font-size: 16px; }
 .mp-medallion-stage { cursor: default; margin: auto 0; }
-button.mp-medallion-circle { margin: 0; padding: 0; width: min(60vw, 240px); height: min(60vw, 240px); border: 3px solid #f0d596; outline: 1px solid #eed59e; outline-offset: 5px; box-shadow: 0 0 24px #fff0bc40; background: #19304c; }
-button.mp-medallion-circle:focus-visible { outline: 3px solid var(--jade); outline-offset: 7px; }
+.mp-medallion-circle { margin: 0; padding: 0; width: min(60vw, 240px); height: min(60vw, 240px); border: 3px solid #f0d596; outline: 1px solid #eed59e; outline-offset: 5px; box-shadow: 0 0 24px #fff0bc40; background: #19304c; cursor: default; }
+.mp-medallion-circle:focus-visible { outline: 3px solid var(--jade); outline-offset: 7px; }
 .mp-medallion-name { background: var(--glass); border: 1px solid var(--accent); border-radius: 8px 24px; padding: 7px 30px; color: #fff0cc; margin: 16px 0 8px; }
 .mp-medallion-motto { color: #fff2d8; text-shadow: 0 2px 4px #081a2a; background: #10273db3; padding: 4px 12px; border-radius: 12px; }
 .mp-home-footer { padding: 8px 0 0; gap: 16px; }

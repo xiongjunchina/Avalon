@@ -27,8 +27,8 @@ export function RolePortrait({
       <Emblem kind={role} />
       {failedRole !== artKey && (
         <img
-          src={`/art/roles/${artKey}-160.webp?v=xiyou2`}
-          srcSet={`/art/roles/${artKey}-160.webp?v=xiyou2 160w, /art/roles/${artKey}-640.webp?v=xiyou2 640w`}
+          src={`/art/roles/${artKey}-160.webp?v=xiyou3`}
+          srcSet={`/art/roles/${artKey}-160.webp?v=xiyou3 160w, /art/roles/${artKey}-640.webp?v=xiyou3 640w`}
           sizes={
             size === 'mini'
               ? '48px'

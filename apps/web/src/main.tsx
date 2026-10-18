@@ -811,14 +811,14 @@ function App() {
               <p className="mp-avalon-sub">一念佛魔皆幻相，谁是修道取经人</p>
             </div>
 
-            {/* Center Single Role Medallion (Auto-rotates one role at a time, tap to switch next) */}
+            {/* Center Single Role Medallion (Auto-rotates one role at a time, non-clickable) */}
             <section
               className="mp-medallion-stage"
               aria-label="角色展示"
             >
-              <button type="button" className={`mp-medallion-circle allegiance-${roleTeam(showcaseRole)}`} onClick={() => setShowcaseIndex(i => (i + 1) % SHOWCASE_ROLES.length)} aria-label="展示下一位西游角色">
+              <div className={`mp-medallion-circle allegiance-${roleTeam(showcaseRole)}`}>
                 <RolePortrait role={showcaseRole} size="card" />
-              </button>
+              </div>
               <h2 className="mp-medallion-name">{roleNames[showcaseRole]}</h2>
               <p className="mp-medallion-motto">{roleMottos[showcaseRole]}</p>
             </section>

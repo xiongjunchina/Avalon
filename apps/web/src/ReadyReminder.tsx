@@ -10,7 +10,7 @@ export function ReadyReminder({room,userId,disabled,onReady}:{room:RoomView;user
     setVisible(false);
     if (!needsReady) return;
     if (isLast) { setVisible(true); return; }
-    const timer=setTimeout(()=>setVisible(true),5000);
+    const timer=setTimeout(()=>setVisible(true),1800);
     return()=>clearTimeout(timer);
   },[room.id,needsReady,isLast]);
   if (!visible || !needsReady) return null;
