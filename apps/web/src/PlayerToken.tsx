@@ -70,12 +70,15 @@ export function PartyBanner({
             ) : null}
           </div>
           <div className="a2-throne-nameplate">
-            <span className="a2-throne-name" title={captain?.nickname ?? '待定'}>
-              {captain?.nickname ?? '待定'}
+            <span className="a2-throne-name" title={captain ? `${captain.seat}号 ${captain.nickname}` : '待定'}>
+              {captain ? `${captain.seat}号 ${captain.nickname}` : '待定'}
             </span>
             <span className="a2-throne-badge">领队</span>
           </div>
         </div>
+
+        {/* Subtle Vertical Divider between Captain and Members */}
+        <div className="a2-altar-divider" aria-hidden="true" />
 
         {/* Right Column: Formation Slots Area (取经阵容) */}
         <div className="party-formation">
@@ -97,6 +100,7 @@ export function PartyBanner({
                   disabled={!canRemove}
                   onClick={() => onRemove(player.id)}
                   aria-label={`${player.seat}号 ${player.nickname}，已入选${canRemove ? '，点击移出队伍' : ''}`}
+                  title={`${player.seat}号 ${player.nickname}${canRemove ? '（点击移出队伍）' : ''}`}
                 >
                   <div className="a2-slot-avatar-wrap">
                     <PlayerAvatar
@@ -111,12 +115,18 @@ export function PartyBanner({
                       </span>
                     )}
                   </div>
+                  <span className="a2-slot-name-pill" title={`${player.seat}号 ${player.nickname}`}>
+                    {player.seat}号 {player.nickname}
+                  </span>
                 </button>
               ) : (
                 <div key={i} className="party-slot a2-slot-card empty" aria-label={`第${i + 1}个出征席位待选`}>
                   <div className="a2-slot-avatar-wrap empty-circle">
                     <span className="a2-empty-lozenge">◇</span>
                   </div>
+                  <span className="a2-slot-name-pill empty-pill">
+                    待选
+                  </span>
                 </div>
               );
             })}
