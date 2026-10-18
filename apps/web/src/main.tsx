@@ -1166,34 +1166,33 @@ function App() {
 
               {/* Bottom Waiting Action Dock */}
               <div className="table-action-dock waiting-dock">
-                <div className="dock-inline-controls">
+                <div className="dock-inline-controls waiting-dock-controls">
                   <button
                     type="button"
-                    className={`mp-cyan-pill ${me?.ready ? 'is-ready-state' : ''}`}
+                    className={`mp-cyan-pill waiting-ready-btn ${me?.ready ? 'is-ready-state' : ''}`}
                     disabled={disabled}
                     onClick={() => command({ type: 'setReady', payload: { ready: !me?.ready } })}
                   >
-                    {me?.ready ? '取消取经' : '✋ 出发取经'}
+                    <span className="waiting-btn-text">{me?.ready ? '取消取经' : '✋ 出发取经'}</span>
                   </button>
                   {host &&
                   room.members.length === room.settings.playerCount &&
                   room.members.every(m => m.ready) ? (
                     <button
                       type="button"
-                      className="mp-cyan-pill"
+                      className="mp-cyan-pill waiting-start-btn"
                       disabled={disabled}
                       onClick={() => command({ type: 'startGame', payload: {} })}
                     >
-                      📜 仙友齐聚 · 敕令发牌
+                      <span className="waiting-btn-text">📜 仙友齐聚 · 敕令发牌</span>
                     </button>
                   ) : (
                     <button
                       type="button"
-                      className="secondary tool-pill pulse-action"
-                      style={{ flex: 1, minHeight: 46 }}
+                      className="secondary tool-pill pulse-action waiting-practice-btn"
                       onClick={() => startPracticeGame(room.settings)}
                     >
-                      🐒 幻化分身试玩 ({room.settings.playerCount}人局)
+                      <span className="waiting-btn-text">🐒 幻化分身试玩 ({room.settings.playerCount}人局)</span>
                     </button>
                   )}
                 </div>

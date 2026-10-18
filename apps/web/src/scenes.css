@@ -1573,3 +1573,79 @@ dialog.table-modal-backdrop::backdrop { background: #081b2d55; }
   .identity-content:has(.early-choice):has(.private-inspections) .identity-knowledge { padding: 7px; }
   .identity-content:has(.early-choice):has(.private-inspections) .identity-vision .token-portrait { width: 32px; }
 }
+
+/* Waiting Room Preparation Dock - Scheme A-2 single-line buttons */
+.waiting-dock {
+  padding: 10px 12px !important;
+}
+.waiting-dock .dock-inline-controls,
+.waiting-dock-controls {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+  width: 100% !important;
+}
+.waiting-dock .waiting-ready-btn,
+.waiting-dock .mp-cyan-pill {
+  flex: 1 1 42% !important;
+  width: auto !important;
+  min-width: 0 !important;
+  min-height: 48px !important;
+  margin: 0 !important;
+  padding: 6px 10px !important;
+  font-size: clamp(13px, 3.8vw, 16px) !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.5px !important;
+  white-space: nowrap !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+}
+.waiting-dock .waiting-ready-btn .waiting-btn-text,
+.waiting-dock .mp-cyan-pill .waiting-btn-text {
+  white-space: nowrap !important;
+  text-overflow: clip !important;
+  overflow: visible !important;
+  word-break: keep-all !important;
+}
+.waiting-dock .waiting-practice-btn,
+.waiting-dock .tool-pill {
+  flex: 1 1 58% !important;
+  width: auto !important;
+  min-width: 0 !important;
+  min-height: 48px !important;
+  margin: 0 !important;
+  padding: 6px 8px !important;
+  font-size: clamp(11.5px, 3.2vw, 13.5px) !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.2px !important;
+  white-space: nowrap !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+}
+.waiting-dock .waiting-practice-btn .waiting-btn-text,
+.waiting-dock .tool-pill .waiting-btn-text {
+  white-space: nowrap !important;
+  text-overflow: clip !important;
+  overflow: visible !important;
+  word-break: keep-all !important;
+}
+.waiting-dock .waiting-start-btn {
+  flex: 1 1 58% !important;
+  width: auto !important;
+  min-width: 0 !important;
+  min-height: 48px !important;
+  margin: 0 !important;
+  padding: 6px 8px !important;
+  font-size: clamp(12.5px, 3.4vw, 15px) !important;
+  white-space: nowrap !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+}
