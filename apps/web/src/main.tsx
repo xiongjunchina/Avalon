@@ -743,7 +743,7 @@ function App() {
                   })
                 }
               >
-                {busy ? '正在开启仙境…' : '开启取经房间'}
+                {busy ? '正在开启法坛…' : '开启法坛'}
               </button>
               <button
                 type="button"
@@ -1322,7 +1322,7 @@ function App() {
                     />
                   </details>
                 )}
-                <button type="button" onClick={() => setSettingsModalOpen(false)}>返回房间</button>
+                <button type="button" onClick={() => setSettingsModalOpen(false)}>返回法坛</button>
               </div>
             </Modal>
           )}

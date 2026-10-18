@@ -21,7 +21,7 @@ export function TeamVoteDialog({ game, players, anonymous, userId, serverTime, d
   const submitted = Boolean(game.self?.teamVoted);
   return <Modal label="组队投票" scene="sword" onClose={onClose}>
     <section className="table-modal-sheet team-vote-sheet">
-      <header className="table-modal-head"><strong>取经组队表决</strong><button className="secondary tool-pill a2-lacquer-pill" onClick={onClose}>返回牌桌</button></header>
+      <header className="table-modal-head"><strong>取经组队表决</strong><button className="secondary tool-pill a2-lacquer-pill" onClick={onClose}>返回法坛</button></header>
       <p className="vote-rule">准行多于封驳即准予出征；旁观不计入比较，平票视为流局。</p>
       <div className="vote-proposal" aria-label="本次组队方案">{round.team.map(id => {
         const player = players.find(p => p.id === id)!;

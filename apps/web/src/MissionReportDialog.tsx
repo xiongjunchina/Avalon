@@ -36,7 +36,7 @@ export function MissionReportDialog({
             <strong>{missionConfig?.title ?? `任务 ${round.mission}`}</strong>
           </div>
           <button type="button" className="secondary tool-pill a2-lacquer-pill" onClick={onClose}>
-            返回牌桌
+            返回法坛
           </button>
         </header>
 

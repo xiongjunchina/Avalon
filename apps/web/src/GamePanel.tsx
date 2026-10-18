@@ -1102,7 +1102,7 @@ export function GamePanel({
                   : ' · 1张失败牌即失败'}）
               </strong>
               <button type="button" className="secondary tool-pill" onClick={() => setInspectMission(null)}>
-                返回牌桌
+                返回法坛
               </button>
             </div>
 
@@ -1139,7 +1139,7 @@ export function GamePanel({
             <div className="table-modal-head">
               <strong>取经劫难全录（共 {g.rounds.length} 次提案）</strong>
               <button type="button" className="secondary tool-pill" onClick={() => setHistoryOpen(false)}>
-                返回牌桌
+                返回法坛
               </button>
             </div>
             {g.rounds.length === 0 ? (
