@@ -1,4 +1,4 @@
-import type { LoyalGuardian, Role } from '@avalon/contracts';
+import type { FemaleDemon, LoyalGuardian, Role } from '@avalon/contracts';
 
 export const roleNames: Record<Role, string> = {
   merlin: '孙悟空',
@@ -9,7 +9,7 @@ export const roleNames: Record<Role, string> = {
   assassin: '红孩儿',
   mordred: '黄眉老怪',
   oberon: '牛魔王',
-  minion: '小钻风',
+  minion: '女妖精',
 };
 
 export const roleTitles: Record<Role, string> = {
@@ -21,7 +21,7 @@ export const roleTitles: Record<Role, string> = {
   assassin: '圣婴大王',
   mordred: '小雷音假佛',
   oberon: '平天大圣',
-  minion: '狮驼妖众',
+  minion: '绝色妖仙',
 };
 
 export const roleMottos: Record<Role, string> = {
@@ -33,7 +33,7 @@ export const roleMottos: Record<Role, string> = {
   assassin: '三昧真火焚天地，终局一击定乾坤',
   mordred: '假扮如来设雷音，瞒过火眼乱真经',
   oberon: '独霸一方不结盟，暗怀异心阻取经',
-  minion: '打锣巡山探消息，混入队伍坏取经',
+  minion: '红绡曼舞惑圣僧，千娇百媚阻西行',
 };
 
 export interface LoyalGuardianMeta {
@@ -80,9 +80,56 @@ export const LOYAL_GUARDIANS: Record<LoyalGuardian, LoyalGuardianMeta> = {
   },
 };
 
-export function formatRoleName(role: Role, loyalGuardian?: LoyalGuardian): string {
+export interface FemaleDemonMeta {
+  key: FemaleDemon;
+  name: string;
+  fullName: string;
+  title: string;
+  motto: string;
+  artPrefix: string;
+}
+
+export const FEMALE_DEMONS: Record<FemaleDemon, FemaleDemonMeta> = {
+  spider: {
+    key: 'spider',
+    name: '蜘蛛精',
+    fullName: '女妖精 · 蜘蛛精',
+    title: '盘丝大仙',
+    motto: '盘丝结网诱唐僧，红绡濯垢困真龙',
+    artPrefix: 'minion-spider',
+  },
+  baigu: {
+    key: 'baigu',
+    name: '白骨精',
+    fullName: '女妖精 · 白骨精',
+    title: '白骨夫人',
+    motto: '三变幻化惑肉眼，枯骨红颜乱佛心',
+    artPrefix: 'minion-baigu',
+  },
+  yutu: {
+    key: 'yutu',
+    name: '玉兔精',
+    fullName: '女妖精 · 玉兔精',
+    title: '广寒仙子',
+    motto: '广寒私逃下天竺，素娥抛绣结良缘',
+    artPrefix: 'minion-yutu',
+  },
+  laoshu: {
+    key: 'laoshu',
+    name: '老鼠精',
+    fullName: '女妖精 · 老鼠精',
+    title: '地涌夫人',
+    motto: '无底洞中藏娇魅，金鼻白毛惑众生',
+    artPrefix: 'minion-laoshu',
+  },
+};
+
+export function formatRoleName(role: Role, loyalGuardian?: LoyalGuardian, femaleDemon?: FemaleDemon): string {
   if (role === 'loyal' && loyalGuardian && LOYAL_GUARDIANS[loyalGuardian]) {
     return LOYAL_GUARDIANS[loyalGuardian].fullName;
+  }
+  if (role === 'minion' && femaleDemon && FEMALE_DEMONS[femaleDemon]) {
+    return FEMALE_DEMONS[femaleDemon].fullName;
   }
   return roleNames[role];
 }

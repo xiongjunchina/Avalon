@@ -1,7 +1,7 @@
 import { BattleRound } from './BattleRound';
 import { useEffect, useRef, useState } from 'react';
 import type { Avatar, User, Statistics, Score, HistoryPage, GameSummary, Replay, GameResult } from '@avalon/contracts';
-import { assignLoyalGuardians } from '@avalon/game-core';
+import { assignFemaleDemons, assignLoyalGuardians } from '@avalon/game-core';
 import { formatRoleName, roleNames } from './roles';
 import { RolePortrait } from './RolePortrait';
 import { api, describe } from './api';
@@ -173,11 +173,12 @@ function HistoryPanel({favorites,onReplay}:{favorites:boolean;onReplay:(id:strin
 export function ReplayView({replay:g}:{replay:Replay}) {
   const name=(id:string)=>{const p=g.players.find(p=>p.id===id);return p?`${p.seat} 号 ${p.nickname}`:'未知成员';};
   const loyalGuardians = assignLoyalGuardians(g.id, g.players, g.roles);
+  const femaleDemons = assignFemaleDemons(g.id, g.players, g.roles);
   return <>
     <div className="result-box"><h2>{g.result.winner===null?'本局中断':`${g.result.winner==='blue'?'蓝方':'红方'}获胜`}</h2><p>{reasons[g.result.reason]}{g.result.targetId?` · 刺杀目标：${name(g.result.targetId)}`:''}</p><p className="hint">开始 {date(g.startedAt)}<br/>结束 {date(g.endedAt)} · 你的结果：{outcome(g)}</p><p className="hint game-uid-line">对局编号 ID：<span>{g.id}</span></p></div>
     <p className="hint">{settingsText(g.settings)}<br/>规则版本：{g.rulesetVersion}</p>
     <p className="notice">仅本局参与者可看。{g.settings.anonymousTeamVote?'组队投票仅展示总数。':'组队投票展示当时公开的个人赞反。'}任务出牌始终不对应个人。</p>
-    <h3>最终身份</h3><ul className="role-list">{g.players.map(p=><li key={p.id}><span>{name(p.id)}</span><strong className={`revealed-role allegiance-${roleTeam(g.roles[p.id])}`}><RolePortrait role={g.roles[p.id]} loyalGuardian={loyalGuardians[p.id]} size="mini"/>{formatRoleName(g.roles[p.id], loyalGuardians[p.id])}</strong></li>)}</ul>
+    <h3>最终身份</h3><ul className="role-list">{g.players.map(p=><li key={p.id}><span>{name(p.id)}</span><strong className={`revealed-role allegiance-${roleTeam(g.roles[p.id])}`}><RolePortrait role={g.roles[p.id]} loyalGuardian={loyalGuardians[p.id]} femaleDemon={femaleDemons[p.id]} size="mini"/>{formatRoleName(g.roles[p.id], loyalGuardians[p.id], femaleDemons[p.id])}</strong></li>)}</ul>
     <h3>逐轮记录</h3>{!g.rounds.length&&<p className="muted">本局在第一次组队前结束。</p>}
     <div className="replay-rounds">{g.rounds.map(r=><div key={r.number}>
       <BattleRound round={r} players={g.players} anonymous={g.settings.anonymousTeamVote}/>

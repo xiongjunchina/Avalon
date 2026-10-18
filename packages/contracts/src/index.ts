@@ -66,6 +66,7 @@ export type ServerMessage =
 
 export type Role = 'merlin' | 'percival' | 'guinevere' | 'loyal' | 'morgana' | 'assassin' | 'mordred' | 'oberon' | 'minion';
 export type LoyalGuardian = 'zhubajie' | 'shawujing' | 'bailong' | 'jingang';
+export type FemaleDemon = 'spider' | 'baigu' | 'yutu' | 'laoshu';
 export type Team = 'blue' | 'red';
 export type GamePhase = 'dealing' | 'role_reveal' | 'proposing' | 'discussion' | 'team_vote' | 'mission' | 'lady' | 'lady_reveal' | 'early_window' | 'assassination' | 'finished' | 'aborted';
 export type Player = User & { seat: number };
@@ -97,7 +98,7 @@ export interface GameView {
   assassinId?: string;
   result?: GameResult; revealedRoles?: Record<string, Role>;
   abortPoll?: { requestedBy: string; approvals: number; required: number; voted: boolean };
-  self?: { role: Role; loyalGuardian?: LoyalGuardian; team: Team; evilIds: string[]; merlinCandidates: string[]; guinevereCandidates?: string[];
+  self?: { role: Role; loyalGuardian?: LoyalGuardian; femaleDemon?: FemaleDemon; team: Team; evilIds: string[]; merlinCandidates: string[]; guinevereCandidates?: string[];
     confirmed: boolean; teamVoted: boolean; missionVoted: boolean;
     inspections: PrivateInspection[]; canInspect: boolean; canConfirmInspection: boolean; canDecideEarly: boolean };
 }

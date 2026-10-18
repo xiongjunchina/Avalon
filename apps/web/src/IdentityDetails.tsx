@@ -16,7 +16,7 @@ export function IdentityDetails({ self, players }: { self: NonNullable<GameView[
     : self.evilIds.length ? (ROLE_CONFIG[players.length]?.includes('oberon') ? '本局牛魔王独霸一方不参与相认；同伙仅知阵营，不知角色。' : '以上是与你相认的群妖同伙，仅知阵营，不知具体角色。')
     : '没有其他初始身份线索，请从发言与取经战况中判断。';
   return <>
-    <IdentityCard role={self.role} loyalGuardian={self.loyalGuardian} />
+    <IdentityCard role={self.role} loyalGuardian={self.loyalGuardian} femaleDemon={self.femaleDemon} />
     <section className="identity-knowledge" aria-label="你的身份视野">
       <h3>{title}</h3>
       {!!candidates.length && <div className="identity-vision" data-count={candidates.length}>{candidates.map(id => {

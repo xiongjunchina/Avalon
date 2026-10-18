@@ -1,7 +1,7 @@
 import { PrivateExtensions, ExtensionStep, ExtensionHistory } from './Extensions';
 import { useEffect, useRef, useState } from 'react';
 import type { Command, GameView, RoomView, RoundView } from '@avalon/contracts';
-import { ROLE_CONFIG, assignLoyalGuardians, failuresRequiredFor } from '@avalon/game-core';
+import { ROLE_CONFIG, assignFemaleDemons, assignLoyalGuardians, failuresRequiredFor } from '@avalon/game-core';
 import { Emblem, PlayerAvatar, WuYueBackdrop, roleTeam, CloudFlourish, DragonPlinthDecor } from './Heraldry';
 import { RolePortrait } from './RolePortrait';
 import { WUYUE_MISSIONS, formatRoleName, roleNames } from './roles';
@@ -259,6 +259,9 @@ export function GamePanel({
   const revealedLoyalGuardians = g.revealedRoles
     ? assignLoyalGuardians(g.id, g.players, g.revealedRoles)
     : {};
+  const revealedFemaleDemons = g.revealedRoles
+    ? assignFemaleDemons(g.id, g.players, g.revealedRoles)
+    : {};
 
   return (
     <div className="game table-game-screen" data-sound="tap" data-phase={effectivePhase} data-player-count={g.players.length}>
@@ -411,7 +414,7 @@ export function GamePanel({
                             g.result?.targetId === p.id ? 'is-target' : ''
                           }`}
                         >
-                          {p.seat}号 {p.nickname} · <strong>{formatRoleName(g.revealedRoles![p.id], revealedLoyalGuardians[p.id])}</strong>
+                          {p.seat}号 {p.nickname} · <strong>{formatRoleName(g.revealedRoles![p.id], revealedLoyalGuardians[p.id], revealedFemaleDemons[p.id])}</strong>
                           {g.result?.targetId === p.id ? ' 🎯' : ''}
                         </span>
                       ))}
@@ -427,7 +430,7 @@ export function GamePanel({
                           key={p.id}
                           className={`faction-player-chip ${p.id === userId ? 'is-self' : ''}`}
                         >
-                          {p.seat}号 {p.nickname} · <strong>{formatRoleName(g.revealedRoles![p.id], revealedLoyalGuardians[p.id])}</strong>
+                          {p.seat}号 {p.nickname} · <strong>{formatRoleName(g.revealedRoles![p.id], revealedLoyalGuardians[p.id], revealedFemaleDemons[p.id])}</strong>
                         </span>
                       ))}
                     </div>
@@ -667,7 +670,7 @@ export function GamePanel({
                   )}
                   <div className="seat-card-avatar">
                     {revealedRole ? (
-                      <RolePortrait role={revealedRole} loyalGuardian={revealedLoyalGuardians[p.id]} size="mini" />
+                      <RolePortrait role={revealedRole} loyalGuardian={revealedLoyalGuardians[p.id]} femaleDemon={revealedFemaleDemons[p.id]} size="mini" />
                     ) : (
                       <PlayerAvatar
                         avatar={member?.avatar}
@@ -712,7 +715,7 @@ export function GamePanel({
                   {revealedRole ? (
                     <span className={`revealed-role allegiance-${roleTeam(revealedRole)}`}>
                       {roleTeam(revealedRole) === 'blue' ? '🛡️ ' : '🗡️ '}
-                      {formatRoleName(revealedRole, revealedLoyalGuardians[p.id])}
+                      {formatRoleName(revealedRole, revealedLoyalGuardians[p.id], revealedFemaleDemons[p.id])}
                     </span>
                   ) : isTargeted ? (
                     <span className="seat-chip chip-target">
