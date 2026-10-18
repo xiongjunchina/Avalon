@@ -697,14 +697,16 @@ export function GamePanel({
                 <div className="seat-card-bottom">
                   {isProposed && <span className="seat-chip chip-team sr-only">已入阵</span>}
                   {canTapSeat && (
-                    <span className={`seat-chip chip-hint ${seatVoteChip ? 'sr-only' : ''}`}>
+                    <span className="seat-chip chip-hint sr-only">
                       {effectivePhase === 'proposing'
                         ? (isProposed ? '移出阵容' : '点击上车')
                         : effectivePhase === 'discussion'
                           ? (isProposed ? '移出阵容' : '点击入阵')
                           : g.phase === 'lady'
                             ? '点击查验'
-                            : '🎯 刺杀'}
+                            : g.phase === 'assassination'
+                              ? '🎯 刺杀'
+                              : ''}
                     </span>
                   )}
                   {revealedRole ? (

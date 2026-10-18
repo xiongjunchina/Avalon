@@ -1051,9 +1051,7 @@ main.app-shell.is-live-table {
   border: 1px solid #fde68a !important;
 }
 .is-live-table .seat-chip.chip-hint {
-  background: rgba(43, 14, 12, 0.85) !important;
-  color: #ffd875 !important;
-  border: 1px dashed #d4a359 !important;
+  display: none !important;
 }
 .is-live-table .seat-chip.chip-team {
   background: rgba(0, 242, 254, 0.2) !important;
