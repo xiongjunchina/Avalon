@@ -998,7 +998,7 @@ export function GamePanel({
                   ? '◇ 收起真身 ◇'
                   : self?.canConfirmInspection
                     ? '◇ 查验结果 ◇'
-                    : '◇ 查看真身 ◇'}
+                    : '◇ 查验真身 ◇'}
               </button>
             </section>
           )}

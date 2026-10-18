@@ -830,7 +830,7 @@ function App() {
               </div>
               <button type="button" className="secondary practice-entry" onClick={() => startPracticeGame(setupSettings)}>🐒 幻境单人试玩 ›</button>
               <div className="lobby-personal-links">
-                <button type="button" className="text-button" onClick={() => { setReplayId(null); setPage('account'); }}><Emblem kind="chronicle"/>取经功果簿（战绩与资料）</button>
+                <button type="button" className="text-button" onClick={() => { setReplayId(null); setPage('account'); }}><Emblem kind="chronicle"/>功果簿（战绩与资料）</button>
                 <button type="button" className="text-button" onClick={handleLogout} style={{ color: '#fca5a5' }}>🚪 退出登录 · 更换新身份</button>
               </div>
             </footer>
