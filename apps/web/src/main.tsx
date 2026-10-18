@@ -525,7 +525,7 @@ function App() {
               }}
             >
               <p className="muted" id="nickname-next-step">
-                输入尊号昵称即可踏入仙境，开启或加入真假猴王取经之局。
+                输入尊号昵称即可踏入取经大道，开启或加入真假猴王取经之局。
               </p>
               <Label.Root htmlFor="nickname">你的尊号（昵称）</Label.Root>
               <input
@@ -542,7 +542,7 @@ function App() {
                 访客身份保存在当前浏览器中，无广告与会员限制。
               </p>
               <button className="mp-cyan-pill" disabled={busy || !nickname.trim()} type="submit">
-                {busy ? '正在踏入仙境…' : '踏入仙境大厅'}
+                {busy ? '正在踏入取经大道…' : '踏入取经大道'}
               </button>
             </form>
             {error && (
