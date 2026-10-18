@@ -96,11 +96,17 @@ export async function buildApp(options: { store: PostgresStore; origin?: string;
   });
   app.get('/api/health',async()=>{await store.health();return {status:'ok',storage:'postgresql',stage:6};});
   app.post('/api/sessions/guest',{config:{rateLimit:{max:15,timeWindow:'1 minute'}}},async(req,reply)=>{
-    const {nickname}=z.object({nickname:nicknameSchema}).strict().parse(req.body);
-    try{return {user:await authenticate(req,reply)};}catch(err){if(!(err instanceof DomainError)||err.code!=='UNAUTHENTICATED')throw err;}
+    const {nickname, forceNew}=z.object({nickname:nicknameSchema, forceNew:z.boolean().optional()}).strict().parse(req.body);
+    if (!forceNew) {
+      try{return {user:await authenticate(req,reply)};}catch(err){if(!(err instanceof DomainError)||err.code!=='UNAUTHENTICATED')throw err;}
+    }
     const {user,token}=await store.createGuest(nickname); setSession(reply,token);return {user};
   });
   app.post('/api/sessions/refresh',async(req,reply)=>({user:await authenticate(req,reply)}));
+  app.delete('/api/sessions',async(_req,reply)=>{
+    reply.clearCookie('avalon_session', { path: '/' });
+    return { ok: true };
+  });
   app.get('/api/me',async(req,reply)=>{const user=await authenticate(req,reply);return {user,roomId:await store.currentRoom(user.id)};});
   app.patch('/api/me',async(req,reply)=>{
     const user=await accounts.updateProfile((await authenticate(req,reply)).id,profileSchema.parse(req.body));

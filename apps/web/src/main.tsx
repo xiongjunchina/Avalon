@@ -107,6 +107,8 @@ function App() {
 
   // Single-player interactive practice game state
   const [practiceGame, setPracticeGame] = useState<GameState | null>(null);
+  const practiceGameRef = useRef<GameState | null>(null);
+  practiceGameRef.current = practiceGame;
   const [practiceUserId, setPracticeUserId] = useState<string>('p1');
   const sound = useSound();
   useGameSound(practiceGame ? projectGame(practiceGame, practiceUserId) : room?.game ?? null,
@@ -280,6 +282,17 @@ function App() {
     }
   }
 
+  async function handleLogout() {
+    await run(async () => {
+      await api('/sessions', {}, 'DELETE');
+      setUser(null);
+      setRoomId(null);
+      setRoom(null);
+      setPage('table');
+      setNotice('已注销当前身份，请重新输入尊号入局');
+    });
+  }
+
   function command(action: Pick<Command, 'type' | 'payload'>) {
     if (!room || busy) return;
     setError('');
@@ -299,19 +312,21 @@ function App() {
     }));
     const g = createGame(`practice-game-${Date.now()}`, players, s, shuffleArray);
     setPracticeUserId('p1');
+    practiceGameRef.current = g;
     setPracticeGame(g);
     setSetupOpen(false);
   }
 
   function handlePracticeCommand(action: Pick<Command, 'type' | 'payload'>) {
-    if (!practiceGame) return;
+    const currentGame = practiceGameRef.current;
+    if (!currentGame) return;
     if (action.type === 'returnToLobby') {
-      startPracticeGame(practiceGame.settings);
+      startPracticeGame(currentGame.settings);
       return;
     }
     try {
-      const onlineIds = practiceGame.players.map(p => p.id);
-      let next = transition(practiceGame, practiceUserId, action, onlineIds);
+      const onlineIds = currentGame.players.map(p => p.id);
+      let next = transition(currentGame, practiceUserId, action, onlineIds);
       // Automatically let other seats submit votes when in team_vote or mission
       if (next.phase === 'role_reveal') {
         for (const p of next.players) {
@@ -343,7 +358,9 @@ function App() {
           }
         }
       }
-      setPracticeGame(next.result?.reason === 'host_ended' ? null : next);
+      const finalGame = next.result?.reason === 'host_ended' ? null : next;
+      practiceGameRef.current = finalGame;
+      setPracticeGame(finalGame);
       setError('');
     } catch (err) {
       setError(describe(err));
@@ -489,11 +506,15 @@ function App() {
         /* Guest Entry Screen */
         <div className="mp-home-screen">
           <div className="mp-logo-block">
-            <h1 className="mp-avalon-logo">西游 · 真假猴王</h1>
-            <p className="mp-avalon-sub">一念佛魔皆幻相，谁是西行取经人</p>
+            <h1 className="mp-avalon-logo">
+              <span className="logo-word">西游</span>
+              <span className="logo-dot">·</span>
+              <span className="logo-word">真假猴王</span>
+            </h1>
+            <p className="mp-avalon-sub">一念佛魔皆幻相，谁是修道取经人</p>
           </div>
           <section className="panel guest-login-card">
-            <h2>请留西行尊号</h2>
+            <h2>请留取经尊号</h2>
             <form
               onSubmit={e => {
                 e.preventDefault();
@@ -504,7 +525,7 @@ function App() {
               }}
             >
               <p className="muted" id="nickname-next-step">
-                输入尊号昵称即可踏入仙境，开启或加入真假猴王西行之局。
+                输入尊号昵称即可踏入仙境，开启或加入真假猴王取经之局。
               </p>
               <Label.Root htmlFor="nickname">你的尊号（昵称）</Label.Root>
               <input
@@ -521,7 +542,7 @@ function App() {
                 访客身份保存在当前浏览器中，无广告与会员限制。
               </p>
               <button className="mp-cyan-pill" disabled={busy || !nickname.trim()} type="submit">
-                {busy ? '正在踏入仙境…' : '踏入西行大厅'}
+                {busy ? '正在踏入仙境…' : '踏入仙境大厅'}
               </button>
             </form>
             {error && (
@@ -545,23 +566,29 @@ function App() {
           onUser={setUser}
           initialReplay={replayId}
           onBack={() => setPage('table')}
+          onLogout={handleLogout}
         />
       ) : practiceGame ? (
         /* Single-Player Interactive Sandbox Game Table */
         <div className="room-table-screen">
-          <header className="room-top-bar">
+          <header className="room-top-bar is-practice-top-bar">
             <div className="room-top-left">
               <button
                 type="button"
-                className="secondary tool-pill"
-                aria-label="← 退出试玩"
+                className="a2-exit-circle-btn"
+                aria-label="退出试玩"
+                title="退出试玩"
                 onClick={() => setPracticeGame(null)}
               >
-                ← 退出
+                <svg viewBox="0 0 24 24" className="a2-exit-arrow-svg" aria-hidden="true">
+                  <path d="M9 14l-4-4 4-4" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M5 10h11a4 4 0 1 1 0 8h-1" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
               </button>
               <PracticeSeatPicker gameId={practiceGame.id} players={practiceGame.players} roles={practiceGame.roles}
                 value={practiceUserId} onChange={setPracticeUserId} />
             </div>
+            <h1 className="table-top-title">西游 · 真假猴王</h1>
             <div className="room-top-right">
               <SoundButton />
               {!isEnded(practiceGame) && (
@@ -716,14 +743,14 @@ function App() {
                   })
                 }
               >
-                {busy ? '正在开启仙境…' : '开启西行房间'}
+                {busy ? '正在开启仙境…' : '开启取经房间'}
               </button>
               <button
                 type="button"
                 className="mp-subtle-link"
                 onClick={() => startPracticeGame(setupSettings)}
               >
-                幻境单人演练 {setupSettings.playerCount} 人西行牌局 ›
+                幻境单人演练 {setupSettings.playerCount} 人取经牌局 ›
               </button>
             </footer>
           </div>
@@ -752,21 +779,36 @@ function App() {
                 <span className="mp-avatar-name">{user.nickname}</span>
               </button>
 
-              <div className="home-tools"><SoundButton /><button
-                type="button"
-                className="secondary tool-pill"
-                onClick={() => {
-                  guideReturn.current = 'table';
-                  setPage('guide');
-                }}
-              >
-                西游识妖谱
-              </button></div>
+              <div className="home-tools">
+                <SoundButton />
+                <button
+                  type="button"
+                  className="secondary tool-pill"
+                  onClick={handleLogout}
+                  title="注销当前登录状态，更换新身份"
+                >
+                  🚪 更换身份
+                </button>
+                <button
+                  type="button"
+                  className="secondary tool-pill"
+                  onClick={() => {
+                    guideReturn.current = 'table';
+                    setPage('guide');
+                  }}
+                >
+                  西游识妖谱
+                </button>
+              </div>
             </header>
 
             <div className="mp-logo-block">
-              <h1 className="mp-avalon-logo">西游 · 真假猴王</h1>
-              <p className="mp-avalon-sub">一念佛魔皆幻相，谁是西行取经人</p>
+              <h1 className="mp-avalon-logo">
+                <span className="logo-word">西游</span>
+                <span className="logo-dot">·</span>
+                <span className="logo-word">真假猴王</span>
+              </h1>
+              <p className="mp-avalon-sub">一念佛魔皆幻相，谁是修道取经人</p>
             </div>
 
             {/* Center Single Role Medallion (Auto-rotates one role at a time, tap to switch next) */}
@@ -787,7 +829,10 @@ function App() {
                 <button type="button" className="secondary lobby-join" onClick={() => setJoinOpen(true)}><Emblem kind="crown"/>入席寻友</button>
               </div>
               <button type="button" className="secondary practice-entry" onClick={() => startPracticeGame(setupSettings)}>🐒 幻境单人试玩 ›</button>
-              <div className="lobby-personal-links"><button type="button" className="text-button" onClick={() => { setReplayId(null); setPage('account'); }}><Emblem kind="chronicle"/>西行功果簿（战绩与资料）</button></div>
+              <div className="lobby-personal-links">
+                <button type="button" className="text-button" onClick={() => { setReplayId(null); setPage('account'); }}><Emblem kind="chronicle"/>取经功果簿（战绩与资料）</button>
+                <button type="button" className="text-button" onClick={handleLogout} style={{ color: '#fca5a5' }}>🚪 退出登录 · 更换新身份</button>
+              </div>
             </footer>
 
             {/* Join Room Modal */}
@@ -846,18 +891,29 @@ function App() {
         /* Single-Screen Room & Game Table Viewport */
         <div className="room-table-screen">
           {/* Compact Top Header Bar */}
-          <header className="room-top-bar">
+          <header className="room-top-bar is-room-top-bar">
             <div className="room-top-left">
-              {room.phase !== 'playing' && (
-                <button
-                  type="button"
-                  className="secondary tool-pill"
-                  disabled={disabled}
-                  onClick={() => command({ type: 'leaveRoom', payload: {} })}
-                >
-                  ← 退出
-                </button>
-              )}
+              <button
+                type="button"
+                className="a2-exit-circle-btn"
+                disabled={disabled}
+                aria-label={room.phase === 'playing' ? (room.hostId === user.id ? '结束游戏' : '退出房间') : '退出房间'}
+                title={room.phase === 'playing' ? (room.hostId === user.id ? '结束游戏' : '退出房间') : '退出房间'}
+                onClick={() => {
+                  if (room.phase === 'playing') {
+                    if (window.confirm(room.hostId === user.id ? '确定要结束本局游戏吗？' : '确定要退出当前房间吗？')) {
+                      command(room.hostId === user.id ? { type: 'endGame', payload: {} } : { type: 'leaveRoom', payload: {} });
+                    }
+                  } else {
+                    command({ type: 'leaveRoom', payload: {} });
+                  }
+                }}
+              >
+                <svg viewBox="0 0 24 24" className="a2-exit-arrow-svg" aria-hidden="true">
+                  <path d="M9 14l-4-4 4-4" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M5 10h11a4 4 0 1 1 0 8h-1" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
               <button
                 type="button"
                 className="room-code-badge"
@@ -876,7 +932,7 @@ function App() {
                 </small>
               </button>
             </div>
-
+            <h1 className="table-top-title">西游 · 真假猴王</h1>
             <div className="room-top-right">
               <SoundButton />
               {connection !== '已连接' && (
@@ -1117,7 +1173,7 @@ function App() {
                     disabled={disabled}
                     onClick={() => command({ type: 'setReady', payload: { ready: !me?.ready } })}
                   >
-                    {me?.ready ? '取消准备' : '✋ 准备西行'}
+                    {me?.ready ? '取消取经' : '✋ 出发取经'}
                   </button>
                   {host &&
                   room.members.length === room.settings.playerCount &&

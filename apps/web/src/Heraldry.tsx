@@ -26,7 +26,7 @@ export function Emblem({kind,className=''}:{kind:Mark;className?:string}) {
   </svg>;
 }
 
-// Five Journey to the West Quests (西行五难) golden mythic emblems inside the 5 quest circles.
+// Five Journey to the West Quests (取经五难) golden mythic emblems inside the 5 quest circles.
 export function WuYueBackdrop({ mission }: { mission: number }) {
   const uniqueId = useId();
   const gold = `wuyue-gold-${uniqueId}`;
@@ -105,7 +105,7 @@ export const roleTeam=(role:Role):Team=>['merlin','percival','guinevere','loyal'
 
 export const WECHAT_SAMPLE_AVATARS = Array.from(
   { length: 12 },
-  (_, i) => `/art/avatars/wx-${i + 1}.webp?v=xiyou2`
+  (_, i) => `/art/avatars/wx-${i + 1}.webp?v=xiyou3`
 );
 
 export function PlayerAvatar({
@@ -124,7 +124,7 @@ export function PlayerAvatar({
   const rawSrc = avatarUrl || wechatAvatarUrl || null;
   const src =
     rawSrc && rawSrc.startsWith('/art/avatars/wx-')
-      ? `${rawSrc.split('?')[0]}?v=xiyou2`
+      ? `${rawSrc.split('?')[0]}?v=xiyou3`
       : rawSrc;
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
   if (src && src !== failedSrc) {
@@ -141,5 +141,90 @@ export function PlayerAvatar({
   }
   return <Emblem kind={avatar ?? fallbackKind} className={className} />;
 }
+
+export function DragonPlinthDecor({ side = 'left', className = '' }: { side?: 'left' | 'right'; className?: string }) {
+  const uniqueId = useId();
+  const goldGrad = `dragon-gold-${uniqueId}`;
+  return (
+    <svg
+      className={`dragon-plinth-decor ${side} ${className}`.trim()}
+      viewBox="0 0 120 70"
+      fill="none"
+      aria-hidden="true"
+      style={{ transform: side === 'right' ? 'scaleX(-1)' : undefined }}
+    >
+      <defs>
+        <linearGradient id={goldGrad} x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#fff8db" />
+          <stop offset="35%" stopColor="#f5ca68" />
+          <stop offset="70%" stopColor="#cf8c23" />
+          <stop offset="100%" stopColor="#7a3f05" />
+        </linearGradient>
+      </defs>
+      <path
+        d="M6 64 C 18 62, 32 60, 48 62 C 64 64, 80 66, 110 65 C 95 56, 75 52, 62 55 C 48 58, 38 52, 28 44 C 20 37, 18 24, 12 14 C 10 9, 7 8, 5 12 C 3 18, 5 28, 9 35 C 4 33, 2 28, 2 22 C 0 32, 4 48, 14 56 C 10 57, 7 60, 6 64 Z"
+        fill={`url(#${goldGrad})`}
+        opacity="0.95"
+      />
+      <path
+        d="M26 38 C 34 32, 45 35, 52 42 C 46 44, 38 42, 32 46 C 28 49, 25 54, 22 57 C 21 52, 23 44, 26 38 Z"
+        fill={`url(#${goldGrad})`}
+      />
+      <circle cx="16" cy="20" r="2.5" fill="#fff" />
+      <path
+        d="M48 60 C 58 52, 72 52, 85 58 C 76 60, 65 58, 56 62 Z"
+        fill={`url(#${goldGrad})`}
+      />
+    </svg>
+  );
+}
+
+export function CloudFlourish({ side = 'left', className = '' }: { side?: 'left' | 'right'; className?: string }) {
+  return (
+    <svg
+      className={`cloud-flourish ${side} ${className}`.trim()}
+      viewBox="0 0 60 28"
+      fill="none"
+      aria-hidden="true"
+      style={{ transform: side === 'right' ? 'scaleX(-1)' : undefined }}
+    >
+      <path
+        d="M6 22 C 12 24, 20 22, 26 18 C 30 15, 36 12, 44 14 C 52 16, 56 22, 58 24 C 52 23, 46 20, 40 21 C 32 23, 28 26, 18 26 C 10 26, 4 23, 6 22 Z"
+        fill="currentColor"
+      />
+      <path
+        d="M18 17 C 22 13, 29 11, 36 14 C 32 16, 26 16, 22 19 Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+
+export function ImperialDragonCrown({ className = '' }: { className?: string }) {
+  return (
+    <svg className={`imperial-dragon-crown ${className}`.trim()} viewBox="0 0 48 30" fill="none" aria-hidden="true">
+      <defs>
+        <linearGradient id="crown-gold-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#fff8e1" />
+          <stop offset="40%" stopColor="#ffd54f" />
+          <stop offset="80%" stopColor="#ff9800" />
+          <stop offset="100%" stopColor="#b75a00" />
+        </linearGradient>
+      </defs>
+      <path
+        d="M6 24 L10 10 L18 18 L24 4 L30 18 L38 10 L42 24 Z"
+        fill="url(#crown-gold-grad)"
+        stroke="#fff4b8"
+        strokeWidth="1.2"
+        strokeLinejoin="round"
+      />
+      <circle cx="24" cy="4" r="2.8" fill="#ff4d4f" stroke="#ffe082" strokeWidth="1" />
+      <circle cx="10" cy="10" r="2" fill="#00e5ff" stroke="#ffe082" strokeWidth="0.8" />
+      <circle cx="38" cy="10" r="2" fill="#00e5ff" stroke="#ffe082" strokeWidth="0.8" />
+      <rect x="8" y="24" width="32" height="4" rx="2" fill="url(#crown-gold-grad)" stroke="#fff4b8" strokeWidth="1" />
+    </svg>
+  );
+}
+
 
 

@@ -9,14 +9,14 @@ export const roleNames: Record<Role, string> = {
   assassin: '红孩儿',
   mordred: '黄眉老怪',
   oberon: '牛魔王',
-  minion: '巡山小妖',
+  minion: '小钻风',
 };
 
 export const roleTitles: Record<Role, string> = {
   merlin: '齐天大圣',
   percival: '大唐圣僧',
   guinevere: '南海大士',
-  loyal: '西行护法',
+  loyal: '取经护法',
   morgana: '混世魔猴',
   assassin: '圣婴大王',
   mordred: '小雷音假佛',
@@ -26,13 +26,13 @@ export const roleTitles: Record<Role, string> = {
 
 export const roleMottos: Record<Role, string> = {
   merlin: '火眼金睛识群妖，天机不可轻泄',
-  percival: '辨明真假美猴王，护持大圣往西行',
+  percival: '辨明真假美猴王，护持大圣保真经',
   guinevere: '慈航普度闻天机，洞悉小雷音真伪',
   loyal: '披荆斩棘护圣僧，降妖除魔取真经',
   morgana: '善聆音察理知前后，假扮大圣惑圣僧',
   assassin: '三昧真火焚天地，终局一击定乾坤',
-  mordred: '假扮如来设雷音，瞒过火眼乱西行',
-  oberon: '独霸一方不结盟，暗怀异心阻西行',
+  mordred: '假扮如来设雷音，瞒过火眼乱真经',
+  oberon: '独霸一方不结盟，暗怀异心阻取经',
   minion: '打锣巡山探消息，混入队伍坏取经',
 };
 
@@ -67,7 +67,7 @@ export const LOYAL_GUARDIANS: Record<LoyalGuardian, LoyalGuardianMeta> = {
     name: '白龙',
     fullName: '取经护法 · 白龙',
     title: '玉龙三太子',
-    motto: '化马西行驮圣僧，银枪破浪护真经',
+    motto: '踏破群山驮圣僧，银枪破浪护真经',
     artPrefix: 'bailong-loyal',
   },
   jingang: {

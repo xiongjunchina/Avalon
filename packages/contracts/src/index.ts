@@ -23,7 +23,7 @@ export const commandSchema = z.discriminatedUnion('type', [
   z.object({ ...base, type: z.literal('setAdmission'), payload: z.object({ acceptingNewMembers: z.boolean() }).strict() }).strict(),
   ...(['startGame', 'confirmRole', 'startTeamVote', 'returnToLobby', 'requestAbort', 'endGame', 'confirmInspection'] as const).map(type =>
     z.object({ ...base, type: z.literal(type), payload: z.object({}).strict() }).strict()),
-  z.object({ ...base, type: z.literal('proposeTeam'), payload: z.object({ playerIds: z.array(z.string().uuid()).min(2).max(6), direction: z.enum(['clockwise', 'counterclockwise']) }).strict() }).strict(),
+  z.object({ ...base, type: z.literal('proposeTeam'), payload: z.object({ playerIds: z.array(z.string().uuid()).max(6), direction: z.enum(['clockwise', 'counterclockwise']) }).strict() }).strict(),
   z.object({ ...base, type: z.literal('updateTeamDraft'), payload: z.object({ playerIds: z.array(z.string().uuid()).max(6), direction: z.enum(['clockwise', 'counterclockwise']) }).strict() }).strict(),
   z.object({ ...base, type: z.literal('teamVote'), payload: z.object({ approve: z.union([z.boolean(), z.literal('abstain')]) }).strict() }).strict(),
   z.object({ ...base, type: z.literal('missionVote'), payload: z.object({ success: z.boolean() }).strict() }).strict(),

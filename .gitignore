@@ -12,3 +12,7 @@ deploy/backups/
 deploy/certs/
 deploy/evidence/
 deploy/runtime/
+
+# Process artifacts and intermediate design drafts
+design/
+artwork/huajian_logo/

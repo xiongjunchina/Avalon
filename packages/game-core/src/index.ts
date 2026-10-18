@@ -161,7 +161,7 @@ export function transition(state: GameState, userId: string, action: Pick<Comman
       requireRule(g.phase === 'proposing' || g.phase === 'role_reveal', 'WRONG_PHASE');
       requireRule(userId === captain(g), 'NOT_CAPTAIN');
       const { playerIds, direction } = action.payload as { playerIds: string[]; direction: RoundView['direction'] };
-      requireRule(playerIds.length === MISSION_SIZES[g.players.length][g.mission-1] && new Set(playerIds).size === playerIds.length && playerIds.every(id => g.players.some(p => p.id === id)), 'INVALID_TEAM');
+      requireRule(playerIds.length <= MISSION_SIZES[g.players.length][g.mission-1] && new Set(playerIds).size === playerIds.length && playerIds.every(id => g.players.some(p => p.id === id)), 'INVALID_TEAM');
       g.rounds.push({ number: g.rounds.length+1, mission: g.mission, captainId: userId,
         team: g.players.filter(p => playerIds.includes(p.id)).map(p => p.id), direction });
       delete g.draftTeam;

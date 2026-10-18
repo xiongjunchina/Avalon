@@ -55,5 +55,24 @@ test('single-screen game table renders all 5-10 seats with captain crown, lady h
   const html10=renderPanel(g10,g10.captainOrder[g10.captainIndex]);
   assert.match(html10,/table-seats-grid grid-10/);
   assert.equal((html10.match(/table-seat-card/g)??[]).length,10);
+
+  // Selected mission team members must display their live vote during team_vote and settled vote during mission
+  const gVote=createGame(randomUUID(),players10,{...defaultSettings,playerCount:10,anonymousTeamVote:false},a=>a);
+  const teamIds=players10.slice(0,3).map(p=>p.id);
+  gVote.phase='team_vote';
+  gVote.rounds=[{number:1,mission:1,captainId:players10[0].id,team:teamIds,direction:'clockwise'}];
+  gVote.teamVotes={[players10[0].id]:true,[players10[1].id]:false,[players10[3].id]:true};
+  const liveVoteHtml=renderPanel(gVote,players10[0].id);
+  assert.equal((liveVoteHtml.match(/seat-card-vote-badge chip-approve/g)??[]).length,2);
+  assert.equal((liveVoteHtml.match(/seat-card-vote-badge chip-reject/g)??[]).length,1);
+  assert.equal((liveVoteHtml.match(/seat-card-vote-badge chip-pending/g)??[]).length,7);
+
+  gVote.phase='mission';
+  gVote.rounds=[{number:1,mission:1,captainId:players10[0].id,team:teamIds,direction:'clockwise',
+    vote:{approvals:8,rejections:2,abstentions:0,passed:true,ballots:Object.fromEntries(players10.map((p,i)=>[p.id,i>=2]))}}];
+  const missionHtml=renderPanel(gVote,players10[0].id);
+  assert.equal((missionHtml.match(/seat-card-vote-badge chip-reject/g)??[]).length,2);
+  assert.equal((missionHtml.match(/seat-card-vote-badge chip-approve/g)??[]).length,8);
 });
+
 

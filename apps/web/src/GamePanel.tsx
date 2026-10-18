@@ -1,14 +1,15 @@
 import { PrivateExtensions, ExtensionStep, ExtensionHistory } from './Extensions';
-import { useEffect, useState } from 'react';
-import type { Command, GameView, RoomView } from '@avalon/contracts';
+import { useEffect, useRef, useState } from 'react';
+import type { Command, GameView, RoomView, RoundView } from '@avalon/contracts';
 import { ROLE_CONFIG, assignLoyalGuardians, failuresRequiredFor } from '@avalon/game-core';
-import { Emblem, PlayerAvatar, WuYueBackdrop, roleTeam } from './Heraldry';
+import { Emblem, PlayerAvatar, WuYueBackdrop, roleTeam, CloudFlourish, DragonPlinthDecor } from './Heraldry';
 import { RolePortrait } from './RolePortrait';
 import { WUYUE_MISSIONS, formatRoleName, roleNames } from './roles';
 import { DealCountdown } from './DealCountdown';
 import { QuestMedallion } from './QuestMedallion';
 import { BattleHistory } from './BattleRound';
 import { TeamVoteDialog } from './TeamVoteDialog';
+import { MissionReportDialog } from './MissionReportDialog';
 import { PartyBanner } from './PlayerToken';
 import { Modal } from './Modal';
 import { IdentityDetails } from './IdentityDetails';
@@ -21,7 +22,7 @@ const phaseNames: Record<GameView['phase'], string> = {
   proposing: '队长组队',
   discussion: '真假论道',
   team_vote: '组队表决',
-  mission: '西行出征',
+  mission: '取经出征',
   lady: '照妖宝镜查验',
   lady_reveal: '确认查验结果',
   early_window: '轮间确认中',
@@ -31,7 +32,7 @@ const phaseNames: Record<GameView['phase'], string> = {
 };
 
 const reasons: Record<string, string> = {
-  three_failures: '三次西行任务失败',
+  three_failures: '三次取经任务失败',
   five_rejections: '累计五次组队未通过',
   merlin_found: '红孩儿刺中了孙悟空',
   merlin_survived: '孙悟空躲过了刺杀',
@@ -76,6 +77,22 @@ export function GamePanel({
   const [choice, setChoice] = useState<boolean | null>(null);
   const [target, setTarget] = useState('');
   const [abortConfirm, setAbortConfirm] = useState(false);
+  const completedMissions = g.rounds.filter(r => r.result);
+  const lastCompletedRound = completedMissions.at(-1);
+  const [missionReportRound, setMissionReportRound] = useState<RoundView | null>(null);
+  const prevCompletedCountRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (prevCompletedCountRef.current === null) {
+      prevCompletedCountRef.current = completedMissions.length;
+      return;
+    }
+    if (completedMissions.length > prevCompletedCountRef.current && lastCompletedRound) {
+      prevCompletedCountRef.current = completedMissions.length;
+      setMissionReportRound(lastCompletedRound);
+    }
+  }, [completedMissions.length, lastCompletedRound]);
+
 
   useEffect(() => {
     const hide = () => {
@@ -113,6 +130,7 @@ export function GamePanel({
   const names = (ids: string[]) => ids.map(name).join('、');
   const publicPlayers = g.players.map(p => ({ ...room.members.find(m => m.id === p.id), ...p }));
   const captain = g.captainId === userId;
+  const captainPlayer = g.players.find(p => p.id === g.captainId);
   const size = g.missionSizes[g.mission - 1];
   const identityVisible = identityOpen && connected;
   const successes = g.rounds.filter(r => r.result?.passed).length;
@@ -135,7 +153,84 @@ export function GamePanel({
   const needsIdentityAction =
     !ended && Boolean(self?.canConfirmInspection);
 
-  const lastVotedRound = [...g.rounds].reverse().find(r => r.vote?.ballots);
+  // Only compute and display team vote status during active team voting or immediately upon mission resolution.
+  // CRITICAL FIX: During 'proposing' and 'discussion', no vote has taken place on the new proposed team.
+  // Historical ballots from previous missions must NEVER bleed into the new proposal!
+  const voteStatusMap: Record<string, { label: string; icon: string; className: string; text: string }> = {};
+
+  if (!ended && effectivePhase === 'team_vote') {
+    g.players.forEach(p => {
+      const hasVotedInLiveVote = Boolean(g.teamVote?.votedIds?.includes(p.id));
+      const liveBallot =
+        !room.settings.anonymousTeamVote
+          ? g.teamVote?.ballots?.[p.id]
+          : undefined;
+      if (liveBallot !== undefined) {
+        voteStatusMap[p.id] = {
+          className:
+            liveBallot === 'abstain'
+              ? 'chip-abstain'
+              : liveBallot
+                ? 'chip-approve'
+                : 'chip-reject',
+          label:
+            liveBallot === 'abstain'
+              ? '− 旁观'
+              : liveBallot
+                ? '✓ 准行'
+                : '× 封驳',
+          icon:
+            liveBallot === 'abstain'
+              ? '−'
+              : liveBallot
+                ? '✓'
+                : '×',
+          text:
+            liveBallot === 'abstain'
+              ? '旁观'
+              : liveBallot
+                ? '准行'
+                : '封驳',
+        };
+      } else if (hasVotedInLiveVote) {
+        voteStatusMap[p.id] = { className: 'chip-approve', label: '✓ 已落印', icon: '✓', text: '已投' };
+      } else {
+        voteStatusMap[p.id] = { className: 'chip-pending', label: '⏳ 待落印', icon: '⏳', text: '待投' };
+      }
+    });
+  } else if (!ended && effectivePhase === 'mission' && round?.vote?.ballots && !room.settings.anonymousTeamVote) {
+    g.players.forEach(p => {
+      const b = round.vote?.ballots?.[p.id];
+      if (b !== undefined) {
+        voteStatusMap[p.id] = {
+          className:
+            b === 'abstain'
+              ? 'chip-abstain'
+              : b
+                ? 'chip-approve'
+                : 'chip-reject',
+          label:
+            b === 'abstain'
+              ? '− 旁观'
+              : b
+                ? '✓ 准行'
+                : '× 封驳',
+          icon:
+            b === 'abstain'
+              ? '−'
+              : b
+                ? '✓'
+                : '×',
+          text:
+            b === 'abstain'
+              ? '旁观'
+              : b
+                ? '准行'
+                : '封驳',
+        };
+      }
+    });
+  }
 
   function handleSeatTap(playerId: string) {
     if (disabled) return;
@@ -185,51 +280,26 @@ export function GamePanel({
                 current={isCurrent}
                 passed={result?.passed}
                 twoFailsRequired={twoFailsRequired}
-                attempts={missionProposals.length}
-                onInspect={() => setInspectMission(missionNum)}
+                onInspect={() => {
+                  const settled = missionProposals.find(r => r.result);
+                  if (settled) {
+                    setMissionReportRound(settled);
+                  } else {
+                    setInspectMission(missionNum);
+                  }
+                }}
               />
             );
           })}
         </div>
 
-        {/* Bottom Row of Quest Board: Compact Translucent Vote Track & Faction Pill */}
-        <div className="quest-vote-track-zone">
-          <div className="quest-vote-track-left">
-            <div className="quest-track-head">
-              <span className="quest-track-badge">流局轨</span>
-              <span className="quest-track-sub">
-                护经 {successes} : 群妖 {failures} · 流局 {g.rejectionCount}/5
-              </span>
-              <span className="sr-only">
-                投票次数记录（点击上方西行五难圆盘可查当轮票型）
-              </span>
-            </div>
-            <div className="quest-vote-circles" aria-label={`流局计数轨：${g.rejectionCount}/5`}>
-              {[1, 2, 3, 4, 5].map(step => {
-                const isPassedRejection = step <= g.rejectionCount;
-                return (
-                  <div
-                    key={step}
-                    className={[
-                      'quest-vote-spot',
-                      step === 5 ? 'is-danger-fifth' : '',
-                      isPassedRejection ? 'is-rejected-step' : '',
-                    ]
-                      .filter(Boolean)
-                      .join(' ')}
-                  >
-                    <span className="vote-spot-num">{step}</span>
-
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="quest-faction-plaque">
-            <strong>{g.players.length}位玩家</strong>
-            <span>{redCount}名群妖乱道</span>
-          </div>
+        {/* Bottom Row of Quest Board: Compact Imperial Summary Track matching Scheme A-2 */}
+        <div className="quest-vote-track-zone" aria-label={`护经进度：${successes}胜${failures}负，流局${g.rejectionCount}/5`}>
+          <span className="quest-summary-item">⚔ 护经 <strong>{successes}:{failures}</strong> 群妖</span>
+          <span className="quest-summary-divider">◇</span>
+          <span className="quest-summary-item">♨ 流局 <strong>{g.rejectionCount}/5</strong></span>
+          <span className="quest-summary-divider">◇</span>
+          <span className="quest-summary-item">👥 <strong>{g.players.length}</strong>人局</span>
         </div>
       </div>
 
@@ -381,7 +451,7 @@ export function GamePanel({
           <h2 className="assassination-stage-title">
             {g.assassinationMode === 'early'
               ? '红孩儿已发起提前刺杀！'
-              : '蓝方已赢三场西行 · 进入刺杀阶段！'}
+              : '蓝方已赢三场取经 · 进入刺杀阶段！'}
           </h2>
           {assassinPlayer && (
             <div className="assassination-identity-reveal">
@@ -430,7 +500,7 @@ export function GamePanel({
               <div className="assassin-banner-kicker">
                 {g.assassinationMode === 'early'
                   ? 'ASSASSIN TURN · 提前刺杀已启动'
-                  : 'ASSASSIN TURN · 蓝方已完成三场西行'}
+                  : 'ASSASSIN TURN · 蓝方已完成三场取经'}
               </div>
               <h2 className="assassin-banner-title">你是红孩儿 · 请选择要刺杀的孙悟空目标</h2>
             </div>
@@ -449,46 +519,46 @@ export function GamePanel({
                 ? round.team
                 : [];
 
+          const statusText =
+            effectivePhase === 'proposing'
+              ? '正在点将'
+              : effectivePhase === 'discussion'
+                ? '真假论道'
+                : effectivePhase === 'team_vote'
+                  ? `表决中 (${g.progress.teamVotes}/${g.players.length})`
+                  : effectivePhase === 'mission'
+                    ? `出征中 (${g.progress.missionVotes}/${activeTeamIds.length})`
+                    : phaseNames[effectivePhase];
+
           return (
             <div className="scheme3-middle-zone">
-              {/* Scheme 3 Floating Ink-and-Gold Calligraphy Ribbon */}
-              <div className="scheme3-ink-ribbon">
-                <h2 className="sr-only" aria-live="polite">
-                  {phaseNames[effectivePhase]}
-                </h2>
-                <span className="ink-ribbon-ornament" aria-hidden="true">
-                  〰
-                </span>
-                <p className="ink-ribbon-text" role="status">
-                  {effectivePhase === 'proposing' ? (
-                    <>
-                      领队<strong>{captainPlayer?.nickname ?? ''}</strong> · 正在点将 ({activeTeamIds.length}/{size})
-                    </>
-                  ) : effectivePhase === 'discussion' ? (
-                    <>
-                      领队<strong>{captainPlayer?.nickname ?? ''}</strong> · 真假论道 ({activeTeamIds.length}/{size})
-                    </>
-                  ) : effectivePhase === 'team_vote' ? (
-                    <>
-                      领队<strong>{captainPlayer?.nickname ?? ''}</strong> · 组队表决 ({g.progress.teamVotes}/{g.players.length})
-                    </>
-                  ) : effectivePhase === 'mission' ? (
-                    <>
-                      <strong>{WUYUE_MISSIONS[g.mission - 1]?.title ?? '西行出征'}</strong> · 出征执行 ({g.progress.missionVotes}/{activeTeamIds.length})
-                    </>
-                  ) : (
-                    <>
-                      候任领队<strong>{captainPlayer?.nickname ?? ''}</strong> · {phaseNames[effectivePhase]}
-                    </>
-                  )}
-                </p>
-                <span className="ink-ribbon-ornament" aria-hidden="true">
-                  〰
-                </span>
-              </div>
-              {['proposing', 'discussion', 'team_vote', 'mission'].includes(effectivePhase) && (
-                <PartyBanner players={publicPlayers} captainId={g.captainId} team={activeTeamIds} size={size}
-                  canRemove={['proposing', 'discussion'].includes(effectivePhase) && captain && !disabled} onRemove={handleSeatTap} />
+              <h2 className="sr-only" aria-live="polite">
+                {phaseNames[effectivePhase]}
+              </h2>
+              {['proposing', 'discussion', 'team_vote', 'mission'].includes(effectivePhase) ? (
+                <PartyBanner
+                  players={publicPlayers}
+                  captainId={g.captainId}
+                  team={activeTeamIds}
+                  size={size}
+                  canRemove={['proposing', 'discussion'].includes(effectivePhase) && captain && !disabled}
+                  onRemove={handleSeatTap}
+                  votes={voteStatusMap}
+                  statusText={statusText}
+                />
+              ) : (
+                /* Scheme 3 Floating Ink-and-Gold Calligraphy Ribbon */
+                <div className="scheme3-ink-ribbon">
+                  <span className="ink-ribbon-ornament left" aria-hidden="true">
+                    <CloudFlourish side="left" />
+                  </span>
+                  <p className="ink-ribbon-text" role="status">
+                    候任领队 <strong>{captainPlayer?.nickname ?? ''}</strong> · {phaseNames[effectivePhase]}
+                  </p>
+                  <span className="ink-ribbon-ornament right" aria-hidden="true">
+                    <CloudFlourish side="right" />
+                  </span>
+                </div>
               )}
             </div>
           );
@@ -523,13 +593,7 @@ export function GamePanel({
               ((['proposing', 'discussion'].includes(effectivePhase) && captain) ||
                 (g.phase === 'lady' && Boolean(self?.canInspect) && !g.lady?.holderIds.includes(p.id)) ||
                 (g.phase === 'assassination' && self?.role === 'assassin' && p.id !== userId));
-            const lastBallot =
-              !ended &&
-              g.phase !== 'assassination' &&
-              !room.settings.anonymousTeamVote &&
-              lastVotedRound?.vote?.ballots
-                ? lastVotedRound.vote.ballots[p.id]
-                : undefined;
+            const seatVoteChip = voteStatusMap[p.id] ?? null;
             const revealedRole = ended && g.revealedRoles ? g.revealedRoles[p.id] : undefined;
             const revealedTeam = revealedRole ? roleTeam(revealedRole) : undefined;
             const isWinnerSeat =
@@ -618,38 +682,41 @@ export function GamePanel({
                     title={member?.online === false ? '离线' : '在线'}
                   />
                   <span className="seat-num-badge">{p.seat}</span>
+                  {seatVoteChip && (
+                    <span className={`seat-card-vote-badge ${seatVoteChip.className}`} title={seatVoteChip.text}>
+                      <span className="vote-badge-icon">{seatVoteChip.icon}</span>
+                      <span className="vote-badge-text sr-only"> {seatVoteChip.text}</span>
+                    </span>
+                  )}
                 </div>
 
                 <strong className="seat-card-name" title={name(p.id)}>
-                  {p.nickname}
-                  {p.id === userId ? '（你）' : ''}
+                  ◇ {p.seat}号 {p.nickname}{p.id === userId ? ' (你)' : ''} ◇
                 </strong>
 
                 <div className="seat-card-bottom">
+                  {isProposed && <span className="seat-chip chip-team sr-only">已入阵</span>}
+                  {canTapSeat && (
+                    <span className={`seat-chip chip-hint ${seatVoteChip ? 'sr-only' : ''}`}>
+                      {effectivePhase === 'proposing'
+                        ? (isProposed ? '移出阵容' : '点击上车')
+                        : effectivePhase === 'discussion'
+                          ? (isProposed ? '移出阵容' : '点击入阵')
+                          : g.phase === 'lady'
+                            ? '点击查验'
+                            : '🎯 刺杀'}
+                    </span>
+                  )}
                   {revealedRole ? (
                     <span className={`revealed-role allegiance-${roleTeam(revealedRole)}`}>
                       {roleTeam(revealedRole) === 'blue' ? '🛡️ ' : '🗡️ '}
                       {formatRoleName(revealedRole, revealedLoyalGuardians[p.id])}
                     </span>
-                  ) : isProposed ? (
-                    <span className="seat-chip chip-team sr-only">已入阵</span>
                   ) : isTargeted ? (
                     <span className="seat-chip chip-target">
                       {g.phase === 'lady' ? '☯️ 查验' : '🗡️ 目标'}
                     </span>
-                  ) : canTapSeat ? (
-                    <span className="seat-chip chip-hint">
-                      {effectivePhase === 'proposing'
-                        ? '点击上车'
-                        : g.phase === 'lady'
-                          ? '点击查验'
-                          : '🎯 刺杀'}
-                    </span>
-                  ) : lastBallot !== undefined ? (
-                    <span className={`seat-chip ${lastBallot === 'abstain' ? 'chip-status' : lastBallot ? 'chip-approve' : 'chip-reject'}`}>
-                      {lastBallot === 'abstain' ? '− 弃权' : lastBallot ? '✓ 赞成' : '× 反对'}
-                    </span>
-                  ) : (
+                  ) : !isProposed && !canTapSeat ? (
                     <span className="sr-only">
                       {g.phase === 'assassination' && p.id === userId
                         ? '刺客本人'
@@ -657,7 +724,7 @@ export function GamePanel({
                           ? '离线'
                           : '在线'}
                     </span>
-                  )}
+                  ) : null}
                 </div>
               </div>
             );
@@ -667,45 +734,6 @@ export function GamePanel({
 
       {/* 4. Bottom Dynamic Action Dock */}
       <div className="table-action-dock">
-        <div className="dock-utility-row">
-          {!ended && self && (
-            <section className="identity-box" aria-label="我的私密身份">
-              <button
-                type="button"
-                className={`secondary tool-pill identity-trigger-btn ${needsIdentityAction ? 'pulse-action' : ''}`}
-                disabled={!connected}
-                aria-expanded={identityVisible}
-                aria-label={self?.canConfirmInspection ? '私下查看我的身份（确认查验结果）' : '私下查看我的身份'}
-                onClick={() => setIdentityOpen(v => !v)}
-              >
-                {identityVisible
-                  ? '收起真身'
-                  : self?.canConfirmInspection
-                    ? '☯️ 查验结果'
-                    : '🔮 查看真身'}
-              </button>
-            </section>
-          )}
-          <button
-            type="button"
-            className="secondary tool-pill"
-            data-sound="page"
-            onClick={() => setHistoryOpen(v => !v)}
-          >
-            📜 西行录 ({g.rounds.length})
-          </button>
-          {onOpenGuide && (
-            <button type="button" className="secondary tool-pill" onClick={onOpenGuide}>
-              📖 识妖谱
-            </button>
-          )}
-          {!ended && <button type="button" className="secondary tool-pill" disabled={disabled}
-            aria-label={room.hostId === userId ? '结束游戏' : '申请中止游戏'}
-            onClick={() => setAbortConfirm(true)}>
-            {room.hostId === userId ? '结束游戏' : '申请中止'}
-          </button>}
-        </div>
-
         <ExtensionStep
           key={`${g.id}:${g.phase}:${g.rounds.length}`}
           game={g}
@@ -719,15 +747,15 @@ export function GamePanel({
         {effectivePhase === 'proposing' &&
           (captain ? (
             <form
-              className="dock-panel"
+              className="dock-panel dock-propose-form"
               onSubmit={e => {
                 e.preventDefault();
                 send({ type: 'proposeTeam', payload: { playerIds: selected, direction } });
               }}
             >
-              <fieldset disabled={disabled}>
+              <fieldset disabled={disabled} className="dock-propose-fieldset">
                 <legend className="dock-rule-hint">
-                  点击头像钦点同行人，可选自己
+                  —◇ 可调整同行人，确认后进入讨论 ◇—
                 </legend>
                 <div className="team-picker sr-only">
                   {g.players.map(p => (
@@ -747,47 +775,93 @@ export function GamePanel({
                   ))}
                 </div>
                 <div className="dock-inline-controls">
-                  <div className="direction-choice" data-sound="tap" role="group" aria-label="发言方向">
-                    <button type="button" aria-pressed={direction === 'clockwise'} onClick={() => setDirection('clockwise')}>顺时针</button>
-                    <button type="button" aria-pressed={direction === 'counterclockwise'} onClick={() => setDirection('counterclockwise')}>逆时针</button>
-                  </div>
-                  <button data-sound="confirm" disabled={selected.length !== size}>🚩 钦点启程（{selected.length}/{size}）</button>
+                  <button
+                    type="button"
+                    className="btn-direction-toggle"
+                    data-sound="tap"
+                    aria-label={`发言方向：${direction === 'clockwise' ? '顺时针' : '逆时针'}，点击切换`}
+                    onClick={() => setDirection(direction === 'clockwise' ? 'counterclockwise' : 'clockwise')}
+                  >
+                    {direction === 'clockwise' ? '顺时针发言' : '逆时针发言'}
+                  </button>
+                  <button
+                    type="submit"
+                    data-sound="confirm"
+                    disabled={disabled || selected.length !== size}
+                    className="btn-primary-cta btn-dragon-cta"
+                  >
+                    <span className="btn-cloud-flourish left" aria-hidden="true"><CloudFlourish side="left" /></span>
+                    <span className="btn-cta-text">确认阵容 ({selected.length}/{size})</span>
+                    <span className="btn-cloud-flourish right" aria-hidden="true"><CloudFlourish side="right" /></span>
+                  </button>
                 </div>
               </fieldset>
             </form>
           ) : (
-            <div className="dock-panel">
-              <p>等待领队钦点 {size} 位同行人踏上本难西行路。</p>
+            <div className="dock-panel dock-panel-waiting">
+              <div className="dock-waiting-hero">
+                <span className="dock-waiting-icon" aria-hidden="true">⏳</span>
+                <div className="dock-waiting-body">
+                  <strong className="dock-waiting-title">候任静观 · 正在点将</strong>
+                  <p className="dock-waiting-desc">
+                    等待领队 <strong>{captainPlayer?.nickname}</strong> 钦点同行人，方案实时同步
+                  </p>
+                </div>
+              </div>
             </div>
           ))}
 
         {g.phase === 'discussion' && (
           <div className="dock-panel">
-            {captain && <p className="dock-rule-hint">点击头像可调整阵容；发起表决后锁定</p>}
+            {captain && <p className="dock-rule-hint">—◇ 真假论道 · 点击头像可调整阵容 · 听取陈述后锁定发起表决 ◇—</p>}
             <p className="dock-compact-text" aria-label={`发言顺序：${names(speakingOrder())}`}>
               论道：{speakingOrder().map(id => g.players.find(p => p.id === id)?.seat).join('→')}
             </p>
             {captain ? (
-              <button disabled={disabled || selected.length !== size} onClick={() => send({ type: 'startTeamVote', payload: {} })}>
-                🔔 论道完毕，锁定阵容开启表决
+              <button
+                disabled={disabled || selected.length !== size}
+                className="btn-primary-cta btn-dragon-cta"
+                onClick={() => send({ type: 'startTeamVote', payload: {} })}
+              >
+                <span className="btn-cloud-flourish left" aria-hidden="true"><CloudFlourish side="left" /></span>
+                <span className="btn-cta-text">
+                  {selected.length === size
+                    ? '锁定阵容 · 发起全员表决'
+                    : `待补全人选（${selected.length}/${size}）`}
+                </span>
+                <span className="btn-cloud-flourish right" aria-hidden="true"><CloudFlourish side="right" /></span>
               </button>
             ) : (
-              <p role="status">领队总结前可调整阵容，方案实时同步。</p>
+              <div className="dock-waiting-hero">
+                <span className="dock-waiting-icon" aria-hidden="true">🗣️</span>
+                <div className="dock-waiting-body">
+                  <strong className="dock-waiting-title">真假论道 · 各抒己见</strong>
+                  <p className="dock-waiting-desc">领队可随时调整阵容并实时同步，论道完毕后锁定表决</p>
+                </div>
+              </div>
             )}
           </div>
         )}
 
-        {g.phase === 'team_vote' && <div className="dock-panel"><button onClick={() => setVoteDismissed(false)}>🗳️ 打开组队表决 · {g.progress.teamVotes}/{g.players.length} 已投</button></div>}
+        {g.phase === 'team_vote' && (
+          <div className="dock-panel">
+            <button className="btn-primary-cta btn-dragon-cta" onClick={() => setVoteDismissed(false)}>
+              <span className="btn-cloud-flourish left" aria-hidden="true"><CloudFlourish side="left" /></span>
+              <span className="btn-cta-text">🗳️ 打开组队表决 · {g.progress.teamVotes}/{g.players.length} 已投</span>
+              <span className="btn-cloud-flourish right" aria-hidden="true"><CloudFlourish side="right" /></span>
+            </button>
+          </div>
+        )}
 
         {g.phase === 'mission' && (
           <div className="dock-panel">
             <p className="dock-rule-hint" role="status">
-              {g.failuresRequired === 2 ? '至少 2 张失败牌，任务才失败。' : '1 张失败牌，任务即失败。'}
+              —◇ {g.failuresRequired === 2 ? '需至少 2 张失败牌，任务方告失败' : '只要出现 1 张失败牌，任务即失败'} ◇—
             </p>
             {!round!.team.includes(userId) ? (
-              <p>你未入本难西行队伍，请静候护经结果。</p>
+              <p>你未入本难取经队伍，请静候护经结果。</p>
             ) : self?.missionVoted ? (
-              <p className="notice">西行任务牌已暗中落定，请静候开牌结果。</p>
+              <p className="notice">取经任务牌已暗中落定，请静候开牌结果。</p>
             ) : (
               <form
                 onSubmit={e => {
@@ -817,7 +891,16 @@ export function GamePanel({
                       <span>🔥 作祟（失败）</span>
                     </label>
                   </div>
-                  <button disabled={choice === null} aria-label="确认提交任务牌">✨ 确认出牌</button>
+                  <button
+                    type="submit"
+                    disabled={choice === null}
+                    aria-label="确认提交任务牌"
+                    className="btn-primary-cta btn-dragon-cta"
+                  >
+                    <span className="btn-cloud-flourish left" aria-hidden="true"><CloudFlourish side="left" /></span>
+                    <span className="btn-cta-text">✨ 确认出牌</span>
+                    <span className="btn-cloud-flourish right" aria-hidden="true"><CloudFlourish side="right" /></span>
+                  </button>
                 </fieldset>
               </form>
             )}
@@ -897,7 +980,54 @@ export function GamePanel({
             </div>
           </section>
         )}
+        {/* Scheme A-2 Bottom 4-Action Utility Dock */}
+        <div className="dock-utility-row">
+          {!ended && self && (
+            <section className="identity-box" aria-label="我的私密身份">
+              <button
+                type="button"
+                className={`secondary tool-pill dock-utility-btn identity-trigger-btn ${needsIdentityAction ? 'pulse-action' : ''}`}
+                disabled={!connected}
+                aria-expanded={identityVisible}
+                aria-label={self?.canConfirmInspection ? '私下查看我的身份（确认查验结果）' : '私下查看我的身份'}
+                onClick={() => setIdentityOpen(v => !v)}
+              >
+                {identityVisible
+                  ? '◇ 收起真身 ◇'
+                  : self?.canConfirmInspection
+                    ? '◇ 查验结果 ◇'
+                    : '◇ 查看真身 ◇'}
+              </button>
+            </section>
+          )}
+          <button
+            type="button"
+            className="secondary tool-pill dock-utility-btn"
+            data-sound="page"
+            onClick={() => setHistoryOpen(v => !v)}
+          >
+            ◇ 取经录 ◇
+          </button>
+          {onOpenGuide && (
+            <button type="button" className="secondary tool-pill dock-utility-btn" onClick={onOpenGuide}>
+              ◇ 识妖谱 ◇
+            </button>
+          )}
+          {!ended && (
+            <button
+              type="button"
+              className="secondary tool-pill dock-utility-btn"
+              disabled={disabled}
+              aria-label={room.hostId === userId ? '结束游戏' : '申请中止游戏'}
+              onClick={() => setAbortConfirm(true)}
+            >
+              ◇ 结束游戏 ◇
+            </button>
+          )}
+        </div>
 
+        <DragonPlinthDecor side="left" />
+        <DragonPlinthDecor side="right" />
       </div>
 
       {g.phase === 'team_vote' && !voteDismissed && <TeamVoteDialog game={g} players={publicPlayers} anonymous={room.settings.anonymousTeamVote} userId={userId} serverTime={room.serverTime} disabled={disabled} send={send} onClose={() => setVoteDismissed(true)} />}
@@ -947,6 +1077,17 @@ export function GamePanel({
         </Modal>
       )}
 
+      {/* Settled Mission Report Modal (Auto-pops up upon mission completion or tapping completed mission circle) */}
+      {missionReportRound && missionReportRound.result && (
+        <MissionReportDialog
+          round={missionReportRound}
+          players={publicPlayers}
+          anonymous={room.settings.anonymousTeamVote}
+          userId={userId}
+          onClose={() => setMissionReportRound(null)}
+        />
+      )}
+
       {/* Per-Mission Detail Modal (Triggered when tapping any of the 5 Mission Circles) */}
       {inspectMission !== null && (
         <Modal label={`任务 ${inspectMission} 组队与投票详情`} scene={ended ? 'dawn' : 'sword'} onClose={() => setInspectMission(null)}>
@@ -959,7 +1100,7 @@ export function GamePanel({
                   : ' · 1张失败牌即失败'}）
               </strong>
               <button type="button" className="secondary tool-pill" onClick={() => setInspectMission(null)}>
-                关闭
+                返回牌桌
               </button>
             </div>
 
@@ -994,9 +1135,9 @@ export function GamePanel({
         <Modal label="战况与提案记录" scene={ended ? 'dawn' : 'sword'} onClose={() => setHistoryOpen(false)}>
           <div className="table-modal-sheet battle-sheet" onClick={e => e.stopPropagation()}>
             <div className="table-modal-head">
-              <strong>西行劫难全录（共 {g.rounds.length} 次提案）</strong>
+              <strong>取经劫难全录（共 {g.rounds.length} 次提案）</strong>
               <button type="button" className="secondary tool-pill" onClick={() => setHistoryOpen(false)}>
-                关闭
+                返回牌桌
               </button>
             </div>
             {g.rounds.length === 0 ? (

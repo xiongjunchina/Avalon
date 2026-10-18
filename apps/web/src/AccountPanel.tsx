@@ -11,7 +11,7 @@ import { SoundControls } from './SoundSettings';
 import { usePageSound } from './audio-interactions';
 
 export const avatarNames:Record<Avatar,{symbol:string;name:string}>={leaf:{symbol:'❧',name:'绿叶'},moon:{symbol:'☾',name:'月亮'},sun:{symbol:'☀',name:'太阳'},mountain:{symbol:'△',name:'山峰'},wave:{symbol:'≋',name:'海浪'},star:{symbol:'✦',name:'星星'}};
-const reasons:Record<GameResult['reason'],string>={three_failures:'三次西行任务失败',five_rejections:'五次组队未通过',merlin_found:'红孩儿刺中孙悟空',merlin_survived:'孙悟空躲过刺杀',early_merlin_found:'提前刺杀命中孙悟空',early_merlin_survived:'提前刺杀未命中孙悟空',unanimous_abort:'在线成员一致同意中断',host_ended:'房主结束游戏',offline_timeout:'全员离线超过 24 小时'};
+const reasons:Record<GameResult['reason'],string>={three_failures:'三次取经任务失败',five_rejections:'五次组队未通过',merlin_found:'红孩儿刺中孙悟空',merlin_survived:'孙悟空躲过刺杀',early_merlin_found:'提前刺杀命中孙悟空',early_merlin_survived:'提前刺杀未命中孙悟空',unanimous_abort:'在线成员一致同意中断',host_ended:'房主结束游戏',offline_timeout:'全员离线超过 24 小时'};
 const date=(s:string)=>new Date(s).toLocaleString('zh-CN',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false});
 export const rate=(s:Score)=>s.winRate===null?'—':`${Math.round(s.winRate*100)}%`;
 const outcome=(g:GameSummary)=>g.result.winner===null?'中断':g.result.winner===g.self.team?'胜利':'失败';
@@ -194,12 +194,12 @@ function ReplayPanel({id,onBack}:{id:string;onBack:()=>void}) {
     {!replay&&!error?<p role="status">正在读取复盘…</p>:replay&&<><ReplayView replay={replay}/><button className="secondary" disabled={busy} aria-pressed={replay.favorite} onClick={()=>{setBusy(true);setError('');void api<{favorite:boolean}>(`/me/favorites/${id}`,undefined,replay.favorite?'DELETE':'PUT').then(r=>setReplay(g=>g?{...g,favorite:r.favorite}:g)).catch(e=>setError(describe(e))).finally(()=>setBusy(false));}}>{replay.favorite?'取消收藏':'收藏这局'}</button><p className="hint">收藏只在你的个人中心可见，不会创建公开链接。取消收藏保留历史对局。</p></>}
   </section>;
 }
-export function AccountPanel({user,onUser,initialReplay,onBack}:{user:User;onUser:(u:User)=>void;initialReplay:string|null;onBack:()=>void}) {
+export function AccountPanel({user,onUser,initialReplay,onBack,onLogout}:{user:User;onUser:(u:User)=>void;initialReplay:string|null;onBack:()=>void;onLogout?:()=>void}) {
   const [tab,setTab]=useState<'stats'|'history'|'favorites'|'presets'>('stats'),[replay,setReplay]=useState(initialReplay);
   usePageSound(`${tab}:${replay ?? ''}`);
   const avatar=avatarNames[user.avatar??'leaf'];
   if(replay)return <ReplayPanel key={replay} id={replay} onBack={()=>{setReplay(null);if(initialReplay)setTab('history');}}/>;
-  return <section className="panel account"><div className="account-banner" aria-hidden="true"><span>西行战绩</span></div><div className="section-head profile-bar"><div className="profile-heading"><span className="avatar" aria-label={`${avatar.name}头像`}><PlayerAvatar avatar={user.avatar??'leaf'} avatarUrl={user.avatarUrl} wechatAvatarUrl={user.wechatAvatarUrl} fallbackKind="leaf"/></span><div><p className="eyebrow">西游 · 真假猴王 / 个人中心</p><h1>{user.nickname}</h1></div></div><button className="secondary compact-button" onClick={onBack}>回到朋友桌</button></div>
+  return <section className="panel account"><div className="account-banner" aria-hidden="true"><span>取经功果</span></div><div className="section-head profile-bar"><div className="profile-heading"><span className="avatar" aria-label={`${avatar.name}头像`}><PlayerAvatar avatar={user.avatar??'leaf'} avatarUrl={user.avatarUrl} wechatAvatarUrl={user.wechatAvatarUrl} fallbackKind="leaf"/></span><div><p className="eyebrow">西游 · 真假猴王 / 个人中心</p><h1>{user.nickname}</h1></div></div><div style={{display:'flex',gap:6}}>{onLogout&&<button className="secondary compact-button" onClick={onLogout} style={{color:'#fca5a5'}}>🚪 更换身份</button>}<button className="secondary compact-button" onClick={onBack}>回到朋友桌</button></div></div>
     <ProfileEditor user={user} onUser={onUser}/>
     <details className="account-sound-settings"><summary>声音设置</summary><SoundControls /></details>
     <nav className="account-tabs" aria-label="个人中心栏目">{([['stats','我的战绩'],['history','历史对局'],['favorites','我的收藏'],['presets','常用设置']] as const).map(([id,label])=><button className="secondary" key={id} aria-current={id===tab?'page':undefined} onClick={()=>setTab(id)}>{label}</button>)}</nav>
