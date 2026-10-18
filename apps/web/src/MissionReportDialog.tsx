@@ -125,7 +125,11 @@ export function MissionReportDialog({
             </div>
 
             {ballots ? (
-              <div className="mission-report-voters-grid" aria-label="全员公开票型">
+              <div
+                className="mission-report-voters-grid"
+                data-count={players.length}
+                aria-label="全员公开票型"
+              >
                 {players.map(p => (
                   <div key={p.id} className="report-voter-item">
                     <PlayerToken player={p} vote={ballots[p.id]} self={p.id === userId} />

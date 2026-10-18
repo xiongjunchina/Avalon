@@ -11,7 +11,10 @@ export function PlayerToken({ player, captain = false, vote, self = false }: {
       {captain && <span className="token-crown"><ImperialDragonCrown /></span>}
       {vote !== undefined && <span className={`token-vote ${vote === 'abstain' ? 'abstain' : vote ? 'approve' : 'reject'}`} aria-label={vote === 'abstain' ? '旁观' : vote ? '准行' : '封驳'}>{vote === 'abstain' ? '−' : vote ? '✓' : '×'}</span>}
     </span>
-    <span className="token-caption" title={`${player.seat}号 ${player.nickname}`}><span className="token-seat">{player.seat}号</span> <span>{player.nickname}</span>{self && <small>（你）</small>}</span>
+    <span className="token-caption" title={`${player.seat}号 ${player.nickname}`}>
+      <span className="token-seat">{player.seat}号{self && <small>（你）</small>}</span>{' '}
+      <span className="token-name">{player.nickname}</span>
+    </span>
     {vote !== undefined && <span className={`token-vote-caption ${vote === 'abstain' ? 'abstain' : vote ? 'approve' : 'reject'}`}>{vote === 'abstain' ? '旁观' : vote ? '准行' : '封驳'}</span>}
   </span>;
 }
