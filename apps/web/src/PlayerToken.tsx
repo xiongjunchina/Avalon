@@ -111,18 +111,12 @@ export function PartyBanner({
                       </span>
                     )}
                   </div>
-                  <span className="a2-slot-name-pill" title={`${player.seat}号 ${player.nickname}`}>
-                    {player.seat}号 {player.nickname}
-                  </span>
                 </button>
               ) : (
                 <div key={i} className="party-slot a2-slot-card empty" aria-label={`第${i + 1}个出征席位待选`}>
                   <div className="a2-slot-avatar-wrap empty-circle">
                     <span className="a2-empty-lozenge">◇</span>
                   </div>
-                  <span className="a2-slot-name-pill empty-pill">
-                    待同行
-                  </span>
                 </div>
               );
             })}
