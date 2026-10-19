@@ -602,13 +602,10 @@ export function GamePanel({
 
       {/* 3. Scheme A: Dual-Flank Altar Arena (Hidden for non-assassins during assassination phase) */}
       {!(g.phase === 'assassination' && self?.role !== 'assassin') && (() => {
-        const isOddCount = g.players.length % 2 === 1;
-        const pairedPlayers = isOddCount ? g.players.slice(0, -1) : g.players;
-        const centerPlayer = isOddCount ? g.players[g.players.length - 1] : null;
-        const leftPlayers = pairedPlayers.filter((_, idx) => idx % 2 === 0);
-        const rightPlayers = pairedPlayers.filter((_, idx) => idx % 2 === 1);
+        const leftPlayers = g.players.filter((_, idx) => idx % 2 === 0);
+        const rightPlayers = g.players.filter((_, idx) => idx % 2 === 1);
 
-        const renderSeat = (p: Player, flank: 'left' | 'right' | 'center') => {
+        const renderSeat = (p: Player, flank: 'left' | 'right') => {
           const member = room.members.find(m => m.id === p.id);
           const isCaptain = !ended && g.phase !== 'assassination' && p.id === g.captainId;
           const isNextCaptain = isCaptain && ['early_window', 'lady', 'lady_reveal'].includes(effectivePhase);
@@ -649,7 +646,7 @@ export function GamePanel({
               className={[
                 'table-seat-card',
                 'flank-seat-card',
-                flank === 'center' ? 'flank-seat-centered' : flank === 'left' ? 'flank-seat-left' : 'flank-seat-right',
+                flank === 'left' ? 'flank-seat-left' : 'flank-seat-right',
                 p.id === userId ? 'is-me' : '',
                 isCaptain ? 'is-captain' : '',
                 isProposed ? 'is-on-team' : '',
@@ -789,12 +786,6 @@ export function GamePanel({
                 {rightPlayers.map(p => renderSeat(p, 'right'))}
               </div>
             </div>
-
-            {centerPlayer && (
-              <div className="scheme-a-bottom-foot">
-                {renderSeat(centerPlayer, 'center')}
-              </div>
-            )}
           </div>
         );
       })()}

@@ -2144,7 +2144,7 @@ dialog.table-modal-backdrop::backdrop { background: #081b2d55; }
 .is-live-table .scheme-a-flank {
   display: flex !important;
   flex-direction: column !important;
-  justify-content: space-around !important;
+  justify-content: flex-start !important;
   gap: clamp(6px, 1.3dvh, 14px) !important;
   width: clamp(124px, 36vw, 150px) !important;
   flex-shrink: 0 !important;
