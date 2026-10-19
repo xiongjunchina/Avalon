@@ -83,15 +83,6 @@ export function GamePanel({
   const [missionReportRound, setMissionReportRound] = useState<RoundView | null>(null);
   const prevCompletedCountRef = useRef<number | null>(null);
 
-  function getAltarSeatCoords(index: number, total: number) {
-    const angle = (index / total) * 2 * Math.PI - Math.PI / 2;
-    const x = 50 + 38.5 * Math.cos(angle);
-    const y = 50 + 40 * Math.sin(angle);
-    return {
-      '--seat-x': `${x.toFixed(2)}%`,
-      '--seat-y': `${y.toFixed(2)}%`,
-    } as React.CSSProperties;
-  }
 
   useEffect(() => {
     if (prevCompletedCountRef.current === null) {
@@ -614,7 +605,7 @@ export function GamePanel({
         <div
           className={`table-seats-grid ${
             g.players.length > 10 ? 'grid-12' : g.players.length > 8 ? 'grid-10' : 'grid-8'
-          } altar-ring-arena ${
+          } altar-dual-flank-arena ${
             ended ? 'is-ended-grid' : g.phase === 'assassination' ? 'is-assassin-picker-grid' : ''
           }`}
           data-player-count={g.players.length}
@@ -657,10 +648,12 @@ export function GamePanel({
               ended && Boolean(g.result?.winner && revealedTeam && g.result.winner === revealedTeam);
             const isAssassinatedTarget = ended && g.result?.targetId === p.id;
 
+            const isLeft = idx % 2 === 0;
+            const isOddLast = g.players.length % 2 === 1 && idx === g.players.length - 1;
+
             return (
               <div
                 key={p.id}
-                style={getAltarSeatCoords(idx, g.players.length)}
                 role={canTapSeat ? 'button' : undefined}
                 tabIndex={canTapSeat ? 0 : undefined}
                 aria-label={`${p.seat}号 ${p.nickname}${isCaptain ? '，队长' : ''}${isProposed ? '，已入阵' : ''}${isTargeted ? '，已锁定' : ''}`}
@@ -674,6 +667,8 @@ export function GamePanel({
                 }}
                 className={[
                   'table-seat-card',
+                  'flank-seat-card',
+                  isOddLast ? 'flank-seat-centered' : isLeft ? 'flank-seat-left' : 'flank-seat-right',
                   p.id === userId ? 'is-me' : '',
                   isCaptain ? 'is-captain' : '',
                   isProposed ? 'is-on-team' : '',
@@ -688,40 +683,8 @@ export function GamePanel({
                   .filter(Boolean)
                   .join(' ')}
               >
-                <div className="seat-card-top">
-                  <div className="seat-top-badges">
-                    {ended && revealedTeam ? (
-                      <>
-                        {isAssassinatedTarget && (
-                          <span className="seat-badge badge-assassinated">🎯 被刺</span>
-                        )}
-                        {isWinnerSeat && <span className="seat-badge badge-winner">🏆 胜</span>}
-                      </>
-                    ) : g.phase === 'assassination' ? (
-                      isTargeted ? (
-                        <span className="seat-badge badge-assassinated">🎯 锁定</span>
-                      ) : p.id === userId ? (
-                        <span className="seat-badge badge-next-captain">🗡️ 刺客</span>
-                      ) : null
-                    ) : (
-                      <>
-                        {isCaptain && (
-                          <span className={`seat-badge ${isNextCaptain ? 'badge-next-captain' : 'badge-captain'}`}>
-                            {isNextCaptain ? '👑 候任' : '👑 队长'}
-                          </span>
-                        )}
-                        {isProposed && (
-                          <span className="seat-badge badge-team-member">
-                            ⚔️ 出征
-                          </span>
-                        )}
-                        {isLadyHolder && <span className="seat-badge badge-lady">☯️ 宝镜</span>}
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                <div className="seat-card-avatar-wrap">
+                {/* 1. Avatar Container */}
+                <div className="flank-avatar-wrap">
                   {(isProposed || isCaptain) && (
                     <span
                       className={`seat-aura-ring ${isProposed ? 'aura-cyan' : 'aura-gold'}`}
@@ -744,23 +707,48 @@ export function GamePanel({
                     className={`seat-online-dot ${member?.online === false ? 'is-offline' : 'is-online'}`}
                     title={member?.online === false ? '离线' : '在线'}
                   />
-                  <span className="seat-num-badge">{p.seat}</span>
+                  {/* Floating role/captain badge over avatar */}
+                  {isCaptain && (
+                    <span className={`seat-badge ${isNextCaptain ? 'badge-next-captain' : 'badge-captain'}`} title={isNextCaptain ? '候任领队' : '当前队长'}>
+                      {isNextCaptain ? '👑 候任' : '👑 队长'}
+                    </span>
+                  )}
+                  {isLadyHolder && (
+                    <span className="seat-badge badge-lady" title="持有湖中女神（照妖宝镜）">
+                      ☯️ 宝镜
+                    </span>
+                  )}
+                  {isTargeted && (
+                    <span className="seat-badge badge-assassinated">🎯 锁定</span>
+                  )}
+                  {ended && isWinnerSeat && (
+                    <span className="seat-badge badge-winner">🏆 胜</span>
+                  )}
+                  {ended && isAssassinatedTarget && (
+                    <span className="seat-badge badge-assassinated">🎯 被刺</span>
+                  )}
+                </div>
+
+                {/* 2. Horizontal Capsule Nameplate */}
+                <div className="flank-nameplate">
+                  <span className="flank-seat-num">{p.seat}号</span>
+                  <span className="flank-nickname" title={name(p.id)}>
+                    {p.nickname}
+                  </span>
+                  {p.id === userId && <span className="flank-me-pill">我</span>}
+                  {isProposed && <span className="flank-tag-proposed">⚔️ 出征</span>}
                   {seatVoteChip && (
-                    <span className={`seat-card-vote-badge ${seatVoteChip.className}`} title={seatVoteChip.text}>
-                      <span className="vote-badge-icon">{seatVoteChip.icon}</span>
-                      <span className="vote-badge-text sr-only"> {seatVoteChip.text}</span>
+                    <span className={`seat-card-vote-badge ${seatVoteChip.className} flank-vote-chip`} title={seatVoteChip.text}>
+                      {seatVoteChip.icon}
                     </span>
                   )}
                 </div>
 
-                <strong className="seat-card-name" title={name(p.id)}>
-                  ◇ {p.seat}号 {p.nickname}{p.id === userId ? ' (你)' : ''} ◇
-                </strong>
-
-                <div className="seat-card-bottom">
-                  {isProposed && <span className="seat-chip chip-team sr-only">已入阵</span>}
+                {/* Hidden interactive prompt for screen-readers & test assertions */}
+                <div className="seat-card-bottom sr-only">
+                  {isProposed && <span className="seat-chip chip-team">已入阵</span>}
                   {canTapSeat && (
-                    <span className="seat-chip chip-hint sr-only">
+                    <span className="seat-chip chip-hint">
                       {effectivePhase === 'proposing'
                         ? (isProposed ? '移出阵容' : '点击上车')
                         : effectivePhase === 'discussion'
@@ -780,14 +768,6 @@ export function GamePanel({
                   ) : isTargeted ? (
                     <span className="seat-chip chip-target">
                       {g.phase === 'lady' ? '☯️ 查验' : '🗡️ 目标'}
-                    </span>
-                  ) : !isProposed && !canTapSeat ? (
-                    <span className="sr-only">
-                      {g.phase === 'assassination' && p.id === userId
-                        ? '刺客本人'
-                        : member?.online === false
-                          ? '离线'
-                          : '在线'}
                     </span>
                   ) : null}
                 </div>

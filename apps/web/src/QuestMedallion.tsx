@@ -22,10 +22,12 @@ export function QuestMedallion({
       <WuYueBackdrop mission={mission} />
       {passed !== undefined && <span className="quest-result-mark">{passed ? '✓' : '×'}</span>}
     </span>
-    <span className="quest-party-size">{count}<small>人</small></span>
-    <span className={`quest-caption ${twoFailsRequired ? 'requires-two' : ''}`}>
-      {passed !== undefined ? status : twoFailsRequired ? '需2败' : current ? '进行中' : `第${mission}难`}
-    </span>
+    <div className="quest-medallion-footer">
+      <span className="quest-party-size">{count}<small>人</small></span>
+      <span className={`quest-caption ${twoFailsRequired ? 'requires-two' : 'is-placeholder'}`}>
+        {twoFailsRequired ? '需2败' : passed !== undefined ? status : current ? '进行中' : `第${mission}难`}
+      </span>
+    </div>
   </>;
   const className = `quest-medallion-wrap ${passed === undefined ? current ? 'mission-current' : 'mission-pending' : passed ? 'mission-success' : 'mission-failure'}`;
   return onInspect ? (

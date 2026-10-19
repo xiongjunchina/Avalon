@@ -10,7 +10,7 @@
 .game-score .mission-failure .quest-caption { color: #ffc2bb; }
 .game-score .mission-success .wuyue-bg-svg, .game-score .mission-failure .wuyue-bg-svg { opacity: 0; }
 .is-live-table .game-score .quest-circle { width: clamp(34px, 5.8dvh, 48px); }
-.is-live-table .game-score .quest-caption:not(.requires-two) { display: none; }
+.is-live-table .game-score .quest-caption.is-placeholder { visibility: hidden; }
 .account .profile-editor, .account .account-sound-settings { padding: 10px 14px; margin: 12px 0; background: #16344edb; border: 1px solid var(--border); border-radius: 18px; }
 .account .profile-editor > summary, .account .account-sound-settings > summary { font: 400 15px/1.5 var(--sans); min-height: 44px; padding: 11px 0; color: #fbe1ad; }
 /* Ready status is persistent, rather than disappearing into the portrait badge area. */
