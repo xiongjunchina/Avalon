@@ -145,27 +145,30 @@ function App() {
     };
   }, [user?.id, friendsModalOpen]);
 
-  // Voice room auto join and leave lifecycle
+  // Clean up voice when leaving room or when room settings disable voice
   useEffect(() => {
-    if (!roomId || !user) {
+    if (!roomId || !user || (room && !room.settings.voiceChatEnabled)) {
       void voiceManager.leave();
-      return;
     }
-    let active = true;
-    api<VoiceTokenResponse>(`/rooms/${roomId}/voice-token`)
-      .then(tokenData => {
-        if (!active) return;
-        void voiceManager.join(tokenData);
-      })
-      .catch(err => {
-        console.warn('Failed to obtain voice token:', err);
-      });
-
     return () => {
-      active = false;
       void voiceManager.leave();
     };
-  }, [roomId, user?.id]);
+  }, [roomId, user?.id, room?.settings.voiceChatEnabled]);
+
+  const handleJoinVoice = async () => {
+    if (!roomId || !room?.settings.voiceChatEnabled) return;
+    try {
+      const tokenData = await api<VoiceTokenResponse>(`/rooms/${roomId}/voice-token`);
+      await voiceManager.join(tokenData);
+    } catch (err) {
+      console.warn('Failed to join voice:', err);
+      setError('无法开启语音：' + (err instanceof Error ? err.message : '请检查网络或麦克风权限'));
+    }
+  };
+
+  const handleLeaveVoice = async () => {
+    await voiceManager.leave();
+  };
 
   const handleToggleMute = () => {
     void voiceManager.toggleMute();
@@ -176,14 +179,7 @@ function App() {
   };
 
   const handleReconnectVoice = () => {
-    if (!roomId) return;
-    api<VoiceTokenResponse>(`/rooms/${roomId}/voice-token`)
-      .then(tokenData => {
-        void voiceManager.join(tokenData);
-      })
-      .catch(err => {
-        console.warn('Failed to reconnect voice:', err);
-      });
+    void handleJoinVoice();
   };
 
   const handleJoinByCode = async (code: string) => {
@@ -755,7 +751,9 @@ function App() {
               >
                 ‹
               </button>
-              <span className="mp-setup-title">选择人数</span>
+              <span className="mp-setup-title">
+                {setupSettings.voiceChatEnabled ? '🎙️ 开启语音房' : '🏛️ 开启常规房'}
+              </span>
               <div className="home-tools"><SoundButton /><button
                 type="button"
                 className="secondary tool-pill"
@@ -767,6 +765,36 @@ function App() {
                 规则
               </button></div>
             </header>
+
+            {/* Room Type Selector in Setup Screen */}
+            <div className="mp-setup-mode-row" role="radiogroup" aria-label="房间类型选择">
+              <button
+                type="button"
+                role="radio"
+                aria-checked={!setupSettings.voiceChatEnabled}
+                className={`mp-setup-mode-btn ${!setupSettings.voiceChatEnabled ? 'is-active' : ''}`}
+                onClick={() => setSetupSettings(s => ({ ...s, voiceChatEnabled: false }))}
+              >
+                <span className="mode-btn-icon">🏛️</span>
+                <span className="mode-btn-info">
+                  <strong>线下常规房</strong>
+                  <small>同桌聚会 · 面杀无语音</small>
+                </span>
+              </button>
+              <button
+                type="button"
+                role="radio"
+                aria-checked={setupSettings.voiceChatEnabled}
+                className={`mp-setup-mode-btn ${setupSettings.voiceChatEnabled ? 'is-active' : ''}`}
+                onClick={() => setSetupSettings(s => ({ ...s, voiceChatEnabled: true }))}
+              >
+                <span className="mode-btn-icon">🎙️</span>
+                <span className="mode-btn-info">
+                  <strong>远端语音房</strong>
+                  <small>线上开黑 · 实时语音</small>
+                </span>
+              </button>
+            </div>
 
             <div className="mp-shield-row" role="radiogroup" aria-label="选择游戏人数">
               {[5, 6, 7, 8, 9, 10, 11, 12].map(count => (
@@ -840,7 +868,7 @@ function App() {
                   })
                 }
               >
-                {busy ? '正在开启法坛…' : '开启法坛'}
+                {busy ? '正在开启法坛…' : setupSettings.voiceChatEnabled ? '开启远端语音房' : '开启线下常规房'}
               </button>
               <button
                 type="button"
@@ -933,9 +961,47 @@ function App() {
             </section>
 
             <footer className="mp-home-footer">
+              {/* Room Mode Toggle: Offline Regular vs Online Voice */}
+              <div className="lobby-mode-switch" role="radiogroup" aria-label="建房模式">
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={!setupSettings.voiceChatEnabled}
+                  className={`lobby-mode-pill ${!setupSettings.voiceChatEnabled ? 'is-active' : ''}`}
+                  onClick={() => setSetupSettings(s => ({ ...s, voiceChatEnabled: false }))}
+                  title="同桌线下聚会，无语音干扰"
+                >
+                  🏛️ 线下常规房
+                </button>
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={setupSettings.voiceChatEnabled}
+                  className={`lobby-mode-pill ${setupSettings.voiceChatEnabled ? 'is-active' : ''}`}
+                  onClick={() => setSetupSettings(s => ({ ...s, voiceChatEnabled: true }))}
+                  title="远端线上开黑，支持声网高清实时语音"
+                >
+                  🎙️ 远端语音房
+                </button>
+              </div>
+
               <div className="lobby-primary-actions">
-                <button type="button" className="mp-cyan-pill" disabled={busy} onClick={() => setSetupOpen(true)}><Emblem kind="mountain"/>开坛建房</button>
-                <button type="button" className="secondary lobby-join" onClick={() => setJoinOpen(true)}><Emblem kind="crown"/>入席寻友</button>
+                <button
+                  type="button"
+                  className="mp-cyan-pill"
+                  disabled={busy}
+                  onClick={() => setSetupOpen(true)}
+                >
+                  <Emblem kind="mountain" />
+                  {setupSettings.voiceChatEnabled ? '开语音房' : '开常规房'}
+                </button>
+                <button
+                  type="button"
+                  className="secondary lobby-join"
+                  onClick={() => setJoinOpen(true)}
+                >
+                  <Emblem kind="crown" />入席寻友
+                </button>
               </div>
               <button type="button" className="secondary practice-entry" onClick={() => startPracticeGame(setupSettings)}>🐒 幻境单人试玩 ›</button>
               <div className="lobby-personal-links">
@@ -1096,14 +1162,18 @@ function App() {
                 }}
                 speakingUids={voiceState.speakingUids}
               />
-              <div className="game-floating-voice-hud" aria-label="实时语音控制">
-                <VoiceControls
-                  voiceState={voiceState}
-                  onToggleMute={handleToggleMute}
-                  onToggleDeafen={handleToggleDeafen}
-                  onReconnect={handleReconnectVoice}
-                />
-              </div>
+              {room.settings.voiceChatEnabled && (
+                <div className="game-floating-voice-hud" aria-label="实时语音控制">
+                  <VoiceControls
+                    voiceState={voiceState}
+                    onJoin={handleJoinVoice}
+                    onLeave={handleLeaveVoice}
+                    onToggleMute={handleToggleMute}
+                    onToggleDeafen={handleToggleDeafen}
+                    onReconnect={handleReconnectVoice}
+                  />
+                </div>
+              )}
             </>
           ) : (
             /* Waiting Room Single-Screen Table with Physical Quest Board at Top */
@@ -1291,15 +1361,23 @@ function App() {
 
               {/* Bottom Waiting Voice & Social Action Bar */}
               <div className="waiting-voice-social-row">
-                <div className="waiting-voice-capsule">
-                  <span className="waiting-voice-label">🎙️ 实时语音</span>
-                  <VoiceControls
-                    voiceState={voiceState}
-                    onToggleMute={handleToggleMute}
-                    onToggleDeafen={handleToggleDeafen}
-                    onReconnect={handleReconnectVoice}
-                  />
-                </div>
+                {room.settings.voiceChatEnabled ? (
+                  <div className="waiting-voice-capsule">
+                    <span className="waiting-voice-label">🎙️ 语音房</span>
+                    <VoiceControls
+                      voiceState={voiceState}
+                      onJoin={handleJoinVoice}
+                      onLeave={handleLeaveVoice}
+                      onToggleMute={handleToggleMute}
+                      onToggleDeafen={handleToggleDeafen}
+                      onReconnect={handleReconnectVoice}
+                    />
+                  </div>
+                ) : (
+                  <div className="waiting-offline-badge" title="本房间为线下常规聚会房，无语音干扰">
+                    <span>🏛️ 线下常规房 · 无语音</span>
+                  </div>
+                )}
                 <button
                   type="button"
                   className="secondary tool-pill waiting-friends-pill-btn"

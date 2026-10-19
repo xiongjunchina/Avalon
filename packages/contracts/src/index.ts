@@ -7,11 +7,13 @@ export const settingsSchema = z.object({
   rejectionScope: z.enum(['game', 'mission']),
   ladyEnabled: z.boolean(),
   earlyAssassinationEnabled: z.boolean(),
+  voiceChatEnabled: z.boolean().default(false),
 }).strict();
 export type Settings = z.infer<typeof settingsSchema>;
 export const defaultSettings: Settings = {
   playerCount: 6, captainMode: 'seat_order', anonymousTeamVote: true,
   rejectionScope: 'game', ladyEnabled: false, earlyAssassinationEnabled: false,
+  voiceChatEnabled: false,
 };
 export const defaultAnonymousTeamVote = (playerCount: number) => playerCount < 8;
 export type TeamBallot = boolean | 'abstain';

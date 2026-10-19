@@ -140,7 +140,11 @@ export async function buildApp(options: { store: PostgresStore; origin?: string;
   app.get<{Params:{id:string}}>('/api/rooms/:id/voice-token',async(req,reply)=>{
     const user=await authenticate(req,reply);
     const roomId=z.string().uuid().parse(req.params.id);
-    await store.roomFor(user.id,roomId);
+    const { room } = await store.roomFor(user.id,roomId);
+    if (!room.settings.voiceChatEnabled) {
+      reply.status(403);
+      return { error: 'VOICE_DISABLED', message: '本房间为常规聚会房，未开启语音功能。' };
+    }
     const rtcUid=uuidToRtcUid(user.id);
     const channelName=`avalon-${roomId}`;
     return generateVoiceToken(channelName,rtcUid);

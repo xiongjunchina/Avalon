@@ -3596,6 +3596,207 @@ dialog.table-modal-backdrop::backdrop { background: #081b2d55; }
   pointer-events: none;
 }
 
+.voice-join-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  max-height: 32px !important;
+  padding: 0 11px !important;
+  border-radius: 16px !important;
+  border: 1.5px solid #58c7d9 !important;
+  background: linear-gradient(180deg, #1d4e5f 0%, #10303b 100%) !important;
+  color: #e0f2fe !important;
+  font-size: 12.5px !important;
+  font-weight: 700 !important;
+  white-space: nowrap !important;
+  cursor: pointer !important;
+  box-shadow: 0 2px 8px rgba(88, 199, 217, 0.25) !important;
+  transition: all 0.2s ease !important;
+  box-sizing: border-box !important;
+}
+
+.voice-join-btn:hover {
+  background: linear-gradient(180deg, #27657b 0%, #174251 100%) !important;
+  border-color: #ffd54f !important;
+  color: #fff !important;
+  transform: translateY(-1px) !important;
+}
+
+.voice-connecting-box {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  padding: 0 8px !important;
+  height: 32px !important;
+  color: #ffd54f !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+}
+
+.voice-error-cluster {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+
+.voice-retry-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: 28px !important;
+  min-height: 28px !important;
+  max-height: 28px !important;
+  padding: 0 8px !important;
+  border-radius: 14px !important;
+  border: 1px solid #ff4d4f !important;
+  background: rgba(60, 20, 25, 0.9) !important;
+  color: #ffa39e !important;
+  font-size: 11.5px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+}
+
+.voice-btn.leave-voice-btn {
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  background: rgba(40, 40, 40, 0.7) !important;
+  color: #ff9494 !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+}
+
+.voice-btn.leave-voice-btn:hover {
+  background: rgba(180, 40, 40, 0.85) !important;
+  border-color: #ff4d4f !important;
+  color: #fff !important;
+}
+
+.waiting-offline-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  padding: 4px 10px !important;
+  border-radius: 14px !important;
+  background: rgba(25, 20, 25, 0.6) !important;
+  border: 1px dashed rgba(229, 185, 100, 0.4) !important;
+  color: #e5edf6 !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+}
+
+/* Lobby Mode Switch */
+.lobby-mode-switch {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  padding: 3px !important;
+  border-radius: 20px !important;
+  background: rgba(16, 26, 38, 0.85) !important;
+  border: 1.5px solid rgba(229, 185, 100, 0.4) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
+  margin: 0 auto 4px !important;
+  width: min(100%, 320px) !important;
+  box-sizing: border-box !important;
+}
+
+.lobby-mode-pill {
+  flex: 1 1 50% !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  max-height: 32px !important;
+  padding: 0 8px !important;
+  margin: 0 !important;
+  border-radius: 16px !important;
+  border: 1px solid transparent !important;
+  background: transparent !important;
+  color: #b0c4de !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  white-space: nowrap !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  box-sizing: border-box !important;
+}
+
+.lobby-mode-pill.is-active {
+  background: linear-gradient(180deg, #27657b 0%, #15404f 100%) !important;
+  border-color: #ffd54f !important;
+  color: #fff9e6 !important;
+  font-weight: 700 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.3) !important;
+}
+
+/* Setup Screen Mode Selector */
+.mp-setup-mode-row {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 10px !important;
+  width: 100% !important;
+  max-width: 440px !important;
+  margin: 0 auto 6px !important;
+}
+
+.mp-setup-mode-btn {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 8px 10px !important;
+  height: 52px !important;
+  min-height: 52px !important;
+  border-radius: 14px !important;
+  border: 1.5px solid rgba(229, 185, 100, 0.35) !important;
+  background: rgba(18, 28, 42, 0.75) !important;
+  color: #c9d8e8 !important;
+  cursor: pointer !important;
+  text-align: left !important;
+  transition: all 0.2s ease !important;
+  box-sizing: border-box !important;
+}
+
+.mp-setup-mode-btn .mode-btn-icon {
+  font-size: 20px !important;
+  flex-shrink: 0 !important;
+}
+
+.mp-setup-mode-btn .mode-btn-info {
+  display: flex !important;
+  flex-direction: column !important;
+  min-width: 0 !important;
+}
+
+.mp-setup-mode-btn .mode-btn-info strong {
+  font-size: 13.5px !important;
+  font-weight: 700 !important;
+  color: #ffd54f !important;
+  white-space: nowrap !important;
+}
+
+.mp-setup-mode-btn .mode-btn-info small {
+  font-size: 11px !important;
+  color: #9cb1c9 !important;
+  white-space: nowrap !important;
+}
+
+.mp-setup-mode-btn.is-active {
+  background: linear-gradient(180deg, #235467 0%, #123440 100%) !important;
+  border-color: #ffd54f !important;
+  box-shadow: 0 0 12px rgba(88, 199, 217, 0.3) !important;
+}
+
+.mp-setup-mode-btn.is-active .mode-btn-info strong {
+  color: #ffffff !important;
+}
+
+.mp-setup-mode-btn.is-active .mode-btn-info small {
+  color: #bce7ff !important;
+}
+
 /* Waiting Room Bottom Voice & Social Row */
 .waiting-voice-social-row {
   display: flex !important;

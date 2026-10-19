@@ -5,8 +5,19 @@ import type {FriendSummary, ServerMessage, VoiceTokenResponse} from '@avalon/con
 import {gameFixture} from './game-helpers';
 import {localSocket, origin} from './helpers';
 
-test('voice token generation returns valid Agora config and deterministic rtcUid for room members', async t => {
-  const f = await gameFixture(t);
+test('voice token generation returns valid Agora config and deterministic rtcUid for room members only when voiceChatEnabled is true', async t => {
+  // Regular room with voice disabled
+  const fOffline = await gameFixture(t, true, { voiceChatEnabled: false });
+  const disabledRes = await fOffline.app.inject({
+    method: 'GET',
+    url: `/api/rooms/${fOffline.room.id}/voice-token`,
+    headers: {cookie: `avalon_session=${fOffline.people[0].token}`},
+  });
+  assert.equal(disabledRes.statusCode, 403);
+  assert.equal(disabledRes.json().error, 'VOICE_DISABLED');
+
+  // Room with voiceChatEnabled
+  const f = await gameFixture(t, true, { voiceChatEnabled: true });
   const user = f.people[0];
 
   const res = await f.app.inject({

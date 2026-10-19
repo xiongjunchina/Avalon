@@ -3,6 +3,8 @@ import type { VoiceState } from './agora-voice';
 
 export interface VoiceControlsProps {
   voiceState: VoiceState;
+  onJoin: () => void;
+  onLeave: () => void;
   onToggleMute: () => void;
   onToggleDeafen: () => void;
   onReconnect?: () => void;
@@ -10,6 +12,8 @@ export interface VoiceControlsProps {
 
 export function VoiceControls({
   voiceState,
+  onJoin,
+  onLeave,
   onToggleMute,
   onToggleDeafen,
   onReconnect,
@@ -18,22 +22,65 @@ export function VoiceControls({
   const isConnected = voiceState.status === 'connected';
   const isConnecting = voiceState.status === 'connecting';
   const isError = voiceState.status === 'error';
+  const isDisconnected = voiceState.status === 'disconnected';
+
+  if (isDisconnected) {
+    return (
+      <button
+        type="button"
+        className="voice-join-btn"
+        onClick={onJoin}
+        title="点击开启声网高清实时语音"
+      >
+        <span className="voice-icon-inner">🎙️</span>
+        <span className="voice-join-label">开启语音</span>
+      </button>
+    );
+  }
+
+  if (isConnecting) {
+    return (
+      <div className="voice-connecting-box">
+        <span className="voice-status-dot connecting" />
+        <span className="voice-connecting-label">连接中…</span>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="voice-error-cluster">
+        <span
+          className="voice-status-dot error"
+          title={`语音连接异常 (${voiceState.error || '点击重新连接'})`}
+        />
+        <button
+          type="button"
+          className="voice-retry-btn"
+          onClick={onReconnect || onJoin}
+          title="重新连接语音"
+        >
+          重试
+        </button>
+        <button
+          type="button"
+          className="voice-btn leave-voice-btn"
+          onClick={onLeave}
+          title="取消并关闭语音"
+          aria-label="取消"
+        >
+          <span className="voice-icon-inner">✕</span>
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="voice-controls-cluster">
       {/* Voice Connection Status Light */}
       <span
-        className={`voice-status-dot ${voiceState.status}`}
-        title={
-          isConnected
-            ? `声网实时语音已连接 (极低延迟)`
-            : isConnecting
-            ? '声网语音连接中...'
-            : isError
-            ? `语音连接异常 (${voiceState.error || '点击重新连接'})`
-            : '语音未连接'
-        }
-        onClick={isError ? onReconnect : undefined}
+        className="voice-status-dot connected"
+        title="声网实时语音已连接 (极低延迟)"
       />
 
       {/* Mic Button */}
@@ -76,6 +123,17 @@ export function VoiceControls({
         <span className="voice-icon-inner">
           {voiceState.deafened ? '🔕' : '🔊'}
         </span>
+      </button>
+
+      {/* Leave Voice Button */}
+      <button
+        type="button"
+        className="voice-btn leave-voice-btn"
+        onClick={onLeave}
+        title="关闭并退出实时语音"
+        aria-label="退出语音"
+      >
+        <span className="voice-icon-inner">✕</span>
       </button>
     </div>
   );
