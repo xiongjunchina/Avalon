@@ -891,21 +891,22 @@ function App() {
                 <SoundButton />
                 <button
                   type="button"
-                  className="secondary tool-pill"
+                  className="secondary tool-pill home-logout-btn"
                   onClick={handleLogout}
                   title="注销当前登录状态，更换新身份"
                 >
-                  🚪 更换身份
+                  🚪 换号
                 </button>
                 <button
                   type="button"
-                  className="secondary tool-pill"
+                  className="secondary tool-pill home-guide-btn"
                   onClick={() => {
                     guideReturn.current = 'table';
                     setPage('guide');
                   }}
+                  title="西游识妖谱 · 规则说明"
                 >
-                  西游识妖谱
+                  📖 识妖谱
                 </button>
               </div>
             </header>

@@ -1,6 +1,23 @@
-.home-tools { display: flex; align-items: center; gap: 8px; }
-button.sound-button { flex: 0 0 38px; display: grid; place-items: center; width: 38px; height: 38px; min-height: 38px; padding: 8px; margin: 0; border-radius: 50%; }
-.sound-button svg { width: 21px; height: 21px; }
+.home-tools { display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0; margin: 0; }
+button.sound-button {
+  flex: 0 0 32px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 32px !important;
+  min-width: 32px !important;
+  max-width: 32px !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  max-height: 32px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  margin-top: 0 !important;
+  border-radius: 50% !important;
+  flex-shrink: 0 !important;
+  box-sizing: border-box !important;
+}
+.sound-button svg { width: 17px !important; height: 17px !important; }
 button.sound-button.is-on { color: #b3fff0; border-color: #a6d9ca; }
 .sound-dialog { width: min(calc(100% - 24px), 420px); margin: auto; padding: 22px; border: 1px solid #dac28b; border-radius: 24px; background: linear-gradient(145deg, #2a4962, #102b42); box-shadow: var(--frame-shadow); }
 .sound-dialog h2 { margin: 0; font-size: 25px; color: var(--accent); }
@@ -18,9 +35,9 @@ button.sound-button.is-on { color: #b3fff0; border-color: #a6d9ca; }
 .account-sound-settings summary { cursor: pointer; color: var(--accent); font-size: 16px; }
 .account-sound-settings[open] summary { margin-bottom: 6px; }
 @media (max-width: 380px) {
-  .room-top-bar { gap: 5px; }
-  .room-top-right { gap: 4px; }
-  .room-top-bar .tool-pill { padding-inline: 7px; }
-  button.sound-button { flex-basis: 32px; width: 32px; height: 36px; min-height: 36px; padding: 6px; }
+  .room-top-bar { gap: 4px; }
+  .room-top-right { gap: 3px; }
+  .room-top-bar .tool-pill { padding-inline: 6px; }
+  button.sound-button { flex: 0 0 30px !important; width: 30px !important; height: 30px !important; min-height: 30px !important; }
   .sound-dialog { padding: 18px; }
 }
