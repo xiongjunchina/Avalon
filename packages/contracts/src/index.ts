@@ -49,12 +49,37 @@ export const profileSchema = z.object({
   wechatAvatarUrl: avatarImageUrlSchema.nullable().optional(),
 }).strict();
 export const presetSchema = z.object({name:z.string().trim().min(1).max(24),settings:settingsSchema}).strict();
-export interface User { id: string; nickname: string; avatar?: Avatar; avatarUrl?: string | null; wechatAvatarUrl?: string | null }
+export interface User { id: string; nickname: string; avatar?: Avatar; avatarUrl?: string | null; wechatAvatarUrl?: string | null; playerCode?: string }
 export interface Member extends User { seat: number; ready: boolean; online: boolean }
 export interface RoomView {
   id: string; code: string; hostId: string; version: number;
   serverTime?: string;
   settings: Settings; members: Member[]; phase: 'waiting' | 'playing' | 'finished'; acceptingNewMembers: boolean; game?: GameView;
+}
+export interface VoiceTokenResponse {
+  appId: string;
+  channel: string;
+  token: string;
+  uid: number;
+}
+export function uuidToRtcUid(uuid: string): number {
+  let hash = 0;
+  for (let i = 0; i < uuid.length; i++) {
+    hash = (Math.imul(31, hash) + uuid.charCodeAt(i)) | 0;
+  }
+  return (Math.abs(hash) % 2000000000) + 1;
+}
+export interface FriendSummary {
+  id: string;
+  nickname: string;
+  avatar?: Avatar;
+  avatarUrl?: string | null;
+  playerCode: string;
+  status: 'pending' | 'accepted';
+  isSender: boolean;
+  online: boolean;
+  roomId?: string | null;
+  roomCode?: string | null;
 }
 export type ServerMessage =
   | { type: 'snapshot'; room: RoomView }
@@ -62,7 +87,8 @@ export type ServerMessage =
   | { type: 'roomClosed' }
   | { type: 'error'; error: string }
   | { type: 'takenOver' }
-  | { type: 'left' };
+  | { type: 'left' }
+  | { type: 'roomInvitation'; fromUser: User; roomId: string; roomCode: string };
 
 export type Role = 'merlin' | 'percival' | 'guinevere' | 'loyal' | 'morgana' | 'assassin' | 'mordred' | 'oberon' | 'minion';
 export type LoyalGuardian = 'zhubajie' | 'shawujing' | 'bailong' | 'jingang';

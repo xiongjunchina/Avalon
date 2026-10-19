@@ -42,6 +42,10 @@ import { GuidePanel } from './GuidePanel';
 import { RolePortrait } from './RolePortrait';
 import { WUYUE_MISSIONS, roleMottos, roleNames, roleTitles } from './roles';
 import { SoundProvider, SoundButton, useSound, useGameSound, useNavigationSound } from './SoundSettings';
+import { VoiceControls } from './VoiceControls';
+import { FriendsModal, RoomInvitationToast } from './FriendsModal';
+import { voiceManager, type VoiceState } from './agora-voice';
+import { uuidToRtcUid, type VoiceTokenResponse, type FriendSummary } from '@avalon/contracts';
 
 const SHOWCASE_ROLES: Role[] = [
   'merlin',
@@ -104,6 +108,96 @@ function App() {
   const [connection, setConnection] = useState('连接中');
   const transportRef = useRef<RoomConnection | null>(null);
   const [bootRetry, setBootRetry] = useState(0);
+
+  // Agora Voice & Friends State
+  const [voiceState, setVoiceState] = useState<VoiceState>(() => voiceManager.getState());
+  const [friendsModalOpen, setFriendsModalOpen] = useState(false);
+  const [pendingInvitation, setPendingInvitation] = useState<{
+    fromUser: User;
+    roomId: string;
+    roomCode: string;
+  } | null>(null);
+  const [incomingFriendRequestsCount, setIncomingFriendRequestsCount] = useState(0);
+
+  useEffect(() => {
+    return voiceManager.subscribe(setVoiceState);
+  }, []);
+
+  // Check incoming friend requests
+  useEffect(() => {
+    if (!user) return;
+    let active = true;
+    const checkFriends = async () => {
+      try {
+        const res = await api<{ friends: FriendSummary[] }>('/friends');
+        if (!active) return;
+        const incoming = res.friends.filter(f => f.status === 'pending' && !f.isSender);
+        setIncomingFriendRequestsCount(incoming.length);
+      } catch {
+        // Silently ignore if offline
+      }
+    };
+    void checkFriends();
+    const interval = setInterval(() => void checkFriends(), 30000);
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
+  }, [user?.id, friendsModalOpen]);
+
+  // Voice room auto join and leave lifecycle
+  useEffect(() => {
+    if (!roomId || !user) {
+      void voiceManager.leave();
+      return;
+    }
+    let active = true;
+    api<VoiceTokenResponse>(`/rooms/${roomId}/voice-token`)
+      .then(tokenData => {
+        if (!active) return;
+        void voiceManager.join(tokenData);
+      })
+      .catch(err => {
+        console.warn('Failed to obtain voice token:', err);
+      });
+
+    return () => {
+      active = false;
+      void voiceManager.leave();
+    };
+  }, [roomId, user?.id]);
+
+  const handleToggleMute = () => {
+    void voiceManager.toggleMute();
+  };
+
+  const handleToggleDeafen = () => {
+    void voiceManager.toggleDeafen();
+  };
+
+  const handleReconnectVoice = () => {
+    if (!roomId) return;
+    api<VoiceTokenResponse>(`/rooms/${roomId}/voice-token`)
+      .then(tokenData => {
+        void voiceManager.join(tokenData);
+      })
+      .catch(err => {
+        console.warn('Failed to reconnect voice:', err);
+      });
+  };
+
+  const handleJoinByCode = async (code: string) => {
+    try {
+      const data = await api<{ room: RoomView }>('/rooms/join', { key: code });
+      setRoom(data.room);
+      setRoomId(data.room.id);
+      setJoinOpen(false);
+      setPage('table');
+      history.replaceState(null, '', '/');
+    } catch (err) {
+      setError(describe(err));
+    }
+  };
 
   // Single-player interactive practice game state
   const [practiceGame, setPracticeGame] = useState<GameState | null>(null);
@@ -207,6 +301,9 @@ function App() {
         status: setConnection,
         busy: setBusy,
         error: code => setError(errors[code] ?? '连接发生问题，请稍后重试。'),
+        invitation: msg => {
+          setPendingInvitation(msg);
+        },
         ended: reason => {
           setRoomId(null);
           setRoom(null);
@@ -780,6 +877,17 @@ function App() {
               </button>
 
               <div className="home-tools">
+                <button
+                  type="button"
+                  className="secondary tool-pill friends-pill-btn"
+                  onClick={() => setFriendsModalOpen(true)}
+                  title="仙友录 · 召集与好友"
+                >
+                  👥 仙友
+                  {incomingFriendRequestsCount > 0 && (
+                    <span className="friends-badge-dot">{incomingFriendRequestsCount}</span>
+                  )}
+                </button>
                 <SoundButton />
                 <button
                   type="button"
@@ -934,6 +1042,23 @@ function App() {
             </div>
             <h1 className="table-top-title">西游 · 真假猴王</h1>
             <div className="room-top-right">
+              <VoiceControls
+                voiceState={voiceState}
+                onToggleMute={handleToggleMute}
+                onToggleDeafen={handleToggleDeafen}
+                onReconnect={handleReconnectVoice}
+              />
+              <button
+                type="button"
+                className="secondary tool-pill friends-pill-btn"
+                onClick={() => setFriendsModalOpen(true)}
+                title="仙友录 · 召集与好友"
+              >
+                👥 仙友
+                {incomingFriendRequestsCount > 0 && (
+                  <span className="friends-badge-dot">{incomingFriendRequestsCount}</span>
+                )}
+              </button>
               <SoundButton />
               {connection !== '已连接' && (
                 <button
@@ -984,6 +1109,7 @@ function App() {
                 setReplayId(gameId);
                 setPage('account');
               }}
+              speakingUids={voiceState.speakingUids}
             />
           ) : (
             /* Waiting Room Single-Screen Table with Physical Quest Board at Top */
@@ -1043,6 +1169,7 @@ function App() {
                 {Array.from({ length: room.settings.playerCount }, (_, i) => {
                   const m = room.members.find(member => member.seat === i + 1);
                   const isRoomHost = m && m.id === room.hostId;
+                  const isMemberSpeaking = m ? voiceState.speakingUids.has(uuidToRtcUid(m.id)) : false;
                   return (
                     <div
                       key={i}
@@ -1064,6 +1191,7 @@ function App() {
                         m?.id === user.id ? 'is-me' : '',
                         isRoomHost ? 'is-captain' : '',
                         m?.ready ? 'is-ready' : '',
+                        isMemberSpeaking ? 'seat-is-speaking' : '',
                       ]
                         .filter(Boolean)
                         .join(' ')}
@@ -1088,11 +1216,14 @@ function App() {
                           )}
                         </div>
                       </div>
-                      <div className="seat-card-avatar-wrap">
+                      <div className={`seat-card-avatar-wrap ${isMemberSpeaking ? 'is-speaking' : ''}`}>
+                        {isMemberSpeaking && (
+                          <span className="seat-speaking-ring" aria-hidden="true" />
+                        )}
                         {isRoomHost && (
                           <span className="seat-aura-ring aura-gold" aria-hidden="true" />
                         )}
-                        <div className="seat-card-avatar">
+                        <div className={`seat-card-avatar ${isMemberSpeaking ? 'speaking-avatar' : ''}`}>
                           <PlayerAvatar
                             avatar={m?.avatar}
                             avatarUrl={m?.avatarUrl}
@@ -1326,6 +1457,22 @@ function App() {
               </div>
             </Modal>
           )}
+
+          {/* Friends & Invitation Modal */}
+          <FriendsModal
+            open={friendsModalOpen}
+            onClose={() => setFriendsModalOpen(false)}
+            currentUser={user}
+            currentRoom={room}
+            onJoinRoom={handleJoinByCode}
+          />
+
+          {/* Floating Room Invitation Toast */}
+          <RoomInvitationToast
+            invitation={pendingInvitation}
+            onAccept={handleJoinByCode}
+            onDismiss={() => setPendingInvitation(null)}
+          />
         </div>
       )}
     </main>

@@ -73,7 +73,13 @@ export class SoundEngine {
       entry.gain.gain.value = 0; try { source.stop(); } catch { /* already ended */ }
     }
   }
-  private musicLevel() { return this.accent ? .025 : this.scene === 'tension' ? .12 : .20; }
+  private voiceDucking = false;
+  private musicLevel() { return this.accent ? .025 : this.voiceDucking ? .035 : this.scene === 'tension' ? .12 : .20; }
+  setVoiceDucking(active: boolean) {
+    if (this.voiceDucking === active) return;
+    this.voiceDucking = active;
+    this.duck();
+  }
   private duck() {
     const gain = this.musicNode && this.nodes.get(this.musicNode)?.gain;
     if (gain && this.context) gain.gain.setTargetAtTime(this.musicLevel(), this.context.currentTime, .12);

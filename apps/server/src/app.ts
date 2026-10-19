@@ -8,10 +8,13 @@ import { z } from 'zod';
 import { commandSchema, nicknameSchema, profileSchema, presetSchema, settingsSchema, type ServerMessage, type User } from '@avalon/contracts';
 import { DomainError, PostgresStore } from './store.js';
 import { Accounts, historyQuery } from './accounts.js';
+import { generateVoiceToken, uuidToRtcUid } from './agora.js';
+import { FriendsService } from './friends.js';
 
 export async function buildApp(options: { store: PostgresStore; origin?: string; secure?: boolean; trustProxy?: boolean; heartbeatMs?: number; maintenanceMs?: number }) {
   const { store }=options;
   const accounts=new Accounts(store);
+  const friendsService=new FriendsService(store);
   const origin=options.origin??'http://localhost:5173';
   const app=Fastify({logger:false,bodyLimit:131072,trustProxy:options.trustProxy ? (_address, hop) => hop === 0 : false});
   // One active server per database schema. Never rebuild presence underneath another server.
@@ -133,6 +136,56 @@ export async function buildApp(options: { store: PostgresStore; origin?: string;
     const room=await store.join(user,key);publish(room.id);return {room};
   });
   app.get<{Params:{id:string}}>('/api/rooms/:id',async(req,reply)=>store.roomFor((await authenticate(req,reply)).id,z.string().uuid().parse(req.params.id)));
+
+  app.get<{Params:{id:string}}>('/api/rooms/:id/voice-token',async(req,reply)=>{
+    const user=await authenticate(req,reply);
+    const roomId=z.string().uuid().parse(req.params.id);
+    await store.roomFor(user.id,roomId);
+    const rtcUid=uuidToRtcUid(user.id);
+    const channelName=`avalon-${roomId}`;
+    return generateVoiceToken(channelName,rtcUid);
+  });
+
+  app.get('/api/friends',async(req,reply)=>{
+    const user=await authenticate(req,reply);
+    return {friends:await friendsService.listFriends(user.id)};
+  });
+
+  app.post('/api/friends/request',{config:{rateLimit:{max:20,timeWindow:'1 minute'}}},async(req,reply)=>{
+    const user=await authenticate(req,reply);
+    const {query}=z.object({query:z.string().trim().min(1).max(50)}).strict().parse(req.body);
+    return friendsService.sendRequest(user.id,query);
+  });
+
+  app.post<{Params:{id:string}}>('/api/friends/:id/accept',async(req,reply)=>{
+    const user=await authenticate(req,reply);
+    const requesterId=z.string().uuid().parse(req.params.id);
+    return friendsService.respondRequest(user.id,requesterId,true);
+  });
+
+  app.delete<{Params:{id:string}}>('/api/friends/:id',async(req,reply)=>{
+    const user=await authenticate(req,reply);
+    const targetId=z.string().uuid().parse(req.params.id);
+    return friendsService.removeFriend(user.id,targetId);
+  });
+
+  app.post<{Params:{id:string}}>('/api/rooms/:id/invite',async(req,reply)=>{
+    const user=await authenticate(req,reply);
+    const roomId=z.string().uuid().parse(req.params.id);
+    const {room}=await store.roomFor(user.id,roomId);
+    const {targetUserId}=z.object({targetUserId:z.string().uuid()}).strict().parse(req.body);
+    const targetConn=connections.get(targetUserId);
+    if(targetConn&&targetConn.socket.readyState===1){
+      send(targetConn.socket,{
+        type:'roomInvitation',
+        fromUser:user,
+        roomId:room.id,
+        roomCode:room.code,
+      });
+      return {sent:true,online:true};
+    }
+    return {sent:true,online:false};
+  });
   const wsUsers=new WeakMap<FastifyRequest,User>();
   app.get<{Params:{id:string}}>('/api/rooms/:id/socket',{
     websocket:true,preValidation:async req=>{

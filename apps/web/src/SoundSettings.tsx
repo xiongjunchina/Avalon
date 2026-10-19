@@ -4,6 +4,7 @@ import { AudioEventTracker, parseSoundPreferences, SOUND_STORAGE_KEY, type Effec
 import { interactionCue, PAGE_SOUND_EVENT } from './audio-interactions';
 import { BACKGROUND_MUSIC } from './audio-catalog';
 import { SoundEngine } from './audio-engine';
+import { voiceManager } from './agora-voice';
 import { Modal } from './Modal';
 
 function readPreferences() {
@@ -27,6 +28,11 @@ export function SoundProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     engine.configure(preferences);
   }, [engine, preferences]);
+  useEffect(() => {
+    voiceManager.setDuckingCallback(active => {
+      engine.setVoiceDucking(active);
+    });
+  }, [engine]);
   useEffect(() => {
     const play = (cue: EffectCue | null) => void engine.activate().then(() => { if (cue) void engine.effect(cue); });
     const click = (event: MouseEvent) => {

@@ -15,7 +15,7 @@ const LEASE_MS = 45_000;
 export const digest = (token: string) => createHash('sha256').update(token).digest('hex');
 type RoomRow = { id: string; code: string; invite: string; host_id: string; settings: RoomView['settings'];
   version: number; accepting_new_members: boolean; phase: RoomView['phase'] | 'closed'; offline_since: Date | null; current_game_id: string | null };
-type MemberRow = { user_id: string; nickname: string; avatar: User['avatar']; avatar_url?: string | null; wechat_avatar_url?: string | null; seat: number; ready: boolean;
+type MemberRow = { user_id: string; nickname: string; avatar: User['avatar']; avatar_url?: string | null; wechat_avatar_url?: string | null; player_code?: string | null; seat: number; ready: boolean;
   connection_id: string | null; last_seen_at: Date; disconnected_at: Date | null; joined_at: Date; join_order: string };
 export class PostgresStore {
   private restartGraceUntil = 0;
@@ -39,7 +39,7 @@ export class PostgresStore {
     return r.rows[0];
   }
   private async members(c: PoolClient, id: string) {
-    return (await c.query<MemberRow>(`SELECT m.*,u.nickname,u.avatar,u.avatar_url,u.wechat_avatar_url FROM room_members m JOIN users u ON u.id=m.user_id
+    return (await c.query<MemberRow>(`SELECT m.*,u.nickname,u.avatar,u.avatar_url,u.wechat_avatar_url,u.player_code FROM room_members m JOIN users u ON u.id=m.user_id
       WHERE room_id=$1 ORDER BY joined_at,join_order`, [id])).rows;
   }
   private async view(c: PoolClient, r: RoomRow, members: MemberRow[], userId?: string): Promise<RoomView> {
@@ -54,6 +54,7 @@ export class PostgresStore {
         avatar: m.avatar,
         ...(m.avatar_url ? { avatarUrl: m.avatar_url } : {}),
         ...(m.wechat_avatar_url ? { wechatAvatarUrl: m.wechat_avatar_url } : {}),
+        ...(m.player_code ? { playerCode: m.player_code } : {}),
         seat: m.seat,
         ready: m.ready,
         online: m.connection_id !== null,
@@ -68,9 +69,14 @@ export class PostgresStore {
   }
   async health() { return this.tx(async c => { await c.query('SELECT 1'); }); }
   async createGuest(nickname: string) {
-    const user: User = { id: randomUUID(), nickname, avatar:'leaf' }, token = randomBytes(32).toString('base64url');
+    let playerCode = String(randomInt(100000, 1000000));
+    const user: User = { id: randomUUID(), nickname, avatar:'leaf', playerCode }, token = randomBytes(32).toString('base64url');
     return this.tx(async c => {
-      await c.query('INSERT INTO users(id,nickname,created_at) VALUES($1,$2,$3)', [user.id,nickname,this.date()]);
+      while ((await c.query('SELECT 1 FROM users WHERE player_code=$1', [playerCode])).rowCount) {
+        playerCode = String(randomInt(100000, 1000000));
+        user.playerCode = playerCode;
+      }
+      await c.query('INSERT INTO users(id,nickname,created_at,player_code) VALUES($1,$2,$3,$4)', [user.id,nickname,this.date(),playerCode]);
       await c.query('INSERT INTO sessions(token_hash,user_id,expires_at) VALUES($1,$2,$3)', [digest(token),user.id,new Date(this.now()+SESSION_MS)]);
       return { user, token };
     });
@@ -82,8 +88,8 @@ export class PostgresStore {
         ? await c.query(`UPDATE sessions SET expires_at=$2 WHERE token_hash=$1 AND expires_at>$3 RETURNING user_id`, [digest(token),new Date(this.now()+SESSION_MS),this.date()])
         : await c.query('SELECT user_id FROM sessions WHERE token_hash=$1 AND expires_at>$2', [digest(token),this.date()]);
       if (!result.rows[0]) throw new DomainError('UNAUTHENTICATED', 401);
-      const u = (await c.query<{id:string;nickname:string;avatar:User['avatar'];avatar_url?:string|null;wechat_avatar_url?:string|null}>(
-        'SELECT id,nickname,avatar,avatar_url,wechat_avatar_url FROM users WHERE id=$1',
+      const u = (await c.query<{id:string;nickname:string;avatar:User['avatar'];avatar_url?:string|null;wechat_avatar_url?:string|null;player_code?:string|null}>(
+        'SELECT id,nickname,avatar,avatar_url,wechat_avatar_url,player_code FROM users WHERE id=$1',
         [result.rows[0].user_id]
       )).rows[0];
       return {
@@ -92,6 +98,7 @@ export class PostgresStore {
         avatar: u.avatar,
         ...(u.avatar_url ? { avatarUrl: u.avatar_url } : {}),
         ...(u.wechat_avatar_url ? { wechatAvatarUrl: u.wechat_avatar_url } : {}),
+        ...(u.player_code ? { playerCode: u.player_code } : {}),
       };
     });
   }

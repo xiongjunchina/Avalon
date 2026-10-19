@@ -14,7 +14,11 @@ export const errors: Record<string, string> = {
   FORBIDDEN: '你没有进行此操作的权限。', VERSION_CONFLICT: '房间刚刚更新，已同步最新状态，请重新操作。',
   SEATS_OCCUPIED: '目标人数中有座位已被占用，不能缩减。', INVALID_INPUT: '输入格式不正确，请检查后重试。',
   ROOM_CLOSED: '房间已关闭，请重新创建或加入其他房间。', JOIN_DISABLED: '房主已关闭新成员加入，请联系房主。',
-  SERVICE_UNAVAILABLE: '服务暂不可用，请稍后重试；已保存的数据不会改为临时存储。', ACK_PENDING: '操作回执尚未收到，正在重连确认结果，请勿重复操作。',
+  USER_NOT_FOUND: '未找到该玩家，请核对仙友数字ID或昵称。',
+  CANNOT_ADD_SELF: '不能添加自己为仙友。',
+  ALREADY_FRIENDS: '你们已经是仙友了。',
+  REQUEST_ALREADY_SENT: '已发送过好友请求，等待对方确认中。',
+  REQUEST_NOT_FOUND: '未找到对应的好友申请。',
   RATE_LIMITED: '操作过于频繁，请稍后再试。', NETWORK: '连接失败，请检查网络后重试。',
 };
 export async function api<T>(path: string, body?: unknown, method = body === undefined ? 'GET' : 'POST'): Promise<T> {

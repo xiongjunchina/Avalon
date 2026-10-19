@@ -1,6 +1,7 @@
 import { PrivateExtensions, ExtensionStep, ExtensionHistory } from './Extensions';
 import { useEffect, useRef, useState } from 'react';
 import type { Command, GameView, Player, RoomView, RoundView } from '@avalon/contracts';
+import { uuidToRtcUid } from '@avalon/contracts';
 import { ROLE_CONFIG, assignFemaleDemons, assignLoyalGuardians, failuresRequiredFor } from '@avalon/game-core';
 import { Emblem, PlayerAvatar, WuYueBackdrop, roleTeam, CloudFlourish, DragonPlinthDecor } from './Heraldry';
 import { RolePortrait } from './RolePortrait';
@@ -52,6 +53,7 @@ export function GamePanel({
   onOpenGuide,
   onOpenReplay,
   onSound,
+  speakingUids,
 }: {
   room: RoomView;
   userId: string;
@@ -61,6 +63,7 @@ export function GamePanel({
   onOpenGuide?: () => void;
   onOpenReplay?: (gameId: string) => void;
   onSound?: (cue: EffectCue) => void;
+  speakingUids?: Set<number>;
 }) {
   const g = room.game!;
   const self = g.self;
@@ -629,6 +632,9 @@ export function GamePanel({
             ended && Boolean(g.result?.winner && revealedTeam && g.result.winner === revealedTeam);
           const isAssassinatedTarget = ended && g.result?.targetId === p.id;
 
+          const pRtcUid = uuidToRtcUid(p.id);
+          const isSpeaking = Boolean(speakingUids?.has(pRtcUid));
+
           return (
             <div
               key={p.id}
@@ -657,19 +663,23 @@ export function GamePanel({
                 isWinnerSeat ? 'is-winner-seat' : '',
                 isAssassinatedTarget ? 'is-assassinated-seat' : '',
                 !ended && member?.online === false ? 'is-offline' : '',
+                isSpeaking ? 'seat-is-speaking' : '',
               ]
                 .filter(Boolean)
                 .join(' ')}
             >
               {/* 1. Avatar Container */}
-              <div className="flank-avatar-wrap">
+              <div className={`flank-avatar-wrap ${isSpeaking ? 'is-speaking' : ''}`}>
+                {isSpeaking && (
+                  <span className="seat-speaking-ring" aria-hidden="true" />
+                )}
                 {(isProposed || isCaptain) && (
                   <span
                     className={`seat-aura-ring ${isProposed ? 'aura-cyan' : 'aura-gold'}`}
                     aria-hidden="true"
                   />
                 )}
-                <div className="seat-card-avatar">
+                <div className={`seat-card-avatar ${isSpeaking ? 'speaking-avatar' : ''}`}>
                   {revealedRole ? (
                     <RolePortrait role={revealedRole} loyalGuardian={revealedLoyalGuardians[p.id]} femaleDemon={revealedFemaleDemons[p.id]} size="mini" />
                   ) : (
