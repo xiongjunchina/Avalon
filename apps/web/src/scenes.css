@@ -545,6 +545,60 @@ main.app-shell.is-live-table {
   color: #ffd875 !important;
   text-shadow: 0 0 10px rgba(255, 216, 117, 0.85) !important;
 }
+
+/* Scheme 3 Lightweight Status Ribbon (.slim-game-status-bar) */
+.is-live-table .slim-game-status-bar {
+  min-height: 34px !important;
+  max-height: 38px !important;
+  padding: 3px 12px !important;
+  background: linear-gradient(90deg, transparent 0%, rgba(95, 24, 22, 0.92) 15%, rgba(135, 34, 30, 0.97) 50%, rgba(95, 24, 22, 0.92) 85%, transparent 100%) !important;
+  border-top: 1.5px solid #ffd875 !important;
+  border-bottom: 1.5px solid #ffd875 !important;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.5) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  margin: 2px 0 4px !important;
+}
+.is-live-table .slim-status-ornament {
+  display: flex !important;
+  align-items: center !important;
+  color: #ffd875 !important;
+  width: 26px !important;
+  height: 14px !important;
+  flex-shrink: 0 !important;
+}
+.is-live-table .slim-status-content {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 0 !important;
+}
+.is-live-table .slim-status-text {
+  font: 700 clamp(12.5px, 3.4vw, 15px)/1.2 var(--calligraphy) !important;
+  color: #fff4d6 !important;
+  letter-spacing: 0.8px !important;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9) !important;
+  white-space: nowrap !important;
+  margin: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+}
+.is-live-table .slim-status-captain {
+  color: #ffd875 !important;
+  font-weight: 800 !important;
+}
+.is-live-table .slim-status-divider {
+  color: rgba(255, 216, 117, 0.6) !important;
+}
+.is-live-table .slim-status-phase {
+  color: #fff2d5 !important;
+}
+.is-live-table .slim-status-phase strong {
+  color: #ffd875 !important;
+}
 /* Scheme A-2 Style: Two-Tier Captain and Formation Grand Plaque (乌金赤羽沉香雕台) */
 /* Scheme A-2 Centerpiece: Captain Drafting Altar (乌金赤羽沉香雕台) */
 .is-live-table .a2-draft-altar,
@@ -882,16 +936,16 @@ main.app-shell.is-live-table {
   gap: 4px !important;
 }
 .is-live-table .table-seats-grid:is([data-player-count="5"], [data-player-count="6"], [data-player-count="7"], [data-player-count="8"]) .seat-card-avatar {
-  width: 48px !important;
-  height: 48px !important;
-  min-width: 48px !important;
-  min-height: 48px !important;
+  width: 58px !important;
+  height: 58px !important;
+  min-width: 58px !important;
+  min-height: 58px !important;
 }
 .is-live-table .table-seats-grid:is([data-player-count="5"], [data-player-count="6"], [data-player-count="7"], [data-player-count="8"]) .seat-card-name {
-  font-size: 12.5px !important;
-  min-height: 22px !important;
-  height: 22px !important;
-  line-height: 22px !important;
+  font-size: 13px !important;
+  min-height: 24px !important;
+  height: 24px !important;
+  line-height: 24px !important;
   padding: 0 8px !important;
   margin-top: 3px !important;
   flex-shrink: 0 !important;
@@ -903,17 +957,17 @@ main.app-shell.is-live-table {
   gap: 3px !important;
 }
 .is-live-table .table-seats-grid:is([data-player-count="9"], [data-player-count="10"], [data-player-count="11"], [data-player-count="12"]) .seat-card-avatar {
-  width: 40px !important;
-  height: 40px !important;
-  min-width: 40px !important;
-  min-height: 40px !important;
+  width: 48px !important;
+  height: 48px !important;
+  min-width: 48px !important;
+  min-height: 48px !important;
   border-width: 2px !important;
 }
 .is-live-table .table-seats-grid:is([data-player-count="9"], [data-player-count="10"], [data-player-count="11"], [data-player-count="12"]) .seat-card-name {
-  font-size: 11.5px !important;
-  min-height: 20px !important;
-  height: 20px !important;
-  line-height: 20px !important;
+  font-size: 12px !important;
+  min-height: 21px !important;
+  height: 21px !important;
+  line-height: 21px !important;
   padding: 0 6px !important;
   margin-top: 2px !important;
   flex-shrink: 0 !important;
@@ -924,8 +978,8 @@ main.app-shell.is-live-table {
 }
 
 .is-live-table .seat-card-avatar {
-  width: clamp(34px, 5.5dvh, 48px);
-  height: clamp(34px, 5.5dvh, 48px);
+  width: clamp(42px, 6.5dvh, 58px);
+  height: clamp(42px, 6.5dvh, 58px);
   aspect-ratio: 1 !important;
   border: 2.5px solid #d4a359 !important;
   background: radial-gradient(circle at 50% 35%, #421614 0%, #1a0808 100%) !important;
@@ -940,8 +994,41 @@ main.app-shell.is-live-table {
   justify-content: center !important;
   flex-shrink: 0 !important;
 }
-.is-live-table .seat-card-top { position: absolute; top: 1px; z-index: 4; min-height: 0; }
-.is-live-table .seat-badge { font-size: 9px; padding: 1px 5px; box-shadow: none; }
+.is-live-table .seat-card-top {
+  position: absolute !important;
+  top: -8px !important;
+  z-index: 5 !important;
+  min-height: 0 !important;
+  width: 100% !important;
+  display: flex !important;
+  justify-content: center !important;
+}
+.is-live-table .seat-top-badges {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 2px !important;
+}
+.is-live-table .seat-badge {
+  font-size: 10px !important;
+  line-height: 1.2 !important;
+  padding: 1.5px 6px !important;
+  font-weight: 800 !important;
+  border-radius: 999px !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.8) !important;
+  letter-spacing: 0.5px !important;
+}
+.is-live-table .badge-captain {
+  background: linear-gradient(180deg, #ffe184 0%, #c98f24 100%) !important;
+  color: #1f1300 !important;
+  border: 1px solid #fff3bf !important;
+}
+.is-live-table .badge-team-member {
+  background: linear-gradient(180deg, #00f2fe 0%, #0284c7 100%) !important;
+  color: #ffffff !important;
+  border: 1px solid #7dd3fc !important;
+  box-shadow: 0 0 10px rgba(0, 242, 254, 0.7) !important;
+}
 .is-live-table .seat-aura-ring { display: none; }
 .is-live-table .table-seat-card.is-on-team .seat-card-avatar {
   border: 3px solid #00f2fe !important;
@@ -1658,3 +1745,338 @@ dialog.table-modal-backdrop::backdrop { background: #081b2d55; }
   justify-content: center !important;
   box-sizing: border-box !important;
 }
+
+/* ===================================================================
+   Dedicated Team Vote Modal Window (专属组队表决弹窗)
+   =================================================================== */
+.dedicated-vote-sheet {
+  background: linear-gradient(180deg, #240a09 0%, #170505 50%, #0d0202 100%) !important;
+  border: 2px solid #e0aa3e !important;
+  border-radius: 18px !important;
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.95), inset 0 1px 0 rgba(255, 230, 150, 0.45) !important;
+  max-width: 520px !important;
+  width: min(100%, 520px) !important;
+  padding: 16px 14px !important;
+  color: #fff2d5 !important;
+}
+.dedicated-vote-head {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  border-bottom: 1.5px solid rgba(224, 170, 62, 0.5) !important;
+  padding-bottom: 10px !important;
+  margin-bottom: 8px !important;
+}
+.vote-head-title-block {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+}
+.vote-head-kicker {
+  font-size: 11px !important;
+  color: #ffd875 !important;
+  letter-spacing: 1px !important;
+  font-family: var(--display) !important;
+}
+.vote-head-main-title {
+  font-size: 20px !important;
+  font-family: var(--calligraphy) !important;
+  color: #fff4d0 !important;
+  letter-spacing: 1px !important;
+}
+.vote-rule-prompt {
+  text-align: center !important;
+  font-size: 12px !important;
+  color: #e2cfa2 !important;
+  margin: 4px 0 10px !important;
+  background: rgba(46, 14, 13, 0.6) !important;
+  padding: 4px 10px !important;
+  border-radius: 999px !important;
+  border: 1px solid rgba(212, 163, 89, 0.3) !important;
+}
+
+/* 1. 组队结果专区 (Team Formation Result) */
+.vote-result-container {
+  background: linear-gradient(180deg, rgba(46, 14, 13, 0.92) 0%, rgba(20, 5, 5, 0.96) 100%) !important;
+  border: 1.5px solid rgba(224, 170, 62, 0.65) !important;
+  border-radius: 14px !important;
+  padding: 10px 12px !important;
+  margin-bottom: 12px !important;
+  box-shadow: inset 0 0 16px rgba(0, 0, 0, 0.6) !important;
+}
+.vote-result-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  margin-bottom: 8px !important;
+}
+.vote-result-title {
+  font: 700 14px/1 var(--calligraphy) !important;
+  color: #ffd875 !important;
+  letter-spacing: 1.5px !important;
+}
+.vote-filigree-bracket {
+  color: rgba(255, 216, 117, 0.5) !important;
+  font-size: 12px !important;
+}
+
+/* Captain Hero Row */
+.vote-captain-hero {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  background: linear-gradient(90deg, rgba(82, 22, 18, 0.85) 0%, rgba(45, 12, 10, 0.6) 100%) !important;
+  border: 1px solid rgba(255, 216, 117, 0.5) !important;
+  border-radius: 10px !important;
+  padding: 6px 12px !important;
+  margin-bottom: 10px !important;
+}
+.vote-captain-avatar-wrap {
+  position: relative !important;
+  width: 44px !important;
+  height: 44px !important;
+  flex-shrink: 0 !important;
+}
+.vote-crown-icon {
+  position: absolute !important;
+  top: -10px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  width: 18px !important;
+  height: 14px !important;
+  color: #ffd875 !important;
+  z-index: 2 !important;
+}
+.vote-captain-avatar {
+  width: 44px !important;
+  height: 44px !important;
+  border-radius: 50% !important;
+  border: 2px solid #ffd875 !important;
+  box-shadow: 0 0 10px rgba(255, 216, 117, 0.7) !important;
+  overflow: hidden !important;
+  display: grid !important;
+  place-items: center !important;
+}
+.vote-captain-info {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+}
+.vote-captain-tag {
+  font-size: 11px !important;
+  color: #ffd875 !important;
+  font-weight: 700 !important;
+}
+.vote-captain-name {
+  font-size: 15px !important;
+  color: #ffffff !important;
+  font-family: var(--display) !important;
+}
+.vote-self-tag {
+  color: #ffd875 !important;
+  font-size: 12px !important;
+}
+
+/* Members Grid */
+.vote-members-section {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+}
+.vote-members-label {
+  font-size: 12px !important;
+  color: #67e8f9 !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.5px !important;
+}
+.vote-members-grid {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: stretch !important;
+  gap: 8px !important;
+  flex-wrap: wrap !important;
+}
+.vote-member-card {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 3px !important;
+  background: rgba(10, 25, 35, 0.7) !important;
+  border: 1.5px solid #00f2fe !important;
+  border-radius: 10px !important;
+  padding: 6px 10px !important;
+  min-width: 68px !important;
+  box-shadow: 0 0 10px rgba(0, 242, 254, 0.25) !important;
+  transition: transform 0.15s ease !important;
+}
+.vote-member-card.is-self {
+  border-color: #ffd875 !important;
+  box-shadow: 0 0 12px rgba(255, 216, 117, 0.4) !important;
+}
+.vote-member-avatar {
+  position: relative !important;
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 50% !important;
+  border: 2px solid #00f2fe !important;
+  overflow: hidden !important;
+  display: grid !important;
+  place-items: center !important;
+}
+.vote-member-seat {
+  position: absolute !important;
+  bottom: 0 !important;
+  right: 0 !important;
+  background: #0284c7 !important;
+  color: #ffffff !important;
+  font-size: 9px !important;
+  font-weight: 800 !important;
+  padding: 0 3px !important;
+  border-radius: 4px !important;
+}
+.vote-member-name {
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  color: #e0f2fe !important;
+  max-width: 80px !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  text-align: center !important;
+}
+.vote-member-badge {
+  font-size: 10px !important;
+  color: #38bdf8 !important;
+  background: rgba(14, 165, 233, 0.15) !important;
+  padding: 1px 5px !important;
+  border-radius: 999px !important;
+  border: 1px solid rgba(56, 189, 248, 0.4) !important;
+}
+
+/* 2. 投票操作区 (Voting Action) */
+.vote-submitted-card {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  padding: 18px 12px !important;
+  background: rgba(16, 185, 129, 0.12) !important;
+  border: 1.5px solid #10b981 !important;
+  border-radius: 12px !important;
+  margin-bottom: 12px !important;
+  text-align: center !important;
+}
+.vote-submitted-icon {
+  font-size: 32px !important;
+}
+.vote-submitted-card strong {
+  font-size: 16px !important;
+  color: #a7f3d0 !important;
+  font-family: var(--calligraphy) !important;
+}
+.vote-submitted-card p {
+  font-size: 12px !important;
+  color: #d1fae5 !important;
+  margin: 0 !important;
+}
+.dedicated-choices-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 10px !important;
+  margin: 6px 0 12px !important;
+}
+.dedicated-submit-btn {
+  width: 100% !important;
+  min-height: 46px !important;
+  font-size: 17px !important;
+  font-family: var(--calligraphy) !important;
+  letter-spacing: 2px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+}
+
+/* 3. 投票进度区 (Progress Panel) */
+.vote-progress-panel {
+  background: rgba(20, 5, 5, 0.6) !important;
+  border: 1px solid rgba(212, 163, 89, 0.3) !important;
+  border-radius: 10px !important;
+  padding: 8px 10px !important;
+  margin-top: 6px !important;
+}
+.vote-progress-head {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  font-size: 12px !important;
+  color: #eddcc4 !important;
+  margin-bottom: 6px !important;
+}
+.vote-progress-head strong {
+  color: #ffd875 !important;
+}
+.dedicated-voters-list {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)) !important;
+  gap: 6px !important;
+}
+.dedicated-voter-chip {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 3px 6px !important;
+  border-radius: 6px !important;
+  font-size: 11px !important;
+  background: rgba(30, 10, 10, 0.8) !important;
+  border: 1px solid rgba(212, 163, 89, 0.3) !important;
+}
+.dedicated-voter-chip.is-done {
+  border-color: #10b981 !important;
+}
+.dedicated-voter-chip.awaiting-vote {
+  border-color: #ffd875 !important;
+  background: rgba(120, 53, 15, 0.4) !important;
+}
+.voter-chip-seat {
+  color: #ffd875 !important;
+  font-weight: 700 !important;
+  font-size: 10px !important;
+}
+.voter-chip-name {
+  color: #fff2d5 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  max-width: 44px !important;
+}
+.voter-chip-status.done {
+  color: #34d399 !important;
+  font-size: 10px !important;
+}
+.voter-chip-status.pending {
+  color: #f59e0b !important;
+  font-size: 10px !important;
+}
+.voter-chip-ballot.approve {
+  color: #34d399 !important;
+  font-weight: 700 !important;
+}
+.voter-chip-ballot.reject {
+  color: #f87171 !important;
+  font-weight: 700 !important;
+}
+.voter-chip-ballot.abstain {
+  color: #fbbf24 !important;
+  font-weight: 700 !important;
+}
+.vote-waiting-footer {
+  font-size: 11px !important;
+  color: #eddcc4 !important;
+  text-align: center !important;
+  margin: 6px 0 0 !important;
+}
+

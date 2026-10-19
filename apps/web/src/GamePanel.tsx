@@ -538,31 +538,60 @@ export function GamePanel({
               <h2 className="sr-only" aria-live="polite">
                 {phaseNames[effectivePhase]}
               </h2>
-              {['proposing', 'discussion', 'team_vote', 'mission'].includes(effectivePhase) ? (
-                <PartyBanner
-                  players={publicPlayers}
-                  captainId={g.captainId}
-                  team={activeTeamIds}
-                  size={size}
-                  canRemove={['proposing', 'discussion'].includes(effectivePhase) && captain && !disabled}
-                  onRemove={handleSeatTap}
-                  votes={voteStatusMap}
-                  statusText={statusText}
-                />
-              ) : (
-                /* Scheme 3 Floating Ink-and-Gold Calligraphy Ribbon */
-                <div className="scheme3-ink-ribbon">
-                  <span className="ink-ribbon-ornament left" aria-hidden="true">
-                    <CloudFlourish side="left" />
-                  </span>
-                  <p className="ink-ribbon-text" role="status">
-                    候任领队 <strong>{captainPlayer?.nickname ?? ''}</strong> · {phaseNames[effectivePhase]}
-                  </p>
-                  <span className="ink-ribbon-ornament right" aria-hidden="true">
-                    <CloudFlourish side="right" />
-                  </span>
+              {/* Slim Game Status Bar (Lightweight Ink-and-Gold Ribbon) */}
+              <div className="slim-game-status-bar" role="status">
+                <span className="slim-status-ornament left" aria-hidden="true">
+                  <CloudFlourish side="left" />
+                </span>
+                <div className="slim-status-content">
+                  {effectivePhase === 'proposing' ? (
+                    <p className="slim-status-text">
+                      <span className="slim-status-captain">
+                        👑 队长【{captainPlayer ? `${captainPlayer.seat}号 ${captainPlayer.nickname}` : ''}】
+                      </span>
+                      <span className="slim-status-divider">·</span>
+                      <span className="slim-status-phase">
+                        {selected.length === size ? (
+                          <strong className="text-gold">已选齐 {size} 人 · 待确认提交</strong>
+                        ) : (
+                          <>正在点将（已选 <strong>{selected.length}</strong>/{size} 人）</>
+                        )}
+                      </span>
+                    </p>
+                  ) : effectivePhase === 'discussion' ? (
+                    <p className="slim-status-text">
+                      <span className="slim-status-captain">
+                        🗣️ 论道中【{captainPlayer ? `${captainPlayer.seat}号 ${captainPlayer.nickname}` : ''}】
+                      </span>
+                      <span className="slim-status-divider">·</span>
+                      <span className="slim-status-phase">阵容 {activeTeamIds.length}/{size} 人</span>
+                    </p>
+                  ) : effectivePhase === 'team_vote' ? (
+                    <p className="slim-status-text">
+                      <span className="slim-status-captain">⚖️ 出征表决</span>
+                      <span className="slim-status-divider">·</span>
+                      <span className="slim-status-phase">
+                        已投 <strong>{g.progress.teamVotes}</strong>/{g.players.length} 人
+                      </span>
+                    </p>
+                  ) : effectivePhase === 'mission' ? (
+                    <p className="slim-status-text">
+                      <span className="slim-status-captain">⚔️ 取经出征中</span>
+                      <span className="slim-status-divider">·</span>
+                      <span className="slim-status-phase">
+                        已出牌 <strong>{g.progress.missionVotes}</strong>/{activeTeamIds.length} 人
+                      </span>
+                    </p>
+                  ) : (
+                    <p className="slim-status-text">
+                      候任领队 <strong>{captainPlayer?.nickname ?? ''}</strong> · {phaseNames[effectivePhase]}
+                    </p>
+                  )}
                 </div>
-              )}
+                <span className="slim-status-ornament right" aria-hidden="true">
+                  <CloudFlourish side="right" />
+                </span>
+              </div>
             </div>
           );
         })()
@@ -653,6 +682,11 @@ export function GamePanel({
                         {isCaptain && (
                           <span className={`seat-badge ${isNextCaptain ? 'badge-next-captain' : 'badge-captain'}`}>
                             {isNextCaptain ? '👑 候任' : '👑 队长'}
+                          </span>
+                        )}
+                        {isProposed && (
+                          <span className="seat-badge badge-team-member">
+                            ⚔️ 出征
                           </span>
                         )}
                         {isLadyHolder && <span className="seat-badge badge-lady">☯️ 宝镜</span>}
