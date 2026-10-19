@@ -37,7 +37,7 @@ export function assignFemaleDemons(gameId: string, players: Player[], roles: Rec
 export const MISSION_SIZES: Record<number, number[]> = {
   5: [2,3,2,3,3], 6: [2,3,4,3,4], 7: [2,3,3,4,4],
   8: [3,4,4,5,5], 9: [3,4,4,5,4], 10: [3,4,4,5,5],
-  11: [3,4,5,6,5], 12: [3,4,5,6,6],
+  11: [3,4,5,5,5], 12: [3,4,5,6,6],
 };
 export const ROLE_CONFIG: Record<number, Role[]> = {
   5: ['merlin','percival','loyal','morgana','assassin'],
@@ -46,7 +46,7 @@ export const ROLE_CONFIG: Record<number, Role[]> = {
   8: ['merlin','percival','loyal','loyal','loyal','morgana','assassin','minion'],
   9: ['merlin','percival','guinevere','loyal','loyal','morgana','assassin','mordred','oberon'],
   10: ['merlin','percival','guinevere','loyal','loyal','loyal','morgana','assassin','mordred','oberon'],
-  11: ['merlin','percival','guinevere','loyal','loyal','loyal','loyal','morgana','assassin','mordred','minion'],
+  11: ['merlin','percival','guinevere','loyal','loyal','loyal','morgana','assassin','mordred','minion','oberon'],
   12: ['merlin','percival','guinevere','loyal','loyal','loyal','loyal','morgana','assassin','mordred','minion','oberon'],
 };
 export const teamOf = (role: Role): Team => ['merlin','percival','guinevere','loyal'].includes(role) ? 'blue' : 'red';
@@ -114,7 +114,7 @@ export function createGame(
 export const isEnded = (g: GameState) => g.phase === 'finished' || g.phase === 'aborted';
 export const captain = (g: GameState) => g.captainOrder[g.captainIndex];
 export const failuresRequiredFor = (playerCount: number, mission: number): number =>
-  (playerCount >= 7 && mission === 4) || ((playerCount === 9 || playerCount === 12) && mission === 3) ? 2 : 1;
+  (playerCount >= 7 && mission === 4) || ((playerCount === 9 || playerCount === 11 || playerCount === 12) && mission === 3) ? 2 : 1;
 export const failuresRequired = (g: GameState) => failuresRequiredFor(g.players.length, g.mission);
 export function finish(g: GameState, result: GameResult) {
   g.result = result; g.phase = result.winner ? 'finished' : 'aborted';
