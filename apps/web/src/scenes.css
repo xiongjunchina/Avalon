@@ -2080,3 +2080,440 @@ dialog.table-modal-backdrop::backdrop { background: #081b2d55; }
   margin: 6px 0 0 !important;
 }
 
+/* ===================================================================
+   1. Bagua Altar Ring Formation (八卦伏魔坛 · 环形周天阵)
+   =================================================================== */
+.is-live-table .table-seats-grid.altar-ring-arena {
+  display: block !important;
+  position: relative !important;
+  width: 100% !important;
+  height: clamp(330px, 46dvh, 440px) !important;
+  min-height: 320px !important;
+  background: radial-gradient(ellipse at 50% 50%, rgba(55, 18, 16, 0.45) 0%, rgba(26, 8, 8, 0.72) 60%, rgba(12, 3, 3, 0.92) 100%) !important;
+  border: 1px solid rgba(212, 163, 89, 0.35) !important;
+  border-radius: 28px !important;
+  box-shadow: inset 0 0 35px rgba(0, 0, 0, 0.85), 0 4px 18px rgba(0, 0, 0, 0.5) !important;
+  margin: 4px 0 !important;
+  padding: 0 !important;
+  overflow: visible !important;
+  box-sizing: border-box !important;
+}
+
+/* Central Altar Core */
+.altar-center-core {
+  position: absolute !important;
+  left: 50% !important;
+  top: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  width: clamp(84px, 22vw, 108px) !important;
+  height: clamp(84px, 22vw, 108px) !important;
+  border-radius: 50% !important;
+  border: 1.5px solid rgba(255, 216, 117, 0.55) !important;
+  background: radial-gradient(circle at 50% 50%, rgba(72, 20, 18, 0.9) 0%, rgba(22, 6, 6, 0.98) 100%) !important;
+  box-shadow: 0 0 24px rgba(0, 0, 0, 0.85), inset 0 0 14px rgba(255, 216, 117, 0.3) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  z-index: 1 !important;
+  pointer-events: none !important;
+}
+
+.altar-bagua-disc {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 2px !important;
+  text-align: center !important;
+}
+
+.altar-core-taichi {
+  font-size: clamp(24px, 6vw, 32px) !important;
+  line-height: 1 !important;
+  color: #ffd875 !important;
+  text-shadow: 0 0 12px rgba(255, 216, 117, 0.85) !important;
+  animation: taichi-gentle-pulse 4s infinite ease-in-out;
+}
+
+@keyframes taichi-gentle-pulse {
+  0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.9; }
+  50% { transform: scale(1.08) rotate(180deg); opacity: 1; }
+}
+
+.altar-direction-tag {
+  font-size: 10px !important;
+  color: #eedcc4 !important;
+  font-weight: 700 !important;
+  background: rgba(15, 4, 4, 0.7) !important;
+  border: 1px solid rgba(229, 185, 100, 0.4) !important;
+  padding: 1px 6px !important;
+  border-radius: 999px !important;
+  letter-spacing: 0.5px !important;
+  white-space: nowrap !important;
+}
+
+.altar-mission-tag {
+  font-size: 9.5px !important;
+  color: #ffd875 !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.5px !important;
+}
+
+/* Seats in Altar Ring Arena */
+.is-live-table .table-seats-grid.altar-ring-arena .table-seat-card {
+  position: absolute !important;
+  left: var(--seat-x) !important;
+  top: var(--seat-y) !important;
+  transform: translate(-50%, -50%) !important;
+  width: auto !important;
+  min-width: clamp(60px, 16vw, 76px) !important;
+  max-width: clamp(74px, 18vw, 86px) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 2px !important;
+  padding: 2px !important;
+  margin: 0 !important;
+  z-index: 3 !important;
+}
+
+/* ===================================================================
+   2. Anti-Peeking Mission Secret Box (乾坤密匣 · 防偷窥出牌)
+   =================================================================== */
+.mission-privacy-dock {
+  padding: 10px 12px !important;
+}
+
+.mission-privacy-form {
+  width: 100% !important;
+  margin: 0 !important;
+}
+
+.mission-privacy-fieldset {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+}
+
+.mission-privacy-bar {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+  background: rgba(30, 10, 10, 0.7) !important;
+  border: 1px solid rgba(212, 163, 89, 0.35) !important;
+  border-radius: 999px !important;
+  padding: 2px 8px !important;
+}
+
+.privacy-mode-pill {
+  font-size: 11px !important;
+  color: #ffd875 !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.5px !important;
+}
+
+.privacy-peek-btn {
+  font-size: 11px !important;
+  padding: 2px 8px !important;
+  min-height: 24px !important;
+  height: 24px !important;
+  line-height: 20px !important;
+  background: rgba(82, 22, 18, 0.9) !important;
+  border: 1px solid #ffd875 !important;
+  color: #fff2d5 !important;
+  border-radius: 999px !important;
+}
+
+.mission-casket-pair {
+  display: grid !important;
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 10px !important;
+  width: 100% !important;
+}
+
+.casket-card {
+  background: linear-gradient(180deg, #260f0e 0%, #120404 100%) !important;
+  border: 1.5px solid #d4a359 !important;
+  border-radius: 12px !important;
+  padding: 8px 6px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6) !important;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease !important;
+  min-height: 78px !important;
+}
+
+.casket-card:active {
+  transform: scale(0.97) !important;
+}
+
+.casket-card.is-selected {
+  border-color: #ffd875 !important;
+  background: linear-gradient(180deg, #3d1614 0%, #1e0908 100%) !important;
+  box-shadow: 0 0 16px rgba(255, 216, 117, 0.6), inset 0 0 10px rgba(255, 216, 117, 0.25) !important;
+}
+
+.casket-card.is-selected-red {
+  border-color: #ffd875 !important;
+  background: linear-gradient(180deg, #3d1614 0%, #1e0908 100%) !important;
+  box-shadow: 0 0 16px rgba(255, 216, 117, 0.6), inset 0 0 10px rgba(255, 216, 117, 0.25) !important;
+}
+
+.casket-card-inner {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 3px !important;
+  width: 100% !important;
+}
+
+.casket-tile-title {
+  font: 700 12px/1.2 var(--calligraphy) !important;
+  color: #ffd875 !important;
+  letter-spacing: 0.8px !important;
+}
+
+.casket-hidden-face {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 2px !important;
+  padding: 4px 0 !important;
+}
+
+.casket-seal-icon {
+  font-size: 16px !important;
+  color: #e5b964 !important;
+}
+
+.casket-hidden-face small {
+  font-size: 10px !important;
+  color: #d1b88e !important;
+  opacity: 0.85 !important;
+}
+
+.casket-revealed-face {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  padding: 4px 0 !important;
+}
+
+.casket-revealed-face.text-pass strong {
+  font-size: 13px !important;
+  color: #34d399 !important;
+  font-family: var(--display) !important;
+}
+
+.casket-revealed-face.text-fail strong {
+  font-size: 13px !important;
+  color: #f87171 !important;
+  font-family: var(--display) !important;
+}
+
+.casket-pick-indicator {
+  font-size: 10px !important;
+  color: #eedcc4 !important;
+  background: rgba(0, 0, 0, 0.45) !important;
+  padding: 1px 6px !important;
+  border-radius: 999px !important;
+  margin-top: 2px !important;
+}
+
+.casket-card.is-selected .casket-pick-indicator,
+.casket-card.is-selected-red .casket-pick-indicator {
+  color: #ffd875 !important;
+  font-weight: 700 !important;
+  background: rgba(60, 20, 18, 0.9) !important;
+  border: 1px solid #ffd875 !important;
+}
+
+.mission-privacy-submit {
+  width: 100% !important;
+  min-height: 42px !important;
+  font-size: 15px !important;
+  font-family: var(--calligraphy) !important;
+  letter-spacing: 1.5px !important;
+}
+
+.mission-sealed-card {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  padding: 12px !important;
+  background: rgba(36, 14, 12, 0.85) !important;
+  border: 1.5px solid rgba(224, 170, 62, 0.6) !important;
+  border-radius: 12px !important;
+  text-align: center !important;
+}
+
+.mission-sealed-card .sealed-icon {
+  font-size: 26px !important;
+}
+
+.mission-sealed-card .sealed-title {
+  font-size: 14px !important;
+  color: #ffd875 !important;
+  font-family: var(--calligraphy) !important;
+}
+
+.mission-sealed-card .sealed-desc {
+  font-size: 11px !important;
+  color: #eedcc4 !important;
+  margin: 0 !important;
+}
+
+/* ===================================================================
+   3. Historical Missions Accordion in TeamVoteDialog (往难功过簿)
+   =================================================================== */
+.vote-history-accordion {
+  margin-bottom: 10px !important;
+  border: 1px solid rgba(212, 163, 89, 0.35) !important;
+  border-radius: 10px !important;
+  background: rgba(26, 8, 8, 0.8) !important;
+  overflow: hidden !important;
+}
+
+.vote-history-toggle {
+  width: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 6px 10px !important;
+  background: rgba(45, 14, 12, 0.85) !important;
+  border: none !important;
+  color: #ffd875 !important;
+  cursor: pointer !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+}
+
+.vote-history-toggle:hover {
+  background: rgba(65, 20, 18, 0.95) !important;
+}
+
+.history-toggle-title {
+  letter-spacing: 0.5px !important;
+}
+
+.history-toggle-arrow {
+  font-size: 10px !important;
+  color: rgba(255, 216, 117, 0.8) !important;
+}
+
+.vote-history-drawer {
+  padding: 8px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+  max-height: 180px !important;
+  overflow-y: auto !important;
+}
+
+.vote-history-empty {
+  font-size: 11px !important;
+  color: #eedcc4 !important;
+  text-align: center !important;
+  margin: 4px 0 !important;
+}
+
+.vote-history-round-card {
+  background: rgba(18, 5, 5, 0.8) !important;
+  border: 1px solid rgba(212, 163, 89, 0.25) !important;
+  border-radius: 8px !important;
+  padding: 6px 8px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 3px !important;
+}
+
+.vote-history-round-card.is-pass {
+  border-left: 3px solid #10b981 !important;
+}
+
+.vote-history-round-card.is-fail {
+  border-left: 3px solid #ef4444 !important;
+}
+
+.history-card-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  font-size: 11.5px !important;
+}
+
+.history-round-badge {
+  color: #ffd875 !important;
+  font-weight: 700 !important;
+}
+
+.history-round-result.text-pass {
+  color: #34d399 !important;
+  font-weight: 700 !important;
+}
+
+.history-round-result.text-fail {
+  color: #f87171 !important;
+  font-weight: 700 !important;
+}
+
+.history-card-detail {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 1px !important;
+  font-size: 10.5px !important;
+  color: #eedcc4 !important;
+}
+
+.history-card-votes {
+  font-size: 10px !important;
+  color: #d1b88e !important;
+  border-top: 1px dashed rgba(212, 163, 89, 0.2) !important;
+  padding-top: 3px !important;
+  margin-top: 2px !important;
+}
+
+.history-ballots-row {
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  flex-wrap: wrap !important;
+  margin-top: 2px !important;
+}
+
+.history-ballot-chip {
+  font-size: 9px !important;
+  padding: 0 4px !important;
+  border-radius: 3px !important;
+  font-weight: 700 !important;
+}
+
+.history-ballot-chip.approve {
+  color: #34d399 !important;
+  background: rgba(16, 185, 129, 0.15) !important;
+}
+
+.history-ballot-chip.reject {
+  color: #f87171 !important;
+  background: rgba(239, 68, 68, 0.15) !important;
+}
+
+.history-ballot-chip.abstain {
+  color: #fbbf24 !important;
+  background: rgba(245, 158, 11, 0.15) !important;
+}
+
+

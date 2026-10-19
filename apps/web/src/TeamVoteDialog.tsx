@@ -24,6 +24,8 @@ export function TeamVoteDialog({ game, players, anonymous, userId, serverTime, d
   const captainPlayer = players.find(p => p.id === game.captainId);
   const teamPlayers = round ? round.team.map(id => players.find(p => p.id === id)!).filter(Boolean) : [];
   const missionMeta = WUYUE_MISSIONS[game.mission - 1];
+  const [showHistory, setShowHistory] = useState(false);
+  const completedRounds = game.rounds.filter(r => r.result);
 
   return (
     <Modal label="出征组队表决" scene="sword" onClose={onClose}>
@@ -115,6 +117,79 @@ export function TeamVoteDialog({ game, players, anonymous, userId, serverTime, d
             </div>
           </div>
         </section>
+        {/* 往难前情折叠抽屉 (Historical Missions Accordion) */}
+        <div className="vote-history-accordion">
+          <button
+            type="button"
+            className="vote-history-toggle"
+            onClick={() => setShowHistory(v => !v)}
+            aria-expanded={showHistory}
+          >
+            <span className="history-toggle-title">
+              📜 往难功过簿（{completedRounds.length ? `已历 ${completedRounds.length} 难` : '初难暂无记录'}）
+            </span>
+            <span className="history-toggle-arrow" aria-hidden="true">
+              {showHistory ? '▲ 收起' : '▼ 展开参详'}
+            </span>
+          </button>
+          {showHistory && (
+            <div className="vote-history-drawer">
+              {completedRounds.length === 0 ? (
+                <p className="vote-history-empty">此乃西行首难，尚无往难战况记录，凭慧眼明断！</p>
+              ) : (
+                completedRounds.map(r => {
+                  const rMeta = WUYUE_MISSIONS[r.mission - 1];
+                  const rCaptain = players.find(p => p.id === r.captainId);
+                  const isSuccess = Boolean(r.result?.passed);
+                  return (
+                    <div key={r.number} className={`vote-history-round-card ${isSuccess ? 'is-pass' : 'is-fail'}`}>
+                      <div className="history-card-header">
+                        <span className="history-round-badge">
+                          第 {r.mission} 难 · {rMeta?.shortLabel ?? `难${r.mission}`}
+                        </span>
+                        <strong className={`history-round-result ${isSuccess ? 'text-pass' : 'text-fail'}`}>
+                          {isSuccess ? '🪷 护经功成' : `🔥 妖魔作祟 (${r.result?.failures ?? 0}张作祟)`}
+                        </strong>
+                      </div>
+                      <div className="history-card-detail">
+                        <span className="history-captain-tag">
+                          👑 领队：{rCaptain ? `${rCaptain.seat}号 ${rCaptain.nickname}` : '未知'}
+                        </span>
+                        <span className="history-team-tag">
+                          ⚔️ 出征：{r.team.map(id => {
+                            const p = players.find(x => x.id === id);
+                            return p ? `${p.seat}号${p.nickname}` : id;
+                          }).join('、')}
+                        </span>
+                      </div>
+                      {r.vote && (
+                        <div className="history-card-votes">
+                          <span className="history-votes-count">
+                            表决：✓ {r.vote.approvals} 准行 · × {r.vote.rejections} 封驳
+                            {r.vote.abstentions ? ` · − ${r.vote.abstentions} 旁观` : ''}
+                          </span>
+                          {!anonymous && r.vote.ballots && (
+                            <div className="history-ballots-row">
+                              {players.map(p => {
+                                const b = r.vote?.ballots?.[p.id];
+                                if (b === undefined) return null;
+                                return (
+                                  <span key={p.id} className={`history-ballot-chip ${b === 'abstain' ? 'abstain' : b ? 'approve' : 'reject'}`}>
+                                    {p.seat}号{b === 'abstain' ? '−' : b ? '✓' : '×'}
+                                  </span>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          )}
+        </div>
 
         {/* 2. 投票操作区 (Voting Buttons) */}
         {submitted ? (

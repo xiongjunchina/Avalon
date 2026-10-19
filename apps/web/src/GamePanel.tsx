@@ -75,12 +75,23 @@ export function GamePanel({
   const setDirection = (value: 'clockwise' | 'counterclockwise') => send({ type: 'updateTeamDraft', payload: { playerIds: selected, direction: value } });
   const [voteDismissed, setVoteDismissed] = useState(false);
   const [choice, setChoice] = useState<boolean | null>(null);
+  const [peekMode, setPeekMode] = useState(false);
   const [target, setTarget] = useState('');
   const [abortConfirm, setAbortConfirm] = useState(false);
   const completedMissions = g.rounds.filter(r => r.result);
   const lastCompletedRound = completedMissions.at(-1);
   const [missionReportRound, setMissionReportRound] = useState<RoundView | null>(null);
   const prevCompletedCountRef = useRef<number | null>(null);
+
+  function getAltarSeatCoords(index: number, total: number) {
+    const angle = (index / total) * 2 * Math.PI - Math.PI / 2;
+    const x = 50 + 38.5 * Math.cos(angle);
+    const y = 50 + 40 * Math.sin(angle);
+    return {
+      '--seat-x': `${x.toFixed(2)}%`,
+      '--seat-y': `${y.toFixed(2)}%`,
+    } as React.CSSProperties;
+  }
 
   useEffect(() => {
     if (prevCompletedCountRef.current === null) {
@@ -109,6 +120,7 @@ export function GamePanel({
   useEffect(() => {
     setVoteDismissed(false);
     setChoice(null);
+    setPeekMode(false);
     setTarget('');
     setIdentityOpen(false);
   }, [g.id, g.phase, round?.number]);
@@ -602,13 +614,26 @@ export function GamePanel({
         <div
           className={`table-seats-grid ${
             g.players.length > 10 ? 'grid-12' : g.players.length > 8 ? 'grid-10' : 'grid-8'
-          } ${
+          } altar-ring-arena ${
             ended ? 'is-ended-grid' : g.phase === 'assassination' ? 'is-assassin-picker-grid' : ''
           }`}
           data-player-count={g.players.length}
           aria-label="对局座位表"
         >
-          {g.players.map(p => {
+          {/* Central BaGua Altar Core (中央八卦伏魔台) */}
+          <div className="altar-center-core" aria-hidden="true">
+            <div className="altar-bagua-disc">
+              <span className="altar-core-taichi">☯</span>
+              <span className="altar-direction-tag">
+                {direction === 'clockwise' ? '⟳ 顺时针' : '⟲ 逆时针'}
+              </span>
+              <span className="altar-mission-tag">
+                第 {g.mission} 难
+              </span>
+            </div>
+          </div>
+
+          {g.players.map((p, idx) => {
             const member = room.members.find(m => m.id === p.id);
             const isCaptain = !ended && g.phase !== 'assassination' && p.id === g.captainId;
             const isNextCaptain = isCaptain && ['early_window', 'lady', 'lady_reveal'].includes(effectivePhase);
@@ -635,6 +660,7 @@ export function GamePanel({
             return (
               <div
                 key={p.id}
+                style={getAltarSeatCoords(idx, g.players.length)}
                 role={canTapSeat ? 'button' : undefined}
                 tabIndex={canTapSeat ? 0 : undefined}
                 aria-label={`${p.seat}号 ${p.nickname}${isCaptain ? '，队长' : ''}${isProposed ? '，已入阵' : ''}${isTargeted ? '，已锁定' : ''}`}
@@ -893,51 +919,114 @@ export function GamePanel({
         )}
 
         {g.phase === 'mission' && (
-          <div className="dock-panel">
+          <div className="dock-panel mission-privacy-dock">
             <p className="dock-rule-hint" role="status">
               —◇ {g.failuresRequired === 2 ? '需至少 2 张失败牌，任务方告失败' : '只要出现 1 张失败牌，任务即失败'} ◇—
             </p>
             {!round!.team.includes(userId) ? (
-              <p>你未入本难取经队伍，请静候护经结果。</p>
+              <p className="dock-waiting-desc">你未入本难出征队伍，请静候众仙护经结果。</p>
             ) : self?.missionVoted ? (
-              <p className="notice">取经任务牌已暗中落定，请静候开牌结果。</p>
+              <div className="mission-sealed-card" role="status">
+                <span className="sealed-icon" aria-hidden="true">📿</span>
+                <strong className="sealed-title">法旨已密匣封存 · 静候全员开牌</strong>
+                <p className="sealed-desc">任务牌已入暗盒封印，全员出牌完毕后自动开牌揭晓吉凶</p>
+              </div>
             ) : (
               <form
+                className="mission-privacy-form"
                 onSubmit={e => {
                   e.preventDefault();
                   if (choice !== null) send({ type: 'missionVote', payload: { success: choice } });
                 }}
               >
-                <fieldset disabled={disabled} className="ballot-controls">
+                <fieldset disabled={disabled} className="ballot-controls mission-privacy-fieldset">
                   <legend className="sr-only">私下选择任务牌，提交后不可更改</legend>
-                  <div className="vote-card-pair">
-                    <label className={`choice vote-card ${choice === true ? 'is-selected-approve' : ''}`}>
-                      <input
-                        type="radio"
-                        name="mission-choice"
-                        checked={choice === true}
-                        onChange={() => setChoice(true)}
-                      />
-                      <span>🪷 护经（成功）</span>
-                    </label>
-                    <label className={`choice vote-card ${choice === false ? 'is-selected-reject' : ''}`}>
-                      <input
-                        type="radio"
-                        name="mission-choice"
-                        checked={choice === false}
-                        onChange={() => setChoice(false)}
-                      />
-                      <span>🔥 作祟（失败）</span>
-                    </label>
+
+                  <div className="mission-privacy-bar">
+                    <span className="privacy-mode-pill">🔒 乾坤密匣（防窥模式）</span>
+                    <button
+                      type="button"
+                      className="tool-pill privacy-peek-btn"
+                      onClick={() => setPeekMode(v => !v)}
+                      aria-pressed={peekMode}
+                    >
+                      {peekMode ? '🙈 盖上密匣' : '👁️ 翻看底牌'}
+                    </button>
                   </div>
+
+                  <div className="mission-casket-pair">
+                    {/* Card 1: 天枢乾牌 (Always Success / 护经) */}
+                    <button
+                      type="button"
+                      className={`casket-card ${choice === true ? 'is-selected' : ''}`}
+                      onClick={() => setChoice(true)}
+                      aria-pressed={choice === true}
+                    >
+                      <div className="casket-card-inner">
+                        <span className="casket-tile-title">【天枢 · 乾牌】</span>
+                        {peekMode ? (
+                          <div className="casket-revealed-face text-pass">
+                            <span className="face-icon">🪷</span>
+                            <strong>护经（成功）</strong>
+                          </div>
+                        ) : (
+                          <div className="casket-hidden-face">
+                            <span className="casket-seal-icon">🔒</span>
+                            <small>密匣封印 · 盲选</small>
+                          </div>
+                        )}
+                        <span className="casket-pick-indicator">
+                          {choice === true ? '✓ 已入密匣' : '点击入匣'}
+                        </span>
+                      </div>
+                    </button>
+
+                    {/* Card 2: 天璇坤牌 (Evil: Fail / 作祟; Good: Success / 护经) */}
+                    <button
+                      type="button"
+                      className={`casket-card ${choice === (self?.team === 'red' ? false : true) && choice !== null ? (self?.team === 'red' ? 'is-selected-red' : 'is-selected') : ''}`}
+                      onClick={() => {
+                        setChoice(self?.team === 'red' ? false : true);
+                      }}
+                      aria-pressed={choice !== null && (self?.team === 'red' ? choice === false : choice === true)}
+                    >
+                      <div className="casket-card-inner">
+                        <span className="casket-tile-title">【天璇 · 坤牌】</span>
+                        {peekMode ? (
+                          self?.team === 'red' ? (
+                            <div className="casket-revealed-face text-fail">
+                              <span className="face-icon">🔥</span>
+                              <strong>作祟（失败）</strong>
+                            </div>
+                          ) : (
+                            <div className="casket-revealed-face text-pass">
+                              <span className="face-icon">🪷</span>
+                              <strong>护经（忠诚护道）</strong>
+                            </div>
+                          )
+                        ) : (
+                          <div className="casket-hidden-face">
+                            <span className="casket-seal-icon">🔒</span>
+                            <small>密匣封印 · 盲选</small>
+                          </div>
+                        )}
+                        <span className="casket-pick-indicator">
+                          {choice !== null && (self?.team === 'red' ? choice === false : choice === true) ? '✓ 已入密匣' : '点击入匣'}
+                        </span>
+                      </div>
+                    </button>
+                  </div>
+
                   <button
                     type="submit"
                     disabled={choice === null}
                     aria-label="确认提交任务牌"
-                    className="btn-primary-cta btn-dragon-cta"
+                    className="btn-primary-cta btn-dragon-cta mission-privacy-submit"
                   >
                     <span className="btn-cloud-flourish left" aria-hidden="true"><CloudFlourish side="left" /></span>
-                    <span className="btn-cta-text">✨ 确认出牌</span>
+                    <span className="btn-cta-text">
+                      {choice === null ? '请先点选一张法牌入匣' : '📿 封印密匣 · 确立出牌'}
+                    </span>
                     <span className="btn-cloud-flourish right" aria-hidden="true"><CloudFlourish side="right" /></span>
                   </button>
                 </fieldset>
