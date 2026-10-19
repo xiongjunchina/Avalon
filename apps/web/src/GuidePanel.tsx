@@ -25,33 +25,80 @@ function composition(roles:Role[]) {
 }
 export function GuideRules() {
   return <div className="guide-rules">
-    <section className="panel"><p className="eyebrow">01 / 佛魔真假对决</p><h2>一念佛魔皆幻相，谁是修道取经人</h2>
+    <section className="panel guide-section"><p className="eyebrow">01 / 佛魔真假对决</p><h2>一念佛魔皆幻相，谁是修道取经人</h2>
       <div className="guide-victories"><div className="allegiance-blue"><h3><Emblem kind="blue"/>蓝方 · 取经正果</h3><p>在五轮劫难中完成三次取经任务，并护住齐天大圣孙悟空躲过红孩儿的三昧真火刺杀，即可获胜。</p></div>
       <div className="allegiance-red"><h3><Emblem kind="red"/>红方 · 群妖乱道</h3><p>破坏三次取经任务、让流局次数达到五次，或由红孩儿刺杀命中孙悟空，任一条件成立即可获胜。</p></div></div>
       <p className="hint">开启提前刺杀时，红孩儿若刺错目标，蓝方立即获胜。中断对局不计胜负。</p>
     </section>
-    <section className="panel"><p className="eyebrow">02 / 取经五难流程</p><h2>从聚义，到证果</h2><ol className="guide-steps">
-      <li><details><summary><Emblem kind="cards"/><span>准备与发牌<small>全员准备，倒计时5秒</small></span></summary><p>5–12位玩家入座且全员准备后，由房主点击开始发牌。所有人同步倒计时5秒，结束后各自在手机上私下查看底牌法相（取经护法与女妖精均会随机分配专属法相名号），首任领队（队长）即可开始点将组队。</p><p className="hint">点击开局后设置与席位锁定。刷新或重连继续原局、原身份和原倒计时；不会重新计时或重新洗牌。</p></details></li>
-      <li><details><summary><Emblem kind="crown"/><span>领队点将，真假论道<small>预选实时同步，投票前可修改</small></span></summary><p>每局共历 1–5 五场修道劫难（依次为：1·五行揭帖、2·流沙收徒、3·三打白骨、4·真假雷音、5·灵山取经）。队长按本场劫难要求选人（可选自己），并指定顺时针或逆时针发言。众人讨论及总结时仍可调整阵容，预选与修改实时展示给全员；队长点击“总结完毕，锁定阵容并投票”后不可再改。</p></details></li>
-      <li><details><summary><Emblem kind="chronicle"/><span>全员表决<small>赞成多于反对即通过</small></span></summary><p>每人提交赞成、反对或弃权，收齐后结算。赞成票多于反对票即通过；弃权不参与比较，平票或全员弃权不通过。未通过记一次流局，换下一位队长重新组队，不推进劫难编号。</p></details></li>
-      <li><details><summary><Emblem kind="blue"/><span>护法出征执行取经<small>任务出牌始终匿名</small></span></summary><p>只有入选队员提交任务牌。蓝方取经人只能提交成功；红方群妖可以提交成功或失败。任务牌始终匿名，只公布成功、失败的数量。</p><p>通常出现一张失败牌即取经受阻失败。唯独7–12人局的第四难（4·真假雷音），以及9人局、12人局的第三难（3·三打白骨），需要至少两张失败牌才算失败。</p></details></li>
-      <li><details><summary><Emblem kind="assassin"/><span>轮换与真火刺杀<small>三次成功后，仍须守护孙悟空</small></span></summary><p>每场任务结束后换下一位队长。三场任务失败立即红方胜；三场任务成功则进入终局刺杀，红方可当面商议，由红孩儿确认刺杀目标。命中孙悟空红方翻盘获胜，否则蓝方取经正果获胜。</p></details></li>
+    <section className="panel guide-section"><p className="eyebrow">02 / 取经五难流程</p><h2>从聚义，到证果</h2><ol className="guide-steps">
+      <li className="guide-step-card">
+        <div className="guide-step-header">
+          <Emblem kind="cards"/>
+          <div className="guide-step-title-wrap">
+            <strong>准备与发牌</strong>
+            <small>全员准备，倒计时5秒</small>
+          </div>
+        </div>
+        <p>5–12位玩家入座且全员准备后，由房主点击开始发牌。所有人同步倒计时5秒，结束后各自在手机上私下查看底牌法相（取经护法与女妖精均会随机分配专属法相名号），首任领队（队长）即可开始点将组队。</p>
+        <p className="hint">点击开局后设置与席位锁定。刷新或重连继续原局、原身份和原倒计时；不会重新计时或重新洗牌。</p>
+      </li>
+      <li className="guide-step-card">
+        <div className="guide-step-header">
+          <Emblem kind="crown"/>
+          <div className="guide-step-title-wrap">
+            <strong>领队点将，真假论道</strong>
+            <small>预选实时同步，投票前可修改</small>
+          </div>
+        </div>
+        <p>每局共历 1–5 五场修道劫难（依次为：1·五行揭帖、2·流沙收徒、3·三打白骨、4·真假雷音、5·灵山取经）。队长按本场劫难要求选人（可选自己），并指定顺时针或逆时针发言。众人讨论及总结时仍可调整阵容，预选与修改实时展示给全员；队长点击“总结完毕，锁定阵容并投票”后不可再改。</p>
+      </li>
+      <li className="guide-step-card">
+        <div className="guide-step-header">
+          <Emblem kind="chronicle"/>
+          <div className="guide-step-title-wrap">
+            <strong>全员表决</strong>
+            <small>赞成多于反对即通过</small>
+          </div>
+        </div>
+        <p>每人提交赞成、反对或弃权，收齐后结算。赞成票多于反对票即通过；弃权不参与比较，平票或全员弃权不通过。未通过记一次流局，换下一位队长重新组队，不推进劫难编号。</p>
+      </li>
+      <li className="guide-step-card">
+        <div className="guide-step-header">
+          <Emblem kind="blue"/>
+          <div className="guide-step-title-wrap">
+            <strong>护法出征执行取经</strong>
+            <small>任务出牌始终匿名</small>
+          </div>
+        </div>
+        <p>只有入选队员提交任务牌。蓝方取经人只能提交成功；红方群妖可以提交成功或失败。任务牌始终匿名，只公布成功、失败的数量。</p>
+        <p>通常出现一张失败牌即取经受阻失败。唯独7–12人局的第四难（4·真假雷音），以及9人局、12人局的第三难（3·三打白骨），需要至少两张失败牌才算失败。</p>
+      </li>
+      <li className="guide-step-card">
+        <div className="guide-step-header">
+          <Emblem kind="assassin"/>
+          <div className="guide-step-title-wrap">
+            <strong>轮换与真火刺杀</strong>
+            <small>三次成功后，仍须守护孙悟空</small>
+          </div>
+        </div>
+        <p>每场任务结束后换下一位队长。三场任务失败立即红方胜；三场任务成功则进入终局刺杀，红方可当面商议，由红孩儿确认刺杀目标。命中孙悟空红方翻盘获胜，否则蓝方取经正果获胜。</p>
+      </li>
     </ol><p className="hint">投票提交成功后不可修改。断线不代投、不自动判负；重连后可继续。确实无法继续时，可向房主申请中止；房主同意或主动结束后关闭房间，全员返回大厅，不计胜负。</p></section>
-    <details className="panel guide-disclosure"><summary>人数、角色与取经五难</summary><div className="guide-configs">
+    <section className="panel guide-section"><p className="eyebrow">03 / 配置与规模</p><h2>人数、角色与取经五难</h2><div className="guide-configs">
       {Object.entries(ROLE_CONFIG).map(([count,roles])=><article key={count} className="guide-config"><h3>{count} 人局</h3><p><strong>蓝方</strong> {composition(roles.filter(r=>roleTeam(r)==='blue'))}</p><p><strong>红方</strong> {composition(roles.filter(r=>roleTeam(r)==='red'))}</p><p className="hint">取经五难（1–5）出征人数</p><ol aria-label={`${count}人局各任务人数`} className="guide-missions">{MISSION_SIZES[Number(count)].map((size,i)=><li key={i}><span>{WUYUE_MISSIONS[i]?.shortLabel ?? `第${i+1}次`}</span><strong>{size}人</strong></li>)}</ol></article>)}
-    </div></details>
-    <details className="panel guide-disclosure"><summary>开局前，约定取经规矩</summary><dl className="guide-options">
+    </div></section>
+    <section className="panel guide-section"><p className="eyebrow">04 / 房主约定</p><h2>开局前，约定取经规矩</h2><dl className="guide-options">
       <dt>队长顺序</dt><dd>默认按座位循环；也可开局打乱一次，此后整局按该顺序循环。房主与当轮队长是两个概念。</dd>
       <dt>组队投票是否匿名</dt><dd>5–7人默认匿名，8–12人默认公开；房主开局前可修改。公开模式实时显示已提交的赞成、反对或弃权；匿名模式只展示是否已投和最终总票数。任务出牌在两种设置下都始终匿名。</dd>
-      <dt>五次流局</dt><dd>默认全局累计，达到五次红方胜；也可只累计当前任务，实际任务结束后清零。一次组队表决未通过计一次流局。</dd>
+      <dt>五次流局</dt><dd>默认全局累计，达到五次红方胜；也可只累计当前任务，实际任务结束后清零。一次组队表决未通过记一次流局。</dd>
       <dt>新成员加入</dt><dd>等待时房主可关闭新成员加入，已有成员仍可重连。开局后锁定席位。修改玩法会清除准备状态，切换接纳开关不会。</dd>
-    </dl></details>
-    <details className="panel guide-disclosure"><summary>照妖宝镜与提前刺杀</summary><p>可选开启，建议7人以上。托塔天王与南海大士赐下照妖宝镜：第2、3、4个实际取经任务结束后，若尚未终局，执镜持有人可查验一名玩家的蓝／红阵营（取经正果或群妖乱道）；不会得知具体角色。</p>
+    </dl></section>
+    <section className="panel guide-section"><p className="eyebrow">05 / 宝镜与刺杀</p><h2>照妖宝镜与提前刺杀</h2><p>可选开启，建议7人以上。托塔天王与南海大士赐下照妖宝镜：第2、3、4个实际取经任务结束后，若尚未终局，执镜持有人可查验一名玩家的蓝／红阵营（取经正果或群妖乱道）；不会得知具体角色。</p>
       <ul><li>首位执镜人为首任领队（队长）在座位顺序中的上一位。</li><li>不能查验自己或任何曾经执掌照妖宝镜的玩家。</li><li>查验对象和宝镜交接公开，阵营结果只有本次查验者能在私密身份区域查看并确认。</li><li>被查验者接任下一位照妖宝镜持有人，但不能读取前任的查验结果。</li></ul>
-      <h2>提前刺杀</h2><p>可选开启。完成第二个实际任务起，在轮间确认窗口由红孩儿（刺客）私下决定发起或跳过；此后的任务结束或组队流局也可能再出现窗口，流局本身不计实际任务。</p>
+      <h3 className="guide-sub-heading">提前刺杀</h3><p>可选开启。完成第二个实际任务起，在轮间确认窗口由红孩儿（刺客）私下决定发起或跳过；此后的任务结束或组队流局也可能再出现窗口，流局本身不计实际任务。</p>
       <ul><li>每局最多发起一次。跳过本次窗口不会消耗机会。</li><li>发起后不能撤回，红孩儿必须选人；命中孙悟空红方胜，刺错则立即蓝方胜。</li><li>不能在投票、任务出牌或宝镜查验过程中随时打断。</li><li>其他玩家只看到“轮间确认中”，不会获知谁是红孩儿。</li></ul>
       <p className="notice">判定顺序：先判断终局；未终局时先完成照妖宝镜查验，再进入提前刺杀窗口。三次任务成功走正常刺杀，三次失败或五次流局直接结束。</p>
-    </details>
+    </section>
   </div>;
 }
 export function GuideRoles() {

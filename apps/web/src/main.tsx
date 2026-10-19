@@ -1042,23 +1042,6 @@ function App() {
             </div>
             <h1 className="table-top-title">西游 · 真假猴王</h1>
             <div className="room-top-right">
-              <VoiceControls
-                voiceState={voiceState}
-                onToggleMute={handleToggleMute}
-                onToggleDeafen={handleToggleDeafen}
-                onReconnect={handleReconnectVoice}
-              />
-              <button
-                type="button"
-                className="secondary tool-pill friends-pill-btn"
-                onClick={() => setFriendsModalOpen(true)}
-                title="仙友录 · 召集与好友"
-              >
-                👥 仙友
-                {incomingFriendRequestsCount > 0 && (
-                  <span className="friends-badge-dot">{incomingFriendRequestsCount}</span>
-                )}
-              </button>
               <SoundButton />
               {connection !== '已连接' && (
                 <button
@@ -1093,24 +1076,34 @@ function App() {
 
           {/* Main Table Body: Either Waiting Room Table or Active GamePanel Table */}
           {room.game ? (
-            <GamePanel
-              key={room.game.id}
-              room={room}
-              userId={user.id}
-              disabled={disabled}
-              connected={connection === '已连接'}
-              onSound={cue => void sound.engine.effect(cue)}
-              send={command}
-              onOpenGuide={() => {
-                guideReturn.current = 'table';
-                setPage('guide');
-              }}
-              onOpenReplay={gameId => {
-                setReplayId(gameId);
-                setPage('account');
-              }}
-              speakingUids={voiceState.speakingUids}
-            />
+            <>
+              <GamePanel
+                key={room.game.id}
+                room={room}
+                userId={user.id}
+                disabled={disabled}
+                connected={connection === '已连接'}
+                onSound={cue => void sound.engine.effect(cue)}
+                send={command}
+                onOpenGuide={() => {
+                  guideReturn.current = 'table';
+                  setPage('guide');
+                }}
+                onOpenReplay={gameId => {
+                  setReplayId(gameId);
+                  setPage('account');
+                }}
+                speakingUids={voiceState.speakingUids}
+              />
+              <div className="game-floating-voice-hud" aria-label="实时语音控制">
+                <VoiceControls
+                  voiceState={voiceState}
+                  onToggleMute={handleToggleMute}
+                  onToggleDeafen={handleToggleDeafen}
+                  onReconnect={handleReconnectVoice}
+                />
+              </div>
+            </>
           ) : (
             /* Waiting Room Single-Screen Table with Physical Quest Board at Top */
             <div className="waiting-table-body">
@@ -1292,6 +1285,31 @@ function App() {
                     <strong>{room.settings.playerCount} 人局配置</strong>
                     <small>{host ? '切换人数/规则' : '查看房间规则'}</small>
                   </span>
+                </button>
+              </div>
+
+              {/* Bottom Waiting Voice & Social Action Bar */}
+              <div className="waiting-voice-social-row">
+                <div className="waiting-voice-capsule">
+                  <span className="waiting-voice-label">🎙️ 实时语音</span>
+                  <VoiceControls
+                    voiceState={voiceState}
+                    onToggleMute={handleToggleMute}
+                    onToggleDeafen={handleToggleDeafen}
+                    onReconnect={handleReconnectVoice}
+                  />
+                </div>
+                <button
+                  type="button"
+                  className="secondary tool-pill waiting-friends-pill-btn"
+                  onClick={() => setFriendsModalOpen(true)}
+                  title="仙友录 · 召集与好友"
+                >
+                  <span className="friends-btn-icon">👥</span>
+                  <span className="friends-btn-label">仙友录</span>
+                  {incomingFriendRequestsCount > 0 && (
+                    <span className="friends-badge-dot">{incomingFriendRequestsCount}</span>
+                  )}
                 </button>
               </div>
 

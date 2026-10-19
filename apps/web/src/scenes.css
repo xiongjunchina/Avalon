@@ -1564,21 +1564,19 @@ dialog.table-modal-backdrop::backdrop { background: #081b2d55; }
 .guide-heading .eyebrow { display: none; }
 .guide-heading button { padding: 8px 12px; min-width: 76px; }
 .guide-nav [aria-pressed="true"] { background: #246576; color: #fff2c9; outline: 1px solid #aef0df; outline-offset: 2px; }
-.guide h2 { font-size: 25px; color: var(--accent); }
-.guide-victories { grid-template-columns: 1fr; }
-.guide-victories > div { background: #123952a3; border-radius: 18px; }
+.guide h2 { font-size: 17px; color: var(--accent); margin: 4px 0 8px; }
+.guide-victories { grid-template-columns: 1fr; gap: 8px; }
+.guide-victories > div { background: #123952a3; border-radius: 12px; padding: 8px 10px; }
 .guide-victories > .allegiance-red { background: #452c3eaa; }
-.guide-victories h3 { font-size: 21px; }
-.guide-victories p { font-size: 16px; }
-.guide-steps { padding: 0; list-style: none; counter-reset: step; }
-.guide-steps > li { counter-increment: step; padding: 0; margin: 0; border-bottom: 1px solid var(--border); }
-.guide-steps summary { display: flex; gap: 14px; align-items: center; padding: 16px 0; cursor: pointer; }
-.guide-steps summary::before { content: counter(step); color: var(--jade); font: 28px var(--display); }
-.guide-steps summary .emblem { border: 1px solid #e2ca8d; border-radius: 50%; padding: 7px; width: 44px; height: 44px; color: #f4d89c; }
-.guide-steps summary span { font: 20px var(--display); }
-.guide-steps p { font-size: 16px; }
-.guide-disclosure > summary { font: 22px var(--display); color: var(--accent); padding: 4px; cursor: pointer; }
-.guide-disclosure[open] > summary { padding-bottom: 20px; }
+.guide-victories h3 { font-size: 15px; margin: 2px 0 4px; }
+.guide-victories p { font-size: 12px; line-height: 1.4; }
+.guide-steps { padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.guide-step-card { padding: 8px 10px; border-radius: 10px; background: rgba(10, 20, 30, 0.45); border: 1px solid rgba(255, 255, 255, 0.08); }
+.guide-step-header { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.guide-step-header .emblem { border: 1px solid #e2ca8d; border-radius: 50%; padding: 3px; width: 26px; height: 26px; color: #f4d89c; flex-shrink: 0; }
+.guide-step-title-wrap strong { font-size: 13.5px; color: #ffd54f; }
+.guide-step-title-wrap small { display: block; font-size: 11.5px; color: #a0aec0; line-height: 1.3; }
+.guide-steps p { font-size: 12.5px; line-height: 1.45; }
 .guide-role-grid { grid-template-columns: 1fr; }
 .guide-role { background: #18354cdb; border-radius: 20px; padding: 18px; box-shadow: var(--frame-shadow); }
 .guide-role.allegiance-red { background: #3a2e41d6; }
@@ -3322,16 +3320,18 @@ dialog.table-modal-backdrop::backdrop { background: #081b2d55; }
    Voice Room (声网 RTC) & Friends / Invitation (仙友法阵) Styles
    ========================================================================== */
 
-/* 1. Topbar Voice Controls */
+/* 1. Voice Controls & Bottom Social Dock */
 .voice-controls-cluster {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  background: rgba(22, 12, 14, 0.75);
-  padding: 3px 6px;
-  border-radius: 20px;
-  border: 1px solid rgba(229, 185, 100, 0.3);
-  backdrop-filter: blur(8px);
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  background: rgba(26, 14, 18, 0.85) !important;
+  padding: 3px 6px !important;
+  border-radius: 20px !important;
+  border: 1px solid rgba(229, 185, 100, 0.35) !important;
+  backdrop-filter: blur(8px) !important;
+  flex-shrink: 0 !important;
+  margin: 0 !important;
 }
 
 .voice-status-dot {
@@ -3370,37 +3370,46 @@ dialog.table-modal-backdrop::backdrop { background: #081b2d55; }
 }
 
 .voice-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  min-width: 32px;
-  height: 30px;
-  padding: 0 6px;
-  border-radius: 15px;
-  background: rgba(40, 20, 24, 0.8);
-  border: 1px solid rgba(229, 185, 100, 0.35);
-  color: #fff4d6;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  position: relative !important;
+  width: 32px !important;
+  min-width: 32px !important;
+  max-width: 32px !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  max-height: 32px !important;
+  margin: 0 !important;
+  margin-top: 0 !important;
+  padding: 0 !important;
+  border-radius: 50% !important;
+  background: rgba(45, 22, 28, 0.85) !important;
+  border: 1px solid rgba(229, 185, 100, 0.4) !important;
+  color: #fff4d6 !important;
+  font-size: 14px !important;
+  line-height: 1 !important;
+  cursor: pointer !important;
+  flex-shrink: 0 !important;
+  box-sizing: border-box !important;
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
 }
 
 .voice-btn:hover:not(:disabled) {
-  border-color: #ffd54f;
-  transform: translateY(-1px);
-  background: rgba(60, 28, 34, 0.9);
+  border-color: #ffd54f !important;
+  transform: translateY(-1px) !important;
+  background: rgba(65, 30, 38, 0.95) !important;
 }
 
 .voice-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
+  opacity: 0.4 !important;
+  cursor: not-allowed !important;
 }
 
 .voice-btn.is-muted,
 .voice-btn.is-deafened {
-  border-color: rgba(255, 77, 79, 0.6);
-  background: rgba(60, 16, 20, 0.85);
+  border-color: rgba(255, 77, 79, 0.6) !important;
+  background: rgba(60, 16, 20, 0.9) !important;
 }
 
 .voice-btn.is-speaking {
@@ -3411,10 +3420,73 @@ dialog.table-modal-backdrop::backdrop { background: #081b2d55; }
 .voice-speaking-pulse {
   position: absolute;
   inset: -2px;
-  border-radius: 15px;
+  border-radius: 50% !important;
   border: 1.5px solid #52c41a;
   animation: speakingRingAnim 1.2s infinite ease-out;
   pointer-events: none;
+}
+
+/* Waiting Room Bottom Voice & Social Row */
+.waiting-voice-social-row {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 10px !important;
+  width: 100% !important;
+  max-width: 440px !important;
+  margin: 6px auto 10px !important;
+  padding: 6px 12px !important;
+  background: linear-gradient(180deg, rgba(32, 14, 18, 0.82), rgba(20, 8, 10, 0.92)) !important;
+  border: 1px solid rgba(229, 185, 100, 0.3) !important;
+  border-radius: 20px !important;
+  box-sizing: border-box !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4) !important;
+}
+
+.waiting-voice-capsule {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+.waiting-voice-label {
+  font-size: 12.5px !important;
+  font-weight: 700 !important;
+  color: #ffd54f !important;
+  letter-spacing: 0.5px !important;
+  white-space: nowrap !important;
+}
+
+.waiting-friends-pill-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  max-height: 32px !important;
+  width: auto !important;
+  margin: 0 !important;
+  margin-top: 0 !important;
+  padding: 0 12px !important;
+  border-radius: 16px !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: #ffe57f !important;
+  white-space: nowrap !important;
+  box-sizing: border-box !important;
+  cursor: pointer !important;
+}
+
+/* Active Game Floating Voice HUD */
+.game-floating-voice-hud {
+  position: fixed !important;
+  bottom: 64px !important;
+  left: 10px !important;
+  z-index: 95 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.65)) !important;
 }
 
 /* 2. Seat Speaking Pulsating Ring (Avatar Animation) */
@@ -3492,39 +3564,52 @@ dialog.table-modal-backdrop::backdrop { background: #081b2d55; }
 }
 
 .friends-nav-tabs {
-  display: flex;
-  gap: 8px;
-  border-bottom: 1px solid rgba(229, 185, 100, 0.25);
-  padding-bottom: 8px;
+  display: flex !important;
+  flex-direction: row !important;
+  gap: 6px !important;
+  border-bottom: 1px solid rgba(229, 185, 100, 0.25) !important;
+  padding-bottom: 8px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
 }
 
 .friends-tab-btn {
-  flex: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 8px 12px;
-  border-radius: 12px;
-  background: rgba(30, 16, 18, 0.6);
-  border: 1px solid rgba(229, 185, 100, 0.25);
-  color: #e5b964;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
+  flex: 1 1 0 !important;
+  min-width: 0 !important;
+  width: auto !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  max-height: 38px !important;
+  margin: 0 !important;
+  margin-top: 0 !important;
+  padding: 0 4px !important;
+  border-radius: 10px !important;
+  background: rgba(30, 16, 18, 0.7) !important;
+  border: 1px solid rgba(229, 185, 100, 0.3) !important;
+  color: #e5b964 !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  white-space: nowrap !important;
+  line-height: 1 !important;
+  cursor: pointer !important;
+  box-sizing: border-box !important;
+  transition: all 0.2s ease !important;
 }
 
 .friends-tab-btn:hover {
-  background: rgba(60, 30, 36, 0.8);
-  border-color: #ffd54f;
+  background: rgba(60, 30, 36, 0.85) !important;
+  border-color: #ffd54f !important;
 }
 
 .friends-tab-btn.active {
-  background: linear-gradient(135deg, rgba(80, 40, 20, 0.9), rgba(50, 20, 15, 0.9));
-  border-color: #ffd54f;
-  color: #fff;
-  box-shadow: 0 0 12px rgba(245, 166, 35, 0.35);
+  background: linear-gradient(135deg, rgba(90, 45, 25, 0.95), rgba(60, 25, 20, 0.95)) !important;
+  border-color: #ffd54f !important;
+  color: #fff !important;
+  box-shadow: 0 0 10px rgba(245, 166, 35, 0.4) !important;
 }
 
 .friends-action-banner {
@@ -3895,43 +3980,61 @@ dialog.table-modal-backdrop::backdrop { background: #081b2d55; }
 }
 
 .search-input-row {
-  display: flex;
-  gap: 8px;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 8px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
 }
 
-.friend-input {
-  flex: 1;
-  min-height: 42px;
-  padding: 0 12px;
-  border-radius: 10px;
-  background: rgba(24, 10, 12, 0.85);
-  border: 1px solid rgba(229, 185, 100, 0.35);
-  color: #fff;
-  font-size: 14px;
+.search-input-row .friend-input {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  width: 0 !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  max-height: 40px !important;
+  padding: 0 12px !important;
+  border-radius: 10px !important;
+  background: rgba(24, 10, 12, 0.9) !important;
+  border: 1px solid rgba(229, 185, 100, 0.35) !important;
+  color: #fff !important;
+  font-size: 13.5px !important;
+  margin: 0 !important;
+  margin-top: 0 !important;
+  box-sizing: border-box !important;
 }
 
-.friend-input:focus {
-  outline: none;
-  border-color: #ffd54f;
-  box-shadow: 0 0 10px rgba(255, 213, 79, 0.3);
+.search-input-row .friend-input:focus {
+  outline: none !important;
+  border-color: #ffd54f !important;
+  box-shadow: 0 0 10px rgba(255, 213, 79, 0.3) !important;
 }
 
-.friend-submit-btn {
-  min-height: 42px;
-  padding: 0 16px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, #f5a623, #d97706);
-  border: 1px solid #ffe082;
-  color: #261004;
-  font-size: 14px;
-  font-weight: 700;
-  cursor: pointer;
-  white-space: nowrap;
+.search-input-row .friend-submit-btn {
+  flex: 0 0 auto !important;
+  width: auto !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  max-height: 40px !important;
+  margin: 0 !important;
+  margin-top: 0 !important;
+  padding: 0 16px !important;
+  border-radius: 10px !important;
+  background: linear-gradient(135deg, #f5a623, #d97706) !important;
+  border: 1px solid #ffe082 !important;
+  color: #261004 !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+  box-sizing: border-box !important;
 }
 
-.friend-submit-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
+.search-input-row .friend-submit-btn:disabled {
+  opacity: 0.4 !important;
+  cursor: not-allowed !important;
 }
 
 .add-friend-status {

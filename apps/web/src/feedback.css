@@ -548,22 +548,34 @@
 .ready-reminder p { font-size: 15px; }
 
 /* Reading pages keep the same artwork but lose oversized headings and line gaps. */
-.guide { padding: 14px 12px 24px; font-size: 13.5px; line-height: 1.42; }
-.guide .panel { padding: 12px; margin: 10px 0; }
-.guide-heading { padding: 12px; }
-.guide-heading h1 { font-size: 22px; }
-.guide-nav { margin: 12px 0; gap: 8px; }
-.guide-rules h2 { font-size: 20px; margin: 8px 0; }
-.guide-rules p, .guide-rules dd, .guide-rules li { font-size: 14px; line-height: 1.5; }
-.guide-victories > div { padding: 10px; }
-.guide-victories h3 { font-size: 17px; margin: 6px 0; }
-.guide-steps summary { padding: 9px 0; gap: 8px; }
-.guide-steps summary::before { font-size: 20px; }
-.guide-steps summary .emblem { width: 30px; height: 30px; padding: 4px; }
-.guide-steps summary span { font: 600 16px/1.4 var(--sans); }
-.guide-steps summary small { font-size: 12px; margin-top: 2px; line-height: 1.3; }
-.guide-disclosure > summary { font: 600 16px/1.4 var(--sans); }
-.guide-disclosure[open] > summary { padding-bottom: 10px; }
+.guide { padding: 14px 12px 24px; font-size: 13px; line-height: 1.42; }
+.guide .panel { padding: 10px 12px; margin: 8px 0; }
+.guide-heading { padding: 10px 12px; }
+.guide-heading h1 { font-size: 20px; }
+.guide-nav { margin: 10px 0; gap: 8px; }
+.guide-rules { display: grid; gap: 10px; font-size: 12.5px; line-height: 1.45; }
+.guide-rules h2 { font-size: 16.5px; margin: 4px 0 8px; color: #ffd875; }
+.guide-rules .guide-sub-heading { font-size: 14.5px; margin: 10px 0 4px; color: #ffd54f; }
+.guide-rules p, .guide-rules dd, .guide-rules li { font-size: 12.5px; line-height: 1.45; color: #e8e3d7; margin: 3px 0; }
+.guide-victories { gap: 8px; }
+.guide-victories > div { padding: 8px 10px; border-radius: 12px; }
+.guide-victories h3 { font-size: 15px; margin: 2px 0 4px; }
+.guide-victories p { font-size: 12px; line-height: 1.4; }
+.guide-steps { display: flex; flex-direction: column; gap: 8px; padding: 0; margin: 6px 0; list-style: none; }
+.guide-step-card { padding: 8px 10px; border-radius: 10px; background: rgba(10, 20, 30, 0.45); border: 1px solid rgba(255, 255, 255, 0.08); }
+.guide-step-header { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.guide-step-header .emblem { width: 26px; height: 26px; padding: 3px; flex-shrink: 0; }
+.guide-step-title-wrap strong { font-size: 13.5px; color: #ffd54f; }
+.guide-step-title-wrap small { display: block; font-size: 11.5px; color: #a0aec0; line-height: 1.3; }
+.guide-configs { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 8px; margin-top: 8px; }
+.guide-config { padding: 8px 10px; border-radius: 10px; background: rgba(10, 20, 30, 0.45); border: 1px solid rgba(229, 185, 100, 0.2); }
+.guide-config h3 { font-size: 14px; color: #ffd54f; margin: 0 0 3px; }
+.guide-config p { font-size: 12px; margin: 2px 0; }
+.guide-missions { display: flex; gap: 4px; padding: 0; margin: 4px 0 0; list-style: none; }
+.guide-missions li { display: flex; flex-direction: column; align-items: center; padding: 2px 5px; background: rgba(255, 255, 255, 0.05); border-radius: 4px; font-size: 11px; margin: 0; }
+.guide-missions li strong { color: #93c5fd; font-size: 11.5px; }
+.guide-options dt { font-size: 13px; font-weight: 700; color: #ffd54f; margin-top: 6px; }
+.guide-options dd { font-size: 12.5px; margin: 2px 0 6px; color: #cbd5e1; }
 .guide-roles > .hint { margin: 6px 0; line-height: 1.45; font-size: 12.5px; }
 .guide-faction { margin-top: 12px; }
 .guide-faction > h2 { font-size: 18px; margin: 0 0 8px; gap: 8px; }
