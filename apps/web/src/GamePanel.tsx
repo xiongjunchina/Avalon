@@ -1,6 +1,6 @@
 import { PrivateExtensions, ExtensionStep, ExtensionHistory } from './Extensions';
 import { useEffect, useRef, useState } from 'react';
-import type { Command, GameView, RoomView, RoundView } from '@avalon/contracts';
+import type { Command, GameView, Player, RoomView, RoundView } from '@avalon/contracts';
 import { ROLE_CONFIG, assignFemaleDemons, assignLoyalGuardians, failuresRequiredFor } from '@avalon/game-core';
 import { Emblem, PlayerAvatar, WuYueBackdrop, roleTeam, CloudFlourish, DragonPlinthDecor } from './Heraldry';
 import { RolePortrait } from './RolePortrait';
@@ -600,182 +600,204 @@ export function GamePanel({
         })()
       )}
 
-      {/* 3. Scheme 3 Floating Circular Player Avatar Grid (Hidden for non-assassins during assassination phase) */}
-      {!(g.phase === 'assassination' && self?.role !== 'assassin') && (
-        <div
-          className={`table-seats-grid ${
-            g.players.length > 10 ? 'grid-12' : g.players.length > 8 ? 'grid-10' : 'grid-8'
-          } altar-dual-flank-arena ${
-            ended ? 'is-ended-grid' : g.phase === 'assassination' ? 'is-assassin-picker-grid' : ''
-          }`}
-          data-player-count={g.players.length}
-          aria-label="对局座位表"
-        >
-          {/* Central BaGua Altar Core (中央八卦伏魔台) */}
-          <div className="altar-center-core" aria-hidden="true">
-            <div className="altar-bagua-disc">
-              <span className="altar-core-taichi">☯</span>
-              <span className="altar-direction-tag">
-                {direction === 'clockwise' ? '⟳ 顺时针' : '⟲ 逆时针'}
-              </span>
-              <span className="altar-mission-tag">
-                第 {g.mission} 难
-              </span>
-            </div>
-          </div>
+      {/* 3. Scheme A: Dual-Flank Altar Arena (Hidden for non-assassins during assassination phase) */}
+      {!(g.phase === 'assassination' && self?.role !== 'assassin') && (() => {
+        const isOddCount = g.players.length % 2 === 1;
+        const pairedPlayers = isOddCount ? g.players.slice(0, -1) : g.players;
+        const centerPlayer = isOddCount ? g.players[g.players.length - 1] : null;
+        const leftPlayers = pairedPlayers.filter((_, idx) => idx % 2 === 0);
+        const rightPlayers = pairedPlayers.filter((_, idx) => idx % 2 === 1);
 
-          {g.players.map((p, idx) => {
-            const member = room.members.find(m => m.id === p.id);
-            const isCaptain = !ended && g.phase !== 'assassination' && p.id === g.captainId;
-            const isNextCaptain = isCaptain && ['early_window', 'lady', 'lady_reveal'].includes(effectivePhase);
-            const isLadyHolder = !ended && g.phase !== 'assassination' && g.lady?.holderId === p.id;
-            const isProposed =
-              !ended &&
-              (effectivePhase === 'proposing'
-                ? selected.includes(p.id)
-                : ['discussion', 'team_vote', 'mission'].includes(effectivePhase) && Boolean(round?.team.includes(p.id)));
-            const isTargeted =
-              (g.phase === 'lady' || g.phase === 'assassination') && target === p.id;
-            const canTapSeat =
-              !disabled &&
-              ((['proposing', 'discussion'].includes(effectivePhase) && captain) ||
-                (g.phase === 'lady' && Boolean(self?.canInspect) && !g.lady?.holderIds.includes(p.id)) ||
-                (g.phase === 'assassination' && self?.role === 'assassin' && p.id !== userId));
-            const seatVoteChip = voteStatusMap[p.id] ?? null;
-            const revealedRole = ended && g.revealedRoles ? g.revealedRoles[p.id] : undefined;
-            const revealedTeam = revealedRole ? roleTeam(revealedRole) : undefined;
-            const isWinnerSeat =
-              ended && Boolean(g.result?.winner && revealedTeam && g.result.winner === revealedTeam);
-            const isAssassinatedTarget = ended && g.result?.targetId === p.id;
+        const renderSeat = (p: Player, flank: 'left' | 'right' | 'center') => {
+          const member = room.members.find(m => m.id === p.id);
+          const isCaptain = !ended && g.phase !== 'assassination' && p.id === g.captainId;
+          const isNextCaptain = isCaptain && ['early_window', 'lady', 'lady_reveal'].includes(effectivePhase);
+          const isLadyHolder = !ended && g.phase !== 'assassination' && g.lady?.holderId === p.id;
+          const isProposed =
+            !ended &&
+            (effectivePhase === 'proposing'
+              ? selected.includes(p.id)
+              : ['discussion', 'team_vote', 'mission'].includes(effectivePhase) && Boolean(round?.team.includes(p.id)));
+          const isTargeted =
+            (g.phase === 'lady' || g.phase === 'assassination') && target === p.id;
+          const canTapSeat =
+            !disabled &&
+            ((['proposing', 'discussion'].includes(effectivePhase) && captain) ||
+              (g.phase === 'lady' && Boolean(self?.canInspect) && !g.lady?.holderIds.includes(p.id)) ||
+              (g.phase === 'assassination' && self?.role === 'assassin' && p.id !== userId));
+          const seatVoteChip = voteStatusMap[p.id] ?? null;
+          const revealedRole = ended && g.revealedRoles ? g.revealedRoles[p.id] : undefined;
+          const revealedTeam = revealedRole ? roleTeam(revealedRole) : undefined;
+          const isWinnerSeat =
+            ended && Boolean(g.result?.winner && revealedTeam && g.result.winner === revealedTeam);
+          const isAssassinatedTarget = ended && g.result?.targetId === p.id;
 
-            const isLeft = idx % 2 === 0;
-            const isOddLast = g.players.length % 2 === 1 && idx === g.players.length - 1;
-
-            return (
-              <div
-                key={p.id}
-                role={canTapSeat ? 'button' : undefined}
-                tabIndex={canTapSeat ? 0 : undefined}
-                aria-label={`${p.seat}号 ${p.nickname}${isCaptain ? '，队长' : ''}${isProposed ? '，已入阵' : ''}${isTargeted ? '，已锁定' : ''}`}
-                aria-pressed={canTapSeat ? isProposed || isTargeted : undefined}
-                onClick={() => canTapSeat && handleSeatTap(p.id)}
-                onKeyDown={e => {
-                  if (canTapSeat && (e.key === 'Enter' || e.key === ' ')) {
-                    e.preventDefault();
-                    handleSeatTap(p.id);
-                  }
-                }}
-                className={[
-                  'table-seat-card',
-                  'flank-seat-card',
-                  isOddLast ? 'flank-seat-centered' : isLeft ? 'flank-seat-left' : 'flank-seat-right',
-                  p.id === userId ? 'is-me' : '',
-                  isCaptain ? 'is-captain' : '',
-                  isProposed ? 'is-on-team' : '',
-                  isTargeted ? 'is-targeted' : '',
-                  canTapSeat ? 'is-interactive' : '',
-                  ended ? 'is-ended-card' : '',
-                  revealedTeam ? `is-revealed-${revealedTeam}` : '',
-                  isWinnerSeat ? 'is-winner-seat' : '',
-                  isAssassinatedTarget ? 'is-assassinated-seat' : '',
-                  !ended && member?.online === false ? 'is-offline' : '',
-                ]
-                  .filter(Boolean)
-                  .join(' ')}
-              >
-                {/* 1. Avatar Container */}
-                <div className="flank-avatar-wrap">
-                  {(isProposed || isCaptain) && (
-                    <span
-                      className={`seat-aura-ring ${isProposed ? 'aura-cyan' : 'aura-gold'}`}
-                      aria-hidden="true"
+          return (
+            <div
+              key={p.id}
+              role={canTapSeat ? 'button' : undefined}
+              tabIndex={canTapSeat ? 0 : undefined}
+              aria-label={`${p.seat}号 ${p.nickname}${isCaptain ? '，队长' : ''}${isProposed ? '，已入阵' : ''}${isTargeted ? '，已锁定' : ''}`}
+              aria-pressed={canTapSeat ? isProposed || isTargeted : undefined}
+              onClick={() => canTapSeat && handleSeatTap(p.id)}
+              onKeyDown={e => {
+                if (canTapSeat && (e.key === 'Enter' || e.key === ' ')) {
+                  e.preventDefault();
+                  handleSeatTap(p.id);
+                }
+              }}
+              className={[
+                'table-seat-card',
+                'flank-seat-card',
+                flank === 'center' ? 'flank-seat-centered' : flank === 'left' ? 'flank-seat-left' : 'flank-seat-right',
+                p.id === userId ? 'is-me' : '',
+                isCaptain ? 'is-captain' : '',
+                isProposed ? 'is-on-team' : '',
+                isTargeted ? 'is-targeted' : '',
+                canTapSeat ? 'is-interactive' : '',
+                ended ? 'is-ended-card' : '',
+                revealedTeam ? `is-revealed-${revealedTeam}` : '',
+                isWinnerSeat ? 'is-winner-seat' : '',
+                isAssassinatedTarget ? 'is-assassinated-seat' : '',
+                !ended && member?.online === false ? 'is-offline' : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+            >
+              {/* 1. Avatar Container */}
+              <div className="flank-avatar-wrap">
+                {(isProposed || isCaptain) && (
+                  <span
+                    className={`seat-aura-ring ${isProposed ? 'aura-cyan' : 'aura-gold'}`}
+                    aria-hidden="true"
+                  />
+                )}
+                <div className="seat-card-avatar">
+                  {revealedRole ? (
+                    <RolePortrait role={revealedRole} loyalGuardian={revealedLoyalGuardians[p.id]} femaleDemon={revealedFemaleDemons[p.id]} size="mini" />
+                  ) : (
+                    <PlayerAvatar
+                      avatar={member?.avatar}
+                      avatarUrl={member?.avatarUrl}
+                      wechatAvatarUrl={member?.wechatAvatarUrl}
+                      fallbackKind="cards"
                     />
                   )}
-                  <div className="seat-card-avatar">
-                    {revealedRole ? (
-                      <RolePortrait role={revealedRole} loyalGuardian={revealedLoyalGuardians[p.id]} femaleDemon={revealedFemaleDemons[p.id]} size="mini" />
-                    ) : (
-                      <PlayerAvatar
-                        avatar={member?.avatar}
-                        avatarUrl={member?.avatarUrl}
-                        wechatAvatarUrl={member?.wechatAvatarUrl}
-                        fallbackKind="cards"
-                      />
-                    )}
-                  </div>
-                  <span
-                    className={`seat-online-dot ${member?.online === false ? 'is-offline' : 'is-online'}`}
-                    title={member?.online === false ? '离线' : '在线'}
-                  />
-                  {/* Floating role/captain badge over avatar */}
-                  {isCaptain && (
-                    <span className={`seat-badge ${isNextCaptain ? 'badge-next-captain' : 'badge-captain'}`} title={isNextCaptain ? '候任领队' : '当前队长'}>
-                      {isNextCaptain ? '👑 候任' : '👑 队长'}
-                    </span>
-                  )}
-                  {isLadyHolder && (
-                    <span className="seat-badge badge-lady" title="持有湖中女神（照妖宝镜）">
-                      ☯️ 宝镜
-                    </span>
-                  )}
-                  {isTargeted && (
-                    <span className="seat-badge badge-assassinated">🎯 锁定</span>
-                  )}
-                  {ended && isWinnerSeat && (
-                    <span className="seat-badge badge-winner">🏆 胜</span>
-                  )}
-                  {ended && isAssassinatedTarget && (
-                    <span className="seat-badge badge-assassinated">🎯 被刺</span>
-                  )}
                 </div>
-
-                {/* 2. Horizontal Capsule Nameplate */}
-                <div className="flank-nameplate">
-                  <span className="flank-seat-num">{p.seat}号</span>
-                  <span className="flank-nickname" title={name(p.id)}>
-                    {p.nickname}
+                <span
+                  className={`seat-online-dot ${member?.online === false ? 'is-offline' : 'is-online'}`}
+                  title={member?.online === false ? '离线' : '在线'}
+                />
+                {/* Floating role/captain badge over avatar */}
+                {isCaptain && (
+                  <span className={`seat-badge ${isNextCaptain ? 'badge-next-captain' : 'badge-captain'}`} title={isNextCaptain ? '候任领队' : '当前队长'}>
+                    {isNextCaptain ? '👑 候任' : '👑 队长'}
                   </span>
-                  {p.id === userId && <span className="flank-me-pill">我</span>}
-                  {isProposed && <span className="flank-tag-proposed">⚔️ 出征</span>}
-                  {seatVoteChip && (
-                    <span className={`seat-card-vote-badge ${seatVoteChip.className} flank-vote-chip`} title={seatVoteChip.text}>
-                      {seatVoteChip.icon}
-                    </span>
-                  )}
-                </div>
+                )}
+                {isLadyHolder && (
+                  <span className="seat-badge badge-lady" title="持有湖中女神（照妖宝镜）">
+                    ☯️ 宝镜
+                  </span>
+                )}
+                {isTargeted && (
+                  <span className="seat-badge badge-assassinated">🎯 锁定</span>
+                )}
+                {ended && isWinnerSeat && (
+                  <span className="seat-badge badge-winner">🏆 胜</span>
+                )}
+                {ended && isAssassinatedTarget && (
+                  <span className="seat-badge badge-assassinated">🎯 被刺</span>
+                )}
+                {seatVoteChip && (
+                  <span className={`seat-card-vote-badge ${seatVoteChip.className} flank-vote-chip`} title={seatVoteChip.text}>
+                    {seatVoteChip.icon}
+                  </span>
+                )}
+              </div>
 
-                {/* Hidden interactive prompt for screen-readers & test assertions */}
-                <div className="seat-card-bottom sr-only">
-                  {isProposed && <span className="seat-chip chip-team">已入阵</span>}
-                  {canTapSeat && (
-                    <span className="seat-chip chip-hint">
-                      {effectivePhase === 'proposing'
-                        ? (isProposed ? '移出阵容' : '点击上车')
-                        : effectivePhase === 'discussion'
-                          ? (isProposed ? '移出阵容' : '点击入阵')
-                          : g.phase === 'lady'
-                            ? '点击查验'
-                            : g.phase === 'assassination'
-                              ? '🎯 刺杀'
-                              : ''}
-                    </span>
-                  )}
-                  {revealedRole ? (
-                    <span className={`revealed-role allegiance-${roleTeam(revealedRole)}`}>
-                      {roleTeam(revealedRole) === 'blue' ? '🛡️ ' : '🗡️ '}
-                      {formatRoleName(revealedRole, revealedLoyalGuardians[p.id], revealedFemaleDemons[p.id])}
-                    </span>
-                  ) : isTargeted ? (
-                    <span className="seat-chip chip-target">
-                      {g.phase === 'lady' ? '☯️ 查验' : '🗡️ 目标'}
-                    </span>
-                  ) : null}
+              {/* 2. Horizontal Capsule Nameplate */}
+              <div className="flank-nameplate">
+                <span className="flank-seat-num">{p.seat}号</span>
+                <span className="flank-name-sep">·</span>
+                <span className="flank-nickname" title={name(p.id)}>
+                  {p.nickname}
+                </span>
+                {p.id === userId && <span className="flank-me-pill">我</span>}
+                {isProposed && <span className="flank-tag-proposed">⚔️</span>}
+              </div>
+
+              {/* Hidden interactive prompt for screen-readers & test assertions */}
+              <div className="seat-card-bottom sr-only">
+                {isProposed && <span className="seat-chip chip-team">已入阵</span>}
+                {canTapSeat && (
+                  <span className="seat-chip chip-hint">
+                    {effectivePhase === 'proposing'
+                      ? (isProposed ? '移出阵容' : '点击上车')
+                      : effectivePhase === 'discussion'
+                        ? (isProposed ? '移出阵容' : '点击入阵')
+                        : g.phase === 'lady'
+                          ? '点击查验'
+                          : g.phase === 'assassination'
+                            ? '🎯 刺杀'
+                            : ''}
+                  </span>
+                )}
+                {revealedRole ? (
+                  <span className={`revealed-role allegiance-${roleTeam(revealedRole)}`}>
+                    {roleTeam(revealedRole) === 'blue' ? '🛡️ ' : '🗡️ '}
+                    {formatRoleName(revealedRole, revealedLoyalGuardians[p.id], revealedFemaleDemons[p.id])}
+                  </span>
+                ) : isTargeted ? (
+                  <span className="seat-chip chip-target">
+                    {g.phase === 'lady' ? '☯️ 查验' : '🗡️ 目标'}
+                  </span>
+                ) : null}
+              </div>
+            </div>
+          );
+        };
+
+        return (
+          <div
+            className={`table-seats-grid ${
+              g.players.length > 10 ? 'grid-12' : g.players.length > 8 ? 'grid-10' : 'grid-8'
+            } altar-dual-flank-arena scheme-a-stage ${
+              ended ? 'is-ended-grid' : g.phase === 'assassination' ? 'is-assassin-picker-grid' : ''
+            }`}
+            data-player-count={g.players.length}
+            aria-label="对局座位表"
+          >
+            <div className="scheme-a-main-arena">
+              <div className="scheme-a-flank flank-left">
+                {leftPlayers.map(p => renderSeat(p, 'left'))}
+              </div>
+
+              {/* Central BaGua Altar Core (中央八卦伏魔台) */}
+              <div className="scheme-a-center-altar" aria-hidden="true">
+                <div className="altar-bagua-disc">
+                  <span className="altar-core-taichi">☯</span>
+                  <span className="altar-direction-tag">
+                    {direction === 'clockwise' ? '⟳ 顺时针' : '⟲ 逆时针'}
+                  </span>
+                  <span className="altar-mission-tag">
+                    第 {g.mission} 难
+                  </span>
                 </div>
               </div>
-            );
-          })}
-        </div>
-      )}
+
+              <div className="scheme-a-flank flank-right">
+                {rightPlayers.map(p => renderSeat(p, 'right'))}
+              </div>
+            </div>
+
+            {centerPlayer && (
+              <div className="scheme-a-bottom-foot">
+                {renderSeat(centerPlayer, 'center')}
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* 4. Bottom Dynamic Action Dock */}
       <div className="table-action-dock">
