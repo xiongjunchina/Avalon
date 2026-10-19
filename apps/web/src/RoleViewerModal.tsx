@@ -49,7 +49,7 @@ export function RoleViewerModal({
         <header className="role-viewer-head">
           <div className="role-viewer-faction-badge">
             <Emblem kind={item.team} />
-            <span>{item.team === 'blue' ? '蓝方 · 取经正果' : '红方 · 群妖乱道'}</span>
+            <span className="role-viewer-faction-text">{item.team === 'blue' ? '蓝方 · 取经正果' : '红方 · 群妖乱道'}</span>
             <span className="role-viewer-sep">·</span>
             <span className="role-viewer-title-pill">{item.title}</span>
           </div>

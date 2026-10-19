@@ -1111,22 +1111,20 @@ export function GamePanel({
         {/* Scheme A-2 Bottom 4-Action Utility Dock */}
         <div className="dock-utility-row">
           {!ended && self && (
-            <section className="identity-box" aria-label="我的私密身份">
-              <button
-                type="button"
-                className={`secondary tool-pill dock-utility-btn identity-trigger-btn ${needsIdentityAction ? 'pulse-action' : ''}`}
-                disabled={!connected}
-                aria-expanded={identityVisible}
-                aria-label={self?.canConfirmInspection ? '私下查看我的身份（确认查验结果）' : '私下查看我的身份'}
-                onClick={() => setIdentityOpen(v => !v)}
-              >
-                {identityVisible
-                  ? '◇ 收起真身 ◇'
-                  : self?.canConfirmInspection
-                    ? '◇ 查验结果 ◇'
-                    : '◇ 查验真身 ◇'}
-              </button>
-            </section>
+            <button
+              type="button"
+              className={`secondary tool-pill dock-utility-btn identity-trigger-btn ${needsIdentityAction ? 'pulse-action' : ''}`}
+              disabled={!connected}
+              aria-expanded={identityVisible}
+              aria-label={self?.canConfirmInspection ? '私下查看我的身份（确认查验结果）' : '私下查看我的身份'}
+              onClick={() => setIdentityOpen(v => !v)}
+            >
+              {identityVisible
+                ? '◇ 收起真身 ◇'
+                : self?.canConfirmInspection
+                  ? '◇ 查验结果 ◇'
+                  : '◇ 查验真身 ◇'}
+            </button>
           )}
           <button
             type="button"
