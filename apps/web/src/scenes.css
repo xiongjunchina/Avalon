@@ -538,6 +538,40 @@ main.app-shell.is-live-table {
   color: #d4a35988 !important;
   font-size: 11px !important;
 }
+.is-live-table .camp-ratio-summary {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+}
+.is-live-table .camp-pill-blue {
+  color: #93c5fd !important;
+  font-weight: 600 !important;
+}
+.is-live-table .camp-pill-blue strong {
+  color: #bfdbfe !important;
+  font-weight: 700 !important;
+}
+.is-live-table .camp-pill-red {
+  color: #fca5a5 !important;
+  font-weight: 600 !important;
+}
+.is-live-table .camp-pill-red strong {
+  color: #fecaca !important;
+  font-weight: 700 !important;
+}
+@media (max-width: 440px) {
+  .is-live-table .quest-vote-track-zone {
+    gap: 8px !important;
+    padding: 3px 6px !important;
+  }
+  .is-live-table .quest-summary-item {
+    font-size: 11px !important;
+    letter-spacing: 0px !important;
+  }
+  .is-live-table .camp-ratio-summary {
+    gap: 3px !important;
+  }
+}
 .is-live-table .scheme3-middle-zone { display: flex !important; flex-direction: column !important; min-height: 0 !important; gap: 0 !important; margin: 0 !important; }
 .is-live-table .scheme3-ink-ribbon {
   min-height: clamp(38px, 5.5dvh, 48px) !important;
