@@ -309,16 +309,16 @@ export function GamePanel({
         </div>
 
         {/* Bottom Row of Quest Board: Compact Imperial Summary Track matching Scheme A-2 */}
-        <div className="quest-vote-track-zone" aria-label={`护经进度：${successes}胜${failures}负，流局${g.rejectionCount}/5，${g.players.length}人局，${blueCount}蓝${redCount}红`}>
+        <div className="quest-vote-track-zone" aria-label={`护经进度：${successes}胜${failures}负，流局${g.rejectionCount}/5，${g.players.length}人局，仙${blueCount} 妖${redCount}`}>
           <span className="quest-summary-item">⚔ 护经 <strong>{successes}:{failures}</strong> 群妖</span>
           <span className="quest-summary-divider">◇</span>
           <span className="quest-summary-item">♨ 流局 <strong>{g.rejectionCount}/5</strong></span>
           <span className="quest-summary-divider">◇</span>
           <span className="quest-summary-item">👥 <strong>{g.players.length}</strong>人局</span>
           <span className="quest-summary-divider">◇</span>
-          <span className="quest-summary-item camp-ratio-summary" title={`本局共${g.players.length}人：蓝方(取经)${blueCount}人，红方(群妖)${redCount}人`}>
-            <span className="camp-pill-blue">🔵 <strong>{blueCount}</strong>蓝</span>
-            <span className="camp-pill-red">🔴 <strong>{redCount}</strong>红</span>
+          <span className="quest-summary-item camp-ratio-summary" title={`本局共${g.players.length}人：取经仙班${blueCount}人，作乱妖魔${redCount}人`}>
+            <span className="camp-pill-blue">仙<strong>{blueCount}</strong></span>
+            <span className="camp-pill-red">妖<strong>{redCount}</strong></span>
           </span>
         </div>
       </div>

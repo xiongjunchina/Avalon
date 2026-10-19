@@ -705,23 +705,29 @@ main.app-shell.is-live-table {
 .is-live-table .camp-ratio-summary {
   display: inline-flex !important;
   align-items: center !important;
-  gap: 5px !important;
+  gap: 6px !important;
 }
 .is-live-table .camp-pill-blue {
-  color: #93c5fd !important;
-  font-weight: 600 !important;
+  color: #7dd3fc !important;
+  font-weight: 700 !important;
+  display: inline-flex !important;
+  align-items: center !important;
 }
 .is-live-table .camp-pill-blue strong {
-  color: #bfdbfe !important;
-  font-weight: 700 !important;
+  color: #e0f2fe !important;
+  font-weight: 800 !important;
+  margin-left: 1px !important;
 }
 .is-live-table .camp-pill-red {
-  color: #fca5a5 !important;
-  font-weight: 600 !important;
+  color: #f87171 !important;
+  font-weight: 700 !important;
+  display: inline-flex !important;
+  align-items: center !important;
 }
 .is-live-table .camp-pill-red strong {
-  color: #fecaca !important;
-  font-weight: 700 !important;
+  color: #ffe4e6 !important;
+  font-weight: 800 !important;
+  margin-left: 1px !important;
 }
 @media (max-width: 440px) {
   .is-live-table .quest-vote-track-zone {
@@ -733,7 +739,7 @@ main.app-shell.is-live-table {
     letter-spacing: 0px !important;
   }
   .is-live-table .camp-ratio-summary {
-    gap: 3px !important;
+    gap: 4px !important;
   }
 }
 .is-live-table .scheme3-middle-zone { display: flex !important; flex-direction: column !important; min-height: 0 !important; gap: 0 !important; margin: 0 !important; }
