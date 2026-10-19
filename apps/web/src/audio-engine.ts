@@ -18,6 +18,14 @@ export class SoundEngine {
   private disposed = false;
   constructor(private report: (message: string) => void = () => {}, private music: BackgroundMusic | null = BACKGROUND_MUSIC) {}
 
+  setMusic(music: BackgroundMusic) {
+    if (this.music?.file === music.file) return;
+    this.music = music;
+    if (this.preferences.music && this.foreground && this.context?.state === 'running') {
+      void this.startMusic();
+    }
+  }
+
   configure(preferences: SoundPreferences) {
     this.preferences = preferences;
     if (!preferences.effects) this.cancelEffects();

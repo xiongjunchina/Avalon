@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useRef, useState, type ReactNode 
 import type { GameView } from '@avalon/contracts';
 import { AudioEventTracker, parseSoundPreferences, SOUND_STORAGE_KEY, type EffectCue, type MusicScene, type SoundPreferences } from './audio-events';
 import { interactionCue, PAGE_SOUND_EVENT } from './audio-interactions';
-import { BACKGROUND_MUSIC } from './audio-catalog';
+import { BGM_CANDIDATES, BGM_STORAGE_KEY, getSavedBgmTrack, type BackgroundMusicTrack } from './audio-catalog';
 import { SoundEngine } from './audio-engine';
 import { Modal } from './Modal';
 
@@ -10,23 +10,34 @@ function readPreferences() {
   try { return parseSoundPreferences(localStorage.getItem(SOUND_STORAGE_KEY)); }
   catch { return parseSoundPreferences(null); }
 }
+
 const SoundContext = createContext<{
-  preferences: SoundPreferences; update: (key: keyof SoundPreferences, enabled: boolean) => void;
-  engine: SoundEngine; error: string; visible: boolean;
+  preferences: SoundPreferences;
+  update: (key: keyof SoundPreferences, enabled: boolean) => void;
+  engine: SoundEngine;
+  error: string;
+  visible: boolean;
+  currentBgm: BackgroundMusicTrack;
+  switchBgm: (track: BackgroundMusicTrack) => void;
 } | null>(null);
+
 export const useSound = () => {
   const sound = useContext(SoundContext);
   if (!sound) throw Error('SoundProvider missing');
   return sound;
 };
+
 export function SoundProvider({ children }: { children: ReactNode }) {
   const [preferences, setPreferences] = useState(readPreferences), [error, setError] = useState('');
   const [visible, setVisible] = useState(() => document.visibilityState === 'visible');
-  const [engine] = useState(() => new SoundEngine(setError));
+  const [currentBgm, setCurrentBgm] = useState<BackgroundMusicTrack>(getSavedBgmTrack);
+  const [engine] = useState(() => new SoundEngine(setError, getSavedBgmTrack()));
   const changeVersion = useRef(0);
+
   useEffect(() => {
     engine.configure(preferences);
   }, [engine, preferences]);
+
   useEffect(() => {
     const play = (cue: EffectCue | null) => void engine.activate().then(() => { if (cue) void engine.effect(cue); });
     const click = (event: MouseEvent) => {
@@ -40,9 +51,16 @@ export function SoundProvider({ children }: { children: ReactNode }) {
     const pageSound = () => play('page');
     const visibility = () => { const value = document.visibilityState === 'visible'; setVisible(value); engine.setForeground(value); };
     const hide = () => { setVisible(false); engine.setForeground(false); };
-    const sync = (event: StorageEvent) => { if (event.key === SOUND_STORAGE_KEY || event.key === null) {
-      const next = readPreferences(); engine.configure(next); setPreferences(next);
-    } };
+    const sync = (event: StorageEvent) => {
+      if (event.key === SOUND_STORAGE_KEY || event.key === null) {
+        const next = readPreferences(); engine.configure(next); setPreferences(next);
+      }
+      if (event.key === BGM_STORAGE_KEY || event.key === null) {
+        const nextTrack = getSavedBgmTrack();
+        setCurrentBgm(nextTrack);
+        engine.setMusic(nextTrack);
+      }
+    };
     document.addEventListener('click', click, true);
     document.addEventListener('keydown', keydown, true);
     document.addEventListener('change', change, true);
@@ -57,14 +75,32 @@ export function SoundProvider({ children }: { children: ReactNode }) {
       engine.dispose();
     };
   }, [engine]);
+
   function update(key: keyof SoundPreferences, enabled: boolean) {
     const version = ++changeVersion.current;
     const next = { ...preferences, [key]: enabled }; setPreferences(next); engine.configure(next); setError('');
     try { localStorage.setItem(SOUND_STORAGE_KEY, JSON.stringify(next)); } catch { /* Still works for this page when storage is unavailable. */ }
     if (enabled) void engine.activate().then(() => { if (key === 'effects' && version === changeVersion.current) void engine.effect('confirm'); });
   }
-  return <SoundContext.Provider value={{ preferences, update, engine, error, visible }}>{children}</SoundContext.Provider>;
+
+  function switchBgm(track: BackgroundMusicTrack) {
+    setCurrentBgm(track);
+    try {
+      localStorage.setItem(BGM_STORAGE_KEY, track.id);
+    } catch {}
+    engine.setMusic(track);
+    if (!preferences.music) {
+      update('music', true);
+    }
+  }
+
+  return (
+    <SoundContext.Provider value={{ preferences, update, engine, error, visible, currentBgm, switchBgm }}>
+      {children}
+    </SoundContext.Provider>
+  );
 }
+
 export function useGameSound(game: GameView | null, active: boolean, connected: boolean) {
   const { engine, visible } = useSound(), tracker = useRef(new AudioEventTracker());
   useEffect(() => {
@@ -81,6 +117,7 @@ export function useGameSound(game: GameView | null, active: boolean, connected: 
     else if (cues.length) void engine.transition(cues);
   }, [engine, game, active, connected, visible]);
 }
+
 export function useNavigationSound(key: string, ready: boolean) {
   const { engine } = useSound(), previous = useRef<string | null>(null);
   useEffect(() => {
@@ -88,16 +125,135 @@ export function useNavigationSound(key: string, ready: boolean) {
     previous.current = ready ? key : null;
   }, [engine, key, ready]);
 }
+
 export function SoundControls() {
-  const { preferences, update, error } = useSound();
-  return <div className="sound-controls">
-    <label className="sound-option"><span><strong>背景音乐</strong><small>{BACKGROUND_MUSIC.title}</small></span><input type="checkbox" role="switch" checked={preferences.music} onChange={e => update('music', e.target.checked)} aria-label="背景音乐" /></label>
-    <label className="sound-option"><span><strong>操作音效</strong><small>法器反馈 · 降妖法鼓 · 金箍惊鸣 · 胜负终章</small></span><input type="checkbox" role="switch" checked={preferences.effects} onChange={e => update('effects', e.target.checked)} aria-label="操作音效" /></label>
-    <p className="sound-hint">仅影响自己的设备，自动记住选择。音量使用手机或电脑的媒体音量键调整。</p>
-    <p className="sound-hint">全部操作都有声音反馈，投票与出牌使用相同点击声。胜负音效按自己的结果播放，全程无人声。</p>
-    {error && <p role="status" className="error">{error}</p>}
-  </div>;
+  const { preferences, update, error, currentBgm, switchBgm } = useSound();
+  const [auditioningId, setAuditioningId] = useState<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, []);
+
+  const handleAudition = (track: BackgroundMusicTrack) => {
+    if (auditioningId === track.id) {
+      audioRef.current?.pause();
+      setAuditioningId(null);
+    } else {
+      if (!audioRef.current) {
+        audioRef.current = new Audio();
+      }
+      audioRef.current.src = track.file;
+      audioRef.current.currentTime = 0;
+      audioRef.current.play().catch(() => {});
+      audioRef.current.onended = () => setAuditioningId(null);
+      setAuditioningId(track.id);
+    }
+  };
+
+  const handleSelectBgm = (track: BackgroundMusicTrack) => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      setAuditioningId(null);
+    }
+    switchBgm(track);
+  };
+
+  return (
+    <div className="sound-controls">
+      <label className="sound-option">
+        <span>
+          <strong>背景音乐</strong>
+          <small>{currentBgm.title}</small>
+        </span>
+        <input
+          type="checkbox"
+          role="switch"
+          checked={preferences.music}
+          onChange={e => update('music', e.target.checked)}
+          aria-label="背景音乐"
+        />
+      </label>
+
+      <label className="sound-option">
+        <span>
+          <strong>操作音效</strong>
+          <small>法器反馈 · 降妖法鼓 · 金箍惊鸣 · 胜负终章</small>
+        </span>
+        <input
+          type="checkbox"
+          role="switch"
+          checked={preferences.effects}
+          onChange={e => update('effects', e.target.checked)}
+          aria-label="操作音效"
+        />
+      </label>
+
+      {/* 5 Candidate Tracks Showcase & Audition */}
+      <section className="bgm-selector-section" aria-label="西游记主题音乐候选">
+        <div className="bgm-selector-head">
+          <span className="bgm-selector-title">🎼 西游记主题仙乐试听与切换</span>
+          <span className="bgm-selector-sub">已下载 5 首高品质 MP3 · 点击试听或设为背景曲</span>
+        </div>
+
+        <div className="bgm-track-list">
+          {BGM_CANDIDATES.map(track => {
+            const isCurrent = currentBgm.id === track.id;
+            const isPlaying = auditioningId === track.id;
+
+            return (
+              <div
+                key={track.id}
+                className={`bgm-track-card ${isCurrent ? 'is-active-bgm' : ''} ${
+                  isPlaying ? 'is-auditioning' : ''
+                }`}
+              >
+                <div className="bgm-track-top">
+                  <div className="bgm-track-meta">
+                    <span className="bgm-badge">{track.badge}</span>
+                    <strong className="bgm-title">{track.title}</strong>
+                    <span className="bgm-duration">{track.duration}</span>
+                  </div>
+                </div>
+                <p className="bgm-subtitle">{track.subtitle}</p>
+                <p className="bgm-desc">{track.desc}</p>
+
+                <div className="bgm-track-actions">
+                  <button
+                    type="button"
+                    className={`bgm-btn-audition ${isPlaying ? 'is-playing' : ''}`}
+                    onClick={() => handleAudition(track)}
+                    aria-label={`${isPlaying ? '暂停试听' : '试听'} ${track.title}`}
+                  >
+                    {isPlaying ? '⏸ 暂停试听' : '▶ 试听'}
+                  </button>
+
+                  <button
+                    type="button"
+                    className={`bgm-btn-select ${isCurrent ? 'is-current' : ''}`}
+                    onClick={() => handleSelectBgm(track)}
+                    disabled={isCurrent && preferences.music}
+                  >
+                    {isCurrent && preferences.music ? '✓ 当前使用中' : '设为背景音乐'}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      <p className="sound-hint">仅影响自己的设备，自动记住选择。音量使用手机或电脑的媒体音量键调整。</p>
+      {error && <p role="status" className="error">{error}</p>}
+    </div>
+  );
 }
+
 export function SoundButton() {
   const [open, setOpen] = useState(false), { preferences } = useSound();
   const enabled = preferences.music || preferences.effects;
