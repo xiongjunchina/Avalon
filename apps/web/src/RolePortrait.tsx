@@ -55,10 +55,12 @@ export function IdentityCard({
   role,
   loyalGuardian,
   femaleDemon,
+  onInspect,
 }: {
   role: Role;
   loyalGuardian?: LoyalGuardian;
   femaleDemon?: FemaleDemon;
+  onInspect?: () => void;
 }) {
   const team = roleTeam(role);
   const guardian = role === 'loyal' && loyalGuardian ? LOYAL_GUARDIANS[loyalGuardian] : undefined;
@@ -66,7 +68,14 @@ export function IdentityCard({
   const title = guardian ? guardian.title : demon ? demon.title : roleTitles[role];
   const motto = guardian ? guardian.motto : demon ? demon.motto : roleMottos[role];
   return (
-    <figure className={`identity-card allegiance-${team}`}>
+    <figure
+      className={`identity-card allegiance-${team} ${onInspect ? 'is-interactive' : ''}`}
+      onClick={onInspect}
+      role={onInspect ? 'button' : undefined}
+      tabIndex={onInspect ? 0 : undefined}
+      onKeyDown={onInspect ? e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onInspect(); } } : undefined}
+      title={onInspect ? '点击赏析此法相高清立绘大图' : undefined}
+    >
       <RolePortrait role={role} loyalGuardian={loyalGuardian} femaleDemon={femaleDemon} size="card" />
       <figcaption>
         <span className="identity-team">
@@ -76,6 +85,7 @@ export function IdentityCard({
         </span>
         <h3>{formatRoleName(role, loyalGuardian, femaleDemon)}</h3>
         <p>{motto}</p>
+        {onInspect && <span className="identity-inspect-hint">🔍 点击赏析高清大图</span>}
       </figcaption>
     </figure>
   );

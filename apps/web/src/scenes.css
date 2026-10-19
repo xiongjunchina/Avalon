@@ -1666,20 +1666,143 @@ dialog.table-modal-backdrop::backdrop { background: #081b2d55; }
 .party-slots > * { position: relative; }
 .guide-steps summary small { display: block; font: 14px/1.6 var(--sans); margin-top: 6px; color: #e5edf6; }
 
-/* Private identity is one composed card, not a full-size portrait stacked above
-   a second card. The body distributes space without duplicating player names. */
-.table-modal-sheet.identity-content { width: min(100%, 520px); height: min(620px, 100dvh - 28px); max-height: calc(100dvh - 28px); padding: 16px; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: 12px; }
-.identity-content .table-modal-head { align-items: center; padding-bottom: 8px; margin: 0; gap: 8px; }
-.identity-content .table-modal-head > strong { font-size: 21px; letter-spacing: 1px; }
-.identity-content .table-modal-head > button { min-height: 44px; margin: 0; padding: 6px 10px; font-size: 12px; }
-.identity-body { display: flex; flex-direction: column; justify-content: space-evenly; min-height: 0; gap: 12px; }
-.identity-body .identity-card { display: grid; grid-template-columns: clamp(76px, 14dvh, 112px) minmax(0, 1fr); align-items: center; gap: 20px; width: 100%; max-width: none; margin: 4px 0; padding: 0 5px; flex-shrink: 0; }
-.identity-body .identity-card .role-portrait { width: 100%; height: auto; aspect-ratio: 1; }
-.identity-body .identity-card figcaption { background: none; border: 0; padding: 0; margin: 0; text-align: left; box-shadow: none; }
-.identity-body .identity-team { display: block; font: 12px/1.6 var(--sans); letter-spacing: 0; }
-.identity-body .identity-team .emblem { display: none; }
-.identity-body .identity-card h3 { margin: 5px 0; font: 30px/1.2 var(--display); letter-spacing: 3px; }
-.identity-body .identity-card figcaption p { font-size: 12px; line-height: 1.6; margin: 0; }
+/* Private identity sheet displays the grand hero medallion card at full lobby scale,
+   with a scrollable body accommodating the secret knowledge vision, inspections, and early windows. */
+.table-modal-sheet.identity-content {
+  width: min(100%, 520px) !important;
+  max-height: calc(100dvh - 28px) !important;
+  padding: 16px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  gap: 10px !important;
+}
+.identity-content .table-modal-head {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding-bottom: 8px !important;
+  margin: 0 !important;
+  gap: 8px !important;
+  border-bottom: 1px solid rgba(220, 190, 120, 0.25) !important;
+  flex-shrink: 0 !important;
+}
+.identity-content .table-modal-head > strong { font-size: 20px; letter-spacing: 1px; color: #ffd875; }
+.identity-content .table-modal-head > button { min-height: 38px; margin: 0; padding: 6px 12px; font-size: 12px; }
+
+.identity-body {
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 0 !important;
+  gap: 14px !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  padding: 4px 4px 10px !important;
+  flex: 1 1 auto !important;
+}
+
+/* Grand Hero Identity Card inside Game Table */
+.identity-body .identity-card {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  text-align: center !important;
+  width: 100% !important;
+  max-width: 380px !important;
+  margin: 4px auto 8px !important;
+  padding: 14px 16px !important;
+  background: linear-gradient(180deg, rgba(16, 43, 67, 0.8) 0%, rgba(8, 24, 38, 0.95) 100%) !important;
+  border: 1.5px solid #d0be8d88 !important;
+  border-radius: 20px !important;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5) !important;
+  flex-shrink: 0 !important;
+  cursor: pointer !important;
+  transition: border-color 180ms ease, box-shadow 180ms ease !important;
+}
+.identity-body .identity-card.allegiance-blue {
+  border-color: #52b0ff88 !important;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5), 0 0 24px rgba(59, 158, 255, 0.2) !important;
+}
+.identity-body .identity-card.allegiance-red {
+  border-color: #ff5e5788 !important;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5), 0 0 24px rgba(255, 71, 87, 0.2) !important;
+}
+.identity-body .identity-card .role-portrait {
+  width: min(58vw, 228px) !important;
+  height: min(58vw, 228px) !important;
+  aspect-ratio: 1 !important;
+  margin: 0 auto 10px !important;
+  border-radius: 50% !important;
+  border: 4px solid #efdaa1 !important;
+  outline: 2px solid #eed59e !important;
+  outline-offset: 4px !important;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.7), 0 0 24px rgba(255, 240, 188, 0.35) !important;
+  background: #091326 !important;
+  transition: transform 200ms ease, box-shadow 200ms ease !important;
+}
+.identity-body .identity-card:hover .role-portrait {
+  transform: scale(1.025) !important;
+}
+.identity-body .identity-card.allegiance-blue .role-portrait {
+  border-color: #9cd4ff !important;
+  outline-color: #52b0ff !important;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.7), 0 0 28px rgba(59, 158, 255, 0.45) !important;
+}
+.identity-body .identity-card.allegiance-red .role-portrait {
+  border-color: #ff9e96 !important;
+  outline-color: #ff5e57 !important;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.7), 0 0 28px rgba(255, 71, 87, 0.45) !important;
+}
+.identity-body .identity-card figcaption {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  text-align: center !important;
+  background: none !important;
+  border: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  box-shadow: none !important;
+  width: 100% !important;
+}
+.identity-body .identity-team {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  padding: 3px 12px !important;
+  border-radius: 16px !important;
+  background: rgba(0, 0, 0, 0.45) !important;
+  border: 1px solid rgba(220, 190, 120, 0.35) !important;
+  font: 600 12.5px/1.4 var(--sans) !important;
+  color: #eeddc4 !important;
+  margin-bottom: 6px !important;
+}
+.identity-body .identity-card h3 {
+  font: 700 27px/1.25 var(--display) !important;
+  letter-spacing: 2.5px !important;
+  color: #fff2d5 !important;
+  margin: 2px 0 6px !important;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8) !important;
+}
+.identity-body .identity-card figcaption p {
+  font-size: 13px !important;
+  line-height: 1.55 !important;
+  color: #e5edf6 !important;
+  margin: 0 !important;
+  max-width: 320px !important;
+}
+.identity-inspect-hint {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 11px;
+  color: #ffd875;
+  background: rgba(229, 185, 100, 0.15);
+  border: 1px solid rgba(229, 185, 100, 0.3);
+  padding: 2px 10px;
+  border-radius: 12px;
+}
+
 .identity-knowledge { background: #102b43b8; border: 1px solid #d0be8d80; border-radius: 16px; padding: 14px 10px; }
 .identity-knowledge h3 { font: 17px/1.4 var(--display); color: #f1dba7; text-align: center; margin: 0 0 12px; }
 .identity-knowledge p { text-align: center; font-size: 13px; line-height: 1.6; margin: 12px 0 0; }
@@ -1695,22 +1818,312 @@ dialog.table-modal-backdrop::backdrop { background: #081b2d55; }
 .identity-body .private-inspections h3, .identity-body .early-choice h3 { font-size: 14px; margin: 0 0 5px; }
 .identity-body .private-inspections p, .identity-body .early-choice p { font-size: 12px; line-height: 1.5; margin: 3px 0; }
 .identity-body button { min-height: 44px; margin: 4px 0 0; padding: 6px; font-size: 13px; }
-.identity-footer { border-top: 1px solid #d0be8d66; padding-top: 10px; }
+.identity-footer { border-top: 1px solid #d0be8d66; padding-top: 10px; flex-shrink: 0; }
 .identity-footer p { text-align: center; color: #bdcfde; font-size: 11px; margin: 0 0 8px; }
-.identity-footer button { margin: 0; min-height: 44px; font-size: 14px; }
-@media (max-height: 680px) {
-  .table-modal-sheet.identity-content { padding: 12px; gap: 8px; }
-  .identity-body { gap: 7px; }
-  .identity-body .identity-card { grid-template-columns: 76px minmax(0, 1fr); gap: 14px; margin: 2px 0; }
-  .identity-body .identity-card h3 { font-size: 26px; }
-  .identity-knowledge { padding: 9px; }
-  .identity-knowledge h3 { font-size: 15px; margin-bottom: 8px; }
-  .identity-knowledge p { font-size: 12px; line-height: 1.4; margin-top: 8px; }
-  .identity-body .private-inspections, .identity-body .early-choice { padding: 7px 9px; }
-  .identity-footer { padding-top: 7px; }
+.identity-footer button { margin: 0; min-height: 40px; font-size: 14px; }
+
+/* Guide Panel Sub-figures Section */
+.guide-role-interactive {
+  cursor: pointer;
+  border-radius: 12px;
+  padding: 6px 8px;
+  margin: -6px -8px;
+  transition: background 160ms ease;
+}
+.guide-role-interactive:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+.guide-role-inspect-hint {
+  display: inline-block;
+  margin-top: 6px;
+  font-size: 11px;
+  color: #ffd875;
+  letter-spacing: 0.5px;
+}
+.sub-figures-section {
+  margin-top: 14px;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px dashed rgba(229, 185, 100, 0.35);
+  border-radius: 12px;
+}
+.sub-figures-title {
+  font: 600 13px/1.4 var(--sans);
+  color: #ffd875;
+  margin: 0 0 10px 0;
+  letter-spacing: 0.5px;
+}
+.sub-figures-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+@media (max-width: 520px) {
+  .sub-figures-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+}
+.sub-figure-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 8px 6px;
+  background: rgba(16, 43, 67, 0.6);
+  border: 1px solid rgba(229, 185, 100, 0.4);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: transform 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+  color: #eeddc4;
+}
+.sub-figure-card:hover {
+  transform: translateY(-2px);
+  border-color: #ffd875;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4), 0 0 10px rgba(255, 216, 117, 0.3);
+}
+.sub-figure-card.allegiance-blue {
+  border-color: rgba(90, 160, 240, 0.45);
+}
+.sub-figure-card.allegiance-blue:hover {
+  border-color: #93c5fd;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4), 0 0 12px rgba(96, 165, 250, 0.4);
+}
+.sub-figure-card.allegiance-red {
+  border-color: rgba(240, 90, 90, 0.45);
+}
+.sub-figure-card.allegiance-red:hover {
+  border-color: #fca5a5;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4), 0 0 12px rgba(248, 113, 113, 0.4);
+}
+.sub-figure-avatar {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  border: 2px solid #e5b964;
+  overflow: hidden;
+  margin-bottom: 6px;
+  background: #091326;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+.sub-figure-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.sub-figure-title {
+  font-size: 10.5px;
+  color: #bfdbfe;
+  line-height: 1.2;
+}
+.sub-figure-card.allegiance-red .sub-figure-title {
+  color: #fca5a5;
+}
+.sub-figure-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff2d5;
+  margin: 2px 0 4px;
+}
+.sub-figure-zoom {
+  font-size: 9.5px;
+  color: #ffd875;
+  background: rgba(229, 185, 100, 0.15);
+  padding: 1px 6px;
+  border-radius: 8px;
 }
 
-.identity-content:has(.early-choice, .private-inspections) { height: min(720px, 100dvh - 28px); }
+/* Role Viewer Full Artwork Modal */
+.role-viewer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(4, 9, 16, 0.88);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: viewerFadeIn 200ms ease;
+}
+@keyframes viewerFadeIn {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: scale(1); }
+}
+.role-viewer-panel {
+  position: relative;
+  width: min(92vw, 480px);
+  max-height: min(94dvh, 760px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  background: linear-gradient(180deg, #18283a 0%, #0d1723 100%);
+  border: 2px solid #efdaa1;
+  border-radius: 24px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 30px rgba(239, 218, 161, 0.25);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 18px 20px;
+  text-align: center;
+  color: #eeddc4;
+}
+.role-viewer-panel.allegiance-blue {
+  border-color: #70baff;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 35px rgba(59, 158, 255, 0.35);
+}
+.role-viewer-panel.allegiance-red {
+  border-color: #ff7675;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 35px rgba(255, 94, 87, 0.35);
+}
+.role-viewer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 12px;
+}
+.role-viewer-faction-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: 600 12.5px/1.4 var(--sans);
+  background: rgba(0, 0, 0, 0.4);
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 1px solid rgba(220, 190, 120, 0.35);
+}
+.role-viewer-sep {
+  color: #d4a35988;
+}
+.role-viewer-title-pill {
+  color: #ffd875;
+  font-weight: 700;
+}
+.role-viewer-close-btn {
+  min-height: 32px !important;
+  padding: 4px 12px !important;
+  font-size: 12px !important;
+  border-radius: 16px !important;
+  margin: 0 !important;
+}
+.role-viewer-art-stage {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin: 6px 0 14px;
+}
+.role-viewer-image-frame {
+  position: relative;
+  width: min(72vw, 300px);
+  height: min(72vw, 300px);
+  border-radius: 50%;
+  border: 5px solid #efdaa1;
+  outline: 2px solid #eed59e;
+  outline-offset: 6px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8), 0 0 30px rgba(255, 240, 188, 0.35);
+  background: #091326;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.role-viewer-panel.allegiance-blue .role-viewer-image-frame {
+  border-color: #9cd4ff;
+  outline-color: #52b0ff;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8), 0 0 35px rgba(59, 158, 255, 0.5);
+}
+.role-viewer-panel.allegiance-red .role-viewer-image-frame {
+  border-color: #ff9e96;
+  outline-color: #ff5e57;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8), 0 0 35px rgba(255, 71, 87, 0.5);
+}
+.role-viewer-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.role-viewer-nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(16, 36, 56, 0.85);
+  color: #ffd875;
+  border: 1.5px solid rgba(229, 185, 100, 0.5);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 700;
+  cursor: pointer;
+  z-index: 10;
+  transition: all 160ms ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+.role-viewer-nav-btn:hover {
+  background: rgba(30, 60, 90, 0.95);
+  border-color: #ffd875;
+  transform: translateY(-50%) scale(1.1);
+}
+.role-viewer-nav-btn.prev {
+  left: 0;
+}
+.role-viewer-nav-btn.next {
+  right: 0;
+}
+.role-viewer-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 400px;
+}
+.role-viewer-name {
+  font: 700 28px/1.2 var(--display);
+  letter-spacing: 3px;
+  color: #fff2d5;
+  margin: 0 0 8px;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
+}
+.role-viewer-motto {
+  font-style: italic;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #ffd875;
+  margin: 0 0 10px;
+}
+.role-viewer-story {
+  font-size: 13px;
+  line-height: 1.65;
+  color: #e5edf6;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  margin: 0 0 12px;
+  text-align: justify;
+}
+.role-viewer-foot {
+  width: 100%;
+  border-top: 1px solid rgba(220, 190, 120, 0.25);
+  padding-top: 10px;
+}
+.role-viewer-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+.role-viewer-counter {
+  font: 700 13px/1 var(--sans);
+  color: #ffd875;
+}
+
 .identity-body .early-choice { display: grid; grid-template-columns: minmax(0, 1fr) 104px; align-items: center; gap: 6px; }
 .identity-body .early-choice h3 { display: none; }
 .identity-body .early-choice p { margin: 0; }
@@ -1719,16 +2132,6 @@ dialog.table-modal-backdrop::backdrop { background: #081b2d55; }
 .is-live-table .scheme3-middle-zone:not(:has(.party-banner)) { display: block; }
 .is-live-table .extension-step .hint { margin: 0; }
 .is-live-table .extension-step label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
-
-@media (max-height: 680px) {
-  .identity-content:has(.early-choice):has(.private-inspections) .identity-body { gap: 2px; }
-  .identity-content:has(.early-choice):has(.private-inspections) .identity-card { grid-template-columns: 64px minmax(0, 1fr); gap: 10px; }
-  .identity-content:has(.early-choice):has(.private-inspections) .identity-card h3 { font-size: 24px; }
-  .identity-content:has(.early-choice):has(.private-inspections) .identity-team,
-  .identity-content:has(.early-choice):has(.private-inspections) .identity-card figcaption p { font-size: 11px; line-height: 1.4; }
-  .identity-content:has(.early-choice):has(.private-inspections) .identity-knowledge { padding: 7px; }
-  .identity-content:has(.early-choice):has(.private-inspections) .identity-vision .token-portrait { width: 32px; }
-}
 
 /* Waiting Room Preparation Dock - Scheme A-2 single-line buttons */
 .waiting-dock {

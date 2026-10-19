@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { usePageSound } from './audio-interactions';
-import type { Role } from '@avalon/contracts';
+import type { FemaleDemon, LoyalGuardian, Role } from '@avalon/contracts';
 import { ROLE_CONFIG, MISSION_SIZES } from '@avalon/game-core';
 import { Emblem, roleTeam } from './Heraldry';
 import { RolePortrait } from './RolePortrait';
-import { WUYUE_MISSIONS, roleNames, roleMottos, roleTitles } from './roles';
+import { ALL_GALLERY_ROLES, FEMALE_DEMONS, LOYAL_GUARDIANS, WUYUE_MISSIONS, roleNames, roleMottos, roleTitles } from './roles';
+import { RoleViewerModal } from './RoleViewerModal';
 
 export const roleDescriptions:Record<Role,{ability:string;visibility:string;tip:string}>={
   merlin:{ability:'开局火眼金睛看见除黄眉老怪以外的所有红方群妖，包括牛魔王；只知道这些人属于红方，不知道各自的具体角色。',visibility:'唐三藏会同时看见你与六耳猕猴，但无法区分谁是真正的齐天大圣孙悟空。',tip:'以言语暗中指点取经团队赢下取经任务，同时藏好真身。蓝方三次取经任务成功后，仍须躲过红孩儿的三昧真火终局刺杀。'},
@@ -54,29 +55,134 @@ export function GuideRules() {
   </div>;
 }
 export function GuideRoles() {
-  return <div className="guide-roles"><p className="hint">这里介绍《西游 · 真假猴王》全部神魔人物的通用规则，不显示本局谁拿到了什么身份。准确角色仅由本人查看，终局才公开。</p>
-    {(['blue','red'] as const).map(team=><section key={team} aria-label={`${team==='blue'?'蓝方':'红方'}角色介绍`} className={`guide-faction allegiance-${team}`}>
-      <h2><Emblem kind={team}/>{team==='blue'?'蓝方 · 取经正果':'红方 · 群妖乱道'}</h2>
-      <div className="guide-role-grid">{allRoles.filter(r=>roleTeam(r)===team).map(role=><article className={`guide-role allegiance-${team}`} key={role}>
-        <div className="guide-role-heading">
-          <RolePortrait role={role}/>
-          <div className="guide-role-meta">
-            <div className="guide-role-badges">
-              <span className="guide-role-faction-pill">{team==='blue'?'蓝方 · 取经正果':'红方 · 群妖乱道'}</span>
-              <span className="guide-role-title-pill">{roleTitles[role]}</span>
-            </div>
-            <h3>{roleNames[role]}{role==='loyal'?'（猪八戒 / 沙悟净 / 白龙 / 金刚）':''}</h3>
-            <p className="guide-role-motto">{roleMottos[role]}</p>
+  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
+
+  const openViewer = (role: Role, guardian?: LoyalGuardian, demon?: FemaleDemon) => {
+    let idx = -1;
+    if (guardian) {
+      idx = ALL_GALLERY_ROLES.findIndex(r => r.role === 'loyal' && r.loyalGuardian === guardian);
+    } else if (demon) {
+      idx = ALL_GALLERY_ROLES.findIndex(r => r.role === 'minion' && r.femaleDemon === demon);
+    } else {
+      idx = ALL_GALLERY_ROLES.findIndex(r => r.role === role);
+    }
+    if (idx !== -1) setViewerIndex(idx);
+  };
+
+  return (
+    <div className="guide-roles">
+      <p className="hint">这里介绍《西游 · 真假猴王》全部神魔人物的通用规则，不显示本局谁拿到了什么身份。准确角色仅由本人查看，终局才公开。点击任意法相可鉴赏高清立绘大图。</p>
+      {(['blue', 'red'] as const).map(team => (
+        <section key={team} aria-label={`${team === 'blue' ? '蓝方' : '红方'}角色介绍`} className={`guide-faction allegiance-${team}`}>
+          <h2>
+            <Emblem kind={team} />
+            {team === 'blue' ? '蓝方 · 取经正果' : '红方 · 群妖乱道'}
+          </h2>
+          <div className="guide-role-grid">
+            {allRoles.filter(r => roleTeam(r) === team).map(role => (
+              <article className={`guide-role allegiance-${team}`} key={role}>
+                <div
+                  className="guide-role-heading guide-role-interactive"
+                  onClick={() => openViewer(role)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      openViewer(role);
+                    }
+                  }}
+                  title="点击鉴赏此神魔高清立绘大图"
+                >
+                  <RolePortrait role={role} />
+                  <div className="guide-role-meta">
+                    <div className="guide-role-badges">
+                      <span className="guide-role-faction-pill">{team === 'blue' ? '蓝方 · 取经正果' : '红方 · 群妖乱道'}</span>
+                      <span className="guide-role-title-pill">{roleTitles[role]}</span>
+                    </div>
+                    <h3>
+                      {roleNames[role]}
+                      {role === 'loyal' ? '（猪八戒 / 沙悟净 / 白龙 / 金刚）' : ''}
+                      {role === 'minion' ? '（蜘蛛精 / 白骨精 / 玉兔精 / 老鼠精）' : ''}
+                    </h3>
+                    <p className="guide-role-motto">{roleMottos[role]}</p>
+                    <span className="guide-role-inspect-hint">🔍 点击赏析完整法相大图 ›</span>
+                  </div>
+                </div>
+
+                <dl className="guide-role-dl">
+                  <div className="guide-role-detail"><dt>能力与视野</dt><dd>{roleDescriptions[role].ability}</dd></div>
+                  <div className="guide-role-detail"><dt>谁能看见你</dt><dd>{roleDescriptions[role].visibility}</dd></div>
+                  <div className="guide-role-detail"><dt>玩法提示</dt><dd>{roleDescriptions[role].tip}</dd></div>
+                </dl>
+
+                {/* Sub-gallery for Loyal Guardians */}
+                {role === 'loyal' && (
+                  <div className="sub-figures-section">
+                    <h4 className="sub-figures-title">✦ 四位取经护法使者法相（点击鉴赏高清立绘大图）：</h4>
+                    <div className="sub-figures-grid">
+                      {Object.values(LOYAL_GUARDIANS).map(g => (
+                        <button
+                          key={g.key}
+                          type="button"
+                          className="sub-figure-card allegiance-blue"
+                          onClick={() => openViewer('loyal', g.key)}
+                          aria-label={`${g.fullName}法相立绘`}
+                        >
+                          <span className="sub-figure-avatar">
+                            <img src={`/art/roles/${g.artPrefix}-160.webp?v=xiyou4`} alt={g.name} />
+                          </span>
+                          <span className="sub-figure-title">{g.title}</span>
+                          <strong className="sub-figure-name">{g.name}</strong>
+                          <span className="sub-figure-zoom">🔍 大图</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Sub-gallery for Female Demons */}
+                {role === 'minion' && (
+                  <div className="sub-figures-section">
+                    <h4 className="sub-figures-title">✦ 四位绝色妖仙法相（点击鉴赏高清立绘大图）：</h4>
+                    <div className="sub-figures-grid">
+                      {Object.values(FEMALE_DEMONS).map(d => (
+                        <button
+                          key={d.key}
+                          type="button"
+                          className="sub-figure-card allegiance-red"
+                          onClick={() => openViewer('minion', undefined, d.key)}
+                          aria-label={`${d.fullName}法相立绘`}
+                        >
+                          <span className="sub-figure-avatar">
+                            <img src={`/art/roles/${d.artPrefix}-160.webp?v=xiyou4`} alt={d.name} />
+                          </span>
+                          <span className="sub-figure-title">{d.title}</span>
+                          <strong className="sub-figure-name">{d.name}</strong>
+                          <span className="sub-figure-zoom">🔍 大图</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </article>
+            ))}
           </div>
-        </div>
-        <dl className="guide-role-dl">
-          <div className="guide-role-detail"><dt>能力与视野</dt><dd>{roleDescriptions[role].ability}</dd></div>
-          <div className="guide-role-detail"><dt>谁能看见你</dt><dd>{roleDescriptions[role].visibility}</dd></div>
-          <div className="guide-role-detail"><dt>玩法提示</dt><dd>{roleDescriptions[role].tip}</dd></div>
-        </dl>
-      </article>)}</div>
-    </section>)}<p className="hint">蓝方所有角色的任务牌都只能选成功；红方所有角色都可以选成功或失败。红方互认仅显示阵营，不揭示队友的具体角色。</p>
-  </div>;
+        </section>
+      ))}
+      <p className="hint">蓝方所有角色的任务牌都只能选成功；红方所有角色都可以选成功或失败。红方互认仅显示阵营，不揭示队友的具体角色。</p>
+
+      {/* Full Artwork Modal Viewer */}
+      <RoleViewerModal
+        item={viewerIndex !== null ? ALL_GALLERY_ROLES[viewerIndex] : null}
+        onClose={() => setViewerIndex(null)}
+        onPrev={() => setViewerIndex(i => (i !== null ? (i - 1 + ALL_GALLERY_ROLES.length) % ALL_GALLERY_ROLES.length : 0))}
+        onNext={() => setViewerIndex(i => (i !== null ? (i + 1) % ALL_GALLERY_ROLES.length : 0))}
+        currentIndex={viewerIndex ?? undefined}
+        totalCount={ALL_GALLERY_ROLES.length}
+      />
+    </div>
+  );
 }
 export function GuidePanel({onBack}:{onBack:()=>void}) {
   const [section,setSection]=useState<'rules'|'roles'>('rules');
