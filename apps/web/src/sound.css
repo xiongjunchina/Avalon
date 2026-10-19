@@ -2,196 +2,25 @@
 button.sound-button { flex: 0 0 38px; display: grid; place-items: center; width: 38px; height: 38px; min-height: 38px; padding: 8px; margin: 0; border-radius: 50%; }
 .sound-button svg { width: 21px; height: 21px; }
 button.sound-button.is-on { color: #b3fff0; border-color: #a6d9ca; }
-.sound-dialog { width: min(calc(100% - 24px), 460px); max-height: 85dvh; overflow-y: auto; margin: auto; padding: 20px; border: 1px solid #dac28b; border-radius: 24px; background: linear-gradient(145deg, #2a4962, #102b42); box-shadow: var(--frame-shadow); }
-.sound-dialog h2 { margin: 0; font-size: 24px; color: var(--accent); }
+.sound-dialog { width: min(calc(100% - 24px), 420px); margin: auto; padding: 22px; border: 1px solid #dac28b; border-radius: 24px; background: linear-gradient(145deg, #2a4962, #102b42); box-shadow: var(--frame-shadow); }
+.sound-dialog h2 { margin: 0; font-size: 25px; color: var(--accent); }
 .sound-dialog .section-head { gap: 12px; margin-bottom: 10px; }
 .sound-controls { display: grid; gap: 10px; }
-.sound-option { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0; padding: 12px 0; border-bottom: 1px solid #cdbb9438; }
-.sound-option strong { display: block; font-size: 15.5px; color: #fff2d6; }
-.sound-option small { display: block; margin-top: 4px; font-size: 12px; font-weight: 400; color: #c6d9e4; }
+.sound-option { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0; padding: 14px 0; border-bottom: 1px solid #cdbb9438; }
+.sound-option strong { display: block; font-size: 16px; color: #fff2d6; }
+.sound-option small { display: block; margin-top: 5px; font-size: 12px; font-weight: 400; color: #c6d9e4; }
 .sound-option input[role=switch] { appearance: none; flex: 0 0 48px; width: 48px; height: 28px; min-height: 28px; padding: 0; margin: 0; position: relative; border: 1px solid #a6b9c5; border-radius: 18px; background: #405467; cursor: pointer; }
 .sound-option input[role=switch]::before { content: ''; position: absolute; width: 20px; height: 20px; top: 3px; left: 3px; border-radius: 50%; background: #e4edf1; transition: transform .16s; }
 .sound-option input[role=switch]:checked { background: #267d7b; border-color: #a1e7cf; }
 .sound-option input[role=switch]:checked::before { transform: translateX(20px); background: #ddfff1; }
-.sound-hint { margin: 0; font-size: 11.5px; line-height: 1.6; color: #cfdee6; opacity: 0.9; }
+.sound-hint { margin: 0; font-size: 12px; line-height: 1.65; color: #cfdee6; }
 .account-sound-settings { margin: 12px 0 18px; padding: 14px 16px; border: 1px solid #cdbb9466; border-radius: 16px; background: #10273d66; }
 .account-sound-settings summary { cursor: pointer; color: var(--accent); font-size: 16px; }
 .account-sound-settings[open] summary { margin-bottom: 6px; }
-
-/* Westward Journey BGM Candidates Audition List */
-.bgm-selector-section {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-top: 6px;
-  padding-top: 14px;
-  border-top: 1px solid rgba(205, 187, 148, 0.25);
-}
-
-.bgm-selector-head {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.bgm-selector-title {
-  font: 700 15px/1.3 var(--display);
-  color: #ffd875;
-}
-
-.bgm-selector-sub {
-  font-size: 11.5px;
-  color: #cfdee6;
-  opacity: 0.85;
-}
-
-.bgm-track-list {
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
-  margin-top: 2px;
-}
-
-.bgm-track-card {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 10px 12px;
-  border-radius: 14px;
-  background: rgba(16, 39, 61, 0.75);
-  border: 1.2px solid rgba(205, 187, 148, 0.3);
-  transition: all 0.2s ease;
-}
-
-.bgm-track-card:hover {
-  border-color: rgba(255, 216, 117, 0.6);
-  background: rgba(22, 54, 84, 0.85);
-}
-
-.bgm-track-card.is-active-bgm {
-  border-color: #ffd875;
-  background: linear-gradient(140deg, rgba(35, 75, 105, 0.9) 0%, rgba(18, 48, 72, 0.95) 100%);
-  box-shadow: 0 0 12px rgba(255, 216, 117, 0.25);
-}
-
-.bgm-track-card.is-auditioning {
-  border-color: #38bdf8;
-  box-shadow: 0 0 14px rgba(56, 189, 248, 0.35);
-}
-
-.bgm-track-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 6px;
-}
-
-.bgm-track-meta {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-  width: 100%;
-}
-
-.bgm-badge {
-  font-size: 10px;
-  font-weight: 700;
-  padding: 1px 6px;
-  border-radius: 999px;
-  background: rgba(255, 216, 117, 0.2);
-  color: #ffd875;
-  border: 1px solid rgba(255, 216, 117, 0.4);
-}
-
-.bgm-title {
-  font-size: 13.5px;
-  font-weight: 700;
-  color: #fff4d6;
-}
-
-.bgm-duration {
-  font-size: 11px;
-  color: #94a3b8;
-  margin-left: auto;
-}
-
-.bgm-subtitle {
-  font-size: 11.5px;
-  color: #38bdf8;
-  margin: 0;
-  font-weight: 600;
-}
-
-.bgm-desc {
-  font-size: 11px;
-  line-height: 1.45;
-  color: #cbd5e1;
-  margin: 0;
-}
-
-.bgm-track-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 4px;
-}
-
-.bgm-btn-audition {
-  flex: 0 0 auto;
-  min-height: 30px;
-  padding: 3px 12px;
-  font-size: 12px;
-  font-weight: 700;
-  border-radius: 999px;
-  background: rgba(56, 189, 248, 0.15);
-  border: 1px solid #38bdf8;
-  color: #e0f2fe;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.bgm-btn-audition:hover {
-  background: rgba(56, 189, 248, 0.3);
-}
-
-.bgm-btn-audition.is-playing {
-  background: #38bdf8;
-  color: #032b44;
-  box-shadow: 0 0 10px rgba(56, 189, 248, 0.6);
-}
-
-.bgm-btn-select {
-  flex: 1;
-  min-height: 30px;
-  padding: 3px 12px;
-  font-size: 12px;
-  font-weight: 700;
-  border-radius: 999px;
-  background: linear-gradient(135deg, rgba(255, 216, 117, 0.25) 0%, rgba(212, 163, 89, 0.3) 100%);
-  border: 1px solid rgba(255, 216, 117, 0.5);
-  color: #ffd875;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.bgm-btn-select:hover:not(:disabled) {
-  background: linear-gradient(135deg, #ffd875 0%, #f59e0b 100%);
-  color: #1e0b04;
-  box-shadow: 0 0 10px rgba(255, 216, 117, 0.4);
-}
-
-.bgm-btn-select.is-current {
-  background: rgba(16, 185, 129, 0.25);
-  border-color: #34d399;
-  color: #6ee7b7;
-  cursor: default;
-}
-
 @media (max-width: 380px) {
   .room-top-bar { gap: 5px; }
   .room-top-right { gap: 4px; }
   .room-top-bar .tool-pill { padding-inline: 7px; }
   button.sound-button { flex-basis: 32px; width: 32px; height: 36px; min-height: 36px; padding: 6px; }
-  .sound-dialog { padding: 16px; }
+  .sound-dialog { padding: 18px; }
 }
