@@ -2486,200 +2486,217 @@ dialog.table-modal-backdrop::backdrop { background: #081b2d55; }
 }
 
 /* ===================================================================
-   2. Anti-Peeking Mission Secret Box (乾坤密匣 · 防偷窥出牌)
+   2. Mission Vote Dock (取经出征任务牌：成功与失败)
    =================================================================== */
-.mission-privacy-dock {
+.mission-vote-dock {
   padding: 10px 12px !important;
 }
 
-.mission-privacy-form {
+.mission-vote-form {
   width: 100% !important;
   margin: 0 !important;
 }
 
-.mission-privacy-fieldset {
+.mission-vote-fieldset {
   display: flex !important;
   flex-direction: column !important;
-  gap: 8px !important;
+  gap: 10px !important;
   width: 100% !important;
   margin: 0 !important;
   padding: 0 !important;
   border: none !important;
 }
 
-.mission-privacy-bar {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  gap: 8px !important;
-  background: rgba(30, 10, 10, 0.7) !important;
-  border: 1px solid rgba(212, 163, 89, 0.35) !important;
-  border-radius: 999px !important;
-  padding: 2px 8px !important;
-}
-
-.privacy-mode-pill {
-  font-size: 11px !important;
-  color: #ffd875 !important;
-  font-weight: 700 !important;
-  letter-spacing: 0.5px !important;
-}
-
-.privacy-peek-btn {
-  font-size: 11px !important;
-  padding: 2px 8px !important;
-  min-height: 24px !important;
-  height: 24px !important;
-  line-height: 20px !important;
-  background: rgba(82, 22, 18, 0.9) !important;
-  border: 1px solid #ffd875 !important;
-  color: #fff2d5 !important;
-  border-radius: 999px !important;
-}
-
-.mission-casket-pair {
+.mission-cards-pair {
   display: grid !important;
   grid-template-columns: repeat(2, 1fr) !important;
   gap: 10px !important;
   width: 100% !important;
 }
 
-.casket-card {
-  background: linear-gradient(180deg, #260f0e 0%, #120404 100%) !important;
-  border: 1.5px solid #d4a359 !important;
-  border-radius: 12px !important;
-  padding: 8px 6px !important;
+.mission-card {
+  border-radius: 14px !important;
+  padding: 10px 8px !important;
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
   justify-content: center !important;
   cursor: pointer !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6) !important;
-  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease !important;
-  min-height: 78px !important;
+  transition: transform 0.15s ease, border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease !important;
+  min-height: 86px !important;
+  user-select: none !important;
 }
 
-.casket-card:active {
+.mission-card:active {
   transform: scale(0.97) !important;
 }
 
-.casket-card.is-selected {
-  border-color: #ffd875 !important;
-  background: linear-gradient(180deg, #3d1614 0%, #1e0908 100%) !important;
-  box-shadow: 0 0 16px rgba(255, 216, 117, 0.6), inset 0 0 10px rgba(255, 216, 117, 0.25) !important;
+/* Card 1: 任务成功 (Emerald / Jade theme) */
+.mission-card.card-success {
+  background: linear-gradient(180deg, rgba(14, 42, 32, 0.95) 0%, rgba(8, 22, 16, 0.98) 100%) !important;
+  border: 1.5px solid rgba(52, 211, 153, 0.5) !important;
 }
 
-.casket-card.is-selected-red {
-  border-color: #ffd875 !important;
-  background: linear-gradient(180deg, #3d1614 0%, #1e0908 100%) !important;
-  box-shadow: 0 0 16px rgba(255, 216, 117, 0.6), inset 0 0 10px rgba(255, 216, 117, 0.25) !important;
+.mission-card.card-success:hover {
+  border-color: #34d399 !important;
+  box-shadow: 0 0 12px rgba(52, 211, 153, 0.35) !important;
 }
 
-.casket-card-inner {
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  gap: 3px !important;
-  width: 100% !important;
+.mission-card.card-success.is-selected {
+  border: 2px solid #34d399 !important;
+  background: linear-gradient(180deg, rgba(20, 64, 48, 0.98) 0%, rgba(10, 32, 24, 0.99) 100%) !important;
+  box-shadow: 0 0 18px rgba(52, 211, 153, 0.55), inset 0 0 12px rgba(52, 211, 153, 0.25) !important;
 }
 
-.casket-tile-title {
-  font: 700 12px/1.2 var(--calligraphy) !important;
-  color: #ffd875 !important;
-  letter-spacing: 0.8px !important;
+.mission-card.card-success .mission-card-title {
+  color: #6ee7b7 !important;
 }
 
-.casket-hidden-face {
+.mission-card.card-success.is-selected .mission-card-status {
+  background: #059669 !important;
+  color: #ffffff !important;
+  border: 1px solid #6ee7b7 !important;
+  font-weight: 800 !important;
+}
+
+/* Card 2: 任务失败 (Crimson / Red theme) */
+.mission-card.card-fail {
+  background: linear-gradient(180deg, rgba(46, 16, 16, 0.95) 0%, rgba(24, 6, 6, 0.98) 100%) !important;
+  border: 1.5px solid rgba(248, 113, 113, 0.5) !important;
+}
+
+.mission-card.card-fail:hover {
+  border-color: #f87171 !important;
+  box-shadow: 0 0 12px rgba(248, 113, 113, 0.35) !important;
+}
+
+.mission-card.card-fail.is-selected {
+  border: 2px solid #ef4444 !important;
+  background: linear-gradient(180deg, rgba(70, 20, 20, 0.98) 0%, rgba(36, 8, 8, 0.99) 100%) !important;
+  box-shadow: 0 0 18px rgba(239, 68, 68, 0.6), inset 0 0 12px rgba(239, 68, 68, 0.25) !important;
+}
+
+.mission-card.card-fail .mission-card-title {
+  color: #fca5a5 !important;
+}
+
+.mission-card.card-fail.is-selected .mission-card-status {
+  background: #dc2626 !important;
+  color: #ffffff !important;
+  border: 1px solid #fca5a5 !important;
+  font-weight: 800 !important;
+}
+
+.mission-card-inner {
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
   gap: 2px !important;
-  padding: 4px 0 !important;
+  width: 100% !important;
 }
 
-.casket-seal-icon {
-  font-size: 16px !important;
-  color: #e5b964 !important;
+.mission-card-icon {
+  font-size: 22px !important;
+  line-height: 1 !important;
+  margin-bottom: 2px !important;
 }
 
-.casket-hidden-face small {
-  font-size: 10px !important;
-  color: #d1b88e !important;
+.mission-card-title {
+  font: 700 15px/1.2 var(--display) !important;
+  letter-spacing: 0.6px !important;
+}
+
+.mission-card-desc {
+  font-size: 10.5px !important;
+  color: #eedcc4 !important;
   opacity: 0.85 !important;
+  margin: 1px 0 3px 0 !important;
+  white-space: nowrap !important;
 }
 
-.casket-revealed-face {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  gap: 4px !important;
-  padding: 4px 0 !important;
-}
-
-.casket-revealed-face.text-pass strong {
-  font-size: 13px !important;
-  color: #34d399 !important;
-  font-family: var(--display) !important;
-}
-
-.casket-revealed-face.text-fail strong {
-  font-size: 13px !important;
-  color: #f87171 !important;
-  font-family: var(--display) !important;
-}
-
-.casket-pick-indicator {
-  font-size: 10px !important;
+.mission-card-status {
+  font: 700 10.5px/1 var(--sans) !important;
   color: #eedcc4 !important;
   background: rgba(0, 0, 0, 0.45) !important;
-  padding: 1px 6px !important;
+  padding: 2.5px 8px !important;
   border-radius: 999px !important;
   margin-top: 2px !important;
+  transition: all 0.2s ease !important;
 }
 
-.casket-card.is-selected .casket-pick-indicator,
-.casket-card.is-selected-red .casket-pick-indicator {
-  color: #ffd875 !important;
+/* Blue player warning */
+.mission-blue-warning {
+  background: rgba(85, 24, 18, 0.92) !important;
+  border: 1px solid #f87171 !important;
+  border-radius: 8px !important;
+  padding: 6px 10px !important;
+  font-size: 12px !important;
+  color: #fee2e2 !important;
+  text-align: center !important;
   font-weight: 700 !important;
-  background: rgba(60, 20, 18, 0.9) !important;
-  border: 1px solid #ffd875 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5) !important;
+  animation: warning-shake 0.3s ease-in-out !important;
 }
 
-.mission-privacy-submit {
+@keyframes warning-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+/* Submit button */
+.mission-submit-btn {
   width: 100% !important;
-  min-height: 42px !important;
+  min-height: 44px !important;
   font-size: 15px !important;
-  font-family: var(--calligraphy) !important;
-  letter-spacing: 1.5px !important;
+  font-family: var(--display) !important;
+  font-weight: 800 !important;
+  letter-spacing: 1px !important;
+  transition: all 0.2s ease !important;
 }
 
-.mission-sealed-card {
+.mission-submit-btn.is-fail-btn {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 50%, #b91c1c 100%) !important;
+  border-color: #fca5a5 !important;
+  box-shadow: 0 0 16px rgba(239, 68, 68, 0.6) !important;
+  color: #ffffff !important;
+}
+
+/* Already submitted feedback card */
+.mission-submitted-card {
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
   justify-content: center !important;
   gap: 4px !important;
-  padding: 12px !important;
-  background: rgba(36, 14, 12, 0.85) !important;
-  border: 1.5px solid rgba(224, 170, 62, 0.6) !important;
+  padding: 14px 12px !important;
+  background: rgba(18, 38, 28, 0.88) !important;
+  border: 1.5px solid rgba(52, 211, 153, 0.6) !important;
   border-radius: 12px !important;
   text-align: center !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6), inset 0 0 15px rgba(52, 211, 153, 0.15) !important;
 }
 
-.mission-sealed-card .sealed-icon {
-  font-size: 26px !important;
+.mission-submitted-card .submitted-icon {
+  font-size: 24px !important;
+  color: #34d399 !important;
+  font-weight: 900 !important;
 }
 
-.mission-sealed-card .sealed-title {
-  font-size: 14px !important;
-  color: #ffd875 !important;
-  font-family: var(--calligraphy) !important;
+.mission-submitted-card .submitted-title {
+  font-size: 14.5px !important;
+  color: #6ee7b7 !important;
+  font-family: var(--display) !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.5px !important;
 }
 
-.mission-sealed-card .sealed-desc {
-  font-size: 11px !important;
-  color: #eedcc4 !important;
+.mission-submitted-card .submitted-desc {
+  font-size: 11.5px !important;
+  color: #d1fae5 !important;
   margin: 0 !important;
+  opacity: 0.9 !important;
 }
 
 /* ===================================================================

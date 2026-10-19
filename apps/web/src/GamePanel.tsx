@@ -75,7 +75,7 @@ export function GamePanel({
   const setDirection = (value: 'clockwise' | 'counterclockwise') => send({ type: 'updateTeamDraft', payload: { playerIds: selected, direction: value } });
   const [voteDismissed, setVoteDismissed] = useState(false);
   const [choice, setChoice] = useState<boolean | null>(null);
-  const [peekMode, setPeekMode] = useState(false);
+  const [blueFailWarning, setBlueFailWarning] = useState(false);
   const [target, setTarget] = useState('');
   const [abortConfirm, setAbortConfirm] = useState(false);
   const completedMissions = g.rounds.filter(r => r.result);
@@ -111,7 +111,7 @@ export function GamePanel({
   useEffect(() => {
     setVoteDismissed(false);
     setChoice(null);
-    setPeekMode(false);
+    setBlueFailWarning(false);
     setTarget('');
     setIdentityOpen(false);
   }, [g.id, g.phase, round?.number]);
@@ -912,113 +912,99 @@ export function GamePanel({
         )}
 
         {g.phase === 'mission' && (
-          <div className="dock-panel mission-privacy-dock">
+          <div className="dock-panel mission-vote-dock">
             <p className="dock-rule-hint" role="status">
               —◇ {g.failuresRequired === 2 ? '需至少 2 张失败牌，任务方告失败' : '只要出现 1 张失败牌，任务即失败'} ◇—
             </p>
             {!round!.team.includes(userId) ? (
-              <p className="dock-waiting-desc">你未入本难出征队伍，请静候众仙护经结果。</p>
+              <p className="dock-waiting-desc">你未入本难出征队伍，请静候众仙取经结果。</p>
             ) : self?.missionVoted ? (
-              <div className="mission-sealed-card" role="status">
-                <span className="sealed-icon" aria-hidden="true">📿</span>
-                <strong className="sealed-title">法旨已密匣封存 · 静候全员开牌</strong>
-                <p className="sealed-desc">任务牌已入暗盒封印，全员出牌完毕后自动开牌揭晓吉凶</p>
+              <div className="mission-submitted-card" role="status">
+                <span className="submitted-icon" aria-hidden="true">✓</span>
+                <strong className="submitted-title">任务牌已暗中投出 · 静候全员结果</strong>
+                <p className="submitted-desc">你已完成本轮出牌，全员出牌完毕后将揭晓任务吉凶。</p>
               </div>
             ) : (
               <form
-                className="mission-privacy-form"
+                className="mission-vote-form"
                 onSubmit={e => {
                   e.preventDefault();
                   if (choice !== null) send({ type: 'missionVote', payload: { success: choice } });
                 }}
               >
-                <fieldset disabled={disabled} className="ballot-controls mission-privacy-fieldset">
+                <fieldset disabled={disabled} className="ballot-controls mission-vote-fieldset">
                   <legend className="sr-only">私下选择任务牌，提交后不可更改</legend>
 
-                  <div className="mission-privacy-bar">
-                    <span className="privacy-mode-pill">🔒 乾坤密匣（防窥模式）</span>
+                  <div className="mission-cards-pair">
+                    {/* Card 1: 任务成功 */}
                     <button
                       type="button"
-                      className="tool-pill privacy-peek-btn"
-                      onClick={() => setPeekMode(v => !v)}
-                      aria-pressed={peekMode}
-                    >
-                      {peekMode ? '🙈 盖上密匣' : '👁️ 翻看底牌'}
-                    </button>
-                  </div>
-
-                  <div className="mission-casket-pair">
-                    {/* Card 1: 天枢乾牌 (Always Success / 护经) */}
-                    <button
-                      type="button"
-                      className={`casket-card ${choice === true ? 'is-selected' : ''}`}
-                      onClick={() => setChoice(true)}
+                      className={`mission-card card-success ${choice === true ? 'is-selected' : ''}`}
+                      onClick={() => {
+                        setChoice(true);
+                        setBlueFailWarning(false);
+                      }}
                       aria-pressed={choice === true}
                     >
-                      <div className="casket-card-inner">
-                        <span className="casket-tile-title">【天枢 · 乾牌】</span>
-                        {peekMode ? (
-                          <div className="casket-revealed-face text-pass">
-                            <span className="face-icon">🪷</span>
-                            <strong>护经（成功）</strong>
-                          </div>
-                        ) : (
-                          <div className="casket-hidden-face">
-                            <span className="casket-seal-icon">🔒</span>
-                            <small>密匣封印 · 盲选</small>
-                          </div>
-                        )}
-                        <span className="casket-pick-indicator">
-                          {choice === true ? '✓ 已入密匣' : '点击入匣'}
+                      <div className="mission-card-inner">
+                        <span className="mission-card-icon" aria-hidden="true">🪷</span>
+                        <strong className="mission-card-title">任务成功</strong>
+                        <span className="mission-card-desc">诚心助道 · 愿力圆满</span>
+                        <span className="mission-card-status">
+                          {choice === true ? '✓ 已选中' : '点击选择'}
                         </span>
                       </div>
                     </button>
 
-                    {/* Card 2: 天璇坤牌 (Evil: Fail / 作祟; Good: Success / 护经) */}
+                    {/* Card 2: 任务失败 */}
                     <button
                       type="button"
-                      className={`casket-card ${choice === (self?.team === 'red' ? false : true) && choice !== null ? (self?.team === 'red' ? 'is-selected-red' : 'is-selected') : ''}`}
+                      className={`mission-card card-fail ${choice === false ? 'is-selected' : ''}`}
                       onClick={() => {
-                        setChoice(self?.team === 'red' ? false : true);
+                        if (self?.team === 'blue') {
+                          setBlueFailWarning(true);
+                          setChoice(null);
+                        } else {
+                          setBlueFailWarning(false);
+                          setChoice(false);
+                        }
                       }}
-                      aria-pressed={choice !== null && (self?.team === 'red' ? choice === false : choice === true)}
+                      aria-pressed={choice === false}
                     >
-                      <div className="casket-card-inner">
-                        <span className="casket-tile-title">【天璇 · 坤牌】</span>
-                        {peekMode ? (
-                          self?.team === 'red' ? (
-                            <div className="casket-revealed-face text-fail">
-                              <span className="face-icon">🔥</span>
-                              <strong>作祟（失败）</strong>
-                            </div>
-                          ) : (
-                            <div className="casket-revealed-face text-pass">
-                              <span className="face-icon">🪷</span>
-                              <strong>护经（忠诚护道）</strong>
-                            </div>
-                          )
-                        ) : (
-                          <div className="casket-hidden-face">
-                            <span className="casket-seal-icon">🔒</span>
-                            <small>密匣封印 · 盲选</small>
-                          </div>
-                        )}
-                        <span className="casket-pick-indicator">
-                          {choice !== null && (self?.team === 'red' ? choice === false : choice === true) ? '✓ 已入密匣' : '点击入匣'}
+                      <div className="mission-card-inner">
+                        <span className="mission-card-icon" aria-hidden="true">🔥</span>
+                        <strong className="mission-card-title">任务失败</strong>
+                        <span className="mission-card-desc">
+                          {self?.team === 'blue' ? '蓝方阵营不可出失败牌' : '妖魔作祟 · 破坏任务'}
+                        </span>
+                        <span className="mission-card-status">
+                          {choice === false ? '✓ 已选中' : '点击选择'}
                         </span>
                       </div>
                     </button>
                   </div>
+
+                  {blueFailWarning && (
+                    <div className="mission-blue-warning" role="alert">
+                      ⚠️ 蓝方（好人）阵营只能出成功牌，不可出失败牌
+                    </div>
+                  )}
 
                   <button
                     type="submit"
                     disabled={choice === null}
                     aria-label="确认提交任务牌"
-                    className="btn-primary-cta btn-dragon-cta mission-privacy-submit"
+                    className={`btn-primary-cta btn-dragon-cta mission-submit-btn ${
+                      choice === false ? 'is-fail-btn' : ''
+                    }`}
                   >
                     <span className="btn-cloud-flourish left" aria-hidden="true"><CloudFlourish side="left" /></span>
                     <span className="btn-cta-text">
-                      {choice === null ? '请先点选一张法牌入匣' : '📿 封印密匣 · 确立出牌'}
+                      {choice === null
+                        ? '请先点击选择【任务成功】或【任务失败】'
+                        : choice === true
+                          ? '✨ 确认提交【任务成功】'
+                          : '🔥 确认提交【任务失败】'}
                     </span>
                     <span className="btn-cloud-flourish right" aria-hidden="true"><CloudFlourish side="right" /></span>
                   </button>
