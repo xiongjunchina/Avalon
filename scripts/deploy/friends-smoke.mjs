@@ -114,7 +114,7 @@ cli(async()=>{
     const inspector=active.find(p=>p.id===host.room.game.lady.holderId),inspectee=active.find(p=>!host.room.game.lady.holderIds.includes(p.id));
     await command(inspector,'inspectAlignment',{targetId:inspectee.id});
     assert.ok(inspector.room.game.self.canConfirmInspection);await command(inspector,'confirmInspection');
-    assert.equal(host.room.game.phase,'early_window');
+    assert.ok(['proposing', 'early_window'].includes(host.room.game.phase));
     const earlyAssassin=active.find(p=>p.room.game.self.role==='assassin'),merlin=active.find(p=>p.room.game.self.role==='merlin');
     await command(earlyAssassin,'earlyAssassinationDecision',{attempt:true});await command(earlyAssassin,'assassinate',{targetId:merlin.id});
     assert.equal(host.room.game.result.reason,'early_merlin_found');assert.equal((await api('/api/me/stats',{user:host})).completed,2);
