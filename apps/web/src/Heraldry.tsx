@@ -105,7 +105,7 @@ export const roleTeam=(role:Role):Team=>['merlin','percival','guinevere','loyal'
 
 export const WECHAT_SAMPLE_AVATARS = Array.from(
   { length: 12 },
-  (_, i) => `/art/avatars/wx-${i + 1}.webp?v=xiyou3`
+  (_, i) => `/art/avatars/wx-${i + 1}.webp?v=artifact1`
 );
 
 export function PlayerAvatar({
@@ -124,7 +124,7 @@ export function PlayerAvatar({
   const rawSrc = avatarUrl || wechatAvatarUrl || null;
   const src =
     rawSrc && rawSrc.startsWith('/art/avatars/wx-')
-      ? `${rawSrc.split('?')[0]}?v=xiyou3`
+      ? `${rawSrc.split('?')[0]}?v=artifact1`
       : rawSrc;
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
   if (src && src !== failedSrc) {

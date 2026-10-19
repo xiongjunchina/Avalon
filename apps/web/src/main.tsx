@@ -55,7 +55,7 @@ const SHOWCASE_ROLES: Role[] = [
   'minion',
 ];
 
-const BOT_NAMES = ['二郎真君', '哪吒太子', '镇元大仙', '嫦娥仙子', '太上老君', '托塔天王', '东海龙王', '铁扇公主', '菩提祖师', '玉兔仙子', '赤脚大仙'];
+const BOT_NAMES = ['仙友2号', '仙友3号', '仙友4号', '仙友5号', '仙友6号', '仙友7号', '仙友8号', '仙友9号', '仙友10号', '仙友11号', '仙友12号'];
 
 function groupRoles(roles: Role[]): Array<{ role: Role; count: number }> {
   const counts = new Map<Role, number>();
