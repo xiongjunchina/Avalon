@@ -2109,6 +2109,7 @@ dialog.table-modal-backdrop::backdrop { background: #081b2d55; }
 /* ===================================================================
    1. Scheme A: Dual-Flank Altar Arena (左右环抱天平阵)
    =================================================================== */
+.table-seats-grid.altar-dual-flank-arena,
 .is-live-table .table-seats-grid.altar-dual-flank-arena {
   display: flex !important;
   flex-direction: column !important;
@@ -2129,6 +2130,7 @@ dialog.table-modal-backdrop::backdrop { background: #081b2d55; }
 }
 
 /* 3-Zone Flex Arena: Left Flank + Center Bagua Altar + Right Flank */
+.scheme-a-main-arena,
 .is-live-table .scheme-a-main-arena {
   display: flex !important;
   flex-direction: row !important;
@@ -2141,6 +2143,7 @@ dialog.table-modal-backdrop::backdrop { background: #081b2d55; }
 }
 
 /* Left and Right Flanks */
+.scheme-a-flank,
 .is-live-table .scheme-a-flank {
   display: flex !important;
   flex-direction: column !important;
@@ -2151,15 +2154,18 @@ dialog.table-modal-backdrop::backdrop { background: #081b2d55; }
   z-index: 2 !important;
 }
 
+.scheme-a-flank.flank-left,
 .is-live-table .scheme-a-flank.flank-left {
   align-items: flex-start !important;
 }
 
+.scheme-a-flank.flank-right,
 .is-live-table .scheme-a-flank.flank-right {
   align-items: flex-end !important;
 }
 
 /* Center Altar: Glowing Bagua Disc */
+.scheme-a-center-altar,
 .is-live-table .scheme-a-center-altar {
   display: flex !important;
   flex-direction: column !important;
@@ -2251,6 +2257,7 @@ dialog.table-modal-backdrop::backdrop { background: #081b2d55; }
 }
 
 /* Seats in Dual-Flank Arena */
+.table-seats-grid.altar-dual-flank-arena .table-seat-card,
 .is-live-table .table-seats-grid.altar-dual-flank-arena .table-seat-card {
   grid-column: auto !important;
   width: auto !important;
@@ -2271,11 +2278,13 @@ dialog.table-modal-backdrop::backdrop { background: #081b2d55; }
   transition: transform 0.15s ease, filter 0.15s ease !important;
 }
 
+.table-seats-grid.altar-dual-flank-arena .table-seat-card:active,
 .is-live-table .table-seats-grid.altar-dual-flank-arena .table-seat-card:active {
   transform: scale(0.97) !important;
 }
 
 /* Left Flank: Avatar on Left, Nameplate on Right */
+.table-seats-grid.altar-dual-flank-arena .flank-seat-left,
 .is-live-table .table-seats-grid.altar-dual-flank-arena .flank-seat-left {
   flex-direction: row !important;
   justify-content: flex-start !important;
@@ -2283,6 +2292,7 @@ dialog.table-modal-backdrop::backdrop { background: #081b2d55; }
 }
 
 /* Right Flank: Avatar on Right, Nameplate on Left */
+.table-seats-grid.altar-dual-flank-arena .flank-seat-right,
 .is-live-table .table-seats-grid.altar-dual-flank-arena .flank-seat-right {
   flex-direction: row-reverse !important;
   justify-content: flex-start !important;
@@ -2290,6 +2300,7 @@ dialog.table-modal-backdrop::backdrop { background: #081b2d55; }
 }
 
 /* Odd-last centered seat (e.g. 5, 7, 9, 11 players) */
+.table-seats-grid.altar-dual-flank-arena .flank-seat-centered,
 .is-live-table .table-seats-grid.altar-dual-flank-arena .flank-seat-centered {
   flex-direction: row !important;
   justify-content: center !important;
@@ -2431,10 +2442,41 @@ dialog.table-modal-backdrop::backdrop { background: #081b2d55; }
 }
 
 /* Target Lock on Capsule */
+.table-seat-card.is-targeted .flank-nameplate,
 .is-live-table .table-seat-card.is-targeted .flank-nameplate {
   border-color: #f87171 !important;
   background: linear-gradient(135deg, rgba(65, 16, 16, 0.96) 0%, rgba(35, 8, 8, 0.98) 100%) !important;
   box-shadow: 0 0 12px rgba(239, 68, 68, 0.6) !important;
+}
+
+/* Scheme A Ended State: Team Allegiance Highlight on Avatar & Capsule */
+.altar-dual-flank-arena .table-seat-card.is-ended-card.is-revealed-blue .flank-avatar-wrap .seat-card-avatar {
+  border-color: #38bdf8 !important;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.5) !important;
+}
+
+.altar-dual-flank-arena .table-seat-card.is-ended-card.is-revealed-red .flank-avatar-wrap .seat-card-avatar {
+  border-color: #f87171 !important;
+  box-shadow: 0 0 10px rgba(248, 113, 113, 0.5) !important;
+}
+
+.altar-dual-flank-arena .table-seat-card.is-ended-card.is-revealed-blue .flank-nameplate {
+  border-color: rgba(56, 189, 248, 0.75) !important;
+  background: linear-gradient(135deg, rgba(14, 38, 54, 0.95) 0%, rgba(8, 22, 34, 0.98) 100%) !important;
+}
+
+.altar-dual-flank-arena .table-seat-card.is-ended-card.is-revealed-red .flank-nameplate {
+  border-color: rgba(248, 113, 113, 0.75) !important;
+  background: linear-gradient(135deg, rgba(54, 16, 16, 0.95) 0%, rgba(26, 8, 8, 0.98) 100%) !important;
+}
+
+.altar-dual-flank-arena .table-seat-card.is-ended-card.is-winner-seat .flank-nameplate {
+  box-shadow: 0 0 10px rgba(234, 179, 8, 0.5), inset 0 1px 0 rgba(254, 240, 138, 0.4) !important;
+}
+
+.altar-dual-flank-arena .table-seat-card.is-ended-card.is-assassinated-seat .flank-avatar-wrap .seat-card-avatar {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 14px rgba(239, 68, 68, 0.8) !important;
 }
 
 .flank-seat-num {

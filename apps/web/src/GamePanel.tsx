@@ -777,7 +777,7 @@ export function GamePanel({
                     {direction === 'clockwise' ? '⟳ 顺时针' : '⟲ 逆时针'}
                   </span>
                   <span className="altar-mission-tag">
-                    第 {g.mission} 难
+                    {ended ? '胜负已分' : `第 ${g.mission} 难`}
                   </span>
                 </div>
               </div>
