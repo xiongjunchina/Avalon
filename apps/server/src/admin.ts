@@ -69,8 +69,8 @@ export class AdminService {
         freeAccessMode: map.has('free_access_mode') ? Boolean(map.get('free_access_mode')) : true,
         adRewardHours: map.has('ad_reward_hours') ? Number(map.get('ad_reward_hours')) : 24,
         announcement: map.get('broadcast_announcement') || {
-          text: '欢迎光临西游·真假猴王！当前为公测全员畅玩阶段，祝各位仙友游戏愉快！',
-          enabled: true,
+          text: '',
+          enabled: false,
         },
       };
     } finally {

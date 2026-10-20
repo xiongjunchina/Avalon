@@ -418,35 +418,3 @@
   letter-spacing: 1px;
 }
 
-/* Announcement Banner in User Client */
-.global-announcement-marquee {
-  background: linear-gradient(90deg, rgba(82, 45, 10, 0.95) 0%, rgba(120, 70, 15, 0.95) 50%, rgba(82, 45, 10, 0.95) 100%);
-  border-bottom: 1px solid #ffd875;
-  color: #fff4d0;
-  padding: 6px 14px;
-  font-size: 13px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
-  position: relative;
-  z-index: 40;
-}
-.global-announcement-text {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  flex: 1;
-}
-.global-announcement-close {
-  background: transparent;
-  border: none;
-  color: #ffd875;
-  cursor: pointer;
-  font-size: 14px;
-  padding: 0 4px;
-}

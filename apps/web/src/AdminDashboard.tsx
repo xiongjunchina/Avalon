@@ -33,7 +33,7 @@ export function AdminDashboard({ onBackToGame }: AdminDashboardProps) {
     announcement: SystemAnnouncement;
   } | null>(null);
   const [announcementInput, setAnnouncementInput] = useState('');
-  const [announcementEnabled, setAnnouncementEnabled] = useState(true);
+  const [announcementEnabled, setAnnouncementEnabled] = useState(false);
 
   // Users Data
   const [users, setUsers] = useState<AdminUserSummary[]>([]);
@@ -133,7 +133,7 @@ export function AdminDashboard({ onBackToGame }: AdminDashboardProps) {
       const data = await adminApi<{ freeAccessMode: boolean; adRewardHours: number; announcement: SystemAnnouncement }>('/settings');
       setSettings(data);
       setAnnouncementInput(data.announcement?.text || '');
-      setAnnouncementEnabled(data.announcement?.enabled ?? true);
+      setAnnouncementEnabled(data.announcement?.enabled ?? false);
     } catch {
       // ignore
     }
