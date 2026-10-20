@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { Command, GameView, Player, TeamBallot } from '@avalon/contracts';
 import { Modal } from './Modal';
-import { CloudFlourish, ImperialDragonCrown, PlayerAvatar } from './Heraldry';
+import { CloudFlourish, ImperialDragonCrown, PlayerAvatar, RuyiSlotFrame } from './Heraldry';
 import { WUYUE_MISSIONS } from './roles';
 
 export function TeamVoteDialog({ game, players, anonymous, userId, serverTime, disabled, send, onClose }: {
@@ -49,16 +49,10 @@ export function TeamVoteDialog({ game, players, anonymous, userId, serverTime, d
           准行多于封驳即准予出征 · 平票或封驳视为流局
         </p>
 
-        {/* 1. 组队结果专区 (Team Formation Result) */}
-        <section className="vote-result-container" aria-label="本轮组队结果">
-          <div className="vote-result-header">
-            <span className="vote-filigree-bracket" aria-hidden="true">—◇</span>
-            <span className="vote-result-title">本轮出征阵容</span>
-            <span className="vote-filigree-bracket" aria-hidden="true">◇—</span>
-          </div>
-
-          {/* Captain Banner */}
-          <div className="vote-captain-hero">
+        {/* 1. 组队结果专区 (Imperial Team Formation Result matching Screenshot 1) */}
+        <section className="vote-result-container imperial-expedition-panel" aria-label="本轮出征阵容">
+          {/* Captain Banner matching Screenshot 1 Top Bar */}
+          <div className="vote-captain-hero imperial-captain-banner">
             <div className="vote-captain-avatar-wrap">
               <span className="vote-crown-icon" aria-hidden="true">
                 <ImperialDragonCrown />
@@ -75,42 +69,41 @@ export function TeamVoteDialog({ game, players, anonymous, userId, serverTime, d
               </div>
             </div>
             <div className="vote-captain-info">
-              <span className="vote-captain-tag">👑 本轮领队</span>
-              <strong className="vote-captain-name">
-                {captainPlayer ? `${captainPlayer.seat}号 ${captainPlayer.nickname}` : '待定'}
+              <span className="vote-captain-title-text">
+                队长：{captainPlayer ? `${captainPlayer.seat}号 ${captainPlayer.nickname}` : '待定'}
                 {captainPlayer?.id === userId && <small className="vote-self-tag">（你）</small>}
-              </strong>
+              </span>
             </div>
           </div>
 
-          {/* Members Grid */}
-          <div className="vote-members-section">
-            <div className="vote-members-label">
-              <span>⚔️ 出征队员（共 {teamPlayers.length} 人）</span>
-            </div>
+          {/* Members Slots Section matching Screenshot 1 Ornamental Ruyi Frames */}
+          <div className="vote-members-section imperial-slots-section">
             <div className="vote-members-grid" data-count={teamPlayers.length}>
               {teamPlayers.map(p => {
                 const isSelf = p.id === userId;
                 return (
                   <div
                     key={p.id}
-                    className={`vote-member-card ${isSelf ? 'is-self' : ''}`}
+                    className={`vote-member-card imperial-ruyi-card ${isSelf ? 'is-self' : ''}`}
                     title={`${p.seat}号 ${p.nickname}`}
                   >
-                    <div className="vote-member-avatar">
-                      <PlayerAvatar
-                        avatar={p.avatar}
-                        avatarUrl={p.avatarUrl}
-                        wechatAvatarUrl={p.wechatAvatarUrl}
-                        fallbackKind="cards"
-                      />
-                      <span className="vote-member-seat">{p.seat}号</span>
+                    <RuyiSlotFrame isSelf={isSelf} />
+                    <div className="vote-member-content">
+                      <div className="vote-member-avatar">
+                        <PlayerAvatar
+                          avatar={p.avatar}
+                          avatarUrl={p.avatarUrl}
+                          wechatAvatarUrl={p.wechatAvatarUrl}
+                          fallbackKind="cards"
+                        />
+                        <span className="vote-member-seat">{p.seat}号</span>
+                      </div>
+                      <span className="vote-member-name">
+                        {p.nickname}
+                        {isSelf && <small className="vote-self-tag">（你）</small>}
+                      </span>
+                      <span className="vote-member-badge">⚔️ 出征</span>
                     </div>
-                    <span className="vote-member-name">
-                      {p.nickname}
-                      {isSelf && <small className="vote-self-tag">（你）</small>}
-                    </span>
-                    <span className="vote-member-badge">⚔️ 出征</span>
                   </div>
                 );
               })}

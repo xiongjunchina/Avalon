@@ -2465,6 +2465,7 @@ dialog.table-modal-backdrop::backdrop { background: #081b2d55; }
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
+  gap: 8px !important;
   border-bottom: 1.5px solid rgba(224, 170, 62, 0.5) !important;
   padding-bottom: 10px !important;
   margin-bottom: 8px !important;
@@ -2473,18 +2474,32 @@ dialog.table-modal-backdrop::backdrop { background: #081b2d55; }
   display: flex !important;
   flex-direction: column !important;
   gap: 2px !important;
+  min-width: 0 !important;
+  flex: 1 1 auto !important;
 }
 .vote-head-kicker {
   font-size: 11px !important;
   color: #ffd875 !important;
   letter-spacing: 1px !important;
   font-family: var(--display) !important;
+  white-space: nowrap !important;
 }
 .vote-head-main-title {
-  font-size: 20px !important;
+  font-size: clamp(14px, 4.3vw, 19px) !important;
   font-family: var(--calligraphy) !important;
   color: #fff4d0 !important;
-  letter-spacing: 1px !important;
+  letter-spacing: 0.5px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+.dedicated-vote-head .a2-lacquer-pill {
+  flex-shrink: 0 !important;
+  width: auto !important;
+  min-width: 0 !important;
+  white-space: nowrap !important;
+  padding: 5px 12px !important;
+  font-size: 13px !important;
 }
 .vote-rule-prompt {
   text-align: center !important;
@@ -2497,47 +2512,34 @@ dialog.table-modal-backdrop::backdrop { background: #081b2d55; }
   border: 1px solid rgba(212, 163, 89, 0.3) !important;
 }
 
-/* 1. 组队结果专区 (Team Formation Result) */
+/* 1. 组队结果专区 · 华贵宫廷图卷风格 (Imperial Expedition Panel matching Screenshot 1) */
 .vote-result-container {
-  background: linear-gradient(180deg, rgba(46, 14, 13, 0.92) 0%, rgba(20, 5, 5, 0.96) 100%) !important;
-  border: 1.5px solid rgba(224, 170, 62, 0.65) !important;
-  border-radius: 14px !important;
-  padding: 10px 12px !important;
+  background: linear-gradient(180deg, #281d2e 0%, #17111d 100%) !important;
+  border: 2px solid #d4a359 !important;
+  outline: 1px solid rgba(255, 230, 160, 0.35) !important;
+  outline-offset: -3px !important;
+  border-radius: 18px !important;
+  padding: 0 !important;
   margin-bottom: 12px !important;
-  box-shadow: inset 0 0 16px rgba(0, 0, 0, 0.6) !important;
-}
-.vote-result-header {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  gap: 8px !important;
-  margin-bottom: 8px !important;
-}
-.vote-result-title {
-  font: 700 14px/1 var(--calligraphy) !important;
-  color: #ffd875 !important;
-  letter-spacing: 1.5px !important;
-}
-.vote-filigree-bracket {
-  color: rgba(255, 216, 117, 0.5) !important;
-  font-size: 12px !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.75), 0 0 16px rgba(212, 163, 89, 0.3) !important;
+  overflow: hidden !important;
 }
 
-/* Captain Hero Row */
-.vote-captain-hero {
+/* Top Captain Banner */
+.imperial-captain-banner {
   display: flex !important;
   align-items: center !important;
   gap: 12px !important;
-  background: linear-gradient(90deg, rgba(82, 22, 18, 0.85) 0%, rgba(45, 12, 10, 0.6) 100%) !important;
-  border: 1px solid rgba(255, 216, 117, 0.5) !important;
-  border-radius: 10px !important;
-  padding: 6px 12px !important;
-  margin-bottom: 10px !important;
+  background: linear-gradient(90deg, #103f4f 0%, #156d7d 45%, #0f8290 85%, #0d6371 100%) !important;
+  border-bottom: 2px solid #e0aa3e !important;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.5) !important;
+  padding: 8px 14px !important;
+  margin: 0 !important;
 }
 .vote-captain-avatar-wrap {
   position: relative !important;
-  width: 44px !important;
-  height: 44px !important;
+  width: 48px !important;
+  height: 48px !important;
   flex-shrink: 0 !important;
 }
 .vote-crown-icon {
@@ -2545,87 +2547,122 @@ dialog.table-modal-backdrop::backdrop { background: #081b2d55; }
   top: -10px !important;
   left: 50% !important;
   transform: translateX(-50%) !important;
-  width: 18px !important;
-  height: 14px !important;
+  width: 22px !important;
+  height: 16px !important;
   color: #ffd875 !important;
-  z-index: 2 !important;
+  z-index: 3 !important;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8)) !important;
 }
 .vote-captain-avatar {
-  width: 44px !important;
-  height: 44px !important;
+  width: 48px !important;
+  height: 48px !important;
   border-radius: 50% !important;
   border: 2px solid #ffd875 !important;
-  box-shadow: 0 0 10px rgba(255, 216, 117, 0.7) !important;
+  box-shadow: 0 0 12px rgba(255, 216, 117, 0.8) !important;
   overflow: hidden !important;
   display: grid !important;
   place-items: center !important;
+  background: #0d2833 !important;
 }
 .vote-captain-info {
   display: flex !important;
-  flex-direction: column !important;
-  gap: 2px !important;
+  align-items: center !important;
+  min-width: 0 !important;
+  flex: 1 !important;
 }
-.vote-captain-tag {
-  font-size: 11px !important;
-  color: #ffd875 !important;
+.vote-captain-title-text {
+  font-family: var(--calligraphy) !important;
+  font-size: clamp(17px, 5vw, 22px) !important;
   font-weight: 700 !important;
-}
-.vote-captain-name {
-  font-size: 15px !important;
-  color: #ffffff !important;
-  font-family: var(--display) !important;
+  color: #ffd875 !important;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9), 0 0 12px rgba(255, 216, 117, 0.5) !important;
+  letter-spacing: 1.5px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
 }
 .vote-self-tag {
   color: #ffd875 !important;
-  font-size: 12px !important;
+  font-size: 13px !important;
+  margin-left: 2px !important;
 }
 
-/* Members Grid */
-.vote-members-section {
+/* Bottom Expedition Slots Section */
+.imperial-slots-section {
+  padding: 14px 10px 16px !important;
   display: flex !important;
   flex-direction: column !important;
-  gap: 6px !important;
-}
-.vote-members-label {
-  font-size: 12px !important;
-  color: #67e8f9 !important;
-  font-weight: 700 !important;
-  letter-spacing: 0.5px !important;
+  gap: 0 !important;
+  background: linear-gradient(180deg, rgba(38, 27, 43, 0.95) 0%, rgba(22, 16, 27, 0.98) 100%) !important;
 }
 .vote-members-grid {
   display: flex !important;
   justify-content: center !important;
-  align-items: stretch !important;
-  gap: 8px !important;
+  align-items: center !important;
+  gap: 10px !important;
   flex-wrap: wrap !important;
+  width: 100% !important;
 }
-.vote-member-card {
+.vote-member-card.imperial-ruyi-card {
+  position: relative !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 76px !important;
+  max-width: 115px !important;
+  flex: 1 1 76px !important;
+  aspect-ratio: 100 / 115 !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  transition: transform 0.18s ease !important;
+}
+.vote-member-card.imperial-ruyi-card:hover {
+  transform: translateY(-2px) scale(1.02) !important;
+}
+.ruyi-slot-frame-svg {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  pointer-events: none !important;
+  z-index: 1 !important;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.6)) !important;
+}
+.vote-member-card.is-self .ruyi-slot-frame-svg {
+  filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.7)) !important;
+}
+.vote-member-content {
+  position: relative !important;
+  z-index: 2 !important;
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
   justify-content: center !important;
   gap: 3px !important;
-  background: rgba(10, 25, 35, 0.7) !important;
-  border: 1.5px solid #00f2fe !important;
-  border-radius: 10px !important;
-  padding: 6px 10px !important;
-  min-width: 68px !important;
-  box-shadow: 0 0 10px rgba(0, 242, 254, 0.25) !important;
-  transition: transform 0.15s ease !important;
-}
-.vote-member-card.is-self {
-  border-color: #ffd875 !important;
-  box-shadow: 0 0 12px rgba(255, 216, 117, 0.4) !important;
+  width: 100% !important;
+  height: 100% !important;
+  padding: 10px 4px 8px !important;
+  box-sizing: border-box !important;
 }
 .vote-member-avatar {
   position: relative !important;
-  width: 40px !important;
-  height: 40px !important;
+  width: 38px !important;
+  height: 38px !important;
   border-radius: 50% !important;
-  border: 2px solid #00f2fe !important;
+  border: 1.8px solid #00f2fe !important;
+  box-shadow: 0 0 8px rgba(0, 242, 254, 0.5) !important;
   overflow: hidden !important;
   display: grid !important;
   place-items: center !important;
+  background: #091c26 !important;
+}
+.vote-member-card.is-self .vote-member-avatar {
+  border-color: #ffd875 !important;
+  box-shadow: 0 0 10px rgba(255, 216, 117, 0.8) !important;
 }
 .vote-member-seat {
   position: absolute !important;
@@ -2633,15 +2670,16 @@ dialog.table-modal-backdrop::backdrop { background: #081b2d55; }
   right: 0 !important;
   background: #0284c7 !important;
   color: #ffffff !important;
-  font-size: 9px !important;
+  font-size: 8.5px !important;
   font-weight: 800 !important;
   padding: 0 3px !important;
-  border-radius: 4px !important;
+  border-radius: 3px !important;
+  line-height: 1.2 !important;
 }
 .vote-member-name {
   font-size: 12px !important;
   font-weight: 700 !important;
-  color: #e0f2fe !important;
+  color: #fff4d0 !important;
   max-width: 80px !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
@@ -2649,12 +2687,14 @@ dialog.table-modal-backdrop::backdrop { background: #081b2d55; }
   text-align: center !important;
 }
 .vote-member-badge {
-  font-size: 10px !important;
-  color: #38bdf8 !important;
-  background: rgba(14, 165, 233, 0.15) !important;
-  padding: 1px 5px !important;
+  font-size: 9.5px !important;
+  color: #67e8f9 !important;
+  background: rgba(14, 165, 233, 0.22) !important;
+  padding: 1px 6px !important;
   border-radius: 999px !important;
-  border: 1px solid rgba(56, 189, 248, 0.4) !important;
+  border: 1px solid rgba(56, 189, 248, 0.45) !important;
+  font-weight: 600 !important;
+  line-height: 1.2 !important;
 }
 
 /* 2. 投票操作区 (Voting Action) */

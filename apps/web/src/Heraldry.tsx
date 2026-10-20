@@ -226,5 +226,98 @@ export function ImperialDragonCrown({ className = '' }: { className?: string }) 
   );
 }
 
+export function RuyiSlotFrame({ className = '', isSelf = false }: { className?: string; isSelf?: boolean }) {
+  const uniqueId = useId();
+  const goldGrad = `ruyi-gold-${uniqueId}`;
+  const gemGrad = `ruyi-gem-${uniqueId}`;
 
+  return (
+    <svg
+      className={`ruyi-slot-frame-svg ${className}`.trim()}
+      viewBox="0 0 100 115"
+      fill="none"
+      aria-hidden="true"
+    >
+      <defs>
+        <linearGradient id={goldGrad} x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor={isSelf ? '#fffbe6' : '#fff0cb'} />
+          <stop offset="35%" stopColor={isSelf ? '#ffd700' : '#e6ab48'} />
+          <stop offset="70%" stopColor={isSelf ? '#ffaa00' : '#b87c24'} />
+          <stop offset="100%" stopColor={isSelf ? '#996300' : '#6b400f'} />
+        </linearGradient>
+        <linearGradient id={gemGrad} x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#e0f7fa" />
+          <stop offset="50%" stopColor="#00e5ff" />
+          <stop offset="100%" stopColor="#0097a7" />
+        </linearGradient>
+        <filter id={`ruyi-glow-${uniqueId}`} x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="0" dy="0" stdDeviation="1.5" floodColor={isSelf ? '#ffd700' : '#e0aa3e'} floodOpacity="0.6" />
+        </filter>
+      </defs>
 
+      {/* Outer Ruyi Bracket Contour */}
+      <path
+        d="M 50 4
+           L 55 8 L 74 8
+           C 79 8 84 10 87 14
+           C 89 17 91 22 91 28
+           L 91 52 L 96 57.5 L 91 63
+           L 91 87
+           C 91 93 89 98 87 101
+           C 84 105 79 107 74 107
+           L 55 107 L 50 111 L 45 107
+           L 26 107
+           C 21 107 16 105 13 101
+           C 11 98 9 93 9 87
+           L 9 63 L 4 57.5 L 9 52
+           L 9 28
+           C 9 22 11 17 13 14
+           C 16 10 21 8 26 8
+           L 45 8
+           Z"
+        stroke={`url(#${goldGrad})`}
+        strokeWidth="1.8"
+        fill="rgba(24, 15, 29, 0.75)"
+        filter={`url(#ruyi-glow-${uniqueId})`}
+      />
+
+      {/* Inner Accent Line */}
+      <path
+        d="M 50 8
+           L 54 11.5 L 72 11.5
+           C 76 11.5 80 13.5 83 17
+           C 85 20 87 24 87 29
+           L 87 53 L 92 57.5 L 87 62
+           L 87 86
+           C 87 91 85 95 83 98
+           C 80 101.5 76 103.5 72 103.5
+           L 54 103.5 L 50 107 L 46 103.5
+           L 28 103.5
+           C 24 103.5 20 101.5 17 98
+           C 15 95 13 91 13 86
+           L 13 62 L 8 57.5 L 13 53
+           L 13 29
+           C 13 24 15 20 17 17
+           C 20 13.5 24 11.5 28 11.5
+           L 46 11.5
+           Z"
+        stroke={`url(#${goldGrad})`}
+        strokeWidth="1"
+        strokeOpacity="0.75"
+        fill="none"
+      />
+
+      {/* Top Cyan Gem */}
+      <polygon points="50,1 53.5,4.5 50,8 46.5,4.5" fill={`url(#${gemGrad})`} stroke="#fff" strokeWidth="0.5" />
+
+      {/* Bottom Cyan Gem */}
+      <polygon points="50,107 53.5,110.5 50,114 46.5,110.5" fill={`url(#${gemGrad})`} stroke="#fff" strokeWidth="0.5" />
+
+      {/* Left Accent Gem */}
+      <polygon points="2,57.5 4.5,55.5 7,57.5 4.5,59.5" fill={`url(#${gemGrad})`} stroke="#ffd875" strokeWidth="0.4" />
+
+      {/* Right Accent Gem */}
+      <polygon points="93,57.5 95.5,55.5 98,57.5 95.5,59.5" fill={`url(#${gemGrad})`} stroke="#ffd875" strokeWidth="0.4" />
+    </svg>
+  );
+}
