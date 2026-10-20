@@ -54,6 +54,9 @@ export function GamePanel({
   onOpenReplay,
   onSound,
   speakingUids,
+  chatBubbles,
+  onOpenChat,
+  hasUnreadChat,
 }: {
   room: RoomView;
   userId: string;
@@ -64,6 +67,9 @@ export function GamePanel({
   onOpenReplay?: (gameId: string) => void;
   onSound?: (cue: EffectCue) => void;
   speakingUids?: Set<number>;
+  chatBubbles?: Record<string, { text: string; expiresAt: number }>;
+  onOpenChat?: () => void;
+  hasUnreadChat?: boolean;
 }) {
   const g = room.game!;
   const self = g.self;
@@ -679,6 +685,12 @@ export function GamePanel({
                 .filter(Boolean)
                 .join(' ')}
             >
+              {/* Floating Chat Bubble */}
+              {chatBubbles?.[p.id] && (
+                <div className="seat-chat-bubble-anchor">
+                  <div className="seat-chat-bubble">{chatBubbles[p.id].text}</div>
+                </div>
+              )}
               {/* 1. Avatar Container */}
               <div className={`flank-avatar-wrap ${isSpeaking ? 'is-speaking' : ''}`}>
                 {isSpeaking && (
@@ -1134,6 +1146,18 @@ export function GamePanel({
           >
             ◇ 取经录 ◇
           </button>
+          {onOpenChat && (
+            <button
+              type="button"
+              className="secondary tool-pill dock-utility-btn"
+              onClick={onOpenChat}
+              aria-label="法坛传音"
+              style={{ position: 'relative' }}
+            >
+              💬 传音
+              {hasUnreadChat && <span className="chat-unread-dot" />}
+            </button>
+          )}
           {onOpenGuide && (
             <button type="button" className="secondary tool-pill dock-utility-btn" onClick={onOpenGuide}>
               ◇ 识妖谱 ◇

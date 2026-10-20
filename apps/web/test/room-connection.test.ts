@@ -49,3 +49,58 @@ test('taken-over page never auto-reconnects; manual reconnect is explicit; termi
   f.transport.reconnect();await flush();assert.equal(f.sockets.length,2);f.sockets[1].open();f.sockets[1].message({type:'roomClosed'});await flush();f.transport.resume();assert.equal(f.sockets.length,2);assert.deepEqual(f.state.ended,['closed']);
   const g=setup(async()=>{throw new Error('UNAUTHENTICATED');});g.transport.start();await flush();assert.deepEqual(g.state.ended,['expired']);g.transport.resume();assert.equal(g.sockets.length,0);g.transport.stop();
 });
+
+test('roomChat and directChat messages are dispatched to handlers without mutating state', async t => {
+  const roomChats: any[] = [];
+  const directChats: any[] = [];
+  const sockets: FakeSocket[] = [];
+  const transport = new RoomConnection({
+    fetchRoom: async () => ({ room, invite: 'test' }),
+    retryDelay: 100000,
+    socket: () => {
+      const s = new FakeSocket();
+      sockets.push(s);
+      return s as unknown as WebSocket;
+    },
+    handlers: {
+      snapshot: () => {},
+      invite: () => {},
+      busy: () => {},
+      status: () => {},
+      error: () => {},
+      ended: () => {},
+      roomChat: msg => roomChats.push(msg),
+      directChat: msg => directChats.push(msg),
+    },
+  });
+  t.after(() => transport.stop());
+  transport.start();
+  await flush();
+  const sock = sockets[0];
+  sock.open();
+
+  sock.message({
+    type: 'roomChat',
+    messageId: 'msg-1',
+    fromUserId: 'u1',
+    seat: 2,
+    nickname: '孙悟空',
+    text: '我是好人',
+    timestamp: '2026-10-20T12:00:00Z',
+  });
+  assert.equal(roomChats.length, 1);
+  assert.equal(roomChats[0].text, '我是好人');
+  assert.equal(roomChats[0].seat, 2);
+
+  sock.message({
+    type: 'directChat',
+    messageId: 'dir-1',
+    fromUser: { id: 'u2', nickname: '猪八戒' },
+    text: '来开黑吗',
+    timestamp: '2026-10-20T12:01:00Z',
+  });
+  assert.equal(directChats.length, 1);
+  assert.equal(directChats[0].text, '来开黑吗');
+  assert.equal(directChats[0].fromUser.nickname, '猪八戒');
+});
+

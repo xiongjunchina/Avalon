@@ -175,6 +175,83 @@ export async function buildApp(options: { store: PostgresStore; origin?: string;
     return friendsService.removeFriend(user.id,targetId);
   });
 
+  app.get<{Params:{id:string}}>('/api/friends/:id/chat',async(req,reply)=>{
+    const user=await authenticate(req,reply);
+    const friendId=z.string().uuid().parse(req.params.id);
+    const client=await store.pool.connect();
+    try{
+      const res=await client.query<any>(`
+        SELECT id, sender_id, receiver_id, message, created_at
+        FROM direct_messages
+        WHERE (sender_id=$1 AND receiver_id=$2) OR (sender_id=$2 AND receiver_id=$1)
+        ORDER BY created_at DESC
+        LIMIT 50
+      `,[user.id,friendId]);
+      const list=res.rows.reverse().map((r: any)=>({
+        id:r.id,
+        senderId:r.sender_id,
+        receiverId:r.receiver_id,
+        message:r.message,
+        createdAt:new Date(r.created_at).toISOString(),
+        isSelf:r.sender_id===user.id,
+      }));
+      return {messages:list};
+    }finally{client.release();}
+  });
+
+  app.post<{Params:{id:string}}>('/api/friends/:id/chat',async(req,reply)=>{
+    const user=await authenticate(req,reply);
+    const friendId=z.string().uuid().parse(req.params.id);
+    const {text}=z.object({text:z.string().trim().min(1).max(500)}).strict().parse(req.body);
+    const client=await store.pool.connect();
+    const msgId=randomUUID();
+    const timestamp=new Date().toISOString();
+    try{
+      await client.query(`
+        INSERT INTO direct_messages(id, sender_id, receiver_id, message, created_at)
+        VALUES($1,$2,$3,$4,now())
+      `,[msgId,user.id,friendId,text]);
+    }finally{client.release();}
+
+    // If target friend has an active WebSocket, push directChat in real time
+    const targetConn=connections.get(friendId);
+    if(targetConn&&targetConn.socket.readyState===1){
+      send(targetConn.socket,{
+        type:'directChat',
+        messageId:msgId,
+        fromUser:user,
+        text,
+        timestamp,
+      });
+    }
+    return {ok:true,messageId:msgId,timestamp};
+  });
+
+  app.post<{Params:{id:string}}>('/api/rooms/:id/chat',async(req,reply)=>{
+    const user=await authenticate(req,reply);
+    const roomId=z.string().uuid().parse(req.params.id);
+    const {room}=await store.roomFor(user.id,roomId);
+    const {text}=z.object({text:z.string().trim().min(1).max(200)}).strict().parse(req.body);
+    const member=room.members.find(m=>m.id===user.id);
+    const seat=member?.seat??0;
+    const messageId=randomUUID();
+    const timestamp=new Date().toISOString();
+    for(const c of connections.values()){
+      if(c.roomId===roomId){
+        send(c.socket,{
+          type:'roomChat',
+          messageId,
+          fromUserId:user.id,
+          seat,
+          nickname:user.nickname,
+          text,
+          timestamp,
+        });
+      }
+    }
+    return {ok:true,messageId};
+  });
+
   app.post<{Params:{id:string}}>('/api/rooms/:id/invite',async(req,reply)=>{
     const user=await authenticate(req,reply);
     const roomId=z.string().uuid().parse(req.params.id);

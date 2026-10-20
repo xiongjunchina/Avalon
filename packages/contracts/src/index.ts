@@ -157,6 +157,24 @@ export interface SystemAnnouncement {
   enabled: boolean;
 }
 
+export interface RoomChatMessage {
+  messageId: string;
+  fromUserId: string;
+  seat: number;
+  nickname: string;
+  text: string;
+  timestamp: string;
+}
+
+export interface DirectMessage {
+  id: string;
+  senderId: string;
+  receiverId: string;
+  message: string;
+  createdAt: string;
+  isSelf?: boolean;
+}
+
 export type ServerMessage =
   | { type: 'snapshot'; room: RoomView }
   | { type: 'commandResult'; commandId: string; ok: boolean; error?: string }
@@ -165,7 +183,9 @@ export type ServerMessage =
   | { type: 'takenOver' }
   | { type: 'left' }
   | { type: 'roomInvitation'; fromUser: User; roomId: string; roomCode: string }
-  | { type: 'systemAnnouncement'; text: string; enabled: boolean };
+  | { type: 'systemAnnouncement'; text: string; enabled: boolean }
+  | { type: 'roomChat'; messageId: string; fromUserId: string; seat: number; nickname: string; text: string; timestamp: string }
+  | { type: 'directChat'; messageId: string; fromUser: User; text: string; timestamp: string };
 
 export type Role = 'merlin' | 'percival' | 'guinevere' | 'loyal' | 'morgana' | 'assassin' | 'mordred' | 'oberon' | 'minion';
 export type LoyalGuardian = 'zhubajie' | 'shawujing' | 'bailong' | 'jingang';

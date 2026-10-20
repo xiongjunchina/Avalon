@@ -43,10 +43,11 @@ import { RolePortrait } from './RolePortrait';
 import { WUYUE_MISSIONS, roleMottos, roleNames, roleTitles } from './roles';
 import { SoundProvider, SoundButton, useSound, useGameSound, useNavigationSound } from './SoundSettings';
 import { VoiceControls } from './VoiceControls';
-import { FriendsModal, RoomInvitationToast } from './FriendsModal';
+import { FriendsModal, RoomInvitationToast, DirectChatToast } from './FriendsModal';
 import { voiceManager, type VoiceState } from './agora-voice';
-import { uuidToRtcUid, type VoiceTokenResponse, type FriendSummary } from '@avalon/contracts';
+import { uuidToRtcUid, type VoiceTokenResponse, type FriendSummary, type RoomChatMessage } from '@avalon/contracts';
 import { AdminDashboard } from './AdminDashboard';
+import { ChatDrawer } from './ChatDrawer';
 
 const SHOWCASE_ROLES: Role[] = [
   'merlin',
@@ -121,6 +122,53 @@ function App() {
     roomCode: string;
   } | null>(null);
   const [incomingFriendRequestsCount, setIncomingFriendRequestsCount] = useState(0);
+
+  // Room Chat & Direct Messages State
+  const [roomChatMessages, setRoomChatMessages] = useState<RoomChatMessage[]>([]);
+  const [chatBubbles, setChatBubbles] = useState<Record<string, { text: string; expiresAt: number }>>({});
+  const [chatDrawerOpen, setChatDrawerOpen] = useState(false);
+  const [unreadChatCount, setUnreadChatCount] = useState(0);
+  const [pendingDirectChat, setPendingDirectChat] = useState<{
+    messageId: string;
+    fromUser: User;
+    text: string;
+    timestamp: string;
+  } | null>(null);
+  const [chatFriendToOpen, setChatFriendToOpen] = useState<User | null>(null);
+
+  const handleOpenChatDrawer = () => {
+    setChatDrawerOpen(true);
+    setUnreadChatCount(0);
+  };
+
+  // Auto expire floating bubbles
+  useEffect(() => {
+    const entries = Object.entries(chatBubbles);
+    if (entries.length === 0) return;
+    const now = Date.now();
+    const nextExpiry = Math.min(...entries.map(([, b]) => b.expiresAt)) - now;
+    if (nextExpiry <= 0) {
+      setChatBubbles(prev => {
+        const next = { ...prev };
+        for (const [id, b] of Object.entries(next)) {
+          if (b.expiresAt <= Date.now()) delete next[id];
+        }
+        return next;
+      });
+      return;
+    }
+    const timer = setTimeout(() => {
+      setChatBubbles(prev => {
+        const next = { ...prev };
+        for (const [id, b] of Object.entries(next)) {
+          if (b.expiresAt <= Date.now()) delete next[id];
+        }
+        return next;
+      });
+    }, nextExpiry + 50);
+    return () => clearTimeout(timer);
+  }, [chatBubbles]);
+
 
   useEffect(() => {
     return voiceManager.subscribe(setVoiceState);
@@ -323,6 +371,17 @@ function App() {
         announcement: msg => {
           setAnnouncement(msg);
         },
+        roomChat: msg => {
+          setRoomChatMessages(prev => [...prev.slice(-49), msg]);
+          setChatBubbles(prev => ({
+            ...prev,
+            [msg.fromUserId]: { text: msg.text, expiresAt: Date.now() + 3800 },
+          }));
+          setUnreadChatCount(prev => prev + 1);
+        },
+        directChat: msg => {
+          setPendingDirectChat(msg);
+        },
         ended: reason => {
           setRoomId(null);
           setRoom(null);
@@ -333,6 +392,10 @@ function App() {
           setJoinOpen(false);
           setInvite('');
           setBusy(false);
+          setRoomChatMessages([]);
+          setChatBubbles({});
+          setChatDrawerOpen(false);
+          setUnreadChatCount(0);
           if (reason === 'expired') {
             setUser(null);
             setError(errors.UNAUTHENTICATED);
@@ -1173,6 +1236,16 @@ function App() {
               <button
                 type="button"
                 className="secondary tool-pill"
+                onClick={handleOpenChatDrawer}
+                aria-label="法坛传音"
+                style={{ position: 'relative' }}
+              >
+                💬 传音
+                {unreadChatCount > 0 && <span className="chat-unread-dot" />}
+              </button>
+              <button
+                type="button"
+                className="secondary tool-pill"
                 aria-label="房间设置"
                 onClick={() => setSettingsModalOpen(true)}
               >
@@ -1212,6 +1285,9 @@ function App() {
                   setPage('account');
                 }}
                 speakingUids={voiceState.speakingUids}
+                chatBubbles={chatBubbles}
+                onOpenChat={handleOpenChatDrawer}
+                hasUnreadChat={unreadChatCount > 0}
               />
               {room.settings.voiceChatEnabled && (
                 <div className="game-floating-voice-hud" aria-label="实时语音控制">
@@ -1311,6 +1387,12 @@ function App() {
                         .filter(Boolean)
                         .join(' ')}
                     >
+                      {/* Floating Chat Bubble */}
+                      {m && chatBubbles[m.id] && (
+                        <div className="seat-chat-bubble-anchor">
+                          <div className="seat-chat-bubble">{chatBubbles[m.id].text}</div>
+                        </div>
+                      )}
                       <div className="seat-card-top">
                         <div className="seat-top-badges">
                           {isRoomHost && <span className="seat-badge badge-captain">👑 房主</span>}
@@ -1429,6 +1511,17 @@ function App() {
                     <span>🏛️ 线下常规房 · 无语音</span>
                   </div>
                 )}
+                <button
+                  type="button"
+                  className="secondary tool-pill waiting-friends-pill-btn"
+                  onClick={handleOpenChatDrawer}
+                  title="法坛传音"
+                  style={{ position: 'relative' }}
+                >
+                  <span className="friends-btn-icon">💬</span>
+                  <span className="friends-btn-label">传音</span>
+                  {unreadChatCount > 0 && <span className="chat-unread-dot" />}
+                </button>
                 <button
                   type="button"
                   className="secondary tool-pill waiting-friends-pill-btn"
@@ -1609,10 +1702,15 @@ function App() {
           {/* Friends & Invitation Modal */}
           <FriendsModal
             open={friendsModalOpen}
-            onClose={() => setFriendsModalOpen(false)}
+            onClose={() => {
+              setFriendsModalOpen(false);
+              setChatFriendToOpen(null);
+            }}
             currentUser={user}
             currentRoom={room}
             onJoinRoom={handleJoinByCode}
+            incomingDirectChat={pendingDirectChat}
+            initialChatFriend={chatFriendToOpen}
           />
 
           {/* Floating Room Invitation Toast */}
@@ -1621,6 +1719,26 @@ function App() {
             onAccept={handleJoinByCode}
             onDismiss={() => setPendingInvitation(null)}
           />
+
+          {/* Floating Direct Chat Notification Toast */}
+          <DirectChatToast
+            message={pendingDirectChat}
+            onOpenChat={fromUser => {
+              setChatFriendToOpen(fromUser);
+              setFriendsModalOpen(true);
+              setPendingDirectChat(null);
+            }}
+            onDismiss={() => setPendingDirectChat(null)}
+          />
+
+          {/* Room In-game / Waiting Floating Chat Drawer */}
+          {chatDrawerOpen && room && (
+            <ChatDrawer
+              roomId={room.id}
+              messages={roomChatMessages}
+              onClose={() => setChatDrawerOpen(false)}
+            />
+          )}
         </div>
       )}
     </main>

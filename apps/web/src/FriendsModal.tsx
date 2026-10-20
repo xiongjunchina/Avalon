@@ -1,8 +1,17 @@
-import React, { useEffect, useState } from 'react';
-import type { FriendSummary, RoomView, User } from '@avalon/contracts';
+import React, { useEffect, useRef, useState } from 'react';
+import type { DirectMessage, FriendSummary, RoomView, User } from '@avalon/contracts';
 import { api, describe } from './api';
 import { Modal } from './Modal';
 import { PlayerAvatar } from './Heraldry';
+
+const DIRECT_QUICK_PHRASES = [
+  '来开一局？',
+  '马上上线！',
+  '稍等我两分钟',
+  '今晚几点开战？',
+  '速来，三缺一！',
+  '上局打得漂亮！',
+];
 
 export interface FriendsModalProps {
   open: boolean;
@@ -10,6 +19,8 @@ export interface FriendsModalProps {
   currentUser: User | null;
   currentRoom: RoomView | null;
   onJoinRoom?: (code: string) => void;
+  incomingDirectChat?: { messageId: string; fromUser: User; text: string; timestamp: string } | null;
+  initialChatFriend?: User | null;
 }
 
 export function FriendsModal({
@@ -18,6 +29,8 @@ export function FriendsModal({
   currentUser,
   currentRoom,
   onJoinRoom,
+  incomingDirectChat,
+  initialChatFriend,
 }: FriendsModalProps) {
   const [activeTab, setActiveTab] = useState<'invite' | 'friends' | 'add'>('invite');
   const [friends, setFriends] = useState<FriendSummary[]>([]);
@@ -30,6 +43,18 @@ export function FriendsModal({
   const [copiedCode, setCopiedCode] = useState(false);
   const [copiedMyCode, setCopiedMyCode] = useState(false);
   const [invitedUserIds, setInvitedUserIds] = useState<Set<string>>(new Set());
+
+  // Direct Message (私聊密札) State
+  const [activeChatFriend, setActiveChatFriend] = useState<FriendSummary | null>(null);
+  const [directMessages, setDirectMessages] = useState<DirectMessage[]>([]);
+  const [directLoading, setDirectLoading] = useState(false);
+  const [directText, setDirectText] = useState('');
+  const [directSending, setDirectSending] = useState(false);
+  const [isDirectRecording, setIsDirectRecording] = useState(false);
+  const [directVoiceNotice, setDirectVoiceNotice] = useState('');
+  const directStreamEndRef = useRef<HTMLDivElement | null>(null);
+  const directRecognitionRef = useRef<any>(null);
+
 
   const fetchFriends = async () => {
     if (!currentUser) return;
@@ -51,7 +76,162 @@ export function FriendsModal({
       setAddError(null);
       setActionMessage(null);
     }
+    if (!open) {
+      setActiveChatFriend(null);
+    }
   }, [open, currentUser]);
+
+  // Web Speech recognition for direct chat dictation
+  useEffect(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'zh-CN';
+      recognition.continuous = false;
+      recognition.interimResults = false;
+
+      recognition.onstart = () => {
+        setIsDirectRecording(true);
+        setDirectVoiceNotice('正在聆听中，请说话…');
+      };
+
+      recognition.onresult = (event: any) => {
+        const transcript = event.results[0]?.[0]?.transcript;
+        if (transcript) {
+          setDirectText(prev => (prev ? `${prev} ${transcript}` : transcript));
+        }
+        setIsDirectRecording(false);
+        setDirectVoiceNotice('');
+      };
+
+      recognition.onerror = () => {
+        setIsDirectRecording(false);
+        setDirectVoiceNotice('语音未捕获，请重试');
+        setTimeout(() => setDirectVoiceNotice(''), 2500);
+      };
+
+      recognition.onend = () => {
+        setIsDirectRecording(false);
+        setDirectVoiceNotice('');
+      };
+
+      directRecognitionRef.current = recognition;
+    }
+  }, []);
+
+  const handleToggleDirectVoice = () => {
+    if (!directRecognitionRef.current) {
+      alert('当前浏览器未开放原生语音识别，请直接使用手机键盘自带的语音输入键');
+      return;
+    }
+    if (isDirectRecording) {
+      directRecognitionRef.current.stop();
+      setIsDirectRecording(false);
+    } else {
+      try {
+        directRecognitionRef.current.start();
+      } catch {
+        directRecognitionRef.current.stop();
+        setIsDirectRecording(false);
+      }
+    }
+  };
+
+  const loadDirectMessages = async (friendId: string) => {
+    setDirectLoading(true);
+    try {
+      const res = await api<{ messages: DirectMessage[] }>(`/friends/${friendId}/chat`);
+      setDirectMessages(res.messages);
+    } catch (err) {
+      console.warn('Failed to load chat:', err);
+    } finally {
+      setDirectLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeChatFriend) {
+      void loadDirectMessages(activeChatFriend.id);
+    } else {
+      setDirectMessages([]);
+    }
+  }, [activeChatFriend?.id]);
+
+  useEffect(() => {
+    if (activeChatFriend) {
+      directStreamEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [directMessages.length, activeChatFriend]);
+
+  // Handle incoming real-time direct chat
+  useEffect(() => {
+    if (!incomingDirectChat) return;
+    if (activeChatFriend && activeChatFriend.id === incomingDirectChat.fromUser.id) {
+      setDirectMessages(prev => [
+        ...prev,
+        {
+          id: incomingDirectChat.messageId,
+          senderId: incomingDirectChat.fromUser.id,
+          receiverId: currentUser?.id ?? '',
+          message: incomingDirectChat.text,
+          createdAt: incomingDirectChat.timestamp,
+          isSelf: false,
+        },
+      ]);
+    }
+  }, [incomingDirectChat]);
+
+  // Handle initialChatFriend
+  useEffect(() => {
+    if (open && initialChatFriend) {
+      const found = friends.find(f => f.id === initialChatFriend.id);
+      if (found) {
+        setActiveChatFriend(found);
+      } else {
+        setActiveChatFriend({
+          id: initialChatFriend.id,
+          nickname: initialChatFriend.nickname,
+          playerCode: initialChatFriend.playerCode ?? '000000',
+          avatar: initialChatFriend.avatar,
+          avatarUrl: initialChatFriend.avatarUrl,
+          online: true,
+          status: 'accepted',
+          isSender: false,
+        });
+      }
+    }
+  }, [open, initialChatFriend, friends]);
+
+  const handleSendDirect = async (overrideText?: string) => {
+    const content = (overrideText ?? directText).trim();
+    if (!content || !activeChatFriend || directSending) return;
+    setDirectSending(true);
+    try {
+      const res = await api<{ ok: boolean; messageId: string; timestamp: string }>(
+        `/friends/${activeChatFriend.id}/chat`,
+        { text: content }
+      );
+      setDirectMessages(prev => [
+        ...prev,
+        {
+          id: res.messageId,
+          senderId: currentUser!.id,
+          receiverId: activeChatFriend.id,
+          message: content,
+          createdAt: res.timestamp,
+          isSelf: true,
+        },
+      ]);
+      if (!overrideText) {
+        setDirectText('');
+      }
+    } catch (err) {
+      alert(describe(err));
+    } finally {
+      setDirectSending(false);
+    }
+  };
+
 
   const handleCopy = async (text: string, type: 'link' | 'code' | 'myCode') => {
     try {
@@ -151,8 +331,116 @@ export function FriendsModal({
           </button>
         </div>
         <div className="friends-modal-content">
-        <div className="friends-nav-tabs">
-          <button
+        {activeChatFriend ? (
+          <div className="direct-chat-sheet">
+            <div className="direct-chat-topbar">
+              <button
+                type="button"
+                className="direct-back-btn"
+                onClick={() => setActiveChatFriend(null)}
+              >
+                ← 返回仙友录
+              </button>
+              <div className="direct-target-info">
+                <PlayerAvatar avatar={activeChatFriend.avatar} avatarUrl={activeChatFriend.avatarUrl} className="friend-avatar" />
+                <span>{activeChatFriend.nickname}</span>
+                <span className={`online-status-dot ${activeChatFriend.online ? 'online' : 'offline'}`} />
+              </div>
+              <button
+                type="button"
+                className="direct-back-btn"
+                onClick={() => void loadDirectMessages(activeChatFriend.id)}
+                title="刷新密信"
+              >
+                🔄
+              </button>
+            </div>
+
+            <div className="direct-chat-stream">
+              {directLoading ? (
+                <div style={{ textAlign: 'center', color: '#64748b', fontSize: '12px', padding: '20px' }}>
+                  正在查阅密札往来…
+                </div>
+              ) : directMessages.length === 0 ? (
+                <div style={{ textAlign: 'center', color: '#64748b', fontSize: '12px', padding: '30px' }}>
+                  📜 暂无密札往来，发送快捷密语或打字开始交谈吧！
+                </div>
+              ) : (
+                directMessages.map(m => {
+                  const isSelf = m.isSelf || m.senderId === currentUser?.id;
+                  const timeStr = m.createdAt ? new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+                  return (
+                    <div
+                      key={m.id}
+                      className={`direct-bubble-row ${isSelf ? 'is-self' : 'is-friend'}`}
+                    >
+                      <div className="direct-bubble">{m.message}</div>
+                      {timeStr && <span className="direct-bubble-time">{timeStr}</span>}
+                    </div>
+                  );
+                })
+              )}
+              <div ref={directStreamEndRef} />
+            </div>
+
+            {/* Quick direct tactical phrases */}
+            <div className="direct-quick-chips">
+              {DIRECT_QUICK_PHRASES.map(p => (
+                <button
+                  key={p}
+                  type="button"
+                  className="direct-quick-chip"
+                  onClick={() => void handleSendDirect(p)}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+
+            {/* Voice notice */}
+            {directVoiceNotice && (
+              <div style={{ padding: '4px 14px', fontSize: '11px', color: '#38bdf8', background: 'rgba(56,189,248,0.1)' }}>
+                🎙️ {directVoiceNotice}
+              </div>
+            )}
+
+            {/* Input bar */}
+            <form
+              className="chat-drawer-input-bar"
+              onSubmit={e => {
+                e.preventDefault();
+                void handleSendDirect();
+              }}
+            >
+              <button
+                type="button"
+                className={`chat-voice-btn ${isDirectRecording ? 'is-recording' : ''}`}
+                onClick={handleToggleDirectVoice}
+                title="语音转文字"
+              >
+                🎙️
+              </button>
+              <input
+                type="text"
+                className="chat-text-input"
+                placeholder={`向 ${activeChatFriend.nickname} 发送密札…`}
+                value={directText}
+                onChange={e => setDirectText(e.target.value)}
+                maxLength={300}
+              />
+              <button
+                type="submit"
+                disabled={directSending || !directText.trim()}
+                className="chat-send-btn"
+              >
+                传札
+              </button>
+            </form>
+          </div>
+        ) : (
+          <>
+          <div className="friends-nav-tabs">
+            <button
             type="button"
             className={`friends-tab-btn ${activeTab === 'invite' ? 'active' : ''}`}
             onClick={() => { setActiveTab('invite'); setActionMessage(null); }}
@@ -247,6 +535,14 @@ export function FriendsModal({
                               </span>
                             </div>
                             <div className="friend-actions">
+                              <button
+                                type="button"
+                                className="invite-action-btn chat"
+                                onClick={() => setActiveChatFriend(f)}
+                                title="密札私聊"
+                              >
+                                ✉️ 密札
+                              </button>
                               {isInCurrentRoom ? (
                                 <span className="status-tag in-room">已在房中</span>
                               ) : (
@@ -354,6 +650,14 @@ export function FriendsModal({
                         </span>
                       </div>
                       <div className="friend-actions">
+                        <button
+                          type="button"
+                          className="invite-action-btn chat"
+                          onClick={() => setActiveChatFriend(f)}
+                          title="密札私聊"
+                        >
+                          ✉️ 密札
+                        </button>
                         {currentRoom && f.online && !currentRoom.members.some(m => m.id === f.id) && (
                           <button
                             type="button"
@@ -435,9 +739,89 @@ export function FriendsModal({
             {addError && <p className="add-friend-status error">{addError}</p>}
           </div>
         )}
+        </>
+      )}
       </div>
       </div>
     </Modal>
+  );
+}
+
+export function DirectChatToast({
+  message,
+  onOpenChat,
+  onDismiss,
+}: {
+  message: { fromUser: User; text: string; timestamp: string } | null;
+  onOpenChat: (user: User) => void;
+  onDismiss: () => void;
+}) {
+  useEffect(() => {
+    if (!message) return;
+    const timer = setTimeout(() => {
+      onDismiss();
+    }, 8000);
+    return () => clearTimeout(timer);
+  }, [message, onDismiss]);
+
+  if (!message) return null;
+
+  return (
+    <div className="room-invitation-toast direct-chat-toast" role="alert">
+      <div className="toast-glow-ring" />
+      <div className="toast-body">
+        <div className="toast-header">
+          <span className="toast-badge" style={{ color: '#38bdf8', borderColor: '#38bdf8' }}>✉️ 仙友私信密札</span>
+          <button type="button" className="toast-close-btn" onClick={onDismiss} aria-label="关闭">
+            ✕
+          </button>
+        </div>
+        <div className="toast-content">
+          <div className="toast-avatar-box">
+            <PlayerAvatar
+              avatar={message.fromUser.avatar}
+              avatarUrl={message.fromUser.avatarUrl}
+              className="toast-avatar"
+            />
+          </div>
+          <div className="toast-info">
+            <p className="toast-message">
+              <strong>{message.fromUser.nickname}</strong>：
+            </p>
+            <p
+              className="toast-room-code"
+              style={{
+                color: '#fff4d0',
+                fontSize: '13px',
+                fontWeight: 'normal',
+                textOverflow: 'ellipsis',
+                overflow: 'hidden',
+                whiteSpace: 'nowrap',
+                maxWidth: '180px',
+              }}
+            >
+              {message.text}
+            </p>
+          </div>
+        </div>
+        <div className="toast-actions">
+          <button
+            type="button"
+            className="toast-join-btn"
+            style={{ background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)' }}
+            onClick={() => {
+              onOpenChat(message.fromUser);
+              onDismiss();
+            }}
+          >
+            查阅并回复
+          </button>
+          <button type="button" className="toast-ignore-btn" onClick={onDismiss}>
+            忽略
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -504,3 +888,4 @@ export function RoomInvitationToast({
     </div>
   );
 }
+
