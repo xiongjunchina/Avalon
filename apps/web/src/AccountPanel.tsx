@@ -49,12 +49,11 @@ async function cropImageToSquareDataUrl(file: File, size = 160): Promise<string>
 }
 
 export function StatisticsView({stats}:{stats:Statistics}) {
-  const [allRoles, setAllRoles] = useState(false);
   return <>
     <div className="stat-grid" aria-label="我的战绩"><div><strong>{stats.completed}</strong><span>完成对局</span></div><div><strong>{stats.wins}</strong><span>胜利</span></div><div><strong>{stats.losses}</strong><span>失败</span></div><div><strong>{rate(stats)}</strong><span>总胜率</span></div></div>
     <p className="hint">另有 {stats.aborted} 局中断，不计入胜负与胜率。统计以最终获胜阵营为准，包含提前刺杀。</p>
     <section className="stats-section" aria-labelledby="faction-stats-title">
-      <div className="ornament-heading"><div><p className="eyebrow">ALLEGIANCE</p><h2 id="faction-stats-title">阵营战绩</h2></div><span>取经正果，或是群妖乱道</span></div>
+      <div className="ornament-heading"><div><h2 id="faction-stats-title">阵营战绩</h2></div></div>
       <div className="faction-grid">{(['blue','red'] as const).map(team=>{const s=stats.byTeam[team];return <article className={`faction-card allegiance-${team}`} key={team} aria-label={`${team==='blue'?'蓝方':'红方'}战绩`}>
         <Emblem kind={team}/><p className="faction-motto">{team==='blue'?'取经正果':'群妖乱道'}</p><h3>{team==='blue'?'蓝方阵营':'红方阵营'}</h3>
         <div className="faction-rate"><strong>{rate(s)}</strong><span>胜率</span></div>
@@ -63,13 +62,12 @@ export function StatisticsView({stats}:{stats:Statistics}) {
       </article>;})}</div>
     </section>
     <section className="stats-section" aria-labelledby="role-stats-title">
-      <div className="ornament-heading"><div><p className="eyebrow">IDENTITIES</p><h2 id="role-stats-title">角色战绩</h2></div><span>你的每一重身份</span></div>
-      <div className="role-grid">{Object.entries(roleNames).slice(0, allRoles ? undefined : 2).map(([key,label])=>{const role=key as keyof typeof roleNames,s=stats.byRole[role],team=roleTeam(role);return <article key={role} className={`role-card allegiance-${team}`} aria-label={`${label}战绩`}>
+      <div className="ornament-heading"><div><h2 id="role-stats-title">角色战绩</h2></div></div>
+      <div className="role-grid">{Object.entries(roleNames).map(([key,label])=>{const role=key as keyof typeof roleNames,s=stats.byRole[role],team=roleTeam(role);return <article key={role} className={`role-card allegiance-${team}`} aria-label={`${label}战绩`}>
         <span className="role-team">{team==='blue'?'蓝方':'红方'}</span><RolePortrait role={role}/><h3>{label}</h3>
         <p className="role-rate"><strong>{rate(s)}</strong><span>胜率</span></p>
         <p className="role-record"><span>{s.wins} 胜</span><span>{s.losses} 负</span></p><p className="card-foot">{s.completed} 局完成 · {s.aborted} 局中断</p>
       </article>;})}</div>
-      <button type="button" className="secondary" aria-expanded={allRoles} onClick={() => setAllRoles(v => !v)}>{allRoles ? '收起角色战绩 ↑' : '更多角色战绩 ↓'}</button>
     </section>
   </>;
 }
