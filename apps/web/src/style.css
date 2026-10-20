@@ -41,7 +41,7 @@ p { line-height:1.75; text-wrap:pretty }
 .layout { display:grid; grid-template-columns:1fr 1fr; gap:24px }
 .room-layout { grid-template-columns:1.35fr 1fr; align-items:start }
 .panel { min-width:0; background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:28px }
-form { max-width:480px }
+form { max-width: 100%; margin: 0 auto; }
 label { display:block; font-size:16px; font-weight:500; margin:16px 0 8px }
 input,select,button { font:inherit; min-height:48px }
 input:not([type=checkbox]):not([type=radio]),select { width:100%; border:1px solid #647378; border-radius:4px; padding:12px; background:var(--ink); color:inherit }

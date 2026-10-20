@@ -5110,5 +5110,98 @@ dialog.table-modal-backdrop::backdrop { background: #081b2d55; }
   cursor: pointer;
 }
 
+/* ==========================================================================
+   Room Presets (常用设置) Symmetrical & Centered Layout
+   ========================================================================== */
+.presets {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 auto !important;
+  box-sizing: border-box !important;
+}
+
+.preset-form,
+.presets form {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 auto !important;
+  box-sizing: border-box !important;
+}
+
+.presets fieldset {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 auto !important;
+  border: none !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.presets .player-count-field,
+.table-modal-sheet .player-count-field {
+  width: 100% !important;
+  margin: 14px 0 8px !important;
+  padding: 0 !important;
+  border: none !important;
+  box-sizing: border-box !important;
+}
+
+.presets .player-count-field legend,
+.table-modal-sheet .player-count-field legend {
+  display: block !important;
+  font-size: 16px !important;
+  font-weight: 500 !important;
+  margin: 14px 0 8px !important;
+  color: inherit !important;
+}
+
+.presets .count-medallions,
+.table-modal-sheet .count-medallions {
+  width: 100% !important;
+  box-sizing: border-box !important;
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  justify-items: center !important;
+  align-items: center !important;
+  gap: 12px !important;
+  padding: 10px 0 !important;
+  margin: 0 auto !important;
+}
+
+.presets .check,
+.table-modal-sheet .check {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.presets input:not([type=checkbox]):not([type=radio]),
+.presets select {
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.presets button:not(.text-button):not(.secondary) {
+  width: 100% !important;
+  box-sizing: border-box !important;
+  margin-top: 18px !important;
+}
+
+.presets .preset-list {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 18px auto 0 !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.presets .preset-list li {
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+
 
 

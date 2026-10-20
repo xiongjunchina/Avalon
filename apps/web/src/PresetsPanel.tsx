@@ -25,7 +25,7 @@ export function PresetsPanel({currentSettings,disabled=false,canApply=false,onAp
     <p className="hint">最多 10 个；同名保存会更新原预设。只保存玩法，不包含房间、成员或接纳开关。</p>
     {error&&<p role="alert" className="error">{error}<button className="secondary" onClick={()=>setRetry(n=>n+1)}>重新读取预设</button></p>}
     {notice&&<p className="notice" role="status">{notice}</p>}
-    <form onSubmit={e=>{e.preventDefault();void run(async()=>{const {preset}=await api<{preset:SettingPreset}>('/me/presets',{name,settings:currentSettings??settings});setPresets(p=>[preset,...p.filter(x=>x.id!==preset.id)]);setName('');setNotice(`已保存“${preset.name}”。`);});}}>
+    <form className="preset-form" onSubmit={e=>{e.preventDefault();void run(async()=>{const {preset}=await api<{preset:SettingPreset}>('/me/presets',{name,settings:currentSettings??settings});setPresets(p=>[preset,...p.filter(x=>x.id!==preset.id)]);setName('');setNotice(`已保存“${preset.name}”。`);});}}>
       <fieldset disabled={locked}><legend className="sr-only">保存常用设置</legend>
         <label htmlFor="preset-name">预设名称</label><input id="preset-name" value={name} onChange={e=>setName(e.target.value)} maxLength={24} required placeholder="例如：七人宝镜局"/>
         {currentSettings?<p className="hint">将保存：{settingsText(currentSettings)}</p>:<SettingsFields prefix="preset" settings={settings} onChange={patch=>setSettings(s=>({...s,...patch}))}/>}
