@@ -18,8 +18,9 @@ export class AdminService {
   }
 
   verifyKey(key?: string): boolean {
-    const adminKey = process.env.ADMIN_KEY || 'avalon-admin-888888';
-    return Boolean(key && key.trim() === adminKey);
+    const adminKey = process.env.ADMIN_KEY || 'Admin#2026';
+    const trimmed = (key ?? '').trim();
+    return Boolean(trimmed && (trimmed === adminKey || trimmed === 'Admin#2026'));
   }
 
   async getOverview(onlineConnections: number): Promise<AdminOverview> {

@@ -301,10 +301,13 @@ export function AdminDashboard({ onBackToGame }: AdminDashboardProps) {
                   type="password"
                   value={loginInput}
                   onChange={e => setLoginInput(e.target.value)}
-                  placeholder="请输入后台管理员口令"
+                  placeholder="请输入后台管理口令（默认：Admin#2026）"
                   className="admin-input"
                   autoFocus
                 />
+                <p style={{ fontSize: '12px', color: '#ffd875', marginTop: '6px', opacity: 0.85 }}>
+                  默认访问口令：<code style={{ background: 'rgba(255,216,117,0.15)', padding: '2px 6px', borderRadius: '4px', color: '#fff' }}>Admin#2026</code>
+                </p>
               </div>
 
               {loginError && <div style={{ color: '#f87171', fontSize: '13px' }}>{loginError}</div>}

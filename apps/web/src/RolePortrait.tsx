@@ -19,7 +19,7 @@ export function RolePortrait({
   const large = size === 'card';
   const guardian = role === 'loyal' && loyalGuardian ? LOYAL_GUARDIANS[loyalGuardian] : undefined;
   const demon = role === 'minion' ? FEMALE_DEMONS[femaleDemon || 'yutu'] : undefined;
-  const artKey = guardian ? guardian.artPrefix : (femaleDemon && demon ? demon.artPrefix : role);
+  const artKey = guardian ? guardian.artPrefix : demon ? demon.artPrefix : role;
   const labelName = guardian ? guardian.fullName : demon ? demon.fullName : roleNames[role];
   return (
     <span
@@ -30,8 +30,8 @@ export function RolePortrait({
       <Emblem kind={role} />
       {failedRole !== artKey && (
         <img
-          src={`/art/roles/${artKey}-160.webp?v=xiyou4`}
-          srcSet={`/art/roles/${artKey}-160.webp?v=xiyou4 160w, /art/roles/${artKey}-640.webp?v=xiyou4 640w`}
+          src={`/art/roles/${artKey}-160.webp?v=xiyou5`}
+          srcSet={`/art/roles/${artKey}-160.webp?v=xiyou5 160w, /art/roles/${artKey}-640.webp?v=xiyou5 640w`}
           sizes={
             size === 'mini'
               ? '48px'

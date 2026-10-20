@@ -22,7 +22,7 @@ test('closed identities never mount or preload character images, for every suppo
       assert.doesNotMatch(html,/\/art\/roles\/|角色图案|identity-card|portrait-card/);
       assert.match(html,/私下查看我的身份/);
       const card=renderToStaticMarkup(createElement(IdentityCard,{role:game.roles[player.id]}));
-      assert.match(card,new RegExp(`${game.roles[player.id]}-640.webp`));
+      assert.match(card,new RegExp(`${game.roles[player.id]}(-[a-z]+)?-640.webp`));
       assert.ok(card.includes(roleNames[game.roles[player.id]]));
     }
   }

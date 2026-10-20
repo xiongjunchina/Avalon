@@ -40,7 +40,7 @@ import { PresetsPanel, SettingsFields, settingsText } from './PresetsPanel';
 import { Emblem, PlayerAvatar, WECHAT_SAMPLE_AVATARS, roleTeam } from './Heraldry';
 import { GuidePanel } from './GuidePanel';
 import { RolePortrait } from './RolePortrait';
-import { WUYUE_MISSIONS, roleMottos, roleNames, roleTitles } from './roles';
+import { FEMALE_DEMONS, WUYUE_MISSIONS, roleMottos, roleNames, roleTitles } from './roles';
 import { SoundProvider, SoundButton, useSound, useGameSound, useNavigationSound } from './SoundSettings';
 import { VoiceControls } from './VoiceControls';
 import { FriendsModal, RoomInvitationToast, DirectChatToast } from './FriendsModal';
@@ -1067,10 +1067,18 @@ function App() {
               aria-label="角色展示"
             >
               <div className={`mp-medallion-circle allegiance-${roleTeam(showcaseRole)}`}>
-                <RolePortrait role={showcaseRole} size="card" />
+                <RolePortrait
+                  role={showcaseRole}
+                  femaleDemon={showcaseRole === 'minion' ? 'yutu' : undefined}
+                  size="card"
+                />
               </div>
-              <h2 className="mp-medallion-name">{roleNames[showcaseRole]}</h2>
-              <p className="mp-medallion-motto">{roleMottos[showcaseRole]}</p>
+              <h2 className="mp-medallion-name">
+                {showcaseRole === 'minion' ? '玉兔精' : roleNames[showcaseRole]}
+              </h2>
+              <p className="mp-medallion-motto">
+                {showcaseRole === 'minion' ? FEMALE_DEMONS.yutu.motto : roleMottos[showcaseRole]}
+              </p>
             </section>
 
             <footer className="mp-home-footer">
