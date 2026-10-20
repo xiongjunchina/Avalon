@@ -46,6 +46,7 @@ import { VoiceControls } from './VoiceControls';
 import { FriendsModal, RoomInvitationToast } from './FriendsModal';
 import { voiceManager, type VoiceState } from './agora-voice';
 import { uuidToRtcUid, type VoiceTokenResponse, type FriendSummary } from '@avalon/contracts';
+import { AdminDashboard } from './AdminDashboard';
 
 const SHOWCASE_ROLES: Role[] = [
   'merlin',
@@ -77,12 +78,14 @@ function shuffleArray<T>(items: T[]): T[] {
 }
 
 function App() {
-  const [page, setPage] = useState<'table' | 'account' | 'guide'>('table');
+  const [page, setPage] = useState<'table' | 'account' | 'guide' | 'admin'>('table');
   const guideReturn = useRef<'table' | 'account'>('table');
   const [replayId, setReplayId] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [roomId, setRoomId] = useState<string | null>(null);
   const [room, setRoom] = useState<RoomView | null>(null);
+  const [announcement, setAnnouncement] = useState<{ text: string; enabled: boolean } | null>(null);
+  const [freeAccessMode, setFreeAccessMode] = useState<boolean>(true);
   const [nickname, setNickname] = useState('');
   const initialInvite = new URLSearchParams(location.search).get('invite') ?? '';
   const [key, setKey] = useState(() => initialInvite);
@@ -121,6 +124,23 @@ function App() {
 
   useEffect(() => {
     return voiceManager.subscribe(setVoiceState);
+  }, []);
+
+  // Check admin url parameter and load system status
+  useEffect(() => {
+    const search = new URLSearchParams(window.location.search);
+    if (search.has('admin') || window.location.hash.includes('admin')) {
+      setPage('admin');
+    }
+    let active = true;
+    void api<{ announcement: { text: string; enabled: boolean }; freeAccessMode: boolean }>('/system/announcement')
+      .then(res => {
+        if (!active) return;
+        setAnnouncement(res.announcement);
+        setFreeAccessMode(res.freeAccessMode);
+      })
+      .catch(() => {});
+    return () => { active = false; };
   }, []);
 
   // Check incoming friend requests
@@ -299,6 +319,9 @@ function App() {
         error: code => setError(errors[code] ?? '连接发生问题，请稍后重试。'),
         invitation: msg => {
           setPendingInvitation(msg);
+        },
+        announcement: msg => {
+          setAnnouncement(msg);
         },
         ended: reason => {
           setRoomId(null);
@@ -574,6 +597,24 @@ function App() {
 
   return (
     <main data-scene={scene} data-sound="tap" className={`app-shell ${inTableViewport ? 'is-table-viewport is-live-table' : ''}`}>
+      {/* Global Announcement Marquee */}
+      {announcement?.enabled && announcement.text && page !== 'admin' && (
+        <div className="global-announcement-marquee" role="alert">
+          <div className="global-announcement-text">
+            <span>📢</span>
+            <span>{announcement.text}</span>
+          </div>
+          <button
+            type="button"
+            className="global-announcement-close"
+            onClick={() => setAnnouncement(a => a ? { ...a, enabled: false } : null)}
+            aria-label="关闭广播"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       {/* Toast Alerts */}
       {room?.phase === 'waiting' && user && <ReadyReminder room={room} userId={user.id} disabled={busy || connection !== '已连接'} onReady={() => command({type:'setReady',payload:{ready:true}})} />}
       {(error || notice) && (
@@ -591,7 +632,9 @@ function App() {
         </div>
       )}
 
-      {page === 'guide' ? (
+      {page === 'admin' ? (
+        <AdminDashboard onBackToGame={() => setPage(user ? 'table' : 'table')} />
+      ) : page === 'guide' ? (
         <GuidePanel onBack={() => setPage(user ? guideReturn.current : 'table')} />
       ) : loading ? (
         <div className="skeleton" aria-label="正在恢复访客身份" />
@@ -946,6 +989,13 @@ function App() {
                 <span className="logo-word">真假猴王</span>
               </h1>
               <p className="mp-avalon-sub">一念佛魔皆幻相，谁是修道取经人</p>
+              {freeAccessMode && (
+                <div style={{ marginTop: '6px' }}>
+                  <span style={{ fontSize: '11px', color: '#34d399', background: 'rgba(52, 211, 153, 0.15)', border: '1px solid rgba(52, 211, 153, 0.35)', padding: '2px 10px', borderRadius: '999px', fontWeight: 600 }}>
+                    🎉 公测盛典 · 全特权限时免费畅玩中
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Center Single Role Medallion (Auto-rotates one role at a time, non-clickable) */}
@@ -1006,6 +1056,7 @@ function App() {
               <button type="button" className="secondary practice-entry" onClick={() => startPracticeGame(setupSettings)}>🐒 幻境单人试玩 ›</button>
               <div className="lobby-personal-links">
                 <button type="button" className="text-button" onClick={() => { setReplayId(null); setPage('account'); }}><Emblem kind="chronicle"/>功果簿（战绩与资料）</button>
+                <button type="button" className="text-button" onClick={() => setPage('admin')} style={{ color: '#ffd875' }}>⛩️ 法坛中枢（管理）</button>
                 <button type="button" className="text-button" onClick={handleLogout} style={{ color: '#fca5a5' }}>🚪 退出登录 · 更换新身份</button>
               </div>
             </footer>

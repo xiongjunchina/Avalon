@@ -116,7 +116,56 @@ function ProfileEditor({user,onUser}:{user:User;onUser:(u:User)=>void}) {
     }
   }
 
-  return <details className="profile-editor"><summary>修改昵称与头像</summary><form onSubmit={e=>{e.preventDefault();setBusy(true);setError('');setSaved(false);void api<{user:User}>('/me',{nickname,avatar,avatarUrl,wechatAvatarUrl},'PATCH').then(r=>{onUser(r.user);setNickname(r.user.nickname);setAvatarUrl(r.user.avatarUrl??null);setWechatAvatarUrl(r.user.wechatAvatarUrl??null);setSaved(true);}).catch(e=>setError(describe(e))).finally(()=>setBusy(false));}}>
+  const [redeemCode, setRedeemCode] = useState('');
+  const [redeemBusy, setRedeemBusy] = useState(false);
+  const [redeemMsg, setRedeemMsg] = useState('');
+
+  async function handleRedeem(e: React.FormEvent) {
+    e.preventDefault();
+    if (!redeemCode.trim()) return;
+    setRedeemBusy(true);
+    setRedeemMsg('');
+    try {
+      const res = await api<{ ok: boolean; days: number; vipUntil: string }>('/me/redeem', { code: redeemCode.trim() });
+      setRedeemMsg(`🎉 成功兑换 ${res.days} 天 VIP！有效期至：${new Date(res.vipUntil).toLocaleDateString()}`);
+      onUser({ ...user, isVip: true, vipUntil: res.vipUntil });
+      setRedeemCode('');
+    } catch (err: any) {
+      setRedeemMsg(err.message === 'CODE_ALREADY_REDEEMED' ? '该兑换码已被使用' : '兑换码无效或不存在');
+    } finally {
+      setRedeemBusy(false);
+    }
+  }
+
+  return <details className="profile-editor"><summary>修仙功果与仙位资料</summary>
+    <div style={{ margin: '10px 0 14px', padding: '12px 14px', background: 'rgba(212,163,89,0.08)', border: '1px solid rgba(212,163,89,0.3)', borderRadius: '10px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+        <div>
+          <strong style={{ color: '#ffd875', fontSize: '14px' }}>
+            {user.isVip ? '⭐ 尊享 VIP 仙友' : '🎉 公测全员畅玩阶段'}
+          </strong>
+          <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#cbd5e1' }}>
+            {user.isVip
+              ? `VIP 到期时间：${new Date(user.vipUntil!).toLocaleDateString()}`
+              : '当前处于公测体验期，全员零门槛免费畅享战绩复盘与高级板子！'}
+          </p>
+        </div>
+      </div>
+      <form onSubmit={handleRedeem} style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
+        <input
+          placeholder="输入 8 位 VIP 兑换码…"
+          value={redeemCode}
+          onChange={e => setRedeemCode(e.target.value.toUpperCase())}
+          style={{ flex: 1, padding: '7px 10px', fontSize: '13px', background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(212,163,89,0.3)', borderRadius: '6px', color: '#ffd875' }}
+        />
+        <button type="submit" disabled={redeemBusy || !redeemCode.trim()} className="secondary" style={{ padding: '6px 14px', fontSize: '13px', whiteSpace: 'nowrap' }}>
+          {redeemBusy ? '核销中…' : '核销兑换'}
+        </button>
+      </form>
+      {redeemMsg && <p style={{ fontSize: '12px', color: '#34d399', margin: '6px 0 0' }}>{redeemMsg}</p>}
+    </div>
+
+    <form onSubmit={e=>{e.preventDefault();setBusy(true);setError('');setSaved(false);void api<{user:User}>('/me',{nickname,avatar,avatarUrl,wechatAvatarUrl},'PATCH').then(r=>{onUser(r.user);setNickname(r.user.nickname);setAvatarUrl(r.user.avatarUrl??null);setWechatAvatarUrl(r.user.wechatAvatarUrl??null);setSaved(true);}).catch(e=>setError(describe(e))).finally(()=>setBusy(false));}}>
     <fieldset disabled={busy}><legend className="sr-only">编辑资料</legend>
       <div className="profile-avatar-manager">
         <div className="profile-avatar-preview-box">

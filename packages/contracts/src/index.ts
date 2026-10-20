@@ -51,7 +51,16 @@ export const profileSchema = z.object({
   wechatAvatarUrl: avatarImageUrlSchema.nullable().optional(),
 }).strict();
 export const presetSchema = z.object({name:z.string().trim().min(1).max(24),settings:settingsSchema}).strict();
-export interface User { id: string; nickname: string; avatar?: Avatar; avatarUrl?: string | null; wechatAvatarUrl?: string | null; playerCode?: string }
+export interface User {
+  id: string;
+  nickname: string;
+  avatar?: Avatar;
+  avatarUrl?: string | null;
+  wechatAvatarUrl?: string | null;
+  playerCode?: string;
+  isVip?: boolean;
+  vipUntil?: string | null;
+}
 export interface Member extends User { seat: number; ready: boolean; online: boolean }
 export interface RoomView {
   id: string; code: string; hostId: string; version: number;
@@ -83,6 +92,71 @@ export interface FriendSummary {
   roomId?: string | null;
   roomCode?: string | null;
 }
+
+export interface AdminOverview {
+  totalUsers: number;
+  todayNewUsers: number;
+  activeRoomsCount: number;
+  totalGames: number;
+  todayGames: number;
+  freeAccessMode: boolean;
+  onlineConnections: number;
+}
+
+export interface AdminUserSummary {
+  id: string;
+  nickname: string;
+  playerCode: string;
+  avatar?: Avatar;
+  avatarUrl?: string | null;
+  isBanned: boolean;
+  bannedReason?: string | null;
+  vipUntil?: string | null;
+  isVip: boolean;
+  gamesCount: number;
+  friendsCount: number;
+  createdAt: string;
+}
+
+export interface AdminRoomSummary {
+  id: string;
+  code: string;
+  hostId: string;
+  hostNickname: string;
+  phase: string;
+  memberCount: number;
+  playerCount: number;
+  voiceChatEnabled: boolean;
+  createdAt: string;
+  offlineSince?: string | null;
+}
+
+export interface AdminGameSummary {
+  id: string;
+  roomId: string;
+  roomCode: string;
+  playerCount: number;
+  winner: Team | null;
+  reason: string | null;
+  createdAt: string;
+  endedAt?: string | null;
+}
+
+export interface RedemptionCodeItem {
+  code: string;
+  days: number;
+  note?: string | null;
+  redeemedBy?: string | null;
+  redeemerNickname?: string | null;
+  redeemedAt?: string | null;
+  createdAt: string;
+}
+
+export interface SystemAnnouncement {
+  text: string;
+  enabled: boolean;
+}
+
 export type ServerMessage =
   | { type: 'snapshot'; room: RoomView }
   | { type: 'commandResult'; commandId: string; ok: boolean; error?: string }
@@ -90,7 +164,8 @@ export type ServerMessage =
   | { type: 'error'; error: string }
   | { type: 'takenOver' }
   | { type: 'left' }
-  | { type: 'roomInvitation'; fromUser: User; roomId: string; roomCode: string };
+  | { type: 'roomInvitation'; fromUser: User; roomId: string; roomCode: string }
+  | { type: 'systemAnnouncement'; text: string; enabled: boolean };
 
 export type Role = 'merlin' | 'percival' | 'guinevere' | 'loyal' | 'morgana' | 'assassin' | 'mordred' | 'oberon' | 'minion';
 export type LoyalGuardian = 'zhubajie' | 'shawujing' | 'bailong' | 'jingang';

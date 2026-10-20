@@ -8,6 +8,7 @@ export interface ConnectionHandlers {
   busy(value:boolean):void;
   ended(reason:'left'|'closed'|'expired'):void;
   invitation?(msg:{fromUser:import('@avalon/contracts').User;roomId:string;roomCode:string}):void;
+  announcement?(msg:{text:string;enabled:boolean}):void;
 }
 // Transport owns one connection attempt and one unacknowledged command at a time.
 // Reconnect retries the same commandId, never creates a new vote/action implicitly.
@@ -73,6 +74,8 @@ export class RoomConnection {
           if(data.ok&&leaving)this.terminal('left');
         }else if(data.type==='roomInvitation'){
           this.options.handlers.invitation?.(data);
+        }else if(data.type==='systemAnnouncement'){
+          this.options.handlers.announcement?.(data);
         }
       };
       ws.onclose=event=>{

@@ -88,10 +88,25 @@ export class PostgresStore {
         ? await c.query(`UPDATE sessions SET expires_at=$2 WHERE token_hash=$1 AND expires_at>$3 RETURNING user_id`, [digest(token),new Date(this.now()+SESSION_MS),this.date()])
         : await c.query('SELECT user_id FROM sessions WHERE token_hash=$1 AND expires_at>$2', [digest(token),this.date()]);
       if (!result.rows[0]) throw new DomainError('UNAUTHENTICATED', 401);
-      const u = (await c.query<{id:string;nickname:string;avatar:User['avatar'];avatar_url?:string|null;wechat_avatar_url?:string|null;player_code?:string|null}>(
-        'SELECT id,nickname,avatar,avatar_url,wechat_avatar_url,player_code FROM users WHERE id=$1',
+      const u = (await c.query<{
+        id: string;
+        nickname: string;
+        avatar: User['avatar'];
+        avatar_url?: string | null;
+        wechat_avatar_url?: string | null;
+        player_code?: string | null;
+        is_banned?: boolean | null;
+        vip_until?: Date | null;
+      }>(
+        `SELECT u.id, u.nickname, u.avatar, u.avatar_url, u.wechat_avatar_url, u.player_code,
+                m.is_banned, m.vip_until
+         FROM users u
+         LEFT JOIN user_memberships m ON m.user_id = u.id
+         WHERE u.id=$1`,
         [result.rows[0].user_id]
       )).rows[0];
+      if (u.is_banned) throw new DomainError('USER_BANNED', 403);
+      const isVip = Boolean(u.vip_until && u.vip_until.getTime() > this.now());
       return {
         id: u.id,
         nickname: u.nickname,
@@ -99,6 +114,8 @@ export class PostgresStore {
         ...(u.avatar_url ? { avatarUrl: u.avatar_url } : {}),
         ...(u.wechat_avatar_url ? { wechatAvatarUrl: u.wechat_avatar_url } : {}),
         ...(u.player_code ? { playerCode: u.player_code } : {}),
+        isVip,
+        ...(u.vip_until ? { vipUntil: u.vip_until.toISOString() } : {}),
       };
     });
   }
@@ -262,6 +279,11 @@ export class PostgresStore {
     if(game && !isEnded(game)) { finish(game,{winner:null,reason:'offline_timeout'}); await this.saveGame(c,id,game); }
     await c.query("UPDATE rooms SET phase='closed',closed_at=$2,accepting_new_members=false WHERE id=$1",[id,this.date()]);
     await c.query('DELETE FROM room_members WHERE room_id=$1',[id]);
+  }
+  async forceCloseRoom(id: string) {
+    return this.tx(async c => {
+      await this.closeRoom(c, id);
+    });
   }
   async connect(userId:string,roomId:string,connectionId:string) {
     return this.tx(async c=>{

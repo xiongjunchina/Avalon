@@ -10,11 +10,13 @@ import { DomainError, PostgresStore } from './store.js';
 import { Accounts, historyQuery } from './accounts.js';
 import { generateVoiceToken, uuidToRtcUid } from './agora.js';
 import { FriendsService } from './friends.js';
+import { AdminService } from './admin.js';
 
 export async function buildApp(options: { store: PostgresStore; origin?: string; secure?: boolean; trustProxy?: boolean; heartbeatMs?: number; maintenanceMs?: number }) {
   const { store }=options;
   const accounts=new Accounts(store);
   const friendsService=new FriendsService(store);
+  const adminService=new AdminService(store);
   const origin=options.origin??'http://localhost:5173';
   const app=Fastify({logger:false,bodyLimit:131072,trustProxy:options.trustProxy ? (_address, hop) => hop === 0 : false});
   // One active server per database schema. Never rebuild presence underneath another server.
@@ -190,6 +192,158 @@ export async function buildApp(options: { store: PostgresStore; origin?: string;
     }
     return {sent:true,online:false};
   });
+
+  // --- Admin & Growth System (Scheme 2) ---
+  const requireAdmin = (req: FastifyRequest, reply: FastifyReply) => {
+    const key = (req.headers['x-admin-key'] as string) || (req.query as any)?.admin_key;
+    if (!adminService.verifyKey(key)) {
+      reply.code(401);
+      throw new DomainError('UNAUTHORIZED_ADMIN', 401);
+    }
+  };
+
+  app.post('/api/admin/verify', async (req, reply) => {
+    const { key } = z.object({ key: z.string() }).parse(req.body);
+    if (!adminService.verifyKey(key)) {
+      reply.code(401);
+      return { ok: false };
+    }
+    return { ok: true };
+  });
+
+  app.get('/api/admin/overview', async (req, reply) => {
+    requireAdmin(req, reply);
+    return adminService.getOverview(connections.size);
+  });
+
+  app.get('/api/admin/settings', async (req, reply) => {
+    requireAdmin(req, reply);
+    return adminService.getSystemSettings();
+  });
+
+  app.post('/api/admin/settings', async (req, reply) => {
+    requireAdmin(req, reply);
+    const { key, value } = z.object({ key: z.string(), value: z.any() }).parse(req.body);
+    await adminService.updateSystemSetting(key, value);
+    if (key === 'broadcast_announcement' && value && typeof value === 'object') {
+      for (const c of connections.values()) {
+        send(c.socket, { type: 'systemAnnouncement', text: value.text || '', enabled: Boolean(value.enabled) });
+      }
+    }
+    return { ok: true };
+  });
+
+  app.get('/api/admin/users', async (req, reply) => {
+    requireAdmin(req, reply);
+    const { query, limit, offset } = req.query as any;
+    return adminService.searchUsers(query, limit ? Number(limit) : 50, offset ? Number(offset) : 0);
+  });
+
+  app.post<{ Params: { id: string } }>('/api/admin/users/:id/ban', async (req, reply) => {
+    requireAdmin(req, reply);
+    const userId = z.string().uuid().parse(req.params.id);
+    const { isBanned, reason } = z.object({ isBanned: z.boolean(), reason: z.string().optional() }).parse(req.body);
+    await adminService.banUser(userId, isBanned, reason);
+    if (isBanned) {
+      const conn = connections.get(userId);
+      if (conn) {
+        send(conn.socket, { type: 'error', error: 'USER_BANNED' });
+        conn.socket.close(4003, 'User banned');
+        connections.delete(userId);
+      }
+    }
+    return { ok: true };
+  });
+
+  app.post<{ Params: { id: string } }>('/api/admin/users/:id/vip', async (req, reply) => {
+    requireAdmin(req, reply);
+    const userId = z.string().uuid().parse(req.params.id);
+    const { days } = z.object({ days: z.number().int().min(1).max(3650) }).parse(req.body);
+    const vipUntil = await adminService.grantVip(userId, days);
+    return { ok: true, vipUntil };
+  });
+
+  app.post<{ Params: { id: string } }>('/api/admin/users/:id/reset-profile', async (req, reply) => {
+    requireAdmin(req, reply);
+    const userId = z.string().uuid().parse(req.params.id);
+    const { resetNickname, resetAvatar } = z.object({ resetNickname: z.boolean().optional(), resetAvatar: z.boolean().optional() }).parse(req.body);
+    await adminService.resetUserProfile(userId, resetNickname, resetAvatar);
+    return { ok: true };
+  });
+
+  app.get<{ Params: { id: string } }>('/api/admin/users/:id/friends', async (req, reply) => {
+    requireAdmin(req, reply);
+    const userId = z.string().uuid().parse(req.params.id);
+    return { friends: await adminService.getUserFriends(userId) };
+  });
+
+  app.get('/api/admin/rooms', async (req, reply) => {
+    requireAdmin(req, reply);
+    return { rooms: await adminService.getActiveRooms() };
+  });
+
+  app.post<{ Params: { id: string } }>('/api/admin/rooms/:id/kill', async (req, reply) => {
+    requireAdmin(req, reply);
+    const roomId = z.string().uuid().parse(req.params.id);
+    await store.forceCloseRoom(roomId);
+    for (const [uid, c] of connections.entries()) {
+      if (c.roomId === roomId) {
+        send(c.socket, { type: 'roomClosed' });
+        c.socket.close(1000, 'Room closed by admin');
+        connections.delete(uid);
+      }
+    }
+    publish(roomId);
+    return { ok: true };
+  });
+
+  app.get('/api/admin/games', async (req, reply) => {
+    requireAdmin(req, reply);
+    const { limit, offset } = req.query as any;
+    return { games: await adminService.getGameHistory(limit ? Number(limit) : 20, offset ? Number(offset) : 0) };
+  });
+
+  app.get('/api/admin/redemption-codes', async (req, reply) => {
+    requireAdmin(req, reply);
+    return { codes: await adminService.listRedemptionCodes() };
+  });
+
+  app.post('/api/admin/redemption-codes/generate', async (req, reply) => {
+    requireAdmin(req, reply);
+    const { count, days, note } = z.object({
+      count: z.number().int().min(1).max(100),
+      days: z.number().int().min(1).max(365),
+      note: z.string().optional(),
+    }).parse(req.body);
+    const codes = await adminService.generateRedemptionCodes(count, days, note);
+    return { codes };
+  });
+
+  app.post('/api/admin/broadcast', async (req, reply) => {
+    requireAdmin(req, reply);
+    const { text, enabled } = z.object({ text: z.string(), enabled: z.boolean() }).parse(req.body);
+    await adminService.updateSystemSetting('broadcast_announcement', { text, enabled });
+    for (const c of connections.values()) {
+      send(c.socket, { type: 'systemAnnouncement', text, enabled });
+    }
+    return { ok: true };
+  });
+
+  // Public system status & user redemption
+  app.get('/api/system/announcement', async () => {
+    const settings = await adminService.getSystemSettings();
+    return {
+      announcement: settings.announcement,
+      freeAccessMode: settings.freeAccessMode,
+    };
+  });
+
+  app.post('/api/me/redeem', async (req, reply) => {
+    const user = await authenticate(req, reply);
+    const { code } = z.object({ code: z.string().trim().min(4).max(16) }).parse(req.body);
+    return adminService.redeemCode(user.id, code);
+  });
+
   const wsUsers=new WeakMap<FastifyRequest,User>();
   app.get<{Params:{id:string}}>('/api/rooms/:id/socket',{
     websocket:true,preValidation:async req=>{
