@@ -1053,8 +1053,8 @@ function App() {
               </h1>
               <p className="mp-avalon-sub">一念佛魔皆幻相，谁是修道取经人</p>
               {freeAccessMode && (
-                <div style={{ marginTop: '6px' }}>
-                  <span style={{ fontSize: '11px', color: '#34d399', background: 'rgba(52, 211, 153, 0.15)', border: '1px solid rgba(52, 211, 153, 0.35)', padding: '2px 10px', borderRadius: '999px', fontWeight: 600 }}>
+                <div className="lobby-banner-wrap">
+                  <span className="lobby-free-access-banner">
                     🎉 公测盛典 · 全特权限时免费畅玩中
                   </span>
                 </div>
@@ -1121,14 +1121,37 @@ function App() {
                   className="secondary lobby-join"
                   onClick={() => setJoinOpen(true)}
                 >
-                  <Emblem kind="crown" />入席寻友
+                  <Emblem kind="crown" />加入房间
                 </button>
               </div>
               <button type="button" className="secondary practice-entry" onClick={() => startPracticeGame(setupSettings)}>🐒 幻境单人试玩 ›</button>
-              <div className="lobby-personal-links">
-                <button type="button" className="text-button" onClick={() => { setReplayId(null); setPage('account'); }}><Emblem kind="chronicle"/>功果簿（战绩与资料）</button>
-                <button type="button" className="text-button" onClick={() => setPage('admin')} style={{ color: '#ffd875' }}>⛩️ 法坛中枢（管理）</button>
-                <button type="button" className="text-button" onClick={handleLogout} style={{ color: '#fca5a5' }}>🚪 退出登录 · 更换新身份</button>
+              <div className="lobby-compact-links" role="navigation" aria-label="快捷导航">
+                <button
+                  type="button"
+                  className="lobby-link-btn"
+                  onClick={() => { setReplayId(null); setPage('account'); }}
+                  title="功果簿（战绩与个人资料）"
+                >
+                  📜 功果簿
+                </button>
+                <span className="lobby-link-sep" aria-hidden="true">·</span>
+                <button
+                  type="button"
+                  className="lobby-link-btn is-admin"
+                  onClick={() => setPage('admin')}
+                  title="法坛中枢（管理）"
+                >
+                  ⛩️ 法坛中枢
+                </button>
+                <span className="lobby-link-sep" aria-hidden="true">·</span>
+                <button
+                  type="button"
+                  className="lobby-link-btn is-logout"
+                  onClick={handleLogout}
+                  title="退出当前登录并更换新身份"
+                >
+                  🚪 退出登录
+                </button>
               </div>
             </footer>
 
