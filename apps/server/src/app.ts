@@ -90,7 +90,11 @@ export async function buildApp(options: { store: PostgresStore; origin?: string;
     if(!['GET','HEAD','OPTIONS'].includes(req.method)||req.headers.upgrade==='websocket') {
       if(req.headers.origin!==origin)throw new DomainError('ORIGIN_REJECTED',403);
     }
-    if(!['GET','HEAD','OPTIONS'].includes(req.method)&&req.headers['x-avalon-request']!=='1')throw new DomainError('CSRF_REJECTED',403);
+    if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
+      const isAvalonRequest = req.headers['x-avalon-request'] === '1';
+      const isAdminRequest = req.url.startsWith('/api/admin') || Boolean(req.headers['x-admin-key']);
+      if (!isAvalonRequest && !isAdminRequest) throw new DomainError('CSRF_REJECTED', 403);
+    }
   });
   app.addHook('onSend',async(_req,reply)=>{reply.header('Cache-Control','no-store');reply.header('X-Content-Type-Options','nosniff');});
   app.setErrorHandler((err,_req,reply)=>{

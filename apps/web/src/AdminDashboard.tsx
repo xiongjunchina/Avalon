@@ -59,6 +59,7 @@ export function AdminDashboard({ onBackToGame }: AdminDashboardProps) {
       method,
       headers: {
         'x-admin-key': adminKey,
+        'x-avalon-request': '1',
         ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}),
       },
       body: body !== undefined ? JSON.stringify(body) : undefined,
@@ -88,7 +89,10 @@ export function AdminDashboard({ onBackToGame }: AdminDashboardProps) {
     try {
       const res = await fetch('/api/admin/verify', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-avalon-request': '1',
+        },
         body: JSON.stringify({ key: cleanKey }),
       });
       if (!res.ok) {
