@@ -76,21 +76,33 @@ export function AdminDashboard({ onBackToGame }: AdminDashboardProps) {
     return res.json();
   };
 
+  const [showPassword, setShowPassword] = useState(false);
+
   // Login handler
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!loginInput.trim()) return;
+    const cleanKey = loginInput.trim();
+    if (!cleanKey) return;
     setBusy(true);
     setLoginError('');
     try {
       const res = await fetch('/api/admin/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ key: loginInput.trim() }),
+        body: JSON.stringify({ key: cleanKey }),
       });
-      if (!res.ok) throw new Error('管理口令错误，请核对后重试');
-      sessionStorage.setItem('avalon_admin_key', loginInput.trim());
-      setAdminKey(loginInput.trim());
+      if (!res.ok) {
+        if (res.status === 404) {
+          throw new Error('后台管理接口未就绪，请确保服务端已同步更新并重启');
+        }
+        if (res.status === 401) {
+          throw new Error('管理口令错误，请核对大小写及特殊符号后重试');
+        }
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || `验证失败 (${res.status})`);
+      }
+      sessionStorage.setItem('avalon_admin_key', cleanKey);
+      setAdminKey(cleanKey);
       setIsAuthenticated(true);
     } catch (err: any) {
       setLoginError(err.message || '登录失败');
@@ -297,17 +309,41 @@ export function AdminDashboard({ onBackToGame }: AdminDashboardProps) {
             <form onSubmit={handleLogin} className="admin-login-form">
               <div className="admin-input-group">
                 <label className="admin-input-label">管理员访问口令 (Admin Secret)</label>
-                <input
-                  type="password"
-                  value={loginInput}
-                  onChange={e => setLoginInput(e.target.value)}
-                  placeholder="请输入后台管理口令（默认：Admin#2026）"
-                  className="admin-input"
-                  autoFocus
-                />
-                <p style={{ fontSize: '12px', color: '#ffd875', marginTop: '6px', opacity: 0.85 }}>
-                  默认访问口令：<code style={{ background: 'rgba(255,216,117,0.15)', padding: '2px 6px', borderRadius: '4px', color: '#fff' }}>Admin#2026</code>
-                </p>
+                <div style={{ position: 'relative', width: '100%' }}>
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={loginInput}
+                    onChange={e => setLoginInput(e.target.value)}
+                    placeholder="请输入后台管理员访问口令"
+                    className="admin-input"
+                    style={{ paddingRight: '44px' }}
+                    autoFocus
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(s => !s)}
+                    style={{
+                      position: 'absolute',
+                      right: '10px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'transparent',
+                      border: 'none',
+                      boxShadow: 'none',
+                      cursor: 'pointer',
+                      padding: '4px',
+                      fontSize: '16px',
+                      width: 'auto',
+                      minHeight: 'auto',
+                      marginTop: 0,
+                      color: '#ffd875',
+                    }}
+                    title={showPassword ? '隐藏口令' : '显示口令'}
+                    aria-label={showPassword ? '隐藏口令' : '显示口令'}
+                  >
+                    {showPassword ? '👁️' : '👁️‍🗨️'}
+                  </button>
+                </div>
               </div>
 
               {loginError && <div style={{ color: '#f87171', fontSize: '13px' }}>{loginError}</div>}

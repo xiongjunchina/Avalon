@@ -30,6 +30,7 @@ export function ChatDrawer({ roomId, messages, onClose, onSent }: ChatDrawerProp
   const [voiceNotice, setVoiceNotice] = useState('');
   const streamEndRef = useRef<HTMLDivElement | null>(null);
   const recognitionRef = useRef<any>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     streamEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -46,7 +47,7 @@ export function ChatDrawer({ roomId, messages, onClose, onSent }: ChatDrawerProp
 
       recognition.onstart = () => {
         setIsRecording(true);
-        setVoiceNotice('正在聆听中，请说话…');
+        setVoiceNotice('正在聆听中，请对着麦克风说话…');
       };
 
       recognition.onresult = (event: any) => {
@@ -60,8 +61,8 @@ export function ChatDrawer({ roomId, messages, onClose, onSent }: ChatDrawerProp
 
       recognition.onerror = () => {
         setIsRecording(false);
-        setVoiceNotice('语音识别未捕获，请重试');
-        setTimeout(() => setVoiceNotice(''), 2500);
+        setVoiceNotice('未捕获到清晰语音，建议使用键盘自带语音键输入');
+        setTimeout(() => setVoiceNotice(''), 3000);
       };
 
       recognition.onend = () => {
@@ -75,7 +76,11 @@ export function ChatDrawer({ roomId, messages, onClose, onSent }: ChatDrawerProp
 
   const handleToggleVoice = () => {
     if (!recognitionRef.current) {
-      alert('当前浏览器未开放原生语音识别，请直接使用手机键盘自带的语音输入键');
+      // Browser doesn't expose native speech API (common on mobile WeChat webview / iOS Safari)
+      // Focus input to invoke native keyboard dictation and show toast
+      inputRef.current?.focus();
+      setVoiceNotice('💡 当前浏览器未开放录音API，已为您激活键盘，可直接点击手机键盘上的【🎙️语音】键进行说话识别');
+      setTimeout(() => setVoiceNotice(''), 4500);
       return;
     }
     if (isRecording) {
@@ -111,22 +116,28 @@ export function ChatDrawer({ roomId, messages, onClose, onSent }: ChatDrawerProp
   return (
     <div className="chat-drawer-backdrop" onClick={onClose}>
       <div className="chat-drawer-sheet" onClick={e => e.stopPropagation()}>
+        {/* Top Drag Handle for quick tap-to-dismiss */}
+        <div className="chat-drawer-handle-bar" onClick={onClose} title="点击收起" />
+
         {/* Header */}
         <div className="chat-drawer-header">
-          <span className="chat-drawer-title">
-            <span>💬 法坛传音</span>
-            <small style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 400 }}>
-              （发送后头像上方将自动冒泡提示全场）
-            </small>
-          </span>
-          <button type="button" className="chat-drawer-close-btn" onClick={onClose} aria-label="关闭">
-            ✕
+          <div className="chat-drawer-title-group">
+            <span className="chat-drawer-title">💬 法坛传音</span>
+            <span className="chat-drawer-hint">（实时全场冒泡）</span>
+          </div>
+          <button
+            type="button"
+            className="chat-drawer-close-btn"
+            onClick={onClose}
+            aria-label="关闭传音并返回房间"
+          >
+            ✕ 关闭
           </button>
         </div>
 
         {/* Tactical Quick Phrases */}
         <div className="chat-tactical-section">
-          <div className="chat-tactical-label">⚡ 快捷战术密语（点击直接秒发）：</div>
+          <div className="chat-tactical-label">⚡ 常用密语（横滑浏览 · 点击直接秒发）：</div>
           <div className="chat-tactical-grid">
             {TACTICAL_PHRASES.map(phrase => (
               <button
@@ -145,7 +156,7 @@ export function ChatDrawer({ roomId, messages, onClose, onSent }: ChatDrawerProp
         <div className="chat-drawer-stream">
           {messages.length === 0 ? (
             <div style={{ textAlign: 'center', color: '#64748b', fontSize: '12px', padding: '16px' }}>
-              暂无法坛发言，点击上方常用语或打字传音
+              暂无法坛发言，点击上方密语或输入打字传音
             </div>
           ) : (
             messages.map(m => (
@@ -161,8 +172,8 @@ export function ChatDrawer({ roomId, messages, onClose, onSent }: ChatDrawerProp
 
         {/* Voice recording notice */}
         {voiceNotice && (
-          <div style={{ padding: '4px 16px', fontSize: '12px', color: '#38bdf8', background: 'rgba(56,189,248,0.1)' }}>
-            🎙️ {voiceNotice}
+          <div className="chat-drawer-voice-notice">
+            {voiceNotice}
           </div>
         )}
 
@@ -178,20 +189,26 @@ export function ChatDrawer({ roomId, messages, onClose, onSent }: ChatDrawerProp
             type="button"
             className={`chat-voice-btn ${isRecording ? 'is-recording' : ''}`}
             onClick={handleToggleVoice}
-            title="语音转文字"
+            title="语音转文字输入"
+            aria-label="语音转文字输入"
           >
             🎙️
           </button>
           <input
+            ref={inputRef}
             type="text"
             className="chat-text-input"
-            placeholder="输入传音内容，发送后自动收起…"
+            placeholder="输入传音，或用手机键盘语音输入…"
             value={text}
             onChange={e => setText(e.target.value)}
             maxLength={100}
             autoFocus
           />
-          <button type="submit" disabled={busy || !text.trim()} className="chat-send-btn">
+          <button
+            type="submit"
+            disabled={busy || !text.trim()}
+            className="chat-send-btn"
+          >
             发送
           </button>
         </form>
