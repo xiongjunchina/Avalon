@@ -183,9 +183,14 @@ function App() {
     let active = true;
     void api<{ announcement: { text: string; enabled: boolean }; freeAccessMode: boolean }>('/system/announcement')
       .then(res => {
-        if (!active) return;
-        setAnnouncement(res.announcement);
+        if (!active || !res) return;
         setFreeAccessMode(res.freeAccessMode);
+        if (res.announcement && res.announcement.enabled && res.announcement.text && !res.announcement.text.includes('欢迎光临')) {
+          const dismissed = sessionStorage.getItem('dismissed_announcement');
+          if (dismissed !== res.announcement.text) {
+            setAnnouncement(res.announcement);
+          }
+        }
       })
       .catch(() => {});
     return () => { active = false; };
@@ -369,7 +374,14 @@ function App() {
           setPendingInvitation(msg);
         },
         announcement: msg => {
-          setAnnouncement(msg);
+          if (msg && msg.enabled && msg.text && !msg.text.includes('欢迎光临')) {
+            const dismissed = sessionStorage.getItem('dismissed_announcement');
+            if (dismissed !== msg.text) {
+              setAnnouncement(msg);
+            }
+          } else {
+            setAnnouncement(null);
+          }
         },
         roomChat: msg => {
           setRoomChatMessages(prev => [...prev.slice(-49), msg]);
@@ -661,7 +673,7 @@ function App() {
   return (
     <main data-scene={scene} data-sound="tap" className={`app-shell ${inTableViewport ? 'is-table-viewport is-live-table' : ''}`}>
       {/* Global Announcement Marquee */}
-      {announcement?.enabled && announcement.text && page !== 'admin' && (
+      {announcement?.enabled && announcement.text && !announcement.text.includes('欢迎光临') && page !== 'admin' && (
         <div className="global-announcement-marquee" role="alert">
           <div className="global-announcement-text">
             <span>📢</span>
@@ -670,7 +682,12 @@ function App() {
           <button
             type="button"
             className="global-announcement-close"
-            onClick={() => setAnnouncement(a => a ? { ...a, enabled: false } : null)}
+            onClick={() => {
+              if (announcement?.text) {
+                sessionStorage.setItem('dismissed_announcement', announcement.text);
+              }
+              setAnnouncement(null);
+            }}
             aria-label="关闭广播"
           >
             ✕

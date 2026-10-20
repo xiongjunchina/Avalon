@@ -65,13 +65,17 @@ export class AdminService {
     try {
       const res = await client.query<{ key: string; value: any }>('SELECT key, value FROM system_settings');
       const map = new Map<string, any>(res.rows.map(r => [r.key, r.value]));
+      let announcement: SystemAnnouncement = map.get('broadcast_announcement') || {
+        text: '',
+        enabled: false,
+      };
+      if (!announcement || announcement.text?.includes('欢迎光临') || !announcement.text?.trim()) {
+        announcement = { text: '', enabled: false };
+      }
       return {
         freeAccessMode: map.has('free_access_mode') ? Boolean(map.get('free_access_mode')) : true,
         adRewardHours: map.has('ad_reward_hours') ? Number(map.get('ad_reward_hours')) : 24,
-        announcement: map.get('broadcast_announcement') || {
-          text: '',
-          enabled: false,
-        },
+        announcement,
       };
     } finally {
       client.release();

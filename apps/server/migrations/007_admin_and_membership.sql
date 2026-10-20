@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS system_settings (
 INSERT INTO system_settings (key, value) VALUES
   ('free_access_mode', 'true'::jsonb),
   ('ad_reward_hours', '24'::jsonb),
-  ('broadcast_announcement', '{"text": "欢迎光临西游·真假猴王！当前为公测全员畅玩阶段，祝各位仙友游戏愉快！", "enabled": true}'::jsonb)
+  ('broadcast_announcement', '{"text": "", "enabled": false}'::jsonb)
 ON CONFLICT (key) DO NOTHING;
 
 -- 2. User memberships, ban status, and VIP expiry
