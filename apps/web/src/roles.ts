@@ -33,7 +33,7 @@ export const roleMottos: Record<Role, string> = {
   assassin: '三昧真火焚天地，终局一击定乾坤',
   mordred: '假扮如来设雷音，瞒过火眼乱真经',
   oberon: '独霸一方不结盟，暗怀异心阻取经',
-  minion: '红绡曼舞惑圣僧，千娇百媚阻西行',
+  minion: '广寒私逃下天竺，素娥抛绣结良缘',
 };
 
 export interface LoyalGuardianMeta {
@@ -90,13 +90,13 @@ export interface FemaleDemonMeta {
 }
 
 export const FEMALE_DEMONS: Record<FemaleDemon, FemaleDemonMeta> = {
-  spider: {
-    key: 'spider',
-    name: '蜘蛛精',
-    fullName: '女妖精 · 蜘蛛精',
-    title: '盘丝大仙',
-    motto: '盘丝结网诱唐僧，红绡濯垢困真龙',
-    artPrefix: 'minion-spider',
+  yutu: {
+    key: 'yutu',
+    name: '玉兔精',
+    fullName: '女妖精 · 玉兔精',
+    title: '广寒仙子',
+    motto: '广寒私逃下天竺，素娥抛绣结良缘',
+    artPrefix: 'minion-yutu',
   },
   baigu: {
     key: 'baigu',
@@ -106,14 +106,6 @@ export const FEMALE_DEMONS: Record<FemaleDemon, FemaleDemonMeta> = {
     motto: '三变幻化惑肉眼，枯骨红颜乱佛心',
     artPrefix: 'minion-baigu',
   },
-  yutu: {
-    key: 'yutu',
-    name: '玉兔精',
-    fullName: '女妖精 · 玉兔精',
-    title: '广寒仙子',
-    motto: '广寒私逃下天竺，素娥抛绣结良缘',
-    artPrefix: 'minion-yutu',
-  },
   laoshu: {
     key: 'laoshu',
     name: '老鼠精',
@@ -121,6 +113,14 @@ export const FEMALE_DEMONS: Record<FemaleDemon, FemaleDemonMeta> = {
     title: '地涌夫人',
     motto: '无底洞中藏娇魅，金鼻白毛惑众生',
     artPrefix: 'minion-laoshu',
+  },
+  spider: {
+    key: 'spider',
+    name: '蜘蛛精',
+    fullName: '女妖精 · 蜘蛛精',
+    title: '盘丝大仙',
+    motto: '盘丝结网诱唐僧，红绡濯垢困真龙',
+    artPrefix: 'minion-spider',
   },
 };
 
@@ -294,16 +294,16 @@ export const ALL_GALLERY_ROLES: RoleGalleryItem[] = [
     story: '翠云山芭蕉洞平天大圣，威镇一方不入群妖同盟，独行孤狼难辨敌我，暗中掣肘西行大计。',
   },
   {
-    id: 'spider',
+    id: 'yutu',
     role: 'minion',
-    femaleDemon: 'spider',
+    femaleDemon: 'yutu',
     team: 'red',
-    name: '蜘蛛精',
-    fullName: '绝色妖仙 · 盘丝大仙',
-    title: '盘丝大仙',
-    motto: '盘丝结网诱唐僧，红绡濯垢困真龙',
-    artPrefix: 'minion-spider',
-    story: '盘丝洞七情妖仙，濯垢泉畔化为绝色佳人，结丝作茧欲困圣僧，娇媚倾城暗藏杀机。',
+    name: '玉兔精',
+    fullName: '绝色妖仙 · 广寒仙子',
+    title: '广寒仙子',
+    motto: '广寒私逃下天竺，素娥抛绣结良缘',
+    artPrefix: 'minion-yutu',
+    story: '月宫捣药玉兔私下凡间，化身天竺国绝美真假公主抛绣招亲，轻歌曼舞欲夺圣僧元阳阻断西行。',
   },
   {
     id: 'baigu',
@@ -318,18 +318,6 @@ export const ALL_GALLERY_ROLES: RoleGalleryItem[] = [
     story: '白虎岭千年尸魔，三化幻形离间师徒，红粉骷髅惑乱肉眼，杀意藏于绝代风华之中。',
   },
   {
-    id: 'yutu',
-    role: 'minion',
-    femaleDemon: 'yutu',
-    team: 'red',
-    name: '玉兔精',
-    fullName: '绝色妖仙 · 广寒仙子',
-    title: '广寒仙子',
-    motto: '广寒私逃下天竺，素娥抛绣结良缘',
-    artPrefix: 'minion-yutu',
-    story: '月宫捣药玉兔私下凡间，化身天竺国绝美真假公主抛绣招亲，轻歌曼舞欲夺圣僧元阳阻断西行。',
-  },
-  {
     id: 'laoshu',
     role: 'minion',
     femaleDemon: 'laoshu',
@@ -340,6 +328,18 @@ export const ALL_GALLERY_ROLES: RoleGalleryItem[] = [
     motto: '无底洞中藏娇魅，金鼻白毛惑众生',
     artPrefix: 'minion-laoshu',
     story: '陷空山无底洞金鼻白毛老鼠精，曾偷饮灵山清油宝烛，国色天香倾国倾城，诱僧入洞暗图大道。',
+  },
+  {
+    id: 'spider',
+    role: 'minion',
+    femaleDemon: 'spider',
+    team: 'red',
+    name: '蜘蛛精',
+    fullName: '绝色妖仙 · 盘丝大仙',
+    title: '盘丝大仙',
+    motto: '盘丝结网诱唐僧，红绡濯垢困真龙',
+    artPrefix: 'minion-spider',
+    story: '盘丝洞七情妖仙，濯垢泉畔化为绝色佳人，结丝作茧欲困圣僧，娇媚倾城暗藏杀机。',
   },
 ];
 

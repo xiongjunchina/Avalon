@@ -18,8 +18,8 @@ export function RolePortrait({
   const [failedRole, setFailedRole] = useState<string | null>(null);
   const large = size === 'card';
   const guardian = role === 'loyal' && loyalGuardian ? LOYAL_GUARDIANS[loyalGuardian] : undefined;
-  const demon = role === 'minion' && femaleDemon ? FEMALE_DEMONS[femaleDemon] : undefined;
-  const artKey = guardian ? guardian.artPrefix : demon ? demon.artPrefix : role;
+  const demon = role === 'minion' ? FEMALE_DEMONS[femaleDemon || 'yutu'] : undefined;
+  const artKey = guardian ? guardian.artPrefix : (femaleDemon && demon ? demon.artPrefix : role);
   const labelName = guardian ? guardian.fullName : demon ? demon.fullName : roleNames[role];
   return (
     <span
@@ -64,7 +64,7 @@ export function IdentityCard({
 }) {
   const team = roleTeam(role);
   const guardian = role === 'loyal' && loyalGuardian ? LOYAL_GUARDIANS[loyalGuardian] : undefined;
-  const demon = role === 'minion' && femaleDemon ? FEMALE_DEMONS[femaleDemon] : undefined;
+  const demon = role === 'minion' ? FEMALE_DEMONS[femaleDemon || 'yutu'] : undefined;
   const title = guardian ? guardian.title : demon ? demon.title : roleTitles[role];
   const motto = guardian ? guardian.motto : demon ? demon.motto : roleMottos[role];
   return (
