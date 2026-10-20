@@ -54,6 +54,40 @@ button:active:not(:disabled) { transform:translateY(1px) }
 .text-button { background:rgba(30, 10, 9, 0.75); color:var(--muted); border-color:transparent; margin-top:0; font-weight:400 }
 .text-button:hover:not(:disabled) { background:rgba(48, 16, 14, 0.9) }
 button:disabled { opacity:.5; cursor:not-allowed }
+/* Universal safeguard against button full-width squashing inputs in horizontal flex rows */
+form[style*="display: flex"],
+div[style*="display: flex"]:has(> input):has(> button),
+.inline-form-row {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+form[style*="display: flex"] > input:not([type=checkbox]):not([type=radio]),
+div[style*="display: flex"] > input:not([type=checkbox]):not([type=radio]),
+.inline-form-row > input {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  width: 0 !important;
+  margin: 0 !important;
+  margin-top: 0 !important;
+  box-sizing: border-box !important;
+}
+
+form[style*="display: flex"] > button,
+div[style*="display: flex"] > button,
+.inline-form-row > button {
+  flex: 0 0 auto !important;
+  width: auto !important;
+  min-width: fit-content !important;
+  margin: 0 !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  white-space: nowrap !important;
+  box-sizing: border-box !important;
+}
 :focus-visible { outline:3px solid #f6d598; outline-offset:4px }
 .error,.notice { padding:14px 18px; border:1px solid #9d875f; border-radius:4px; overflow-wrap:anywhere; background:#302b20; color:#f0dcb0 }
 .error { color:#ffc3b1; background:#382723; border-color:#bc8167 }

@@ -151,14 +151,19 @@ function ProfileEditor({user,onUser}:{user:User;onUser:(u:User)=>void}) {
           </p>
         </div>
       </div>
-      <form onSubmit={handleRedeem} style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
+      <form onSubmit={handleRedeem} className="account-redeem-form">
         <input
-          placeholder="输入 8 位 VIP 兑换码…"
+          placeholder="输入 8 位 VIP 授权兑换码…"
           value={redeemCode}
           onChange={e => setRedeemCode(e.target.value.toUpperCase())}
-          style={{ flex: 1, padding: '7px 10px', fontSize: '13px', background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(212,163,89,0.3)', borderRadius: '6px', color: '#ffd875' }}
+          maxLength={16}
+          className="account-redeem-input"
         />
-        <button type="submit" disabled={redeemBusy || !redeemCode.trim()} className="secondary" style={{ padding: '6px 14px', fontSize: '13px', whiteSpace: 'nowrap' }}>
+        <button
+          type="submit"
+          disabled={redeemBusy || !redeemCode.trim()}
+          className="account-redeem-btn"
+        >
           {redeemBusy ? '核销中…' : '核销兑换'}
         </button>
       </form>

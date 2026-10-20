@@ -292,6 +292,14 @@
   flex-wrap: wrap;
   margin-bottom: 16px;
 }
+.admin-form-row .admin-primary-btn {
+  width: auto !important;
+  margin: 0 !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  height: 42px !important;
+  flex-shrink: 0 !important;
+}
 .admin-search-input {
   min-width: 280px;
   flex: 1;
