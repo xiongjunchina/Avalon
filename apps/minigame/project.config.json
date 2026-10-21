@@ -1,0 +1,10 @@
+{
+  "compileType": "game",
+  "appid": "touristappid",
+  "projectname": "AvalonMiniGame",
+  "setting": {
+    "urlCheck": true,
+    "es6": true,
+    "minified": true
+  }
+}
