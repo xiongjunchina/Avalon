@@ -371,6 +371,25 @@ export async function buildApp(options: { store: PostgresStore; origin?: string;
     return { ok: true };
   });
 
+  app.delete<{ Params: { id: string } }>('/api/admin/users/:id', async (req, reply) => {
+    requireAdmin(req, reply);
+    const userId = z.string().uuid().parse(req.params.id);
+    await adminService.deleteUser(userId);
+    const conn = connections.get(userId);
+    if (conn) {
+      send(conn.socket, { type: 'error', error: 'USER_NOT_FOUND' });
+      conn.socket.close(4004, 'User deleted');
+      connections.delete(userId);
+    }
+    return { ok: true };
+  });
+
+  app.post('/api/admin/users/batch-delete-empty', async (req, reply) => {
+    requireAdmin(req, reply);
+    const deletedCount = await adminService.deleteEmptyUsers();
+    return { ok: true, deletedCount };
+  });
+
   app.get<{ Params: { id: string } }>('/api/admin/users/:id/friends', async (req, reply) => {
     requireAdmin(req, reply);
     const userId = z.string().uuid().parse(req.params.id);

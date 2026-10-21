@@ -1399,7 +1399,7 @@ function App() {
                   房号 {room.code}
                 </span>
                 <small>
-                  {room.members.length}/{room.settings.playerCount}人 · 复制邀请
+                  {room.members.length}/{room.settings.playerCount}人 · 复制
                 </small>
               </button>
             </div>

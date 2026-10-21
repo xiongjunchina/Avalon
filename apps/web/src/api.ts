@@ -17,6 +17,8 @@ export const errors: Record<string, string> = {
   USER_NOT_FOUND: '未找到该玩家，请核对6位仙友码或昵称。',
   USER_BANNED: '此账号已被系统封禁。',
   INVALID_PLAYER_CODE: '请输入6位有效数字仙友码。',
+  HAS_GAME_RECORDS: '该用户存在对局记录，为维护对局复盘与数据完整性不可删除。如需限制其访问可使用封禁功能。',
+  USER_IN_ACTIVE_ROOM: '该用户当前正处于活跃房间中，请先将其移出房间再执行删除。',
   CANNOT_ADD_SELF: '不能添加自己为仙友。',
   ALREADY_FRIENDS: '你们已经是仙友了。',
   REQUEST_ALREADY_SENT: '已发送过好友请求，等待对方确认中。',

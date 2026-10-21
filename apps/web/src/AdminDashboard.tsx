@@ -270,6 +270,38 @@ export function AdminDashboard({ onBackToGame }: AdminDashboardProps) {
     }
   };
 
+  const handleDeleteUser = async (user: AdminUserSummary) => {
+    if (user.gamesCount > 0) {
+      alert(`仙友【${user.nickname}】已有 ${user.gamesCount} 局历史对局战绩，为保证对局复盘与数据完整性，不可删除！如需限制其访问可使用【封禁】。`);
+      return;
+    }
+    if (!confirm(`⚠️ 彻底删除确认：\n\n确定要永久删除仙友【${user.nickname}】（仙友码 #${user.playerCode}）吗？\n该用户无历史对局战绩，删除后该账号及仙友码将被彻底注销，不可恢复。`)) {
+      return;
+    }
+    try {
+      await adminApi(`/users/${user.id}`, undefined, 'DELETE');
+      alert(`仙友【${user.nickname}】已成功删除！`);
+      void loadUsers(userSearchQuery);
+      void loadOverview();
+    } catch (err: any) {
+      alert(err.message || '删除失败，请稍后重试');
+    }
+  };
+
+  const handleBatchDeleteEmptyUsers = async () => {
+    if (!confirm('⚠️ 批量清理确认：\n\n确定要一键清理系统中所有【无对局战绩（0局）】的仙籍与测试账号吗？\n\n· 有对局记录（哪怕1局）的仙友将受到严格保护，绝不删除。\n· 无战绩游离账号将被彻底清理并释放。\n\n是否继续执行批量清理？')) {
+      return;
+    }
+    try {
+      const res = await adminApi<{ deletedCount: number }>('/users/batch-delete-empty', {}, 'POST');
+      alert(`批量清理完成！共彻底删除了 ${res.deletedCount} 个无对局战绩的账号。`);
+      void loadUsers(userSearchQuery);
+      void loadOverview();
+    } catch (err: any) {
+      alert(err.message || '批量清理失败，请重试');
+    }
+  };
+
   const handleKillRoom = async (room: AdminRoomSummary) => {
     if (!confirm(`确认强制解散房间【${room.code}】？此操作将立即结束该房并将全员送回大厅。`)) return;
     try {
@@ -629,8 +661,8 @@ export function AdminDashboard({ onBackToGame }: AdminDashboardProps) {
               <span>👥 仙友用户列表 ({userTotal})</span>
             </h3>
 
-            {/* Search Bar */}
-            <div className="admin-form-row">
+            {/* Search Bar & Batch Clean */}
+            <div className="admin-form-row" style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
               <input
                 type="text"
                 placeholder="搜索仙友（输入6位仙友码 / 昵称 / UUID）…"
@@ -647,6 +679,23 @@ export function AdminDashboard({ onBackToGame }: AdminDashboardProps) {
                   清空
                 </button>
               )}
+              <button
+                type="button"
+                className="admin-action-btn danger"
+                style={{
+                  marginLeft: 'auto',
+                  background: 'rgba(239, 68, 68, 0.15)',
+                  borderColor: 'rgba(239, 68, 68, 0.5)',
+                  color: '#fca5a5',
+                  padding: '6px 12px',
+                  fontWeight: 600,
+                  fontSize: '13px',
+                }}
+                onClick={handleBatchDeleteEmptyUsers}
+                title="一键清理所有0对局记录的游离或测试账号"
+              >
+                🗑️ 批量清理无战绩账号
+              </button>
             </div>
 
             {/* Desktop User Table */}
@@ -724,6 +773,21 @@ export function AdminDashboard({ onBackToGame }: AdminDashboardProps) {
                           <button type="button" className="admin-action-btn" onClick={() => handleResetProfile(u)} title="重置资料">
                             🔄 重置
                           </button>
+                          <button
+                            type="button"
+                            className="admin-action-btn danger"
+                            style={{
+                              color: u.gamesCount > 0 ? '#64748b' : '#f87171',
+                              borderColor: u.gamesCount > 0 ? 'rgba(255,255,255,0.08)' : 'rgba(239, 68, 68, 0.4)',
+                              cursor: u.gamesCount > 0 ? 'not-allowed' : 'pointer',
+                              opacity: u.gamesCount > 0 ? 0.45 : 1,
+                            }}
+                            onClick={() => handleDeleteUser(u)}
+                            title={u.gamesCount > 0 ? `该仙友有 ${u.gamesCount} 局历史对局战绩，不可删除` : '彻底删除该无战绩账号'}
+                            disabled={u.gamesCount > 0}
+                          >
+                            🗑️ 删除
+                          </button>
                         </td>
                       </tr>
                     ))
@@ -784,6 +848,21 @@ export function AdminDashboard({ onBackToGame }: AdminDashboardProps) {
                       </button>
                       <button type="button" className="admin-action-btn" onClick={() => handleResetProfile(u)} title="重置资料">
                         🔄 重置
+                      </button>
+                      <button
+                        type="button"
+                        className="admin-action-btn danger"
+                        style={{
+                          color: u.gamesCount > 0 ? '#64748b' : '#f87171',
+                          borderColor: u.gamesCount > 0 ? 'rgba(255,255,255,0.08)' : 'rgba(239, 68, 68, 0.4)',
+                          cursor: u.gamesCount > 0 ? 'not-allowed' : 'pointer',
+                          opacity: u.gamesCount > 0 ? 0.45 : 1,
+                        }}
+                        onClick={() => handleDeleteUser(u)}
+                        title={u.gamesCount > 0 ? `该仙友有 ${u.gamesCount} 局历史对局战绩，不可删除` : '彻底删除该无战绩账号'}
+                        disabled={u.gamesCount > 0}
+                      >
+                        🗑️ 删除
                       </button>
                     </div>
                   </div>

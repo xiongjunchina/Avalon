@@ -226,6 +226,129 @@ export class AdminService {
     }
   }
 
+  async deleteUser(userId: string): Promise<void> {
+    const client = await this.pool.connect();
+    try {
+      await client.query('BEGIN');
+      const uRes = await client.query<{ id: string; nickname: string }>('SELECT id, nickname FROM users WHERE id = $1', [userId]);
+      if (uRes.rowCount === 0) {
+        throw new DomainError('USER_NOT_FOUND');
+      }
+
+      const gRes = await client.query<{ count: string }>('SELECT count(*) FROM game_participants WHERE user_id = $1', [userId]);
+      if (Number(gRes.rows[0]?.count || 0) > 0) {
+        throw new DomainError('HAS_GAME_RECORDS');
+      }
+
+      const rRes = await client.query<{ count: string }>(
+        `SELECT count(*) FROM room_members rm
+         JOIN rooms r ON r.id = rm.room_id
+         WHERE rm.user_id = $1 AND r.phase IN ('waiting', 'playing')`,
+        [userId]
+      );
+      if (Number(rRes.rows[0]?.count || 0) > 0) {
+        throw new DomainError('USER_IN_ACTIVE_ROOM');
+      }
+
+      const hRes = await client.query<{ count: string }>(
+        `SELECT count(*) FROM rooms WHERE host_id = $1 AND phase IN ('waiting', 'playing')`,
+        [userId]
+      );
+      if (Number(hRes.rows[0]?.count || 0) > 0) {
+        throw new DomainError('USER_IN_ACTIVE_ROOM');
+      }
+
+      await client.query('DELETE FROM sessions WHERE user_id = $1', [userId]);
+      await client.query('DELETE FROM command_receipts WHERE user_id = $1', [userId]);
+      await client.query('DELETE FROM setting_presets WHERE user_id = $1', [userId]);
+      await client.query('DELETE FROM favorites WHERE user_id = $1', [userId]);
+      await client.query('DELETE FROM room_members WHERE user_id = $1', [userId]);
+
+      await client.query(
+        `DELETE FROM command_receipts WHERE room_id IN (
+           SELECT id FROM rooms WHERE host_id = $1 AND phase = 'closed' AND id NOT IN (SELECT room_id FROM games)
+         )`,
+        [userId]
+      );
+      await client.query(
+        `DELETE FROM room_members WHERE room_id IN (
+           SELECT id FROM rooms WHERE host_id = $1 AND phase = 'closed' AND id NOT IN (SELECT room_id FROM games)
+         )`,
+        [userId]
+      );
+      await client.query(
+        `DELETE FROM rooms WHERE host_id = $1 AND phase = 'closed' AND id NOT IN (SELECT room_id FROM games)`,
+        [userId]
+      );
+
+      await client.query('DELETE FROM users WHERE id = $1', [userId]);
+      await client.query('COMMIT');
+    } catch (e) {
+      await client.query('ROLLBACK');
+      throw e;
+    } finally {
+      client.release();
+    }
+  }
+
+  async deleteEmptyUsers(): Promise<number> {
+    const client = await this.pool.connect();
+    try {
+      await client.query('BEGIN');
+      const candidateSql = `
+        SELECT u.id FROM users u
+        WHERE u.id NOT IN (SELECT user_id FROM game_participants)
+          AND u.id NOT IN (
+            SELECT rm.user_id FROM room_members rm
+            JOIN rooms r ON r.id = rm.room_id
+            WHERE r.phase IN ('waiting', 'playing')
+          )
+          AND u.id NOT IN (
+            SELECT host_id FROM rooms WHERE phase IN ('waiting', 'playing')
+          )
+      `;
+      const candRes = await client.query<{ id: string }>(candidateSql);
+      const userIds = candRes.rows.map(r => r.id);
+
+      if (userIds.length === 0) {
+        await client.query('COMMIT');
+        return 0;
+      }
+
+      await client.query('DELETE FROM sessions WHERE user_id = ANY($1::uuid[])', [userIds]);
+      await client.query('DELETE FROM command_receipts WHERE user_id = ANY($1::uuid[])', [userIds]);
+      await client.query('DELETE FROM setting_presets WHERE user_id = ANY($1::uuid[])', [userIds]);
+      await client.query('DELETE FROM favorites WHERE user_id = ANY($1::uuid[])', [userIds]);
+      await client.query('DELETE FROM room_members WHERE user_id = ANY($1::uuid[])', [userIds]);
+
+      await client.query(
+        `DELETE FROM command_receipts WHERE room_id IN (
+           SELECT id FROM rooms WHERE host_id = ANY($1::uuid[]) AND phase = 'closed' AND id NOT IN (SELECT room_id FROM games)
+         )`,
+        [userIds]
+      );
+      await client.query(
+        `DELETE FROM room_members WHERE room_id IN (
+           SELECT id FROM rooms WHERE host_id = ANY($1::uuid[]) AND phase = 'closed' AND id NOT IN (SELECT room_id FROM games)
+         )`,
+        [userIds]
+      );
+      await client.query(
+        `DELETE FROM rooms WHERE host_id = ANY($1::uuid[]) AND phase = 'closed' AND id NOT IN (SELECT room_id FROM games)`,
+        [userIds]
+      );
+
+      const delRes = await client.query('DELETE FROM users WHERE id = ANY($1::uuid[])', [userIds]);
+      await client.query('COMMIT');
+      return delRes.rowCount || 0;
+    } catch (e) {
+      await client.query('ROLLBACK');
+      throw e;
+    } finally {
+      client.release();
+    }
+  }
+
   async getActiveRooms(): Promise<AdminRoomSummary[]> {
     const client = await this.pool.connect();
     try {
