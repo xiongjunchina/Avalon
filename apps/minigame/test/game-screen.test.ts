@@ -17,7 +17,7 @@ test('every server game phase renders without exposing private role by default',
     assert.doesNotMatch(JSON.stringify(view), /梅林|merlin|evilIds/);
   }
   const visible = gameScreen(room('role_reveal'), self as User, { privateRoleVisible: true, ballotVisible: false });
-  assert.match(JSON.stringify(visible), /merlin/);
+  assert.match(JSON.stringify(visible), /孙悟空/);
 });
 
 test('game actions use typed versioned commands and reject unauthorized actions', () => {
@@ -28,4 +28,18 @@ test('game actions use typed versioned commands and reject unauthorized actions'
   assert.equal(gameAction(r, self as User, 'missionSuccess'), undefined);
   assert.equal(gameAction(room('mission'), self as User, 'missionSuccess')?.type, 'missionVote');
   assert.equal(gameAction(room('role_reveal'), self as User, 'confirmRole')?.type, 'confirmRole');
+});
+
+test('captain can update a partial draft and host can resolve an abort request', () => {
+  const proposing = room('proposing');
+  assert.equal(gameAction(proposing, self as User, 'draft', { selectedIds: [self.id] })?.type, 'updateTeamDraft');
+  const discussion = room('discussion');
+  assert.equal(gameAction(discussion, self as User, 'draft', { selectedIds: [self.id, other.id] })?.type, 'updateTeamDraft');
+  const pending = room('team_vote');
+  pending.game!.abortPoll = { requestedBy: other.id, approvals: 0, required: 1, voted: false };
+  assert.equal(gameAction(pending, self as User, 'approveAbort')?.type, 'voteAbort');
+  assert.equal(gameAction(pending, self as User, 'rejectAbort')?.type, 'voteAbort');
+  assert.equal(gameAction(pending, other as User, 'approveAbort'), undefined);
+  assert.equal(gameAction(room('mission'), self as User, 'endGame')?.type, 'endGame');
+  assert.equal(gameAction(room('mission'), other as User, 'endGame'), undefined);
 });

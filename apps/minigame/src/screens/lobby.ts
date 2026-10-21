@@ -57,7 +57,7 @@ export function lobbyScreen(room: RoomView, user: User, status = ''): ScreenMode
       { id: 'settings', text: '房间玩法设置' },
       { id: 'admission', text: room.acceptingNewMembers ? '关闭新玩家加入' : '允许新玩家加入' },
     ] : []),
-    { id: 'chat', text: '房间聊天' }, { id: 'voice', text: '语音控制' },
+    { id: 'share', text: '邀请微信好友' }, { id: 'chat', text: '房间聊天' }, { id: 'voice', text: '语音控制' },
     { id: 'leave', text: '离开房间' },
   ] };
 }

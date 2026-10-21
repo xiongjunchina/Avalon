@@ -35,6 +35,8 @@ export interface WxRuntime {
   onShow(callback: () => void): void;
   onHide(callback: () => void): void;
   onShareAppMessage?(callback: () => { title: string; query?: string }): void;
+  shareAppMessage?(options: { title: string; query: string }): void;
+  getLaunchOptionsSync?(): { query?: { invite?: string } };
 }
 
 export class WechatPlatform {

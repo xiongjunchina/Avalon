@@ -4,6 +4,7 @@ import { PlayerExtras } from '../src/screens/player-extras.js';
 import { guideScreen } from '../src/screens/guide.js';
 import { PlayerPanel } from '../src/screens/player-panel.js';
 import { PracticeSession } from '../src/screens/practice.js';
+import { entryScreen } from '../src/screens/entry.js';
 import { defaultSettings } from '@avalon/contracts';
 
 test('player extras use the matching current server endpoints', async () => {
@@ -37,4 +38,21 @@ test('practice uses the shared local game core and advances bots without API wri
   assert.equal(practice.view().phase, 'playing');
   practice.stepBot();
   assert.ok(practice.view().game);
+});
+
+test('offline visitors can read rules and practice without a network session', () => {
+  const actions = entryScreen().rows.map(row => row.id);
+  assert.ok(actions.includes('guide'));
+  assert.ok(actions.includes('practice'));
+});
+
+test('practice can run when the Mini Game runtime lacks structuredClone', () => {
+  const nativeClone = globalThis.structuredClone;
+  try {
+    (globalThis as { structuredClone?: typeof structuredClone }).structuredClone = undefined;
+    const practice = new PracticeSession({ ...defaultSettings, playerCount: 5 }, '我');
+    assert.equal(practice.view().game?.players.length, 5);
+  } finally {
+    globalThis.structuredClone = nativeClone;
+  }
 });

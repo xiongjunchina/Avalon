@@ -235,6 +235,9 @@ export class PostgresStore {
       };
     });
   }
+  async revokeSession(token: string): Promise<void> {
+    await this.tx(async client => { await client.query('DELETE FROM sessions WHERE token_hash=$1', [digest(token)]); });
+  }
   async currentRoom(userId: string) {
     return this.tx(async c => (await c.query('SELECT room_id FROM room_members WHERE user_id=$1', [userId])).rows[0]?.room_id ?? null);
   }

@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { MiniGameTickets, bearerToken, requestOriginAllowed } from '../src/minigame-session.js';
+import { PostgresStore, digest } from '../src/store.js';
 
 test('accepts only well formed bearer credentials and validates their session', async () => {
   assert.equal(bearerToken('Bearer live-token'), 'live-token');
@@ -33,4 +34,14 @@ test('mini-game may omit Origin with explicit auth but web CSRF remains strict',
   assert.equal(requestOriginAllowed({ method: 'POST', origin: 'https://attacker.example' }, expected), false);
   assert.equal(requestOriginAllowed({ method: 'POST', origin: undefined }, expected), false);
   assert.equal(requestOriginAllowed({ method: 'POST', origin: expected }, expected), true);
+});
+
+test('logout revokes only the hash of the presented session token', async () => {
+  const queries: { sql: string; params?: unknown[] }[] = [];
+  const client = { query: async (sql: string, params?: unknown[]) => { queries.push({ sql, params }); return { rows: [] }; }, release: () => {} };
+  const store = new PostgresStore({ connect: async () => client } as any);
+  await store.revokeSession('secret-token');
+  assert.deepEqual(queries.map(query => query.sql), ['BEGIN', 'DELETE FROM sessions WHERE token_hash=$1', 'COMMIT']);
+  assert.deepEqual(queries[1]?.params, [digest('secret-token')]);
+  assert.equal(JSON.stringify(queries).includes('secret-token'), false);
 });

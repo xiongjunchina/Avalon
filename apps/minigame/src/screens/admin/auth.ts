@@ -37,7 +37,7 @@ export class AdminApi {
   games(offset = 0): Promise<{ games: AdminGameSummary[] }> { this.guard(); return this.request(`/games?offset=${offset}`); }
   replay(id: string): Promise<Replay> { this.guard(); return this.request(`/games/${encodeURIComponent(id)}/replay`); }
   codes(): Promise<{ codes: RedemptionCodeItem[] }> { this.guard(); return this.request('/redemption-codes'); }
-  generateCodes(count: number, days: number, note?: string) { this.guard(); return this.request<{ codes: RedemptionCodeItem[] }>('/redemption-codes/generate', { count, days, ...(note ? { note } : {}) }); }
+  generateCodes(count: number, days: number, note?: string) { this.guard(); return this.request<{ codes: string[] }>('/redemption-codes/generate', { count, days, ...(note ? { note } : {}) }); }
   broadcast(text: string, enabled: boolean) { this.guard(); return this.request<{ ok: boolean }>('/broadcast', { text, enabled }); }
   banUser(id: string, isBanned: boolean, reason = '') { this.guard(); return this.request<{ ok: boolean }>(`/users/${encodeURIComponent(id)}/ban`, { isBanned, reason }); }
   grantVip(id: string, days: number) { this.guard(); return this.request<{ ok: boolean; vipUntil: string }>(`/users/${encodeURIComponent(id)}/vip`, { days }); }

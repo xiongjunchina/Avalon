@@ -57,5 +57,17 @@ export class MiniGameApi {
     return result.user;
   }
 
+  async switchAccount(playerCode: string): Promise<User> {
+    if (!this.session.get()) throw new Error('UNAUTHENTICATED');
+    const result = await this.request<{ user: User; token: string }>('/sessions/switch', { playerCode });
+    if (!result.token) throw new Error('SESSION_TOKEN_MISSING');
+    this.session.set(result.token);
+    return result.user;
+  }
+
+  async logout(): Promise<void> {
+    try { if (this.session.get()) await this.request<{ ok: boolean }>('/sessions', undefined, 'DELETE'); }
+    finally { this.session.clear(); }
+  }
   clearSession() { this.session.clear(); }
 }

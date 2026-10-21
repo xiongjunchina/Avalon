@@ -15,6 +15,7 @@ import { AdminPanel } from './screens/admin/panel.js';
 import { PlayerExtras } from './screens/player-extras.js';
 import { PlayerPanel } from './screens/player-panel.js';
 import { PracticeSession } from './screens/practice.js';
+import { guideScreen } from './screens/guide.js';
 
 declare const wx: WxRuntime;
 declare const __MINIGAME_API_BASE_URL__: string;
@@ -23,6 +24,7 @@ const baseUrl = __MINIGAME_API_BASE_URL__;
 const platform = new WechatPlatform(wx);
 const canvas = drawShell(platform);
 const api = new MiniGameApi(platform, baseUrl);
+const launchInvite = wx.getLaunchOptionsSync?.().query?.invite;
 const adminPanel = new AdminPanel(new AdminApi(platform, baseUrl, () => api.session.get()));
 const extras = new PlayerExtras(api);
 const screen = platform.screen();
@@ -34,7 +36,7 @@ let lobby: LobbyController | undefined;
 let playerPanel: PlayerPanel | undefined;
 let practice: PracticeSession | undefined;
 let connection: MiniGameRoomConnection | undefined;
-let view: 'entry' | 'lobby' | 'game' | 'settings' | 'admin' | 'player' | 'practice' = 'entry';
+let view: 'entry' | 'lobby' | 'game' | 'settings' | 'admin' | 'player' | 'practice' | 'guide' = 'entry';
 let previousView: 'entry' | 'lobby' | 'game' = 'entry';
 let status = '';
 let error = '';
@@ -46,6 +48,7 @@ const gameUi: GameUiState = { privateRoleVisible: false, ballotVisible: false, s
 function model(): ScreenModel {
   let result: ScreenModel;
   if (view === 'admin') result = adminPanel.model();
+  else if (view === 'guide') result = guideScreen();
   else if (view === 'player' && playerPanel) result = playerPanel.model();
   else if (view === 'practice' && practice) {
     const local = practice.view();
@@ -127,14 +130,17 @@ async function select(id: string) {
     const outcome = await adminPanel.handle(id, async (label, maxLength) => { status = label; render(); return askText(wx, '', maxLength ?? 200); });
     if (outcome === 'back') navigate('entry');
   });
+  if (view === 'guide') { if (id === 'back') navigate('entry'); return; }
   if (view === 'entry') {
-    if (id === 'login') return run(async () => { const result = await api.login(); user = result.user; lobby = new LobbyController(api, user); playerPanel = new PlayerPanel(extras, user); const existing = await lobby.resume(); if (existing) connect(existing); else render(); });
+    if (id === 'guide') { navigate('guide'); return; }
+    if (id === 'practice') { practice = new PracticeSession(editableSettings, user?.nickname ?? '我'); hideSensitiveView(gameUi); navigate('practice'); return; }
+    if (id === 'login') return run(async () => { const result = await api.login(); user = result.user; lobby = new LobbyController(api, user); playerPanel = new PlayerPanel(extras, user); const existing = await lobby.resume(); if (existing) connect(existing); else if (launchInvite) connect(await lobby.join(launchInvite)); else render(); });
     if (id === 'create' && lobby) return run(async () => { connect(await lobby!.create(editableSettings)); });
     if (id === 'join' && lobby) return run(async () => { const key = await askText(wx, '', 200); if (key) connect(await lobby!.join(key)); });
-    if (id === 'logout') { connection?.stop(); connection = undefined; room = undefined; user = undefined; lobby = undefined; playerPanel = undefined; api.clearSession(); render(); return; }
+    if (id === 'switch') return run(async () => { const code = await askText(wx, '', 6); if (!code) return; connection?.stop(); connection = undefined; room = undefined; user = await api.switchAccount(code); lobby = new LobbyController(api, user); playerPanel = new PlayerPanel(extras, user); const existing = await lobby.resume(); if (existing) connect(existing); });
+    if (id === 'logout') return run(async () => { connection?.stop(); connection = undefined; room = undefined; user = undefined; lobby = undefined; playerPanel = undefined; await api.logout(); render(); });
     if (id === 'admin') return run(async () => { const key = await askText(wx, '', 256); if (!key) return; await adminPanel.open(key); navigate('admin'); });
-    if ((id === 'guide' || id === 'account' || id === 'friends') && playerPanel) return run(async () => { previousView = 'entry'; await playerPanel!.open(id); navigate('player'); });
-    if (id === 'practice') { practice = new PracticeSession(editableSettings, user?.nickname ?? '我'); hideSensitiveView(gameUi); navigate('practice'); return; }
+    if ((id === 'account' || id === 'friends') && playerPanel) return run(async () => { previousView = 'entry'; await playerPanel!.open(id); navigate('player'); });
   }
   if (view === 'settings') {
     if (id === 'apply') { if (room && lobby) lobby.updateSettings(editableSettings); navigate(room?.game ? 'game' : room ? 'lobby' : 'entry'); return; }
@@ -147,6 +153,7 @@ async function select(id: string) {
     else if (id === 'admission') lobby.admission(!room.acceptingNewMembers);
     else if (id === 'settings') { editableSettings = { ...room.settings }; navigate('settings'); }
     else if (id === 'leave') lobby.leave();
+    else if (id === 'share') { if (wx.shareAppMessage) wx.shareAppMessage({ title: `来嘻游 · 真假猴王房间 ${room.code} 一起论剑`, query: `invite=${encodeURIComponent(room.code)}` }); else { error = `请告知好友房间号 ${room.code}`; render(); } }
     else if (id.startsWith('member:') && room.hostId === user?.id && id.slice(7) !== user.id) { error = '请在管理操作中确认移除玩家'; render(); }
     else if (id === 'chat' && playerPanel) return run(async () => { previousView = 'lobby'; await playerPanel!.open('roomchat', { roomId: room!.id }); navigate('player'); });
     else if (id === 'voice') { error = '语音功能正在接入'; render(); }
@@ -157,7 +164,7 @@ async function select(id: string) {
     if (id === 'direction') { gameUi.direction = gameUi.direction === 'clockwise' ? 'counterclockwise' : 'clockwise'; render(); return; }
     if (id.startsWith('player:')) {
       const targetId = id.slice(7);
-      if (room.game?.phase === 'proposing' && room.game.captainId === user.id) {
+      if (['proposing', 'discussion'].includes(room.game?.phase ?? '') && room.game?.captainId === user.id) {
         const selected = gameUi.selectedIds ?? [];
         gameUi.selectedIds = selected.includes(targetId) ? selected.filter(value => value !== targetId) : [...selected, targetId];
       } else gameUi.targetId = targetId;
@@ -186,4 +193,6 @@ if (api.session.get()) void run(async () => {
   playerPanel = new PlayerPanel(extras, user);
   const existing = await lobby.resume();
   if (existing) connect(existing);
+  else if (launchInvite) connect(await lobby.join(launchInvite));
 });
+wx.onShareAppMessage?.(() => ({ title: room ? `来嘻游 · 真假猴王房间 ${room.code} 一起论剑` : '嘻游 · 真假猴王', ...(room ? { query: `invite=${encodeURIComponent(room.code)}` } : {}) }));

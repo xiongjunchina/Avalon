@@ -1,5 +1,6 @@
 import type { Command, Player, RoomView, Settings } from '@avalon/contracts';
 import { MISSION_SIZES, captain, createGame, isEnded, projectGame, teamOf, transition, type GameState } from '@avalon/game-core';
+import { ensureGameClone } from '../platform/clone.js';
 
 const SELF_ID = 'practice-self';
 function shuffle<T>(items: T[]): T[] {
@@ -15,6 +16,7 @@ export class PracticeSession {
   private game: GameState;
   readonly user = { id: SELF_ID, nickname: '我' };
   constructor(readonly settings: Settings, nickname: string) {
+    ensureGameClone();
     this.user.nickname = nickname;
     const players: Player[] = Array.from({ length: settings.playerCount }, (_, index) => ({
       id: index === 0 ? SELF_ID : `practice-bot-${index}`, seat: index + 1,

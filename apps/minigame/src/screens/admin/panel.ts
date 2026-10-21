@@ -57,7 +57,7 @@ export class AdminPanel {
   async handle(id: string, input: Input): Promise<'back' | void> {
     if (id === 'back') return 'back';
     if (id === 'confirm:no') { this.pending = undefined; return; }
-    if (id === 'confirm:yes' && this.pending) { const action = this.pending.action; this.pending = undefined; await action(); await this.load(this.page); return; }
+    if (id === 'confirm:yes' && this.pending) { const action = this.pending.action; this.pending = undefined; await action(); this.user = undefined; await this.load(this.page === 'user' ? 'users' : this.page); return; }
     if (id.startsWith('page:')) { await this.load(id.slice(5) as Page); return; }
     if (id === 'search') { this.query = await input('搜索用户', 40) ?? ''; await this.load('users'); return; }
     if (id.startsWith('user:')) { this.user = this.usersData.find(user => user.id === id.slice(5)); if (this.user) this.page = 'user'; return; }
@@ -78,7 +78,7 @@ export class AdminPanel {
       if (target) this.pending = { label: `强制关闭房间 ${target.code}？`, action: () => this.api.killRoom(target.id, true) };
       return;
     }
-    if (id.startsWith('replay:') && !id.includes(':player:') && !id.includes(':round:')) { this.replayData = await this.api.replay(id.slice(7)); this.page = 'replay'; return; }
+    if (this.page === 'games' && id.startsWith('replay:')) { this.replayData = await this.api.replay(id.slice(7)); this.page = 'replay'; return; }
     if (id === 'generate') { const count = Number(await input('生成数量（1-100）', 3)); const days = Number(await input('有效天数（1-365）', 3)); if (Number.isInteger(count) && count >= 1 && count <= 100 && Number.isInteger(days) && days >= 1 && days <= 365) { await this.api.generateCodes(count, days); await this.load('codes'); } return; }
     if (id === 'mode' && this.settingsData) { const value = !this.settingsData.freeAccessMode; this.pending = { label: value ? '恢复全员免费？' : '切换商业模式？', action: () => this.api.updateSetting('free_access_mode', value) }; return; }
     if (id === 'reward' && this.settingsData) { const hours = Number(await input('广告奖励小时数', 3)); if (Number.isInteger(hours) && hours >= 1 && hours <= 720) { await this.api.updateSetting('ad_reward_hours', hours); await this.load('settings'); } return; }

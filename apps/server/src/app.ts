@@ -126,7 +126,7 @@ export async function buildApp(options: { store: PostgresStore; origin?: string;
     }).strict().parse(req.body);
     const { user, token } = await store.switchAccount(playerCode);
     setSession(reply, token);
-    return { user };
+    return bearerToken(req.headers.authorization) ? { user, token } : { user };
   });
   app.post('/api/sessions/minigame', { config: { rateLimit: { max: 30, timeWindow: '1 minute' } } }, async req => {
     const appId = process.env.WECHAT_MINIGAME_APP_ID;
@@ -142,7 +142,9 @@ export async function buildApp(options: { store: PostgresStore; origin?: string;
     await store.roomFor(user.id,roomId);
     return {ticket:miniGameTickets.issue(roomId,token)};
   });
-  app.delete('/api/sessions',async(_req,reply)=>{
+  app.delete('/api/sessions',async(req,reply)=>{
+    const token=bearerToken(req.headers.authorization)??req.cookies.avalon_session;
+    if(token)await store.revokeSession(token);
     reply.clearCookie('avalon_session', { path: '/' });
     return { ok: true };
   });

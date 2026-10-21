@@ -92,7 +92,7 @@ export class PlayerPanel {
   async handle(id: string, input: Input): Promise<'back' | void> {
     if (id === 'back') return 'back';
     if (id === 'confirm:no') { this.pending = undefined; return; }
-    if (id === 'confirm:yes' && this.pending) { const action = this.pending.action; this.pending = undefined; await action(); await this.open(this.page); return; }
+    if (id === 'confirm:yes' && this.pending) { const action = this.pending.action; this.pending = undefined; await action(); await this.open(this.page === 'direct' ? 'friends' : this.page); return; }
     if (id.startsWith('page:')) { await this.open(id.slice(5) as Page); return; }
     if (id === 'nickname') { const nickname = await input('新昵称', 20); if (nickname) this.user = (await this.api.updateProfile({ nickname, avatar: this.user.avatar ?? 'leaf', avatarUrl: this.user.avatarUrl ?? null, wechatAvatarUrl: this.user.wechatAvatarUrl ?? null })).user; return; }
     if (id === 'avatar') { const next = avatarOrder[(avatarOrder.indexOf(this.user.avatar ?? 'leaf') + 1) % avatarOrder.length]!; this.user = (await this.api.updateProfile({ nickname: this.user.nickname, avatar: next, avatarUrl: null, wechatAvatarUrl: null })).user; return; }
