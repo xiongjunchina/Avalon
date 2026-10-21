@@ -430,7 +430,7 @@ export function AdminDashboard({ onBackToGame }: AdminDashboardProps) {
           className={`admin-nav-item ${activeTab === 'strategy' ? 'is-active' : ''}`}
           onClick={() => setActiveTab('strategy')}
         >
-          ⚙️ 策略与总开关
+          ⚙️ 运营策略
         </button>
         <button
           type="button"
@@ -451,7 +451,7 @@ export function AdminDashboard({ onBackToGame }: AdminDashboardProps) {
           className={`admin-nav-item ${activeTab === 'codes' ? 'is-active' : ''}`}
           onClick={() => setActiveTab('codes')}
         >
-          🎟️ 兑换码中心 ({codes.length})
+          🎟️ 兑换码 ({codes.length})
         </button>
       </nav>
 

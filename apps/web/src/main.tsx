@@ -96,6 +96,34 @@ function App() {
   const [announcement, setAnnouncement] = useState<{ text: string; enabled: boolean } | null>(null);
   const [freeAccessMode, setFreeAccessMode] = useState<boolean>(true);
   const [nickname, setNickname] = useState('');
+  const [authMode, setAuthMode] = useState<'create' | 'switch'>('create');
+  const [switchCode, setSwitchCode] = useState('');
+  const [knownAccounts, setKnownAccounts] = useState<Array<{ id: string; nickname: string; playerCode: string; lastSeen: number }>>(() => {
+    try {
+      const raw = localStorage.getItem('avalon_known_accounts');
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const saveKnownAccount = (u: User) => {
+    if (!u || !u.playerCode) return;
+    try {
+      const raw = localStorage.getItem('avalon_known_accounts');
+      const list: Array<{ id: string; nickname: string; playerCode: string; lastSeen: number }> = raw ? JSON.parse(raw) : [];
+      const filtered = list.filter(item => item.playerCode !== u.playerCode && item.id !== u.id);
+      filtered.unshift({
+        id: u.id,
+        nickname: u.nickname,
+        playerCode: u.playerCode,
+        lastSeen: Date.now(),
+      });
+      const updated = filtered.slice(0, 5);
+      localStorage.setItem('avalon_known_accounts', JSON.stringify(updated));
+      setKnownAccounts(updated);
+    } catch {}
+  };
   const initialInvite = new URLSearchParams(location.search).get('invite') ?? '';
   const [key, setKey] = useState(() => initialInvite);
   const [joinOpen, setJoinOpen] = useState(false);
@@ -314,6 +342,7 @@ function App() {
       .then(data => {
         if (active) {
           setUser(data.user);
+          saveKnownAccount(data.user);
           setRoomId(data.roomId);
         }
       })
@@ -489,6 +518,25 @@ function App() {
       setRoom(null);
       setPage('table');
       setNotice('已注销当前身份，请重新输入尊号入局');
+    });
+  }
+
+  async function handleSwitchAccount(code: string) {
+    const clean = code.trim();
+    if (!/^\d{6}$/.test(clean)) {
+      setError('请输入6位有效数字仙友码');
+      return;
+    }
+    await run(async () => {
+      const data = await api<{ user: User }>('/sessions/switch', { playerCode: clean });
+      setUser(data.user);
+      saveKnownAccount(data.user);
+      setSwitchCode('');
+      try {
+        const meData = await api<{ user: User; roomId: string | null }>('/me');
+        setRoomId(meData.roomId);
+      } catch {}
+      setNotice(`仙友 ${data.user.nickname}（#${data.user.playerCode}）已归位！`);
     });
   }
 
@@ -738,40 +786,127 @@ function App() {
             <p className="mp-avalon-sub">一念佛魔皆幻相，谁是修道取经人</p>
           </div>
           <section className="panel guest-login-card">
-            <h2>请留取经尊号</h2>
-            <form
-              onSubmit={e => {
-                e.preventDefault();
-                void run(async () => {
-                  const data = await api<{ user: User }>('/sessions/guest', { nickname });
-                  setUser(data.user);
-                });
-              }}
-            >
-              <p className="muted" id="nickname-next-step">
-                输入尊号昵称即可踏入取经大道，开启或加入真假猴王取经之局。
-              </p>
-              <Label.Root htmlFor="nickname">你的尊号（昵称）</Label.Root>
-              <input
-                id="nickname"
-                value={nickname}
-                maxLength={20}
-                required
-                autoComplete="nickname"
-                aria-describedby="nickname-next-step nickname-identity-hint"
-                placeholder="例如：军哥"
-                onChange={e => setNickname(e.target.value)}
-              />
-              <p className="hint" id="nickname-identity-hint">
-                访客身份保存在当前浏览器中，无广告与会员限制。
-              </p>
-              <button className="mp-cyan-pill" disabled={busy || !nickname.trim()} type="submit">
-                {busy ? '正在踏入取经大道…' : '踏入取经大道'}
+            <h2>{authMode === 'create' ? '请留取经尊号' : '仙友归位'}</h2>
+
+            <div className="guest-tabs-bar" role="tablist" aria-label="登录模式选择">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={authMode === 'create'}
+                className={`guest-tab-btn ${authMode === 'create' ? 'is-active' : ''}`}
+                onClick={() => setAuthMode('create')}
+              >
+                ✨ 新入仙途（取名启程）
               </button>
-            </form>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={authMode === 'switch'}
+                className={`guest-tab-btn is-switch ${authMode === 'switch' ? 'is-active is-switch' : ''}`}
+                onClick={() => setAuthMode('switch')}
+              >
+                🔄 仙友归位（切换账号）
+              </button>
+            </div>
+
+            {authMode === 'create' ? (
+              <form
+                onSubmit={e => {
+                  e.preventDefault();
+                  void run(async () => {
+                    const data = await api<{ user: User }>('/sessions/guest', { nickname });
+                    setUser(data.user);
+                    saveKnownAccount(data.user);
+                  });
+                }}
+              >
+                <p className="muted" id="nickname-next-step">
+                  输入尊号昵称即可踏入取经大道，开启或加入真假猴王取经之局。
+                </p>
+                <Label.Root htmlFor="nickname">你的尊号（昵称）</Label.Root>
+                <input
+                  id="nickname"
+                  value={nickname}
+                  maxLength={20}
+                  required
+                  autoComplete="nickname"
+                  aria-describedby="nickname-next-step nickname-identity-hint"
+                  placeholder="例如：军哥"
+                  onChange={e => setNickname(e.target.value)}
+                />
+                <p className="hint" id="nickname-identity-hint">
+                  系统会自动为你分派唯一的 6 位专属仙友码，在不同设备或账号间自由切换。
+                </p>
+                <button className="mp-cyan-pill" disabled={busy || !nickname.trim()} type="submit">
+                  {busy ? '正在踏入取经大道…' : '踏入取经大道'}
+                </button>
+              </form>
+            ) : (
+              <form
+                onSubmit={e => {
+                  e.preventDefault();
+                  void handleSwitchAccount(switchCode);
+                }}
+              >
+                <p className="muted" id="switch-next-step">
+                  输入你的 6 位唯一专属仙友码，立即切回历史账号查看功果簿战绩。
+                </p>
+                <Label.Root htmlFor="switchCode">6 位专属仙友码</Label.Root>
+                <input
+                  id="switchCode"
+                  className="guest-switch-input"
+                  value={switchCode}
+                  maxLength={6}
+                  pattern="\d{6}"
+                  required
+                  autoComplete="off"
+                  aria-describedby="switch-next-step"
+                  placeholder="例如：123456"
+                  onChange={e => setSwitchCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                />
+                <p className="hint">
+                  仙友码可在个人中心“功果簿”中查看并复制，永久绑定个人历史胜率与复盘。
+                </p>
+                <button
+                  className="mp-gold-pill"
+                  disabled={busy || switchCode.trim().length !== 6}
+                  type="submit"
+                >
+                  {busy ? '正在寻回仙友仙籍…' : '立即归位切回账号'}
+                </button>
+              </form>
+            )}
+
+            {/* Recently Used Accounts Quick Switcher */}
+            {knownAccounts.length > 0 && (
+              <div style={{ marginTop: '20px', borderTop: '1px dashed rgba(255, 255, 255, 0.15)', paddingTop: '14px' }}>
+                <p style={{ fontSize: '12.5px', color: '#94a3b8', margin: '0 0 6px', fontWeight: 600 }}>
+                  📜 常用仙籍（点击秒切）：
+                </p>
+                <div className="guest-known-list">
+                  {knownAccounts.map(acc => (
+                    <button
+                      key={acc.playerCode}
+                      type="button"
+                      disabled={busy}
+                      className="guest-known-item"
+                      onClick={() => void handleSwitchAccount(acc.playerCode)}
+                      title={`快速切回 ${acc.nickname}（仙友码 #${acc.playerCode}）`}
+                    >
+                      <span style={{ fontWeight: 600, color: '#f1f5f9' }}>{acc.nickname}</span>
+                      <span style={{ color: '#ffd875', fontFamily: 'monospace', fontSize: '12px' }}>
+                        #{acc.playerCode} · 点击切入 ➔
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {error && (
               <button
                 className="secondary"
+                style={{ marginTop: '14px', width: '100%' }}
                 onClick={() => {
                   setLoading(true);
                   setError('');
@@ -1478,7 +1613,13 @@ function App() {
                         <span className="seat-num-badge">{i + 1}</span>
                       </div>
                       <strong className="seat-card-name">
-                        {m ? `${m.nickname}${m.id === user.id ? '（你）' : ''}` : '邀请好友'}
+                        {m
+                          ? `${m.nickname}${
+                              room.members.filter(x => x.nickname === m.nickname).length > 1
+                                ? ` #${m.playerCode ? m.playerCode.slice(-4) : m.id.slice(0, 4)}`
+                                : ''
+                            }${m.id === user.id ? '（你）' : ''}`
+                          : '邀请好友'}
                       </strong>
                       <div className="seat-card-bottom">
                         {m ? (
@@ -1634,7 +1775,7 @@ function App() {
                   </button>
                 </div>
                 <p>
-                  确认将 <strong>{String(kickTarget.seat).padStart(2, '0')}号 · {kickTarget.nickname}</strong> 移出当前房间吗？移出后该座位将立即空出。
+                  确认将 <strong>{String(kickTarget.seat).padStart(2, '0')}号 · {kickTarget.nickname}{room.members.filter(x => x.nickname === kickTarget.nickname).length > 1 && kickTarget.playerCode ? ` #${kickTarget.playerCode.slice(-4)}` : ''}</strong> 移出当前房间吗？移出后该座位将立即空出。
                 </p>
                 <div className="dock-inline-controls" style={{ marginTop: 14 }}>
                   <button
@@ -1711,7 +1852,8 @@ function App() {
                         .map(m => (
                           <div key={m.id} className="settings-member-row">
                             <span>
-                              {String(m.seat).padStart(2, '0')}号 · {m.nickname}{' '}
+                              {String(m.seat).padStart(2, '0')}号 · {m.nickname}
+                              {room.members.filter(x => x.nickname === m.nickname).length > 1 && m.playerCode ? ` #${m.playerCode.slice(-4)}` : ''}{' '}
                               <small className="hint">({m.online ? '在线' : '离线'})</small>
                             </span>
                             <button

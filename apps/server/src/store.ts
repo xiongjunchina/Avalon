@@ -81,6 +81,122 @@ export class PostgresStore {
       return { user, token };
     });
   }
+  async switchAccount(playerCode: string): Promise<{ user: User; token: string }> {
+    const token = randomBytes(32).toString('base64url');
+    return this.tx(async c => {
+      const u = (await c.query<{
+        id: string;
+        nickname: string;
+        avatar: User['avatar'];
+        avatar_url?: string | null;
+        wechat_avatar_url?: string | null;
+        player_code: string;
+        is_banned?: boolean | null;
+        vip_until?: Date | null;
+      }>(
+        `SELECT u.id, u.nickname, u.avatar, u.avatar_url, u.wechat_avatar_url, u.player_code,
+                m.is_banned, m.vip_until
+         FROM users u
+         LEFT JOIN user_memberships m ON m.user_id = u.id
+         WHERE u.player_code = $1`,
+        [playerCode]
+      )).rows[0];
+
+      if (!u) throw new DomainError('USER_NOT_FOUND', 404);
+      if (u.is_banned) throw new DomainError('USER_BANNED', 403);
+
+      await c.query('INSERT INTO sessions(token_hash, user_id, expires_at) VALUES($1, $2, $3)', [
+        digest(token),
+        u.id,
+        new Date(this.now() + SESSION_MS),
+      ]);
+
+      const isVip = Boolean(u.vip_until && u.vip_until.getTime() > this.now());
+      const user: User = {
+        id: u.id,
+        nickname: u.nickname,
+        avatar: u.avatar || 'leaf',
+        ...(u.avatar_url ? { avatarUrl: u.avatar_url } : {}),
+        ...(u.wechat_avatar_url ? { wechatAvatarUrl: u.wechat_avatar_url } : {}),
+        playerCode: u.player_code,
+        isVip,
+        ...(u.vip_until ? { vipUntil: u.vip_until.toISOString() } : {}),
+      };
+      return { user, token };
+    });
+  }
+  async loginWechat(input: {
+    openid: string;
+    unionid?: string;
+    nickname?: string;
+    avatarUrl?: string;
+  }): Promise<{ user: User; token: string }> {
+    const token = randomBytes(32).toString('base64url');
+    return this.tx(async c => {
+      let u = (await c.query<{
+        id: string;
+        nickname: string;
+        avatar: User['avatar'];
+        avatar_url?: string | null;
+        wechat_avatar_url?: string | null;
+        player_code: string;
+        is_banned?: boolean | null;
+        vip_until?: Date | null;
+      }>(
+        `SELECT u.id, u.nickname, u.avatar, u.avatar_url, u.wechat_avatar_url, u.player_code,
+                m.is_banned, m.vip_until
+         FROM users u
+         LEFT JOIN user_memberships m ON m.user_id = u.id
+         WHERE u.wechat_openid = $1`,
+        [input.openid]
+      )).rows[0];
+
+      if (!u) {
+        let playerCode = String(randomInt(100000, 1000000));
+        while ((await c.query('SELECT 1 FROM users WHERE player_code=$1', [playerCode])).rowCount) {
+          playerCode = String(randomInt(100000, 1000000));
+        }
+        const userId = randomUUID();
+        const nickname = input.nickname?.trim() || `微信仙友${playerCode.slice(-4)}`;
+        await c.query(
+          `INSERT INTO users(id, nickname, created_at, player_code, wechat_openid, wechat_unionid, wechat_avatar_url)
+           VALUES($1, $2, $3, $4, $5, $6, $7)`,
+          [userId, nickname, this.date(), playerCode, input.openid, input.unionid ?? null, input.avatarUrl ?? null]
+        );
+        u = {
+          id: userId,
+          nickname,
+          avatar: 'leaf',
+          avatar_url: null,
+          wechat_avatar_url: input.avatarUrl ?? null,
+          player_code: playerCode,
+          is_banned: false,
+          vip_until: null,
+        };
+      } else if (u.is_banned) {
+        throw new DomainError('USER_BANNED', 403);
+      }
+
+      await c.query('INSERT INTO sessions(token_hash, user_id, expires_at) VALUES($1, $2, $3)', [
+        digest(token),
+        u.id,
+        new Date(this.now() + SESSION_MS),
+      ]);
+
+      const isVip = Boolean(u.vip_until && u.vip_until.getTime() > this.now());
+      const user: User = {
+        id: u.id,
+        nickname: u.nickname,
+        avatar: u.avatar || 'leaf',
+        ...(u.avatar_url ? { avatarUrl: u.avatar_url } : {}),
+        ...(u.wechat_avatar_url ? { wechatAvatarUrl: u.wechat_avatar_url } : {}),
+        playerCode: u.player_code,
+        isVip,
+        ...(u.vip_until ? { vipUntil: u.vip_until.toISOString() } : {}),
+      };
+      return { user, token };
+    });
+  }
   async authenticate(token?: string, renew = false): Promise<User> {
     if (!token) throw new DomainError('UNAUTHENTICATED', 401);
     return this.tx(async c => {

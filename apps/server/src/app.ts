@@ -112,6 +112,25 @@ export async function buildApp(options: { store: PostgresStore; origin?: string;
     const {user,token}=await store.createGuest(nickname); setSession(reply,token);return {user};
   });
   app.post('/api/sessions/refresh',async(req,reply)=>({user:await authenticate(req,reply)}));
+  app.post('/api/sessions/switch', { config: { rateLimit: { max: 30, timeWindow: '1 minute' } } }, async (req, reply) => {
+    const { playerCode } = z.object({
+      playerCode: z.string().trim().regex(/^\d{6}$/, '请输入6位有效仙友码'),
+    }).strict().parse(req.body);
+    const { user, token } = await store.switchAccount(playerCode);
+    setSession(reply, token);
+    return { user };
+  });
+  app.post('/api/sessions/wechat', { config: { rateLimit: { max: 30, timeWindow: '1 minute' } } }, async (req, reply) => {
+    const input = z.object({
+      openid: z.string().trim().min(1, '微信OpenID不可为空'),
+      unionid: z.string().trim().optional(),
+      nickname: z.string().trim().max(20).optional(),
+      avatarUrl: z.string().trim().optional(),
+    }).strict().parse(req.body);
+    const { user, token } = await store.loginWechat(input);
+    setSession(reply, token);
+    return { user };
+  });
   app.delete('/api/sessions',async(_req,reply)=>{
     reply.clearCookie('avalon_session', { path: '/' });
     return { ok: true };
