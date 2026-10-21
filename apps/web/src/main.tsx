@@ -79,7 +79,15 @@ function shuffleArray<T>(items: T[]): T[] {
 }
 
 function App() {
-  const [page, setPage] = useState<'table' | 'account' | 'guide' | 'admin'>('table');
+  const [page, setPage] = useState<'table' | 'account' | 'guide' | 'admin'>(() => {
+    if (typeof window !== 'undefined') {
+      const search = new URLSearchParams(window.location.search);
+      if (search.has('admin') || search.get('page') === 'admin' || window.location.hash.includes('admin') || window.location.pathname.startsWith('/admin')) {
+        return 'admin';
+      }
+    }
+    return 'table';
+  });
   const guideReturn = useRef<'table' | 'account'>('table');
   const [replayId, setReplayId] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
@@ -177,7 +185,7 @@ function App() {
   // Check admin url parameter and load system status
   useEffect(() => {
     const search = new URLSearchParams(window.location.search);
-    if (search.has('admin') || window.location.hash.includes('admin')) {
+    if (search.has('admin') || search.get('page') === 'admin' || window.location.hash.includes('admin') || window.location.pathname.startsWith('/admin')) {
       setPage('admin');
     }
     let active = true;
@@ -1150,15 +1158,6 @@ function App() {
                   title="功果簿（战绩与个人资料）"
                 >
                   📜 功果簿
-                </button>
-                <span className="lobby-link-sep" aria-hidden="true">·</span>
-                <button
-                  type="button"
-                  className="lobby-link-btn is-admin"
-                  onClick={() => setPage('admin')}
-                  title="法坛中枢（管理）"
-                >
-                  ⛩️ 法坛中枢
                 </button>
                 <span className="lobby-link-sep" aria-hidden="true">·</span>
                 <button

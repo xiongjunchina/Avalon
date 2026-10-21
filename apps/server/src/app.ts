@@ -384,6 +384,12 @@ export async function buildApp(options: { store: PostgresStore; origin?: string;
     return { games: await adminService.getGameHistory(limit ? Number(limit) : 20, offset ? Number(offset) : 0) };
   });
 
+  app.get<{ Params: { id: string } }>('/api/admin/games/:id/replay', async (req, reply) => {
+    requireAdmin(req, reply);
+    const id = z.string().uuid().parse(req.params.id);
+    return await adminService.getGameReplay(id);
+  });
+
   app.get('/api/admin/redemption-codes', async (req, reply) => {
     requireAdmin(req, reply);
     return { codes: await adminService.listRedemptionCodes() };

@@ -5,8 +5,10 @@ import type {
   AdminRoomSummary,
   AdminUserSummary,
   RedemptionCodeItem,
+  Replay,
   SystemAnnouncement,
 } from '@avalon/contracts';
+import { ReplayView } from './AccountPanel';
 import './admin.css';
 
 interface AdminDashboardProps {
@@ -45,6 +47,8 @@ export function AdminDashboard({ onBackToGame }: AdminDashboardProps) {
   const [roomSubTab, setRoomSubTab] = useState<'active' | 'history'>('active');
   const [activeRooms, setActiveRooms] = useState<AdminRoomSummary[]>([]);
   const [gameHistory, setGameHistory] = useState<AdminGameSummary[]>([]);
+  const [inspectingReplay, setInspectingReplay] = useState<Replay | null>(null);
+  const [replayLoading, setReplayLoading] = useState(false);
 
   // Redemption Codes Data
   const [codes, setCodes] = useState<RedemptionCodeItem[]>([]);
@@ -277,6 +281,18 @@ export function AdminDashboard({ onBackToGame }: AdminDashboardProps) {
     }
   };
 
+  const handleViewGameReplay = async (gameId: string) => {
+    setReplayLoading(true);
+    try {
+      const replay = await adminApi<Replay>(`/games/${gameId}/replay`);
+      setInspectingReplay(replay);
+    } catch (err: any) {
+      alert('读取对局复盘失败：' + (err.message || '请重试'));
+    } finally {
+      setReplayLoading(false);
+    }
+  };
+
   const handleGenerateCodes = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -373,9 +389,9 @@ export function AdminDashboard({ onBackToGame }: AdminDashboardProps) {
         <div className="admin-header-left">
           <h1 className="admin-header-title">
             <span>⛩️ 法坛中枢</span>
-            <span style={{ fontSize: '13px', color: '#94a3b8', fontWeight: 400 }}>· 运营与用户增长控制台</span>
+            <span className="admin-header-sub">· 运营管理</span>
           </h1>
-          <span className="admin-status-badge">● 系统运行正常</span>
+          <span className="admin-status-badge">● 系统正常</span>
         </div>
 
         <div className="admin-header-right">
@@ -394,7 +410,7 @@ export function AdminDashboard({ onBackToGame }: AdminDashboardProps) {
           <button type="button" className="admin-tool-btn" onClick={onBackToGame}>
             ‹ 返回大厅
           </button>
-          <button type="button" className="admin-tool-btn" onClick={handleLogout} style={{ color: '#f87171' }}>
+          <button type="button" className="admin-tool-btn danger" onClick={handleLogout}>
             🚪 登出
           </button>
         </div>
@@ -633,8 +649,8 @@ export function AdminDashboard({ onBackToGame }: AdminDashboardProps) {
               )}
             </div>
 
-            {/* User Table */}
-            <div className="admin-table-wrap">
+            {/* Desktop User Table */}
+            <div className="admin-desktop-table admin-table-wrap">
               <table className="admin-table">
                 <thead>
                   <tr>
@@ -714,6 +730,65 @@ export function AdminDashboard({ onBackToGame }: AdminDashboardProps) {
                   )}
                 </tbody>
               </table>
+            </div>
+
+            {/* Mobile User Cards */}
+            <div className="admin-mobile-cards admin-user-cards">
+              {users.length === 0 ? (
+                <div style={{ textAlign: 'center', color: '#94a3b8', padding: '24px' }}>
+                  暂未找到匹配的仙友
+                </div>
+              ) : (
+                users.map(u => (
+                  <div key={u.id} className="admin-user-card">
+                    <div className="admin-user-card-head">
+                      <div className="admin-user-card-name">
+                        <span>{u.nickname}</span>
+                        <span className="admin-user-card-code">#{u.playerCode}</span>
+                      </div>
+                      <div className="admin-user-card-badges">
+                        {u.isVip ? (
+                          <span className="badge-vip" title={`到期时间：${u.vipUntil}`}>⭐ 会员</span>
+                        ) : settings?.freeAccessMode ? (
+                          <span className="badge-free">公测全免</span>
+                        ) : (
+                          <span className="badge-normal">普通</span>
+                        )}
+                        {u.isBanned ? (
+                          <span className="badge-banned" title={u.bannedReason || ''}>🚫 封禁</span>
+                        ) : (
+                          <span style={{ color: '#4ade80', fontSize: '11px', fontWeight: 600 }}>● 正常</span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="admin-user-card-meta">
+                      <span>⚔️ {u.gamesCount} 局</span>
+                      <span>👥 {u.friendsCount} 位好友</span>
+                      <span>📅 {new Date(u.createdAt).toLocaleDateString()}</span>
+                    </div>
+
+                    <div className="admin-user-card-actions">
+                      <button type="button" className="admin-action-btn" onClick={() => handleGrantVip(u)} title="赠送VIP">
+                        🎁 赠VIP
+                      </button>
+                      <button
+                        type="button"
+                        className={`admin-action-btn ${u.isBanned ? '' : 'danger'}`}
+                        onClick={() => handleBanUser(u)}
+                      >
+                        {u.isBanned ? '✅ 解封' : '🚫 封禁'}
+                      </button>
+                      <button type="button" className="admin-action-btn" onClick={() => handleViewFriends(u)} title="查看社交圈">
+                        👥 社交
+                      </button>
+                      <button type="button" className="admin-action-btn" onClick={() => handleResetProfile(u)} title="重置资料">
+                        🔄 重置
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
 
             {/* Friend Network Modal */}
@@ -816,55 +891,112 @@ export function AdminDashboard({ onBackToGame }: AdminDashboardProps) {
                 </div>
               )
             ) : (
-              <div className="admin-table-wrap">
-                <table className="admin-table">
-                  <thead>
-                    <tr>
-                      <th>对局 ID</th>
-                      <th>房号</th>
-                      <th>人数</th>
-                      <th>胜利阵营</th>
-                      <th>结束原因</th>
-                      <th>开局时间</th>
-                      <th>结束时间</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {gameHistory.length === 0 ? (
+              <div>
+                {/* Desktop Match History Table */}
+                <div className="admin-desktop-table admin-table-wrap">
+                  <table className="admin-table">
+                    <thead>
                       <tr>
-                        <td colSpan={7} style={{ textAlign: 'center', color: '#94a3b8', padding: '24px' }}>
-                          暂无历史对局数据
-                        </td>
+                        <th>对局 ID</th>
+                        <th>房号</th>
+                        <th>人数</th>
+                        <th>胜利阵营</th>
+                        <th>结束原因</th>
+                        <th>开局时间</th>
+                        <th>结束时间</th>
+                        <th>管理操作</th>
                       </tr>
-                    ) : (
-                      gameHistory.map(g => (
-                        <tr key={g.id}>
-                          <td>
-                            <code style={{ fontSize: '11px', color: '#94a3b8' }}>{g.id.slice(0, 8)}</code>
+                    </thead>
+                    <tbody>
+                      {gameHistory.length === 0 ? (
+                        <tr>
+                          <td colSpan={8} style={{ textAlign: 'center', color: '#94a3b8', padding: '24px' }}>
+                            暂无历史对局数据
                           </td>
-                          <td>{g.roomCode}</td>
-                          <td>{g.playerCount} 人局</td>
-                          <td>
+                        </tr>
+                      ) : (
+                        gameHistory.map(g => (
+                          <tr key={g.id}>
+                            <td>
+                              <code style={{ fontSize: '11px', color: '#ffd875' }}>{g.id.slice(0, 8)}</code>
+                            </td>
+                            <td>{g.roomCode}</td>
+                            <td>{g.playerCount} 人局</td>
+                            <td>
+                              {g.winner === 'blue' ? (
+                                <span style={{ color: '#38bdf8', fontWeight: 600 }}>蓝方 · 取经正果</span>
+                              ) : g.winner === 'red' ? (
+                                <span style={{ color: '#f87171', fontWeight: 600 }}>红方 · 群妖乱道</span>
+                              ) : (
+                                <span style={{ color: '#94a3b8' }}>平局/中止</span>
+                              )}
+                            </td>
+                            <td style={{ fontSize: '12px', color: '#cbd5e1' }}>{g.reason || '—'}</td>
+                            <td style={{ fontSize: '12px', color: '#94a3b8' }}>
+                              {new Date(g.createdAt).toLocaleTimeString()}
+                            </td>
+                            <td style={{ fontSize: '12px', color: '#94a3b8' }}>
+                              {g.endedAt ? new Date(g.endedAt).toLocaleTimeString() : '—'}
+                            </td>
+                            <td>
+                              <button
+                                type="button"
+                                className="admin-action-btn"
+                                disabled={replayLoading}
+                                onClick={() => handleViewGameReplay(g.id)}
+                                title="点击调取本局完整复盘"
+                              >
+                                🔍 查看复盘
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile Match History Cards */}
+                <div className="admin-mobile-cards admin-game-cards">
+                  {gameHistory.length === 0 ? (
+                    <div style={{ textAlign: 'center', color: '#94a3b8', padding: '24px' }}>
+                      暂无历史对局数据
+                    </div>
+                  ) : (
+                    gameHistory.map(g => (
+                      <div key={g.id} className="admin-game-card">
+                        <div className="admin-game-card-head">
+                          <span style={{ fontWeight: 700, color: '#f8fafc' }}>
+                            房间 #{g.roomCode} <small style={{ color: '#94a3b8' }}>({g.playerCount}人局)</small>
+                          </span>
+                          <span className="admin-game-card-winner">
                             {g.winner === 'blue' ? (
-                              <span style={{ color: '#38bdf8', fontWeight: 600 }}>蓝方 · 取经正果</span>
+                              <span style={{ color: '#38bdf8' }}>蓝方 · 取经正果</span>
                             ) : g.winner === 'red' ? (
-                              <span style={{ color: '#f87171', fontWeight: 600 }}>红方 · 群妖乱道</span>
+                              <span style={{ color: '#f87171' }}>红方 · 群妖乱道</span>
                             ) : (
                               <span style={{ color: '#94a3b8' }}>平局/中止</span>
                             )}
-                          </td>
-                          <td style={{ fontSize: '12px', color: '#cbd5e1' }}>{g.reason || '—'}</td>
-                          <td style={{ fontSize: '12px', color: '#94a3b8' }}>
-                            {new Date(g.createdAt).toLocaleTimeString()}
-                          </td>
-                          <td style={{ fontSize: '12px', color: '#94a3b8' }}>
-                            {g.endedAt ? new Date(g.endedAt).toLocaleTimeString() : '—'}
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
+                          </span>
+                        </div>
+                        <div className="admin-game-card-meta">
+                          <div>结案原因：{g.reason || '—'}</div>
+                          <div>结束时间：{g.endedAt ? new Date(g.endedAt).toLocaleString() : '—'}</div>
+                          <div>对局ID：<code style={{ fontSize: '11px', color: '#ffd875' }}>{g.id}</code></div>
+                        </div>
+                        <button
+                          type="button"
+                          className="admin-primary-btn"
+                          disabled={replayLoading}
+                          onClick={() => handleViewGameReplay(g.id)}
+                          style={{ width: '100% !important', padding: '8px 12px', fontSize: '13px' }}
+                        >
+                          {replayLoading ? '读取复盘中…' : '🔍 查看本局完整复盘'}
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -985,6 +1117,33 @@ export function AdminDashboard({ onBackToGame }: AdminDashboardProps) {
           </div>
         )}
       </main>
+
+      {/* Admin Replay Inspection Modal */}
+      {inspectingReplay && (
+        <div className="admin-replay-modal-backdrop" onClick={() => setInspectingReplay(null)}>
+          <div className="admin-replay-modal" onClick={e => e.stopPropagation()}>
+            <div className="admin-replay-modal-head">
+              <h3 className="admin-replay-modal-title">
+                <span>📜 法坛对局全景复盘</span>
+                <span style={{ fontSize: '12px', color: '#ffd875', fontWeight: 500, marginLeft: '6px' }}>
+                  ({inspectingReplay.playerCount}人局 · 胜者：{inspectingReplay.result.winner === 'blue' ? '蓝方' : inspectingReplay.result.winner === 'red' ? '红方' : '中断'})
+                </span>
+              </h3>
+              <button
+                type="button"
+                className="admin-tool-btn"
+                onClick={() => setInspectingReplay(null)}
+                style={{ padding: '4px 10px', fontSize: '13px' }}
+              >
+                ✕ 关闭
+              </button>
+            </div>
+            <div className="admin-replay-modal-body">
+              <ReplayView replay={inspectingReplay} />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

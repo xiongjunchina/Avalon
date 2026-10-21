@@ -6,8 +6,10 @@ import type {
   AdminRoomSummary,
   AdminUserSummary,
   RedemptionCodeItem,
+  Replay,
   SystemAnnouncement,
 } from '@avalon/contracts';
+import { teamOf } from '@avalon/game-core';
 import { DomainError, PostgresStore } from './store.js';
 
 export class AdminService {
@@ -279,6 +281,84 @@ export class AdminService {
         createdAt: new Date(r.created_at).toISOString(),
         endedAt: r.ended_at ? new Date(r.ended_at).toISOString() : null,
       }));
+    } finally {
+      client.release();
+    }
+  }
+
+  async getGameReplay(id: string): Promise<Replay> {
+    const client = await this.pool.connect();
+    try {
+      const res = await client.query<any>(`
+        SELECT g.*,
+               to_char(g.ended_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') AS cursor_at
+        FROM games g
+        WHERE g.id = $1
+      `, [id]);
+      const r = res.rows[0];
+      if (!r) throw new DomainError('GAME_NOT_FOUND', 404);
+      const g = r.state;
+      const firstPlayer = g.players?.[0];
+      const self = firstPlayer
+        ? { nickname: firstPlayer.nickname, seat: firstPlayer.seat, role: g.roles[firstPlayer.id], team: teamOf(g.roles[firstPlayer.id]) }
+        : { nickname: '管理员', seat: 0, role: 'merlin' as const, team: 'blue' as const };
+
+      return {
+        id: r.id,
+        startedAt: new Date(r.created_at).toISOString(),
+        endedAt: r.ended_at ? new Date(r.ended_at).toISOString() : new Date().toISOString(),
+        rulesetVersion: g.rulesetVersion,
+        playerCount: g.players?.length || 0,
+        self,
+        result: {
+          winner: g.result?.winner ?? null,
+          reason: g.result?.reason ?? 'unknown',
+          ...(g.result?.targetId ? { targetId: g.result.targetId } : {}),
+        },
+        favorite: false,
+        settings: { ...g.settings },
+        players: (g.players || []).map((p: any) => ({ id: p.id, nickname: p.nickname, seat: p.seat })),
+        roles: Object.fromEntries((g.players || []).map((p: any) => [p.id, g.roles[p.id]])),
+        rounds: (g.rounds || []).map((rnd: any) => ({
+          number: rnd.number,
+          mission: rnd.mission,
+          captainId: rnd.captainId,
+          team: [...rnd.team],
+          direction: rnd.direction,
+          ...(rnd.vote ? {
+            vote: {
+              approvals: rnd.vote.approvals,
+              rejections: rnd.vote.rejections,
+              abstentions: rnd.vote.abstentions ?? 0,
+              passed: rnd.vote.passed,
+              ...(!g.settings?.anonymousTeamVote && rnd.vote.ballots ? {
+                ballots: Object.fromEntries(
+                  g.players
+                    .filter((p: any) => typeof rnd.vote.ballots[p.id] === 'boolean' || rnd.vote.ballots[p.id] === 'abstain')
+                    .map((p: any) => [p.id, rnd.vote.ballots[p.id]])
+                ),
+              } : {}),
+            },
+          } : {}),
+          ...(rnd.result ? {
+            result: {
+              successes: rnd.result.successes,
+              failures: rnd.result.failures,
+              passed: rnd.result.passed,
+            },
+          } : {}),
+        })),
+        inspections: (g.lady?.inspections ?? []).map((i: any) => ({
+          afterMission: i.afterMission,
+          inspectorId: i.inspectorId,
+          targetId: i.targetId,
+        })),
+        earlyWindows: (g.earlyAssassination?.windows ?? []).map((w: any) => ({
+          afterMission: w.afterMission,
+          afterProposal: w.afterProposal,
+          decision: w.decision,
+        })),
+      };
     } finally {
       client.release();
     }
