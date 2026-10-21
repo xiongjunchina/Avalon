@@ -18,10 +18,12 @@ export function adminOverviewScreen(data: AdminOverview): ScreenModel {
   ] };
 }
 
-export function adminUsersScreen(users: AdminUserSummary[], query = ''): ScreenModel {
+export function adminUsersScreen(users: AdminUserSummary[], query = '', hasMore = false): ScreenModel {
   return { title: '管理用户', subtitle: query ? `搜索：${query}` : '点击用户查看管理操作', rows: [
     { id: 'search', text: '搜索昵称 / 仙友码 / ID' },
     ...users.map(user => ({ id: `user:${user.id}`, text: `${user.nickname} ${user.playerCode} ${user.isBanned ? '已封禁' : ''} ${user.isVip ? 'VIP' : ''}` })),
+    ...(hasMore ? [{ id: 'more:users', text: '加载更多用户' }] : []),
+    { id: 'cleanup', text: '清理无对局的空账户' },
     ...navigation,
   ] };
 }
@@ -44,9 +46,10 @@ export function adminRoomsScreen(rooms: AdminRoomSummary[]): ScreenModel {
   ] };
 }
 
-export function adminGamesScreen(games: AdminGameSummary[]): ScreenModel {
+export function adminGamesScreen(games: AdminGameSummary[], hasMore = false): ScreenModel {
   return { title: '对局记录', rows: [
     ...games.map(game => ({ id: `replay:${game.id}`, text: `${game.roomCode} · ${game.playerCount}人 · ${game.winner ?? '中止'}` })),
+    ...(hasMore ? [{ id: 'more:games', text: '加载更多对局' }] : []),
     ...navigation,
   ] };
 }

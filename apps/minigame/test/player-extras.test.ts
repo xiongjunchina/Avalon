@@ -21,6 +21,9 @@ test('guide includes the five missions and win conditions', () => {
   const view = guideScreen();
   assert.ok(view.rows.some(row => row.text.includes('五轮')));
   assert.ok(view.rows.some(row => row.text.includes('刺杀')));
+  assert.equal(view.rows.filter(row => row.id.startsWith('mission:')).length, 5);
+  assert.ok(view.rows.some(row => row.id === 'guide-role:merlin'));
+  assert.ok(guideScreen('merlin').rows.some(row => row.text.includes('火眼金睛')));
 });
 
 test('account panel loads player statistics and history', async () => {
@@ -55,4 +58,13 @@ test('practice can run when the Mini Game runtime lacks structuredClone', () => 
   } finally {
     globalThis.structuredClone = nativeClone;
   }
+});
+
+test('incoming direct chat appears in the open conversation', async () => {
+  const api = { request: async (path: string) => path === '/friends' ? { friends: [{ id: 'f', nickname: '仙友', status: 'accepted' }] } : { messages: [] } } as any;
+  const panel = new PlayerPanel(new PlayerExtras(api), { id: 'u', nickname: '我' });
+  await panel.open('friends');
+  await panel.handle('friend:f', async () => undefined);
+  panel.onDirectChat({ type: 'directChat', messageId: 'm', fromUser: { id: 'f', nickname: '仙友' }, text: '你好', timestamp: '2026-10-22T00:00:00Z' });
+  assert.ok(panel.model().rows.some(row => row.text.includes('你好')));
 });

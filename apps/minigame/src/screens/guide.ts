@@ -1,6 +1,13 @@
 import type { ScreenModel } from '../ui/widgets.js';
+import { ALL_GALLERY_ROLES, WUYUE_MISSIONS } from '../../../web/src/roles.js';
 
-export function guideScreen(): ScreenModel {
+export function guideScreen(roleId?: string): ScreenModel {
+  const role = ALL_GALLERY_ROLES.find(item => item.id === roleId);
+  if (role) return { title: role.fullName, subtitle: role.team === 'blue' ? '取经阵营' : '妖魔阵营', rows: [
+    { id: 'role-title', text: role.title }, { id: 'role-motto', text: role.motto },
+    ...Array.from({ length: Math.ceil(role.story.length / 16) }, (_, index) => ({ id: `role-story:${index}`, text: role.story.slice(index * 16, (index + 1) * 16) })),
+    { id: 'guide:roles', text: '返回角色图鉴' },
+  ] };
   return { title: '玩法说明', subtitle: '嘻游 · 真假猴王', rows: [
     { id: 'guide:win', text: '五轮取经任务，蓝方完成三次后还须躲过刺杀' },
     { id: 'guide:loss', text: '红方破坏三次任务、累计五次流局或刺中孙悟空获胜' },
@@ -10,6 +17,8 @@ export function guideScreen(): ScreenModel {
     { id: 'guide:mission', text: '队员匿名出成功或失败；蓝方只能出成功' },
     { id: 'guide:assassin', text: '三次成功后由红孩儿刺杀孙悟空' },
     { id: 'guide:lady', text: '照妖宝镜与提前刺杀由房主开局前设置' },
+    ...WUYUE_MISSIONS.map(mission => ({ id: `mission:${mission.num}`, text: `第${mission.num}轮 · ${mission.mountain} · ${mission.title}` })),
+    ...ALL_GALLERY_ROLES.map(item => ({ id: `guide-role:${item.id}`, text: `${item.team === 'blue' ? '取经' : '妖魔'} · ${item.fullName}` })),
     { id: 'back', text: '返回' },
   ] };
 }

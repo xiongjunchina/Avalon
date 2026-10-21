@@ -1,4 +1,4 @@
-import type { Avatar, DirectMessage, FriendSummary, GameSummary, Replay, RoomChatMessage, SettingPreset, Settings, Statistics, User } from '@avalon/contracts';
+import type { Avatar, DirectMessage, FriendSummary, GameSummary, Replay, RoomChatMessage, ServerMessage, SettingPreset, Settings, Statistics, User } from '@avalon/contracts';
 import type { ScreenModel } from '../ui/widgets.js';
 import { guideScreen } from './guide.js';
 import { PlayerExtras } from './player-extras.js';
@@ -26,6 +26,13 @@ export class PlayerPanel {
   constructor(private readonly api: PlayerExtras, public user: User) {}
 
   onRoomChat(message: RoomChatMessage) { this.roomMessages.push(message); this.roomMessages = this.roomMessages.slice(-50); }
+  onDirectChat(message: Extract<ServerMessage, { type: 'directChat' }>): void {
+    if (this.page !== 'direct' || this.selectedFriend?.id !== message.fromUser.id) return;
+    if (this.direct.some(item => item.id === message.messageId)) return;
+    this.direct.push({ id: message.messageId, senderId: message.fromUser.id, receiverId: this.user.id,
+      message: message.text, createdAt: message.timestamp, isSelf: false });
+    this.direct = this.direct.slice(-50);
+  }
   async open(page: Page, options: { roomId?: string; settings?: Settings; canApplyPreset?: boolean } = {}): Promise<void> {
     this.page = page;
     this.roomId = options.roomId ?? this.roomId;

@@ -11,8 +11,10 @@ export class AdminPanel {
   private page: Page = 'overview';
   private overviewData?: AdminOverview;
   private usersData: AdminUserSummary[] = [];
+  private userTotal = 0;
   private roomsData: AdminRoomSummary[] = [];
   private gamesData: AdminGameSummary[] = [];
+  private moreGames = false;
   private codesData: RedemptionCodeItem[] = [];
   private settingsData?: Settings;
   private user?: AdminUserSummary;
@@ -36,9 +38,9 @@ export class AdminPanel {
     ] };
     if (this.page === 'friends') return { title: '用户仙友', rows: [...this.friendNames.map((name, index) => ({ id: `friend:${index}`, text: name })), { id: 'page:users', text: '返回用户列表' }] };
     if (this.page === 'overview' && this.overviewData) return adminOverviewScreen(this.overviewData);
-    if (this.page === 'users') return adminUsersScreen(this.usersData, this.query);
+    if (this.page === 'users') return adminUsersScreen(this.usersData, this.query, this.usersData.length < this.userTotal);
     if (this.page === 'rooms') return adminRoomsScreen(this.roomsData);
-    if (this.page === 'games') return adminGamesScreen(this.gamesData);
+    if (this.page === 'games') return adminGamesScreen(this.gamesData, this.moreGames);
     if (this.page === 'codes') return adminCodesScreen(this.codesData);
     if (this.page === 'settings' && this.settingsData) return adminSettingsScreen(this.settingsData);
     return { title: '管理员', rows: [{ id: 'page:overview', text: '刷新管理总览' }, { id: 'back', text: '返回游戏' }] };
@@ -47,9 +49,9 @@ export class AdminPanel {
   async load(page: Page): Promise<void> {
     this.page = page;
     if (page === 'overview') this.overviewData = await this.api.overview();
-    else if (page === 'users') this.usersData = (await this.api.users(this.query)).users;
+    else if (page === 'users') { const result = await this.api.users(this.query, 0); this.usersData = result.users; this.userTotal = result.total; }
     else if (page === 'rooms') this.roomsData = (await this.api.rooms()).rooms;
-    else if (page === 'games') this.gamesData = (await this.api.games()).games;
+    else if (page === 'games') { this.gamesData = (await this.api.games(0)).games; this.moreGames = this.gamesData.length === 20; }
     else if (page === 'codes') this.codesData = (await this.api.codes()).codes;
     else if (page === 'settings') this.settingsData = await this.api.settings() as Settings;
   }
@@ -58,6 +60,9 @@ export class AdminPanel {
     if (id === 'back') return 'back';
     if (id === 'confirm:no') { this.pending = undefined; return; }
     if (id === 'confirm:yes' && this.pending) { const action = this.pending.action; this.pending = undefined; await action(); this.user = undefined; await this.load(this.page === 'user' ? 'users' : this.page); return; }
+    if (id === 'more:users' && this.page === 'users' && this.usersData.length < this.userTotal) { const result = await this.api.users(this.query, this.usersData.length); this.usersData.push(...result.users); this.userTotal = result.total; return; }
+    if (id === 'more:games' && this.page === 'games' && this.moreGames) { const result = await this.api.games(this.gamesData.length); this.gamesData.push(...result.games); this.moreGames = result.games.length === 20; return; }
+    if (id === 'cleanup' && this.page === 'users') { this.pending = { label: '清理所有无对局的空账户？', action: () => this.api.deleteEmptyUsers(true) }; return; }
     if (id.startsWith('page:')) { await this.load(id.slice(5) as Page); return; }
     if (id === 'search') { this.query = await input('搜索用户', 40) ?? ''; await this.load('users'); return; }
     if (id.startsWith('user:')) { this.user = this.usersData.find(user => user.id === id.slice(5)); if (this.user) this.page = 'user'; return; }

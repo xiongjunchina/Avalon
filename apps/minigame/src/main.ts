@@ -35,20 +35,25 @@ let room: RoomView | undefined;
 let lobby: LobbyController | undefined;
 let playerPanel: PlayerPanel | undefined;
 let practice: PracticeSession | undefined;
+let guideRoleId: string | undefined;
 let connection: MiniGameRoomConnection | undefined;
 let view: 'entry' | 'lobby' | 'game' | 'settings' | 'admin' | 'player' | 'practice' | 'guide' = 'entry';
 let previousView: 'entry' | 'lobby' | 'game' = 'entry';
 let status = '';
 let error = '';
+let notice = '';
+let pendingConfirm: { label: string; execute: () => void } | undefined;
 let rows: HitRegion[] = [];
 let scroll = 0;
 let editableSettings: Settings = { ...defaultSettings };
 const gameUi: GameUiState = { privateRoleVisible: false, ballotVisible: false, selectedIds: [], direction: 'clockwise' };
 
 function model(): ScreenModel {
+  if (pendingConfirm) return { title: '确认操作', subtitle: pendingConfirm.label,
+    rows: [{ id: 'confirm:yes', text: '确认执行' }, { id: 'confirm:no', text: '取消' }] };
   let result: ScreenModel;
   if (view === 'admin') result = adminPanel.model();
-  else if (view === 'guide') result = guideScreen();
+  else if (view === 'guide') result = guideScreen(guideRoleId);
   else if (view === 'player' && playerPanel) result = playerPanel.model();
   else if (view === 'practice' && practice) {
     const local = practice.view();
@@ -60,10 +65,11 @@ function model(): ScreenModel {
   else if (room && user && view === 'lobby') result = lobbyScreen(room, user, status);
   else result = entryScreen(user, error);
   if (error && view !== 'entry') result.subtitle = error;
+  if (notice) result.rows.unshift({ id: 'notice', text: notice });
   return { ...result, scroll };
 }
 function render() { rows = renderScreen(model(), canvas, viewport); }
-function navigate(next: typeof view) { view = next; scroll = 0; error = ''; render(); }
+function navigate(next: typeof view) { view = next; scroll = 0; error = ''; notice = ''; pendingConfirm = undefined; render(); }
 
 function connect(next: RoomView) {
   connection?.stop();
@@ -83,7 +89,12 @@ function connect(next: RoomView) {
     },
     status: value => { status = value; render(); },
     error: value => { error = value; render(); },
-    message: message => { if (message.type === 'roomChat') { playerPanel?.onRoomChat(message); if (view === 'player') render(); } },
+    message: message => {
+      if (message.type === 'roomChat') { playerPanel?.onRoomChat(message); if (view === 'player') render(); }
+      if (message.type === 'directChat') { playerPanel?.onDirectChat(message); notice = `${message.fromUser.nickname}：${message.text}`; render(); }
+      if (message.type === 'roomInvitation') { notice = `${message.fromUser.nickname} 邀请你加入房间 ${message.roomCode}`; render(); }
+      if (message.type === 'systemAnnouncement' && message.enabled) { notice = message.text; render(); }
+    },
     ended: () => { connection = undefined; room = undefined; navigate('entry'); },
   } });
   lobby?.setConnection(connection);
@@ -101,6 +112,12 @@ async function run(action: () => Promise<void>) {
 }
 
 async function select(id: string) {
+  if (pendingConfirm) {
+    const pending = pendingConfirm;
+    pendingConfirm = undefined;
+    if (id === 'confirm:yes') pending.execute();
+    render(); return;
+  }
   if (view === 'practice' && practice) {
     if (id === 'exitPractice') { practice = undefined; navigate('entry'); return; }
     if (id === 'bot') { practice.stepBot(); render(); return; }
@@ -130,7 +147,12 @@ async function select(id: string) {
     const outcome = await adminPanel.handle(id, async (label, maxLength) => { status = label; render(); return askText(wx, '', maxLength ?? 200); });
     if (outcome === 'back') navigate('entry');
   });
-  if (view === 'guide') { if (id === 'back') navigate('entry'); return; }
+  if (view === 'guide') {
+    if (id === 'back') { guideRoleId = undefined; navigate('entry'); }
+    else if (id === 'guide:roles') { guideRoleId = undefined; scroll = 0; render(); }
+    else if (id.startsWith('guide-role:')) { guideRoleId = id.slice('guide-role:'.length); scroll = 0; render(); }
+    return;
+  }
   if (view === 'entry') {
     if (id === 'guide') { navigate('guide'); return; }
     if (id === 'practice') { practice = new PracticeSession(editableSettings, user?.nickname ?? '我'); hideSensitiveView(gameUi); navigate('practice'); return; }
@@ -154,7 +176,10 @@ async function select(id: string) {
     else if (id === 'settings') { editableSettings = { ...room.settings }; navigate('settings'); }
     else if (id === 'leave') lobby.leave();
     else if (id === 'share') { if (wx.shareAppMessage) wx.shareAppMessage({ title: `来嘻游 · 真假猴王房间 ${room.code} 一起论剑`, query: `invite=${encodeURIComponent(room.code)}` }); else { error = `请告知好友房间号 ${room.code}`; render(); } }
-    else if (id.startsWith('member:') && room.hostId === user?.id && id.slice(7) !== user.id) { error = '请在管理操作中确认移除玩家'; render(); }
+    else if (id.startsWith('member:') && room.hostId === user?.id && id.slice(7) !== user.id) {
+      const targetId = id.slice(7), member = room.members.find(item => item.id === targetId);
+      if (member) { pendingConfirm = { label: `移除 ${member.nickname}？`, execute: () => { if (room?.hostId === user?.id) lobby?.kick(targetId); } }; render(); }
+    }
     else if (id === 'chat' && playerPanel) return run(async () => { previousView = 'lobby'; await playerPanel!.open('roomchat', { roomId: room!.id }); navigate('player'); });
     else if (id === 'voice') { error = '语音功能正在接入'; render(); }
     return;
@@ -171,6 +196,11 @@ async function select(id: string) {
       render(); return;
     }
     const command = gameAction(room, user, id, gameUi);
+    if (command && ['endGame', 'voteAbort'].includes(command.type)) {
+      pendingConfirm = { label: command.type === 'endGame' ? '结束游戏并关闭房间？' : '确认处理结束申请？',
+        execute: () => { if (room && user) { const fresh = gameAction(room, user, id, gameUi); if (fresh && !connection?.send(fresh)) { error = '正在等待上一操作确认'; } } } };
+      render(); return;
+    }
     if (command && !connection?.send(command)) { error = '正在等待上一操作确认'; render(); }
   }
 }
@@ -184,7 +214,7 @@ wx.onTouchEnd?.(event => {
   if (Math.abs(delta) > 15) { scroll = Math.max(0, scroll - delta); render(); }
   else { const row = hitTest(rows, point.clientX, point.clientY); if (row) void select(row.id); }
 });
-platform.onHide(() => { hideSensitiveView(gameUi); adminPanel.onHide(); if (view === 'admin') view = 'entry'; render(); });
+platform.onHide(() => { hideSensitiveView(gameUi); pendingConfirm = undefined; adminPanel.onHide(); if (view === 'admin') view = 'entry'; render(); });
 platform.onShow(() => { connection?.resume(); render(); });
 render();
 if (api.session.get()) void run(async () => {

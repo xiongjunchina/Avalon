@@ -3,21 +3,26 @@ import type { WechatPlatform } from '../../platform/wechat.js';
 
 export class AdminApi {
   private key: string | undefined;
-  constructor(private readonly platform: Pick<WechatPlatform, 'request'>, private readonly baseUrl: string, private readonly bearer?: () => string | undefined) {}
+  constructor(private readonly platform: Pick<WechatPlatform, 'request'>, private readonly baseUrl: string, private readonly bearer?: () => string | undefined, private readonly timeoutMs = 10_000) {}
   get authorized() { return Boolean(this.key); }
   onHide() { this.key = undefined; }
   clear() { this.key = undefined; }
 
   private request<T>(path: string, body?: unknown, method = body === undefined ? 'GET' : 'POST', key = this.key): Promise<T> {
     return new Promise((resolve, reject) => {
+      let finished = false;
+      const finish = (action: () => void) => { if (finished) return; finished = true; clearTimeout(timer); action(); };
+      const timer = setTimeout(() => finish(() => reject(new Error('NETWORK_TIMEOUT'))), this.timeoutMs);
       this.platform.request({ url: `${this.baseUrl}/api/admin${path}`, method,
         header: { ...(body === undefined ? {} : { 'Content-Type': 'application/json' }), ...(key ? { 'x-admin-key': key } : {}), ...(this.bearer?.() ? { Authorization: `Bearer ${this.bearer()}` } : {}) },
         ...(body === undefined ? {} : { data: body }),
         success: response => {
-          if (response.statusCode === 401 || response.statusCode === 403) { this.clear(); reject(new Error('ADMIN_UNAUTHORIZED')); return; }
-          if (response.statusCode < 200 || response.statusCode >= 300) { reject(new Error(String((response.data as { error?: string })?.error ?? `HTTP_${response.statusCode}`))); return; }
-          resolve(response.data as T);
-        }, fail: () => reject(new Error('NETWORK')),
+          finish(() => {
+            if (response.statusCode === 401 || response.statusCode === 403) { this.clear(); reject(new Error('ADMIN_UNAUTHORIZED')); return; }
+            if (response.statusCode < 200 || response.statusCode >= 300) { reject(new Error(String((response.data as { error?: string })?.error ?? `HTTP_${response.statusCode}`))); return; }
+            resolve(response.data as T);
+          });
+        }, fail: () => finish(() => reject(new Error('NETWORK'))),
       });
     });
   }
@@ -32,7 +37,7 @@ export class AdminApi {
   overview(): Promise<AdminOverview> { this.guard(); return this.request('/overview'); }
   settings(): Promise<Record<string, unknown>> { this.guard(); return this.request('/settings'); }
   updateSetting(key: string, value: unknown) { this.guard(); return this.request<{ ok: boolean }>('/settings', { key, value }); }
-  users(query = '', offset = 0): Promise<{ users: AdminUserSummary[] }> { this.guard(); return this.request(`/users?query=${encodeURIComponent(query)}&offset=${offset}`); }
+  users(query = '', offset = 0): Promise<{ users: AdminUserSummary[]; total: number }> { this.guard(); return this.request(`/users?query=${encodeURIComponent(query)}&offset=${offset}`); }
   rooms(): Promise<{ rooms: AdminRoomSummary[] }> { this.guard(); return this.request('/rooms'); }
   games(offset = 0): Promise<{ games: AdminGameSummary[] }> { this.guard(); return this.request(`/games?offset=${offset}`); }
   replay(id: string): Promise<Replay> { this.guard(); return this.request(`/games/${encodeURIComponent(id)}/replay`); }
