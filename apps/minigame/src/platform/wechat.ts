@@ -25,7 +25,12 @@ export interface WxRuntime {
   request(options: WxRequestOptions): void;
   connectSocket(options: { url: string; header?: Record<string, string> }): WxSocketTask;
   login(options: { success(result: { code: string }): void; fail(error: unknown): void }): void;
-  showKeyboard?(options: { defaultValue?: string; maxLength?: number; confirmType?: string; success?(): void }): void;
+  showKeyboard?(options: { defaultValue?: string; maxLength?: number; confirmType?: string; success?(): void; fail?(error: unknown): void }): void;
+  hideKeyboard?(): void;
+  onKeyboardConfirm?(callback: (event: { value: string }) => void): void;
+  offKeyboardConfirm?(callback: (event: { value: string }) => void): void;
+  onTouchStart?(callback: (event: { touches: { clientX: number; clientY: number }[] }) => void): void;
+  onTouchEnd?(callback: (event: { changedTouches: { clientX: number; clientY: number }[] }) => void): void;
   createInnerAudioContext?(): { src: string; play(): void; pause(): void; stop(): void; destroy(): void };
   onShow(callback: () => void): void;
   onHide(callback: () => void): void;
