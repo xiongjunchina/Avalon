@@ -118,7 +118,7 @@ export function GuideRoles() {
 
   return (
     <div className="guide-roles">
-      <p className="hint">这里介绍《西游 · 真假猴王》全部神魔人物的通用规则，不显示本局谁拿到了什么身份。准确角色仅由本人查看，终局才公开。点击任意法相可鉴赏高清立绘大图。</p>
+      <p className="hint">这里介绍《嘻游 · 真假猴王》全部神魔人物的通用规则，不显示本局谁拿到了什么身份。准确角色仅由本人查看，终局才公开。点击任意法相可鉴赏高清立绘大图。</p>
       {(['blue', 'red'] as const).map(team => (
         <section key={team} aria-label={`${team === 'blue' ? '蓝方' : '红方'}角色介绍`} className={`guide-faction allegiance-${team}`}>
           <h2>
@@ -234,7 +234,7 @@ export function GuideRoles() {
 export function GuidePanel({onBack}:{onBack:()=>void}) {
   const [section,setSection]=useState<'rules'|'roles'>('rules');
   usePageSound(section);
-  return <section className="guide"><div className="guide-heading"><div><p className="eyebrow">JOURNEY TO THE WEST / 真假猴王秘卷</p><h1>《西游 · 真假猴王》</h1><p className="muted">一念佛魔皆幻相，谁是修道取经人</p></div><button className="secondary" onClick={onBack}>返回原页面</button></div>
+  return <section className="guide"><div className="guide-heading"><div><p className="eyebrow">JOURNEY TO THE WEST / 真假猴王秘卷</p><h1>《嘻游 · 真假猴王》</h1><p className="muted">一念佛魔皆幻相，谁是修道取经人</p></div><button className="secondary" onClick={onBack}>返回原页面</button></div>
     <nav className="guide-nav" aria-label="说明分类"><button className="secondary" aria-pressed={section==='rules'} onClick={()=>setSection('rules')}>游戏规则</button><button className="secondary" aria-pressed={section==='roles'} onClick={()=>setSection('roles')}>角色介绍</button></nav>
     {section==='rules'?<GuideRules/>:<GuideRoles/>}
   </section>;

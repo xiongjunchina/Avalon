@@ -779,7 +779,7 @@ function App() {
         <div className="mp-home-screen">
           <div className="mp-logo-block">
             <h1 className="mp-avalon-logo">
-              <span className="logo-word">西游</span>
+              <span className="logo-word">嘻游</span>
               <span className="logo-dot">·</span>
               <span className="logo-word">真假猴王</span>
             </h1>
@@ -947,7 +947,7 @@ function App() {
               <PracticeSeatPicker gameId={practiceGame.id} players={practiceGame.players} roles={practiceGame.roles}
                 value={practiceUserId} onChange={setPracticeUserId} />
             </div>
-            <h1 className="table-top-title">西游 · 真假猴王</h1>
+            <h1 className="table-top-title">嘻游 · 真假猴王</h1>
             <div className="room-top-right">
               <SoundButton />
               {!isEnded(practiceGame) && (
@@ -1198,7 +1198,7 @@ function App() {
                     guideReturn.current = 'table';
                     setPage('guide');
                   }}
-                  title="西游识妖谱 · 规则说明"
+                  title="嘻游识妖谱 · 规则说明"
                 >
                   📖 识妖谱
                 </button>
@@ -1207,7 +1207,7 @@ function App() {
 
             <div className="mp-logo-block">
               <h1 className="mp-avalon-logo">
-                <span className="logo-word">西游</span>
+                <span className="logo-word">嘻游</span>
                 <span className="logo-dot">·</span>
                 <span className="logo-word">真假猴王</span>
               </h1>
@@ -1403,7 +1403,7 @@ function App() {
                 </small>
               </button>
             </div>
-            <h1 className="table-top-title">西游 · 真假猴王</h1>
+            <h1 className="table-top-title">嘻游 · 真假猴王</h1>
             <div className="room-top-right">
               <SoundButton />
               {connection !== '已连接' && (
