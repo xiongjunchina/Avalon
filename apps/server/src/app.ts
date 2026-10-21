@@ -12,6 +12,7 @@ import { generateVoiceToken, uuidToRtcUid } from './agora.js';
 import { FriendsService } from './friends.js';
 import { AdminService } from './admin.js';
 import { loginWithWechatCode } from './wechat-auth.js';
+import { MiniGameTickets, bearerToken, requestOriginAllowed } from './minigame-session.js';
 
 export async function buildApp(options: { store: PostgresStore; origin?: string; secure?: boolean; trustProxy?: boolean; heartbeatMs?: number; maintenanceMs?: number }) {
   const { store }=options;
@@ -27,6 +28,7 @@ export async function buildApp(options: { store: PostgresStore; origin?: string;
   let storageHealthy=true,closing=false;
   type Connection={socket:WebSocket;roomId:string;id:string;alive:boolean;token?:string; userId:string};
   const connections=new Map<string,Connection>();
+  const miniGameTickets=new MiniGameTickets(store.now);
   const tasks=new Set<Promise<unknown>>();
   const queues=new Map<string,Promise<unknown>>();
   function track<T>(p:Promise<T>):Promise<T> { tasks.add(p); void p.finally(()=>tasks.delete(p)).catch(()=>{}); return p; }
@@ -82,19 +84,24 @@ export async function buildApp(options: { store: PostgresStore; origin?: string;
   await app.register(websocket,{options:{maxPayload:8192}});
   const setSession=(reply:FastifyReply,token:string)=>reply.setCookie('avalon_session',token,{httpOnly:true,sameSite:'strict',secure:options.secure??false,path:'/',maxAge:30*86400});
   const authenticate=async(req:FastifyRequest,reply?:FastifyReply)=>{
-    const token=req.cookies.avalon_session;
+    const bearer=bearerToken(req.headers.authorization);
+    const token=bearer??req.cookies.avalon_session;
     const user=await store.authenticate(token,!!reply);
-    if(reply)setSession(reply,token!); return user;
+    if(reply&&!bearer)setSession(reply,token!); return user;
   };
   app.addHook('onRequest',async req=>{
     if(!storageHealthy||closing)throw new DomainError('SERVICE_UNAVAILABLE',503);
-    if(!['GET','HEAD','OPTIONS'].includes(req.method)||req.headers.upgrade==='websocket') {
-      if(req.headers.origin!==origin)throw new DomainError('ORIGIN_REJECTED',403);
-    }
+    const websocketRequest=req.headers.upgrade==='websocket';
+    const miniGameLogin=req.method==='POST'&&req.url==='/api/sessions/minigame';
+    const socketTicket=websocketRequest&&req.url.startsWith('/api/rooms/')
+      ? new URL(req.url,origin).searchParams.get('ticket')??undefined : undefined;
+    if(!requestOriginAllowed({method:req.method,origin:req.headers.origin,authorization:req.headers.authorization,
+      socketTicket,websocket:websocketRequest,miniGameLogin},origin))throw new DomainError('ORIGIN_REJECTED',403);
     if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
       const isAvalonRequest = req.headers['x-avalon-request'] === '1';
       const isAdminRequest = req.url.startsWith('/api/admin') || Boolean(req.headers['x-admin-key']);
-      if (!isAvalonRequest && !isAdminRequest) throw new DomainError('CSRF_REJECTED', 403);
+      if (!isAvalonRequest && !isAdminRequest && !bearerToken(req.headers.authorization) && !miniGameLogin)
+        throw new DomainError('CSRF_REJECTED', 403);
     }
   });
   app.addHook('onSend',async(_req,reply)=>{reply.header('Cache-Control','no-store');reply.header('X-Content-Type-Options','nosniff');});
@@ -126,6 +133,14 @@ export async function buildApp(options: { store: PostgresStore; origin?: string;
     const appSecret = process.env.WECHAT_MINIGAME_APP_SECRET;
     if (!appId || !appSecret) throw new DomainError('WECHAT_UNAVAILABLE', 503);
     return loginWithWechatCode(req.body, { appId, appSecret }, identity => store.loginWechat(identity));
+  });
+  app.post('/api/minigame/socket-ticket',async(req,reply)=>{
+    const token=bearerToken(req.headers.authorization);
+    if(!token)throw new DomainError('UNAUTHENTICATED',401);
+    const user=await authenticate(req,reply);
+    const {roomId}=z.object({roomId:z.string().uuid()}).strict().parse(req.body);
+    await store.roomFor(user.id,roomId);
+    return {ticket:miniGameTickets.issue(roomId,token)};
   });
   app.delete('/api/sessions',async(_req,reply)=>{
     reply.clearCookie('avalon_session', { path: '/' });
@@ -465,14 +480,19 @@ export async function buildApp(options: { store: PostgresStore; origin?: string;
     return adminService.redeemCode(user.id, code);
   });
 
-  const wsUsers=new WeakMap<FastifyRequest,User>();
+  const wsUsers=new WeakMap<FastifyRequest,{user:User;token:string}>();
   app.get<{Params:{id:string}}>('/api/rooms/:id/socket',{
     websocket:true,preValidation:async req=>{
-      const user=await authenticate(req);await store.roomFor(user.id,z.string().uuid().parse(req.params.id));wsUsers.set(req,user);
+      const roomId=z.string().uuid().parse(req.params.id);
+      const ticket=(req.query as {ticket?:string}).ticket;
+      const token=ticket?miniGameTickets.consume(ticket,roomId):req.cookies.avalon_session;
+      const user=await store.authenticate(token);
+      await store.roomFor(user.id,roomId);
+      wsUsers.set(req,{user,token:token!});
     },
   },(socket,req)=>{
-    const user=wsUsers.get(req)!;
-    const c:Connection={socket,roomId:req.params.id,id:randomUUID(),alive:true,token:req.cookies.avalon_session,userId:user.id};
+    const {user,token}=wsUsers.get(req)!;
+    const c:Connection={socket,roomId:req.params.id,id:randomUUID(),alive:true,token,userId:user.id};
     let count=0,windowStart=Date.now();
     const ready=serial(`user:${user.id}`,async()=>{
       if(closing||socket.readyState!==1)return;
