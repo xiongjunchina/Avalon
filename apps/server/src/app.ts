@@ -121,12 +121,14 @@ export async function buildApp(options: { store: PostgresStore; origin?: string;
   });
   app.post('/api/sessions/refresh',async(req,reply)=>({user:await authenticate(req,reply)}));
   app.post('/api/sessions/switch', { config: { rateLimit: { max: 30, timeWindow: '1 minute' } } }, async (req, reply) => {
+    const miniGameToken = bearerToken(req.headers.authorization);
+    if (miniGameToken) await authenticate(req, reply);
     const { playerCode } = z.object({
       playerCode: z.string().trim().regex(/^\d{6}$/, '请输入6位有效仙友码'),
     }).strict().parse(req.body);
     const { user, token } = await store.switchAccount(playerCode);
     setSession(reply, token);
-    return bearerToken(req.headers.authorization) ? { user, token } : { user };
+    return miniGameToken ? { user, token } : { user };
   });
   app.post('/api/sessions/minigame', { config: { rateLimit: { max: 30, timeWindow: '1 minute' } } }, async req => {
     const appId = process.env.WECHAT_MINIGAME_APP_ID;
