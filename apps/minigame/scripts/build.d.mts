@@ -1,6 +1,7 @@
 export interface MiniGameBuildOptions {
   outDir?: string;
   appId?: string;
+  apiBaseUrl?: string;
   maxBytes?: number;
 }
 export function buildMiniGame(options?: MiniGameBuildOptions): Promise<{ outDir: string; size: number; appId: string }>;

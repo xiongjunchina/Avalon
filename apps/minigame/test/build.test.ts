@@ -17,6 +17,14 @@ test('builds an importable project without server or admin secrets', async t => 
   assert.doesNotMatch(bundle, /WECHAT_MINIGAME_APP_SECRET|ADMIN_KEY|server-only-secret/);
 });
 
+test('build embeds the configured HTTPS API origin only', async t => {
+  const outDir = await mkdtemp(join(tmpdir(), 'avalon-minigame-origin-'));
+  t.after(() => rm(outDir, { recursive: true, force: true }));
+  await buildMiniGame({ outDir, appId: 'wx-test-appid', apiBaseUrl: 'https://avalon.example:8443' });
+  assert.match(await readFile(join(outDir, 'bundle.js'), 'utf8'), /https:\/\/avalon\.example:8443/);
+  await assert.rejects(buildMiniGame({ outDir, appId: 'wx-test-appid', apiBaseUrl: 'http://avalon.example' }), /INVALID_API_ORIGIN/);
+});
+
 test('rejects a package that exceeds its declared limit', async t => {
   const outDir = await mkdtemp(join(tmpdir(), 'avalon-minigame-small-'));
   t.after(() => rm(outDir, { recursive: true, force: true }));

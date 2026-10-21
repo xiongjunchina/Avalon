@@ -10,21 +10,32 @@ import { entryScreen } from './screens/entry.js';
 import { LobbyController, lobbyScreen } from './screens/lobby.js';
 import { settingsScreen, toggleSetting } from './screens/settings.js';
 import { gameAction, gameScreen, type GameUiState } from './screens/game.js';
+import { AdminApi } from './screens/admin/auth.js';
+import { AdminPanel } from './screens/admin/panel.js';
+import { PlayerExtras } from './screens/player-extras.js';
+import { PlayerPanel } from './screens/player-panel.js';
+import { PracticeSession } from './screens/practice.js';
 
 declare const wx: WxRuntime;
+declare const __MINIGAME_API_BASE_URL__: string;
 
-const baseUrl = 'https://avalon.ccnepower.com:8443';
+const baseUrl = __MINIGAME_API_BASE_URL__;
 const platform = new WechatPlatform(wx);
 const canvas = drawShell(platform);
 const api = new MiniGameApi(platform, baseUrl);
+const adminPanel = new AdminPanel(new AdminApi(platform, baseUrl, () => api.session.get()));
+const extras = new PlayerExtras(api);
 const screen = platform.screen();
 const viewport = { width: screen.screenWidth, height: screen.screenHeight, top: screen.safeArea?.top ?? 0, bottom: screen.screenHeight - (screen.safeArea?.bottom ?? screen.screenHeight) };
 
 let user: User | undefined;
 let room: RoomView | undefined;
 let lobby: LobbyController | undefined;
+let playerPanel: PlayerPanel | undefined;
+let practice: PracticeSession | undefined;
 let connection: MiniGameRoomConnection | undefined;
-let view: 'entry' | 'lobby' | 'game' | 'settings' = 'entry';
+let view: 'entry' | 'lobby' | 'game' | 'settings' | 'admin' | 'player' | 'practice' = 'entry';
+let previousView: 'entry' | 'lobby' | 'game' = 'entry';
 let status = '';
 let error = '';
 let rows: HitRegion[] = [];
@@ -34,7 +45,14 @@ const gameUi: GameUiState = { privateRoleVisible: false, ballotVisible: false, s
 
 function model(): ScreenModel {
   let result: ScreenModel;
-  if (view === 'settings') result = settingsScreen(editableSettings);
+  if (view === 'admin') result = adminPanel.model();
+  else if (view === 'player' && playerPanel) result = playerPanel.model();
+  else if (view === 'practice' && practice) {
+    const local = practice.view();
+    result = gameScreen(local, practice.user, gameUi);
+    result.rows.push({ id: 'bot', text: '让其他仙友继续' }, { id: 'exitPractice', text: '退出练习' });
+  }
+  else if (view === 'settings') result = settingsScreen(editableSettings);
   else if (room?.game && view === 'game' && user) result = gameScreen(room, user, gameUi);
   else if (room && user && view === 'lobby') result = lobbyScreen(room, user, status);
   else result = entryScreen(user, error);
@@ -54,12 +72,15 @@ function connect(next: RoomView) {
       room = snapshot;
       lobby?.setRoom(snapshot);
       if (changedGame) hideSensitiveView(gameUi);
-      if (snapshot.game && snapshot.phase !== 'waiting') view = 'game';
-      else if (view !== 'settings') view = 'lobby';
+      if (view !== 'player' && view !== 'admin') {
+        if (snapshot.game && snapshot.phase !== 'waiting') view = 'game';
+        else if (view !== 'settings') view = 'lobby';
+      }
       render();
     },
     status: value => { status = value; render(); },
     error: value => { error = value; render(); },
+    message: message => { if (message.type === 'roomChat') { playerPanel?.onRoomChat(message); if (view === 'player') render(); } },
     ended: () => { connection = undefined; room = undefined; navigate('entry'); },
   } });
   lobby?.setConnection(connection);
@@ -77,12 +98,43 @@ async function run(action: () => Promise<void>) {
 }
 
 async function select(id: string) {
+  if (view === 'practice' && practice) {
+    if (id === 'exitPractice') { practice = undefined; navigate('entry'); return; }
+    if (id === 'bot') { practice.stepBot(); render(); return; }
+    if (id === 'role') { gameUi.privateRoleVisible = !gameUi.privateRoleVisible; render(); return; }
+    if (id === 'direction') { gameUi.direction = gameUi.direction === 'clockwise' ? 'counterclockwise' : 'clockwise'; render(); return; }
+    if (id.startsWith('player:')) {
+      const targetId = id.slice(7);
+      if (practice.view().game?.phase === 'proposing') {
+        const selected = gameUi.selectedIds ?? [];
+        gameUi.selectedIds = selected.includes(targetId) ? selected.filter(value => value !== targetId) : [...selected, targetId];
+      } else gameUi.targetId = targetId;
+      render(); return;
+    }
+    if (id === 'rematch') { practice = new PracticeSession(practice.settings, user?.nickname ?? '我'); hideSensitiveView(gameUi); render(); return; }
+    const command = gameAction(practice.view(), practice.user, id, gameUi);
+    if (command) { try { practice.act(command); } catch (cause) { error = cause instanceof Error ? cause.message : '练习操作失败'; } render(); }
+    return;
+  }
+  if (view === 'player' && playerPanel) return run(async () => {
+    const outcome = await playerPanel!.handle(id, async (label, maxLength) => { status = label; render(); return askText(wx, '', maxLength ?? 200); });
+    user = playerPanel!.user;
+    const applied = playerPanel!.takeAppliedSettings();
+    if (applied && room?.hostId === user.id) lobby?.updateSettings(applied);
+    if (outcome === 'back') navigate(previousView);
+  });
+  if (view === 'admin') return run(async () => {
+    const outcome = await adminPanel.handle(id, async (label, maxLength) => { status = label; render(); return askText(wx, '', maxLength ?? 200); });
+    if (outcome === 'back') navigate('entry');
+  });
   if (view === 'entry') {
-    if (id === 'login') return run(async () => { const result = await api.login(); user = result.user; lobby = new LobbyController(api, user); const existing = await lobby.resume(); if (existing) connect(existing); else render(); });
+    if (id === 'login') return run(async () => { const result = await api.login(); user = result.user; lobby = new LobbyController(api, user); playerPanel = new PlayerPanel(extras, user); const existing = await lobby.resume(); if (existing) connect(existing); else render(); });
     if (id === 'create' && lobby) return run(async () => { connect(await lobby!.create(editableSettings)); });
     if (id === 'join' && lobby) return run(async () => { const key = await askText(wx, '', 200); if (key) connect(await lobby!.join(key)); });
-    if (id === 'logout') { connection?.stop(); connection = undefined; room = undefined; user = undefined; lobby = undefined; api.clearSession(); render(); return; }
-    if (id === 'guide' || id === 'account' || id === 'friends' || id === 'practice' || id === 'admin') { error = '此页面正在接入，请稍后重试'; render(); return; }
+    if (id === 'logout') { connection?.stop(); connection = undefined; room = undefined; user = undefined; lobby = undefined; playerPanel = undefined; api.clearSession(); render(); return; }
+    if (id === 'admin') return run(async () => { const key = await askText(wx, '', 256); if (!key) return; await adminPanel.open(key); navigate('admin'); });
+    if ((id === 'guide' || id === 'account' || id === 'friends') && playerPanel) return run(async () => { previousView = 'entry'; await playerPanel!.open(id); navigate('player'); });
+    if (id === 'practice') { practice = new PracticeSession(editableSettings, user?.nickname ?? '我'); hideSensitiveView(gameUi); navigate('practice'); return; }
   }
   if (view === 'settings') {
     if (id === 'apply') { if (room && lobby) lobby.updateSettings(editableSettings); navigate(room?.game ? 'game' : room ? 'lobby' : 'entry'); return; }
@@ -96,7 +148,8 @@ async function select(id: string) {
     else if (id === 'settings') { editableSettings = { ...room.settings }; navigate('settings'); }
     else if (id === 'leave') lobby.leave();
     else if (id.startsWith('member:') && room.hostId === user?.id && id.slice(7) !== user.id) { error = '请在管理操作中确认移除玩家'; render(); }
-    else if (id === 'chat' || id === 'voice') { error = '此功能正在接入'; render(); }
+    else if (id === 'chat' && playerPanel) return run(async () => { previousView = 'lobby'; await playerPanel!.open('roomchat', { roomId: room!.id }); navigate('player'); });
+    else if (id === 'voice') { error = '语音功能正在接入'; render(); }
     return;
   }
   if (view === 'game' && room && user) {
@@ -124,12 +177,13 @@ wx.onTouchEnd?.(event => {
   if (Math.abs(delta) > 15) { scroll = Math.max(0, scroll - delta); render(); }
   else { const row = hitTest(rows, point.clientX, point.clientY); if (row) void select(row.id); }
 });
-platform.onHide(() => { hideSensitiveView(gameUi); render(); });
+platform.onHide(() => { hideSensitiveView(gameUi); adminPanel.onHide(); if (view === 'admin') view = 'entry'; render(); });
 platform.onShow(() => { connection?.resume(); render(); });
 render();
 if (api.session.get()) void run(async () => {
   user = await api.refresh();
   lobby = new LobbyController(api, user);
+  playerPanel = new PlayerPanel(extras, user);
   const existing = await lobby.resume();
   if (existing) connect(existing);
 });
