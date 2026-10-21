@@ -831,7 +831,7 @@ function App() {
                   required
                   autoComplete="nickname"
                   aria-describedby="nickname-next-step nickname-identity-hint"
-                  placeholder="例如：军哥"
+                  placeholder="例如：仙友xx"
                   onChange={e => setNickname(e.target.value)}
                 />
                 <p className="hint" id="nickname-identity-hint">
