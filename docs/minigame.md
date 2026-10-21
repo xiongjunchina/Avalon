@@ -18,7 +18,7 @@ npm run build:minigame
 
 ## 服务端
 
-服务端进程需从安全的部署环境读取 `WECHAT_MINIGAME_APP_ID` 和 `WECHAT_MINIGAME_APP_SECRET`。`AppSecret` 只留在服务端。小游戏调用 `wx.login` 后，服务端通过微信 `jscode2session` 核验临时代码并签发自身的会话令牌。新接口部署前，生产服务无法接受小游戏登录。
+服务端进程需从安全的部署环境读取 `WECHAT_MINIGAME_APP_ID` 和 `WECHAT_MINIGAME_APP_SECRET`。Docker Compose 通过私有 `deploy/.env.<实例名>` 将两项传入服务端容器；`AppSecret` 只留在服务端，不能写进仓库或客户端。小游戏调用 `wx.login` 后，服务端通过微信 `jscode2session` 核验临时代码并签发自身的会话令牌。新接口部署前，生产服务无法接受小游戏登录。
 
 当前线上健康检查 `https://avalon.ccnepower.com:8443/api/health` 可访问，但不能据此认定本分支的新接口已部署。上线前应读取服务器实际代码版本，并以真实 AppID 登录验证 `/api/sessions/minigame`、`/api/minigame/socket-ticket` 及房间 WebSocket。
 
