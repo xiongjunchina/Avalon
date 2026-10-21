@@ -129,3 +129,53 @@ test('extension schema rejects secret fields, forged actors and ambiguous decisi
   for(const [type,payload] of [['inspectAlignment',{targetId:randomUUID(),team:'blue'}],['earlyAssassinationDecision',{attempt:'yes'}],['confirmInspection',{inspectorId:randomUUID()}]] as const)
     assert.equal(commandSchema.safeParse({commandId:randomUUID(),expectedVersion:1,type,payload}).success,false);
 });
+
+test('guardianPerksEnabled generates strictly bounded, role-consistent private clues without leaks',()=>{
+  for (const n of [5, 6, 7, 8, 9, 10, 11, 12]) {
+    const players = Array.from({ length: n }, (_, i) => ({ id: `p-${i + 1}`, seat: i + 1, nickname: `玩家${i + 1}` }));
+    const g = createGame('guardian-test', players, { ...defaultSettings, playerCount: n, guardianPerksEnabled: true }, a => a);
+    const pub = projectGame(g);
+    assert.equal('guardianClues' in pub, false);
+    assert.equal(pub.self, undefined);
+
+    for (const p of g.players) {
+      const v = projectGame(g, p.id);
+      const role = g.roles[p.id];
+      if (role !== 'loyal') {
+        assert.equal(v.self?.guardianClue, undefined, `${role} must not receive guardianClue`);
+      } else {
+        const clue = v.self?.guardianClue;
+        assert.ok(clue, `loyal player ${p.id} must receive guardianClue`);
+        assert.equal(clue.kind, v.self?.loyalGuardian);
+
+        if (clue.kind === 'zhubajie') {
+          assert.equal(clue.targetIds.length, 1);
+          assert.notEqual(clue.targetIds[0], p.id);
+          assert.notEqual(g.roles[clue.targetIds[0]], 'morgana');
+        } else if (clue.kind === 'shawujing') {
+          const otherLoyals = g.players.filter(q => q.id !== p.id && g.roles[q.id] === 'loyal');
+          if (otherLoyals.length > 0) {
+            assert.equal(clue.targetIds.length, 1);
+            assert.equal(g.roles[clue.targetIds[0]], 'loyal');
+            assert.notEqual(clue.targetIds[0], p.id);
+          } else {
+            assert.deepEqual(clue.targetIds, []);
+          }
+        } else if (clue.kind === 'bailong') {
+          assert.equal(clue.targetIds.length, 2);
+          const rolesInTarget = clue.targetIds.map(id => g.roles[id]);
+          assert.ok(rolesInTarget.includes('percival'));
+          assert.ok(clue.targetIds.some(id => teamOf(g.roles[id]) === 'red'));
+        } else if (clue.kind === 'jingang') {
+          assert.equal(clue.targetIds.length, 2);
+          const hasRed = clue.targetIds.some(id => teamOf(g.roles[id]) === 'red');
+          const hasBlueNotMerlin = clue.targetIds.some(id => teamOf(g.roles[id]) === 'blue' && g.roles[id] !== 'merlin' && id !== p.id);
+          assert.ok(hasRed);
+          assert.ok(hasBlueNotMerlin);
+          assert.ok(!clue.targetIds.includes(g.players.find(q => g.roles[q.id] === 'merlin')!.id));
+        }
+      }
+    }
+  }
+});
+

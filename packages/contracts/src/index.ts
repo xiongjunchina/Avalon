@@ -7,12 +7,14 @@ export const settingsSchema = z.object({
   rejectionScope: z.enum(['game', 'mission']),
   ladyEnabled: z.boolean(),
   earlyAssassinationEnabled: z.boolean(),
+  guardianPerksEnabled: z.boolean().default(false),
   voiceChatEnabled: z.boolean().default(false),
 }).strict();
 export type Settings = z.infer<typeof settingsSchema>;
 export const defaultSettings: Settings = {
   playerCount: 6, captainMode: 'seat_order', anonymousTeamVote: true,
   rejectionScope: 'game', ladyEnabled: false, earlyAssassinationEnabled: false,
+  guardianPerksEnabled: false,
   voiceChatEnabled: false,
 };
 export const defaultAnonymousTeamVote = (playerCount: number) => playerCount < 8;
@@ -207,6 +209,12 @@ export interface GameResult {
 export interface Inspection { afterMission: number; inspectorId: string; targetId: string }
 export interface PrivateInspection extends Inspection { team: Team }
 export interface EarlyWindow { afterMission: number; afterProposal: number; decision: 'skip' | 'attempt' }
+export interface GuardianClue {
+  kind: LoyalGuardian;
+  title: string;
+  description: string;
+  targetIds: string[];
+}
 export interface GameView {
   id: string; rulesetVersion: string; phase: GamePhase; players: Player[];
   dealEndsAt?: string;
@@ -222,6 +230,7 @@ export interface GameView {
   result?: GameResult; revealedRoles?: Record<string, Role>;
   abortPoll?: { requestedBy: string; approvals: number; required: number; voted: boolean };
   self?: { role: Role; loyalGuardian?: LoyalGuardian; femaleDemon?: FemaleDemon; team: Team; evilIds: string[]; merlinCandidates: string[]; guinevereCandidates?: string[];
+    guardianClue?: GuardianClue;
     confirmed: boolean; teamVoted: boolean; missionVoted: boolean;
     inspections: PrivateInspection[]; canInspect: boolean; canConfirmInspection: boolean; canDecideEarly: boolean };
 }

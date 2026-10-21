@@ -38,3 +38,23 @@ test('Merlin identity only mentions Mordred when this game configuration include
     if(count<9)assert.match(html,/本局全部群妖成员/);
   }
 });
+
+test('IdentityDetails renders guardian perk clue for loyal players when guardianPerksEnabled is true', () => {
+  const players = Array.from({ length: 12 }, (_, i) => ({ id: `p${i + 1}`, seat: i + 1, nickname: `仙友${i + 1}` }));
+  const game = createGame('perk-ui', players, { ...defaultSettings, playerCount: 12, guardianPerksEnabled: true }, a => a);
+  const loyalPlayers = players.filter(p => game.roles[p.id] === 'loyal');
+  assert.ok(loyalPlayers.length > 0);
+
+  for (const p of loyalPlayers) {
+    const self = projectGame(game, p.id).self!;
+    assert.ok(self.guardianClue);
+    const html = renderToStaticMarkup(createElement(IdentityDetails, { self, players }));
+    assert.ok(html.includes(self.guardianClue.title));
+    assert.ok(html.includes(self.guardianClue.description));
+    for (const tid of self.guardianClue.targetIds) {
+      const targetPlayer = players.find(x => x.id === tid)!;
+      assert.ok(html.includes(targetPlayer.nickname));
+    }
+  }
+});
+

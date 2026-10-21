@@ -1,4 +1,4 @@
-import type { Command, GameResult, GameView, LoyalGuardian, FemaleDemon, Player, Role, RoundView, Settings, Team, PrivateInspection, EarlyWindow, TeamBallot } from '@avalon/contracts';
+import type { Command, GameResult, GameView, LoyalGuardian, FemaleDemon, Player, Role, RoundView, Settings, Team, PrivateInspection, EarlyWindow, TeamBallot, GuardianClue } from '@avalon/contracts';
 export const RULESET_VERSION = 'standard-no-lancelot-v3';
 export const LOYAL_GUARDIAN_POOL: readonly LoyalGuardian[] = ['zhubajie', 'shawujing', 'bailong', 'jingang'];
 export function assignLoyalGuardians(gameId: string, players: Player[], roles: Record<string, Role>): Record<string, LoyalGuardian> {
@@ -60,6 +60,7 @@ export interface GameState {
   draftTeam?: { playerIds: string[]; direction: RoundView['direction'] };
   teamVoteStartedAt?: string;
   guinevereCandidates?: string[];
+  guardianClues?: Record<string, GuardianClue>;
   lady?: { holderId: string; holderIds: string[]; inspections: PrivateInspection[] };
   earlyAssassination?: { used: boolean; windows: EarlyWindow[] };
   assassinationMode?: 'normal' | 'early';
@@ -100,6 +101,61 @@ export function createGame(
       .filter(p => p.id === mordredId || p.id === decoyId)
       .map(p => p.id);
   }
+  let guardianClues: Record<string, GuardianClue> | undefined;
+  if (settings.guardianPerksEnabled) {
+    guardianClues = {};
+    const loyalGuardians = assignLoyalGuardians(id, sorted, roles);
+    const loyalPlayers = sorted.filter(p => roles[p.id] === 'loyal');
+    for (const p of loyalPlayers) {
+      const gKind = loyalGuardians[p.id];
+      if (gKind === 'zhubajie') {
+        const nonMorganas = sorted.filter(q => q.id !== p.id && roles[q.id] !== 'morgana');
+        const target = shuffle(nonMorganas)[0];
+        guardianClues[p.id] = {
+          kind: 'zhubajie',
+          title: '【八戒巡山】天机灵觉',
+          description: '你巡山探路获知：此仙友绝非混世魔猴六耳猕猴（假猴王）。',
+          targetIds: target ? [target.id] : [],
+        };
+      } else if (gKind === 'shawujing') {
+        const otherLoyals = sorted.filter(q => q.id !== p.id && roles[q.id] === 'loyal');
+        const target = shuffle(otherLoyals)[0];
+        guardianClues[p.id] = {
+          kind: 'shawujing',
+          title: '【同修感应】天机灵觉',
+          description: target ? '你感应到同门佛光：此仙友亦是取经护法同修，可互为倚仗。' : '你感应天地流沙：其余护法皆在天庭未下凡，此局取经唯君独守。',
+          targetIds: target ? [target.id] : [],
+        };
+      } else if (gKind === 'bailong') {
+        const percivalPlayer = sorted.find(q => roles[q.id] === 'percival');
+        const redPool = sorted.filter(q => teamOf(roles[q.id]) === 'red');
+        const redDecoy = shuffle(redPool)[0];
+        const targetIds = percivalPlayer && redDecoy
+          ? sorted.filter(q => q.id === percivalPlayer.id || q.id === redDecoy.id).map(q => q.id)
+          : [];
+        guardianClues[p.id] = {
+          kind: 'bailong',
+          title: '【龙驹护圣】天机灵觉',
+          description: '你隐闻圣僧佛光：两位仙友之中，必有一位是大唐圣僧（唐三藏）。',
+          targetIds,
+        };
+      } else if (gKind === 'jingang') {
+        const redPool = sorted.filter(q => teamOf(roles[q.id]) === 'red');
+        const bluePool = sorted.filter(q => teamOf(roles[q.id]) === 'blue' && roles[q.id] !== 'merlin' && q.id !== p.id);
+        const chosenRed = shuffle(redPool)[0];
+        const chosenBlue = shuffle(bluePool)[0];
+        const targetIds = chosenRed && chosenBlue
+          ? sorted.filter(q => q.id === chosenRed.id || q.id === chosenBlue.id).map(q => q.id)
+          : [];
+        guardianClues[p.id] = {
+          kind: 'jingang',
+          title: '【金刚怒目】天机灵觉',
+          description: '你目运金光察得：两位仙友之中，至少潜藏一位混世妖魔。',
+          targetIds,
+        };
+      }
+    }
+  }
   const seats = sorted.map(p => p.id);
   const captainOrder = settings.captainMode === 'random_order' ? shuffle(seats) : seats;
   const initialHolder = seats[(seats.indexOf(captainOrder[0])+seats.length-1)%seats.length];
@@ -107,6 +163,7 @@ export function createGame(
     roles, phase: 'role_reveal', mission: 1,
     rejectionCount: 0, captainOrder,
     ...(guinevereCandidates ? { guinevereCandidates } : {}),
+    ...(guardianClues ? { guardianClues } : {}),
     ...(settings.ladyEnabled ? { lady: { holderId: initialHolder, holderIds: [initialHolder], inspections: [] } } : {}),
     ...(settings.earlyAssassinationEnabled ? { earlyAssassination: { used: false, windows: [] } } : {}),
     captainIndex: 0, confirmed: [], teamVotes: {}, missionVotes: {}, rounds: [] };
@@ -311,6 +368,7 @@ export function projectGame(g: GameState, userId?: string): GameView {
     ...(role && userId ? { self: { role, ...(role === 'loyal' ? { loyalGuardian: assignLoyalGuardians(g.id, g.players, g.roles)[userId] } : {}), ...(role === 'minion' ? { femaleDemon: assignFemaleDemons(g.id, g.players, g.roles)[userId] } : {}), team: teamOf(role), evilIds,
       merlinCandidates: role === 'percival' ? g.players.filter(p => ['merlin','morgana'].includes(g.roles[p.id])).map(p => p.id) : [],
       guinevereCandidates: role === 'guinevere' ? [...(g.guinevereCandidates ?? [])] : [],
+      guardianClue: role === 'loyal' && g.guardianClues ? g.guardianClues[userId] : undefined,
       confirmed: g.confirmed.includes(userId), teamVoted: userId in g.teamVotes, missionVoted: userId in g.missionVotes,
       inspections: structuredClone((g.lady?.inspections ?? []).filter(i => i.inspectorId === userId)),
       canInspect: g.phase === 'lady' && g.lady?.holderId === userId,
