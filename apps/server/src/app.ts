@@ -11,6 +11,7 @@ import { Accounts, historyQuery } from './accounts.js';
 import { generateVoiceToken, uuidToRtcUid } from './agora.js';
 import { FriendsService } from './friends.js';
 import { AdminService } from './admin.js';
+import { loginWithWechatCode } from './wechat-auth.js';
 
 export async function buildApp(options: { store: PostgresStore; origin?: string; secure?: boolean; trustProxy?: boolean; heartbeatMs?: number; maintenanceMs?: number }) {
   const { store }=options;
@@ -120,16 +121,11 @@ export async function buildApp(options: { store: PostgresStore; origin?: string;
     setSession(reply, token);
     return { user };
   });
-  app.post('/api/sessions/wechat', { config: { rateLimit: { max: 30, timeWindow: '1 minute' } } }, async (req, reply) => {
-    const input = z.object({
-      openid: z.string().trim().min(1, '微信OpenID不可为空'),
-      unionid: z.string().trim().optional(),
-      nickname: z.string().trim().max(20).optional(),
-      avatarUrl: z.string().trim().optional(),
-    }).strict().parse(req.body);
-    const { user, token } = await store.loginWechat(input);
-    setSession(reply, token);
-    return { user };
+  app.post('/api/sessions/minigame', { config: { rateLimit: { max: 30, timeWindow: '1 minute' } } }, async req => {
+    const appId = process.env.WECHAT_MINIGAME_APP_ID;
+    const appSecret = process.env.WECHAT_MINIGAME_APP_SECRET;
+    if (!appId || !appSecret) throw new DomainError('WECHAT_UNAVAILABLE', 503);
+    return loginWithWechatCode(req.body, { appId, appSecret }, identity => store.loginWechat(identity));
   });
   app.delete('/api/sessions',async(_req,reply)=>{
     reply.clearCookie('avalon_session', { path: '/' });
