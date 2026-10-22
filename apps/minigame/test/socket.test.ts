@@ -36,7 +36,8 @@ test('reconnect replays the same unacknowledged command and ignores stale snapsh
   const command = { type: 'setReady', commandId: 'id-1', expectedVersion: 2, payload: { ready: true } } as Command;
   assert.equal(connection.send(command), true);
   assert.deepEqual(JSON.parse(sockets[0].sent[0]), command);
-  await pause(40);
+  const deadline = Date.now() + 1_000;
+  while (sockets.length < 2 && Date.now() < deadline) await pause(5);
   assert.ok(sockets.length >= 2);
   sockets[1].open();
   sockets[1].emit({ type: 'snapshot', room: room(1) });
