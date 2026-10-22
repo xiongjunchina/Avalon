@@ -124,8 +124,8 @@ function App() {
       setKnownAccounts(updated);
     } catch {}
   };
-  const initialInvite = new URLSearchParams(location.search).get('invite') ?? '';
-  const [key, setKey] = useState(() => initialInvite);
+  // Room join key is always strictly empty - never auto prefilled from historical/URL invite string
+  const [key, setKey] = useState('');
   const [joinOpen, setJoinOpen] = useState(false);
   const [setupOpen, setSetupOpen] = useState(false);
   const [setupSettings, setSetupSettings] = useState<Settings>(() => ({
@@ -215,6 +215,14 @@ function App() {
     const search = new URLSearchParams(window.location.search);
     if (search.has('admin') || search.get('page') === 'admin' || window.location.hash.includes('admin') || window.location.pathname.startsWith('/admin')) {
       setPage('admin');
+    }
+    // Clean up lingering invite query parameter from browser address bar so page refreshes stay clean
+    if (search.has('invite')) {
+      try {
+        const url = new URL(window.location.href);
+        url.searchParams.delete('invite');
+        window.history.replaceState(null, '', url.pathname + (url.search ? url.search : '') + url.hash);
+      } catch {}
     }
     let active = true;
     void api<{ announcement: { text: string; enabled: boolean }; freeAccessMode: boolean }>('/system/announcement')
@@ -1282,7 +1290,10 @@ function App() {
                 <button
                   type="button"
                   className="secondary lobby-join"
-                  onClick={() => setJoinOpen(true)}
+                  onClick={() => {
+                    setKey('');
+                    setJoinOpen(true);
+                  }}
                 >
                   <Emblem kind="crown" />加入房间
                 </button>
@@ -1311,14 +1322,24 @@ function App() {
 
             {/* Join Room Modal */}
             {joinOpen && (
-              <Modal label="加入朋友房间" scene="gate" onClose={() => setJoinOpen(false)}>
+              <Modal
+                label="加入朋友房间"
+                scene="gate"
+                onClose={() => {
+                  setKey('');
+                  setJoinOpen(false);
+                }}
+              >
                 <div className="table-modal-sheet">
                   <div className="table-modal-head">
                     <strong>加入朋友的房间</strong>
                     <button
                       type="button"
                       className="secondary tool-pill"
-                      onClick={() => setJoinOpen(false)}
+                      onClick={() => {
+                        setKey('');
+                        setJoinOpen(false);
+                      }}
                     >
                       关闭
                     </button>
@@ -1336,20 +1357,35 @@ function App() {
                         const data = await api<{ room: RoomView }>('/rooms/join', { key: value });
                         setRoom(data.room);
                         setRoomId(data.room.id);
+                        setKey('');
                         setJoinOpen(false);
                         history.replaceState(null, '', '/');
                       });
                     }}
                   >
                     <Label.Root htmlFor="room-key">输入 6 位数字房号或粘贴邀请链接</Label.Root>
-                    <input
-                      id="room-key"
-                      value={key}
-                      required
-                      placeholder="例如：6位数字房号（如 382910）或完整邀请链接"
-                      onChange={e => setKey(e.target.value)}
-                      autoComplete="off"
-                    />
+                    <div className="join-room-input-wrap">
+                      <input
+                        id="room-key"
+                        value={key}
+                        required
+                        placeholder="例如：6位数字房号（如 382910）或完整邀请链接"
+                        onChange={e => setKey(e.target.value)}
+                        autoComplete="off"
+                        autoFocus
+                      />
+                      {Boolean(key) && (
+                        <button
+                          type="button"
+                          className="join-room-clear-btn"
+                          onClick={() => setKey('')}
+                          title="清空输入"
+                          aria-label="清空输入内容"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
                     <button className="mp-cyan-pill" disabled={busy || !key.trim()} type="submit">
                       {busy ? '正在入座…' : '立即入座'}
                     </button>

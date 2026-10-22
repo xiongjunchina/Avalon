@@ -6100,6 +6100,46 @@ dialog.table-modal-backdrop::backdrop { background: #081b2d55; }
   box-shadow: 0 0 6px rgba(245, 158, 11, 0.6) !important;
 }
 
+/* Join Room Input & Instant Clear Button */
+.join-room-input-wrap {
+  position: relative;
+  width: 100%;
+  margin: 6px 0 14px;
+}
+.join-room-input-wrap input {
+  width: 100%;
+  padding-right: 38px !important;
+  font-family: var(--sans);
+  font-size: 15px;
+}
+.join-room-clear-btn {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 24px;
+  min-height: 24px !important;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+  border: none;
+  color: #eeddc4;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+  transition: all 0.15s ease;
+  line-height: 1;
+}
+.join-room-clear-btn:hover {
+  background: rgba(255, 255, 255, 0.32);
+  color: #ffffff;
+}
+
 
 
 
