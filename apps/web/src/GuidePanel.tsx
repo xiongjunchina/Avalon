@@ -192,7 +192,7 @@ export function GuideRoles() {
                 <dl className="guide-role-dl">
                   <div className="guide-role-detail"><dt>能力与视野</dt><dd>{roleDescriptions[role].ability}</dd></div>
                   <div className="guide-role-detail"><dt>谁能看见你</dt><dd>{roleDescriptions[role].visibility}</dd></div>
-                  <div className="guide-role-detail"><dt>专属法宝（9-12人局）</dt><dd>{roleTreasures[role]}</dd></div>
+                  <div className="guide-role-detail"><dt>专属法宝</dt><dd>{roleTreasures[role]}</dd></div>
                   <div className="guide-role-detail"><dt>玩法提示</dt><dd>{roleDescriptions[role].tip}</dd></div>
                 </dl>
 
