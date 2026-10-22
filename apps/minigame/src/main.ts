@@ -30,7 +30,10 @@ const artwork = createArtwork(wx, () => render());
 const api = new MiniGameApi(platform, baseUrl);
 const invites = new InviteInbox();
 invites.receive(wx.getLaunchOptionsSync?.().query?.invite);
-const adminPanel = new AdminPanel(new AdminApi(platform, baseUrl, () => api.session.get()));
+const adminPanel = new AdminPanel(new AdminApi(platform, baseUrl, () => api.session.get()), text => new Promise<void>((resolve, reject) => {
+  if (!wx.setClipboardData) { reject(new Error('当前设备不支持复制')); return; }
+  wx.setClipboardData({ data: text, success: resolve, fail: reject });
+}));
 const extras = new PlayerExtras(api);
 const screen = platform.screen();
 const viewport = { width: screen.screenWidth, height: screen.screenHeight, top: screen.safeArea?.top ?? 0, bottom: screen.screenHeight - (screen.safeArea?.bottom ?? screen.screenHeight) };
@@ -77,7 +80,7 @@ function model(): ScreenModel {
     : undefined;
   const portraitRole = privateSelf?.loyalGuardian ? `${privateSelf.loyalGuardian}-loyal`
     : privateSelf?.femaleDemon ? `minion-${privateSelf.femaleDemon}` : privateSelf?.role;
-  return { ...result, scroll, scene: view === 'entry' ? 'entry' : view === 'game' || view === 'practice' ? 'game' : 'standard',
+  return { ...result, scroll, scene: view === 'entry' ? 'entry' : view === 'game' || view === 'practice' ? 'game' : view === 'admin' ? 'admin' : 'standard',
     ...(portraitRole ? { portrait: `${portraitRole}-160.webp` } : view === 'guide' && guideRoleId ? { portrait: `${guideRoleId}-160.webp` } : {}) };
 }
 function render() { rows = renderScreen(model(), canvas, viewport, artwork); }
@@ -163,8 +166,13 @@ async function select(id: string) {
     if (outcome === 'back') navigate(previousView);
   });
   if (view === 'admin') return run(async () => {
-    const outcome = await adminPanel.handle(id, async (label, maxLength) => { status = label; render(); return askText(wx, '', maxLength ?? 200); });
-    if (outcome === 'back') navigate('entry');
+    try {
+      const outcome = await adminPanel.handle(id, async (label, maxLength) => { status = label; render(); return askText(wx, '', maxLength ?? 200); });
+      if (outcome === 'back') { adminPanel.onHide(); navigate('entry'); }
+    } catch (cause) {
+      if (cause instanceof Error && cause.message === 'ADMIN_UNAUTHORIZED') { adminPanel.onHide(); navigate('entry'); }
+      throw cause;
+    }
   });
   if (view === 'guide') {
     if (id === 'back') { guideRoleId = undefined; navigate('entry'); }

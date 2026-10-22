@@ -1,8 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { AdminApi } from '../src/screens/admin/auth.js';
-import { adminOverviewScreen, adminUsersScreen } from '../src/screens/admin/views.js';
+import { adminOverviewScreen, adminReplayScreen, adminUsersScreen } from '../src/screens/admin/views.js';
 import { AdminPanel } from '../src/screens/admin/panel.js';
+import { rowTone } from '../src/ui/widgets.js';
 
 test('invalid key never authorizes a player data write', async () => {
   const calls: string[] = [];
@@ -70,4 +71,87 @@ test('admin verification does not wait forever when wx.request stalls', async ()
   const admin = new AdminApi({ request: () => {} } as any, 'https://example.com', undefined, 15);
   await assert.rejects(admin.verify('key'), /NETWORK_TIMEOUT/);
   assert.equal(admin.authorized, false);
+});
+
+test('generated codes retain their note and can be copied with unused inventory', async () => {
+  const generated: unknown[] = [];
+  const copied: string[] = [];
+  const api = {
+    codes: async () => ({ codes: [
+      { code: 'FREE-ONE', days: 7, note: '社群', redeemedAt: null },
+      { code: 'USED-TWO', days: 3, note: '活动', redeemedAt: '2026-01-01' },
+    ] }),
+    generateCodes: async (...args: unknown[]) => { generated.push(args); return { codes: ['NEW-ONE'] }; },
+  } as any;
+  const panel = new AdminPanel(api, value => { copied.push(value); return Promise.resolve(); });
+  await panel.load('codes');
+  assert.ok(panel.model().rows.some(row => row.id === 'copy:unused'));
+  await panel.handle('copy:unused', async () => undefined);
+  assert.deepEqual(copied, ['FREE-ONE (7天 - 社群)']);
+  const answers = ['2', '30', '秋季活动'];
+  await panel.handle('generate', async () => answers.shift());
+  assert.deepEqual(generated, [[2, 30, '秋季活动']]);
+});
+
+test('backgrounding clears cached administrator data and pending actions', async () => {
+  const api = { onHide() {}, overview: async () => ({ totalUsers: 42, todayNewUsers: 0, activeRoomsCount: 0, totalGames: 0, todayGames: 0, freeAccessMode: true, onlineConnections: 0 }) } as any;
+  const panel = new AdminPanel(api);
+  await panel.load('overview');
+  assert.ok(panel.model().rows.some(row => row.text.includes('42')));
+  panel.onHide();
+  assert.ok(!panel.model().rows.some(row => row.text.includes('42')));
+});
+
+test('admin replay includes team, vote, mission and inspection without individual mission cards', () => {
+  const replay = {
+    id: 'game-1', playerCount: 2, rulesetVersion: 'v1', startedAt: '2026-01-01', endedAt: '2026-01-01',
+    result: { winner: 'blue', reason: 'merlin_survived' }, settings: { anonymousTeamVote: true },
+    players: [{ id: 'u1', seat: 1, nickname: '甲' }, { id: 'u2', seat: 2, nickname: '乙' }], roles: { u1: 'merlin', u2: 'assassin' },
+    rounds: [{ number: 1, mission: 1, captainId: 'u1', team: ['u1', 'u2'], direction: 'clockwise',
+      vote: { approvals: 2, rejections: 0, passed: true, ballots: { u1: 'approve', u2: 'approve' } },
+      result: { successes: 2, failures: 0, passed: true } }],
+    inspections: [{ afterMission: 1, inspectorId: 'u1', targetId: 'u2' }], earlyWindows: [],
+  } as any;
+  const screen = adminReplayScreen(replay);
+  const labels = screen.rows.map(row => row.text).join(' ');
+  assert.match(labels, /甲.*乙/);
+  assert.match(labels, /赞成2.*反对0/);
+  assert.match(labels, /任务.*成功2.*失败0/);
+  assert.match(labels, /宝镜.*甲.*乙/);
+  assert.doesNotMatch(labels, /approve/);
+});
+
+test('admin response arriving after background does not restore cached data', async () => {
+  let respond!: (value: any) => void;
+  const api = { onHide() {}, overview: () => new Promise(resolve => { respond = resolve; }) } as any;
+  const panel = new AdminPanel(api);
+  const loading = panel.load('overview');
+  panel.onHide();
+  respond({ totalUsers: 99, todayNewUsers: 0, activeRoomsCount: 0, totalGames: 0, todayGames: 0, freeAccessMode: true, onlineConnections: 0 });
+  await loading;
+  assert.ok(!panel.model().rows.some(row => row.text.includes('99')));
+});
+
+test('failed admin opening discards the verified key and cached page', async () => {
+  let cleared = false;
+  const api = { verify: async () => {}, overview: async () => { throw new Error('NETWORK'); }, onHide: () => { cleared = true; } } as any;
+  const panel = new AdminPanel(api);
+  await assert.rejects(panel.open('key'), /NETWORK/);
+  assert.equal(cleared, true);
+  assert.equal(panel.model().title, '管理员');
+});
+
+test('administrator destructive actions and read-only metrics have distinct visual tones', () => {
+  for (const id of ['cleanup', 'ban:u', 'delete:u', 'room:r', 'reset:u']) assert.equal(rowTone(id), 'danger');
+  for (const id of ['stats:users', 'replay:mission:1']) assert.equal(rowTone(id), 'info');
+  assert.equal(rowTone('generate'), 'primary');
+});
+
+test('admin friend inspection shows player codes and relationship status', async () => {
+  const api = { userFriends: async () => ({ friends: [{ id: 'f', nickname: '乙', player_code: '123456', status: 'accepted' }] }) } as any;
+  const panel = new AdminPanel(api);
+  (panel as any).user = { id: 'u', nickname: '甲' };
+  await panel.handle('friends:u', async () => undefined);
+  const text = panel.model().rows.map(row => row.text).join(' ');
+  assert.match(text, /乙.*123456.*已互关/);
 });

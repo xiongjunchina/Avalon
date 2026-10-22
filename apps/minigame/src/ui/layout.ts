@@ -1,7 +1,7 @@
 export interface SafeViewport { width: number; height: number; top: number; bottom: number }
 export interface HitRegion { id: string; x: number; y: number; width: number; height: number; text: string }
 
-export function layoutRows(rows: { id: string; text: string }[], viewport: SafeViewport, scroll: number, scene: 'entry' | 'standard' | 'game' = 'standard'): HitRegion[] {
+export function layoutRows(rows: { id: string; text: string }[], viewport: SafeViewport, scroll: number, scene: 'entry' | 'standard' | 'game' | 'admin' = 'standard'): HitRegion[] {
   const rowHeight = 60;
   const contentTop = scene === 'entry'
     ? viewport.top + Math.min(270, Math.round((viewport.height - viewport.top - viewport.bottom) * 0.32))
@@ -22,6 +22,15 @@ export function layoutRows(rows: { id: string; text: string }[], viewport: SafeV
         y += rowHeight;
       }
     }
+    return placed.filter(row => row.y >= viewport.top && row.y + row.height <= bottom);
+  }
+  if (scene === 'admin') {
+    const navCount = rows.findIndex(row => !row.id.startsWith('page:') && row.id !== 'back');
+    const count = navCount < 0 ? rows.length : navCount;
+    const gap = 9, columnWidth = (viewport.width - 36 - gap) / 2;
+    const placed = rows.map((row, index) => index < count
+      ? { ...row, x: 18 + (index % 2) * (columnWidth + gap), y: contentTop + Math.floor(index / 2) * 60 - scroll, width: columnWidth, height: 52 }
+      : { ...row, x: 18, y: contentTop + Math.ceil(count / 2) * 60 + 12 + (index - count) * rowHeight - scroll, width: viewport.width - 36, height: 52 });
     return placed.filter(row => row.y >= viewport.top && row.y + row.height <= bottom);
   }
   return rows.map((row, index) => ({ ...row, x: 18, y: contentTop + index * rowHeight - scroll,

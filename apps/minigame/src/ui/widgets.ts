@@ -7,7 +7,7 @@ export interface ScreenModel {
   subtitle?: string;
   rows: { id: string; text: string }[];
   scroll?: number;
-  scene?: 'entry' | 'standard' | 'game';
+  scene?: 'entry' | 'standard' | 'game' | 'admin';
   portrait?: string;
 }
 
@@ -15,10 +15,12 @@ export type RowTone = 'primary' | 'danger' | 'secret' | 'info' | 'seat' | 'stand
 
 export function rowTone(id: string): RowTone {
   if (id.startsWith('player:')) return 'seat';
-  if (['login', 'create', 'start', 'propose', 'startTeamVote', 'confirmRole', 'approve', 'missionSuccess', 'confirmInspection', 'rematch', 'confirm:yes', 'apply'].includes(id)) return 'primary';
-  if (['endGame', 'requestAbort', 'leave', 'logout', 'reject', 'missionFail', 'assassinate', 'confirm:no'].includes(id)) return 'danger';
+  if (['login', 'create', 'start', 'propose', 'startTeamVote', 'confirmRole', 'approve', 'missionSuccess', 'confirmInspection', 'rematch', 'confirm:yes', 'apply', 'generate'].includes(id)) return 'primary';
+  if (['endGame', 'requestAbort', 'leave', 'logout', 'reject', 'missionFail', 'assassinate', 'confirm:no', 'cleanup'].includes(id)
+    || ['ban:', 'delete:', 'reset:', 'room:'].some(prefix => id.startsWith(prefix))) return 'danger';
   if (id === 'role' || id === 'clue' || id.startsWith('inspection:') || id === 'evil' || id.endsWith('Candidates')) return 'secret';
-  if (['status', 'progress', 'result', 'team', 'teamVoteProgress', 'missionProgress', 'notice', 'invitation'].includes(id) || id.startsWith('round:') || id.startsWith('revealed:')) return 'info';
+  if (['status', 'progress', 'result', 'team', 'teamVoteProgress', 'missionProgress', 'notice', 'invitation'].includes(id)
+    || ['round:', 'revealed:', 'stats:', 'replay:'].some(prefix => id.startsWith(prefix))) return 'info';
   return 'standard';
 }
 

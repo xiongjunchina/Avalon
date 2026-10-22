@@ -60,3 +60,17 @@ test('game seats form a two-column board before action cards', () => {
   assert.ok(placed.find(row => row.id === 'role')!.y > seats[5]!.y);
   assert.equal(rowTone('player:1'), 'seat');
 });
+
+test('admin navigation stays above long lists in a touchable two-column grid', () => {
+  const viewport = { width: 390, height: 844, top: 44, bottom: 34 };
+  const rows = [
+    { id: 'page:overview', text: '总览' }, { id: 'page:users', text: '用户' },
+    { id: 'page:rooms', text: '房间' }, { id: 'back', text: '返回游戏' },
+    ...Array.from({ length: 50 }, (_, index) => ({ id: `user:${index}`, text: `用户${index}` })),
+  ];
+  const placed = layoutRows(rows, viewport, 0, 'admin');
+  assert.equal(placed[0]!.y, placed[1]!.y);
+  assert.ok(placed[0]!.x < placed[1]!.x);
+  assert.ok(placed.find(row => row.id === 'user:0')!.y > placed.find(row => row.id === 'back')!.y);
+  assert.equal(hitTest(placed, placed[1]!.x + 5, placed[1]!.y + 5)?.id, 'page:users');
+});

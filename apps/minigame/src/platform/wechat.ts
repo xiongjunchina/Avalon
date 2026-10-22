@@ -42,6 +42,7 @@ export interface WxRuntime {
   getStorageSync(key: string): unknown;
   setStorageSync(key: string, value: unknown): void;
   removeStorageSync(key: string): void;
+  setClipboardData?(options: { data: string; success(): void; fail(error: unknown): void }): void;
   request(options: WxRequestOptions): void;
   connectSocket(options: { url: string; header?: Record<string, string> }): WxSocketTask;
   login(options: { success(result: { code: string }): void; fail(error: unknown): void }): void;

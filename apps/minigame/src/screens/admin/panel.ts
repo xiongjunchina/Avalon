@@ -1,7 +1,7 @@
 import type { AdminGameSummary, AdminOverview, AdminRoomSummary, AdminUserSummary, RedemptionCodeItem, Replay, SystemAnnouncement } from '@avalon/contracts';
 import type { ScreenModel } from '../../ui/widgets.js';
 import { AdminApi } from './auth.js';
-import { adminCodesScreen, adminGamesScreen, adminOverviewScreen, adminRoomsScreen, adminSettingsScreen, adminUserScreen, adminUsersScreen } from './views.js';
+import { adminCodesScreen, adminGamesScreen, adminOverviewScreen, adminReplayScreen, adminRoomsScreen, adminSettingsScreen, adminUserScreen, adminUsersScreen } from './views.js';
 
 type Page = 'overview' | 'users' | 'rooms' | 'games' | 'codes' | 'settings' | 'user' | 'replay' | 'friends';
 type Input = (label: string, maxLength?: number) => Promise<string | undefined>;
@@ -22,47 +22,66 @@ export class AdminPanel {
   private friendNames: string[] = [];
   private query = '';
   private pending?: { label: string; action: () => Promise<unknown> };
-  constructor(readonly api: AdminApi) {}
+  private feedback = '';
+  private loadEpoch = 0;
+  constructor(readonly api: AdminApi, private readonly copy?: (text: string) => Promise<void>) {}
 
-  async open(key: string) { await this.api.verify(key); await this.load('overview'); }
-  onHide() { this.api.onHide(); this.pending = undefined; }
+  async open(key: string) {
+    try { await this.api.verify(key); await this.load('overview'); }
+    catch (error) { this.onHide(); throw error; }
+  }
+  onHide() {
+    this.loadEpoch++;
+    this.api.onHide(); this.pending = undefined; this.page = 'overview'; this.overviewData = undefined;
+    this.usersData = []; this.userTotal = 0; this.roomsData = []; this.gamesData = []; this.moreGames = false;
+    this.codesData = []; this.settingsData = undefined; this.user = undefined; this.replayData = undefined;
+    this.friendNames = []; this.query = ''; this.feedback = '';
+  }
 
   model(): ScreenModel {
     if (this.pending) return { title: '确认管理操作', subtitle: this.pending.label, rows: [{ id: 'confirm:yes', text: '确认执行' }, { id: 'confirm:no', text: '取消' }] };
     if (this.page === 'user' && this.user) return adminUserScreen(this.user);
-    if (this.page === 'replay' && this.replayData) return { title: '对局复盘', rows: [
-      { id: 'replay:result', text: `${this.replayData.playerCount}人 · ${this.replayData.result.winner ?? '中止'}` },
-      ...this.replayData.players.map(player => ({ id: `replay:player:${player.id}`, text: `${player.seat}号 ${player.nickname} · ${this.replayData!.roles[player.id] ?? ''}` })),
-      ...this.replayData.rounds.map(round => ({ id: `replay:round:${round.number}`, text: `第${round.number}轮 · ${round.result?.passed ? '成功' : '失败'}` })),
-      { id: 'page:games', text: '返回对局记录' },
-    ] };
+    if (this.page === 'replay' && this.replayData) return adminReplayScreen(this.replayData);
     if (this.page === 'friends') return { title: '用户仙友', rows: [...this.friendNames.map((name, index) => ({ id: `friend:${index}`, text: name })), { id: 'page:users', text: '返回用户列表' }] };
     if (this.page === 'overview' && this.overviewData) return adminOverviewScreen(this.overviewData);
     if (this.page === 'users') return adminUsersScreen(this.usersData, this.query, this.usersData.length < this.userTotal);
     if (this.page === 'rooms') return adminRoomsScreen(this.roomsData);
     if (this.page === 'games') return adminGamesScreen(this.gamesData, this.moreGames);
-    if (this.page === 'codes') return adminCodesScreen(this.codesData);
+    if (this.page === 'codes') { const result = adminCodesScreen(this.codesData); if (this.feedback) result.subtitle = this.feedback; return result; }
     if (this.page === 'settings' && this.settingsData) return adminSettingsScreen(this.settingsData);
     return { title: '管理员', rows: [{ id: 'page:overview', text: '刷新管理总览' }, { id: 'back', text: '返回游戏' }] };
   }
 
   async load(page: Page): Promise<void> {
+    const epoch = ++this.loadEpoch;
     this.page = page;
-    if (page === 'overview') this.overviewData = await this.api.overview();
-    else if (page === 'users') { const result = await this.api.users(this.query, 0); this.usersData = result.users; this.userTotal = result.total; }
-    else if (page === 'rooms') this.roomsData = (await this.api.rooms()).rooms;
-    else if (page === 'games') { this.gamesData = (await this.api.games(0)).games; this.moreGames = this.gamesData.length === 20; }
-    else if (page === 'codes') this.codesData = (await this.api.codes()).codes;
-    else if (page === 'settings') this.settingsData = await this.api.settings() as Settings;
+    this.feedback = '';
+    if (page === 'overview') { const data = await this.api.overview(); if (epoch === this.loadEpoch) this.overviewData = data; }
+    else if (page === 'users') { const result = await this.api.users(this.query, 0); if (epoch === this.loadEpoch) { this.usersData = result.users; this.userTotal = result.total; } }
+    else if (page === 'rooms') { const result = await this.api.rooms(); if (epoch === this.loadEpoch) this.roomsData = result.rooms; }
+    else if (page === 'games') { const result = await this.api.games(0); if (epoch === this.loadEpoch) { this.gamesData = result.games; this.moreGames = result.games.length === 20; } }
+    else if (page === 'codes') { const result = await this.api.codes(); if (epoch === this.loadEpoch) this.codesData = result.codes; }
+    else if (page === 'settings') { const data = await this.api.settings() as Settings; if (epoch === this.loadEpoch) this.settingsData = data; }
   }
 
   async handle(id: string, input: Input): Promise<'back' | void> {
     if (id === 'back') return 'back';
     if (id === 'confirm:no') { this.pending = undefined; return; }
     if (id === 'confirm:yes' && this.pending) { const action = this.pending.action; this.pending = undefined; await action(); this.user = undefined; await this.load(this.page === 'user' ? 'users' : this.page); return; }
-    if (id === 'more:users' && this.page === 'users' && this.usersData.length < this.userTotal) { const result = await this.api.users(this.query, this.usersData.length); this.usersData.push(...result.users); this.userTotal = result.total; return; }
-    if (id === 'more:games' && this.page === 'games' && this.moreGames) { const result = await this.api.games(this.gamesData.length); this.gamesData.push(...result.games); this.moreGames = result.games.length === 20; return; }
+    if (id === 'more:users' && this.page === 'users' && this.usersData.length < this.userTotal) { const epoch = this.loadEpoch; const result = await this.api.users(this.query, this.usersData.length); if (epoch === this.loadEpoch) { this.usersData.push(...result.users); this.userTotal = result.total; } return; }
+    if (id === 'more:games' && this.page === 'games' && this.moreGames) { const epoch = this.loadEpoch; const result = await this.api.games(this.gamesData.length); if (epoch === this.loadEpoch) { this.gamesData.push(...result.games); this.moreGames = result.games.length === 20; } return; }
     if (id === 'cleanup' && this.page === 'users') { this.pending = { label: '清理所有无对局的空账户？', action: () => this.api.deleteEmptyUsers(true) }; return; }
+    if (id === 'copy:unused' && this.page === 'codes') {
+      const unused = this.codesData.filter(code => !code.redeemedAt).map(code => `${code.code} (${code.days}天 - ${code.note || '无备注'})`);
+      if (!unused.length) { this.feedback = '当前没有未使用兑换码'; return; }
+      if (!this.copy) { this.feedback = '当前设备不支持复制'; return; }
+      await this.copy(unused.join('\n')); this.feedback = `已复制 ${unused.length} 个未使用兑换码`; return;
+    }
+    if (id.startsWith('code:') && this.page === 'codes') {
+      const code = this.codesData.find(item => item.code === id.slice(5));
+      if (code) this.feedback = `${code.code} · ${code.days}天 · ${code.note || '无备注'} · ${code.redeemerNickname || '未兑换'}`;
+      return;
+    }
     if (id.startsWith('page:')) { await this.load(id.slice(5) as Page); return; }
     if (id === 'search') { this.query = await input('搜索用户', 40) ?? ''; await this.load('users'); return; }
     if (id.startsWith('user:')) { this.user = this.usersData.find(user => user.id === id.slice(5)); if (this.user) this.page = 'user'; return; }
@@ -73,8 +92,13 @@ export class AdminPanel {
     }
     if (id.startsWith('vip:') && this.user) { const days = Number(await input('赠送 VIP 天数（1-3650）', 4)); if (Number.isInteger(days) && days >= 1 && days <= 3650) { await this.api.grantVip(this.user.id, days); await this.load('users'); } return; }
     if (id.startsWith('friends:') && this.user) {
-      const response = await this.api.userFriends(this.user.id) as { friends: { nickname: string }[] };
-      this.friendNames = response.friends.map(friend => friend.nickname); this.page = 'friends'; return;
+      const epoch = this.loadEpoch;
+      const response = await this.api.userFriends(this.user.id) as { friends: { nickname: string; player_code: string; status: string }[] };
+      if (epoch === this.loadEpoch) {
+        this.friendNames = response.friends.map(friend => `${friend.nickname} (${friend.player_code}) · ${friend.status === 'accepted' ? '已互关' : '申请中'}`);
+        this.page = 'friends';
+      }
+      return;
     }
     if (id.startsWith('reset:') && this.user) { const target = this.user; this.pending = { label: `重置 ${target.nickname} 的资料？`, action: () => this.api.resetProfile(target.id, true, true) }; return; }
     if (id.startsWith('delete:') && this.user) { const target = this.user; this.pending = { label: `永久删除 ${target.nickname}？`, action: () => this.api.deleteUser(target.id, true) }; return; }
@@ -83,8 +107,16 @@ export class AdminPanel {
       if (target) this.pending = { label: `强制关闭房间 ${target.code}？`, action: () => this.api.killRoom(target.id, true) };
       return;
     }
-    if (this.page === 'games' && id.startsWith('replay:')) { this.replayData = await this.api.replay(id.slice(7)); this.page = 'replay'; return; }
-    if (id === 'generate') { const count = Number(await input('生成数量（1-100）', 3)); const days = Number(await input('有效天数（1-365）', 3)); if (Number.isInteger(count) && count >= 1 && count <= 100 && Number.isInteger(days) && days >= 1 && days <= 365) { await this.api.generateCodes(count, days); await this.load('codes'); } return; }
+    if (this.page === 'games' && id.startsWith('replay:')) { const epoch = this.loadEpoch; const result = await this.api.replay(id.slice(7)); if (epoch === this.loadEpoch) { this.replayData = result; this.page = 'replay'; } return; }
+    if (id === 'generate') {
+      const countInput = await input('生成数量（1-100）', 3); if (countInput === undefined) return;
+      const daysInput = await input('有效天数（1-365）', 3); if (daysInput === undefined) return;
+      const count = Number(countInput), days = Number(daysInput);
+      if (!Number.isInteger(count) || count < 1 || count > 100 || !Number.isInteger(days) || days < 1 || days > 365) { this.feedback = '数量或天数超出范围'; return; }
+      const note = await input('备注（可留空）', 100); if (note === undefined) return;
+      const result = await this.api.generateCodes(count, days, note.trim() || undefined);
+      await this.load('codes'); this.feedback = `已生成 ${result.codes.length} 个兑换码`; return;
+    }
     if (id === 'mode' && this.settingsData) { const value = !this.settingsData.freeAccessMode; this.pending = { label: value ? '恢复全员免费？' : '切换商业模式？', action: () => this.api.updateSetting('free_access_mode', value) }; return; }
     if (id === 'reward' && this.settingsData) { const hours = Number(await input('广告奖励小时数', 3)); if (Number.isInteger(hours) && hours >= 1 && hours <= 720) { await this.api.updateSetting('ad_reward_hours', hours); await this.load('settings'); } return; }
     if (id === 'broadcast' && this.settingsData) { const text = await input('公告内容（留空关闭）', 200); if (text !== undefined) { await this.api.broadcast(text, Boolean(text)); await this.load('settings'); } }
