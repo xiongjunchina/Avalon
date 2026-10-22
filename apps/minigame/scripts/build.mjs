@@ -17,7 +17,7 @@ async function bytesIn(dir) {
 
 export async function buildMiniGame({
   outDir = join(repoRoot, 'dist', 'minigame'),
-  appId = process.env.WECHAT_MINIGAME_APP_ID || 'touristappid',
+  appId = process.env.WECHAT_MINIGAME_APP_ID,
   apiBaseUrl = process.env.WECHAT_MINIGAME_API_BASE_URL || 'https://avalon.ccnepower.com:8443',
   maxBytes = 4 * 1024 * 1024,
 } = {}) {
@@ -25,6 +25,9 @@ export async function buildMiniGame({
   try { url = new URL(apiBaseUrl); } catch { throw new Error('INVALID_API_ORIGIN'); }
   if (url.protocol !== 'https:' || !url.hostname || url.pathname !== '/' || url.search || url.hash || url.username || url.password)
     throw new Error('INVALID_API_ORIGIN');
+  const project = JSON.parse(await readFile(join(minigameRoot, 'project.config.json'), 'utf8'));
+  const selectedAppId = appId || project.appid;
+  if (!/^wx[0-9a-f]{16}$/.test(selectedAppId)) throw new Error('INVALID_MINIGAME_APP_ID');
   await mkdir(outDir, { recursive: true });
   await build({
     entryPoints: [join(minigameRoot, 'src', 'main.ts')],
@@ -37,8 +40,7 @@ export async function buildMiniGame({
     outfile: join(outDir, 'bundle.js'),
   });
   for (const name of ['game.js', 'game.json']) await copyFile(join(minigameRoot, name), join(outDir, name));
-  const project = JSON.parse(await readFile(join(minigameRoot, 'project.config.json'), 'utf8'));
-  project.appid = appId;
+  project.appid = selectedAppId;
   await writeFile(join(outDir, 'project.config.json'), JSON.stringify(project, null, 2));
   await mkdir(join(outDir, 'art'), { recursive: true });
   await copyFile(join(repoRoot, 'apps', 'web', 'public', 'art', 'scenes', 'gate.webp'), join(outDir, 'art', 'gate.webp'));
@@ -50,7 +52,7 @@ export async function buildMiniGame({
   }
   const size = await bytesIn(outDir);
   if (size > maxBytes) throw new Error(`PACKAGE_TOO_LARGE: ${size} > ${maxBytes}`);
-  return { outDir, size, appId };
+  return { outDir, size, appId: selectedAppId };
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

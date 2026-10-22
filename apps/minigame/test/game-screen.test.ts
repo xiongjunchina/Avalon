@@ -86,3 +86,9 @@ test('game screen shows team, voting progress and end-of-game role reveal', () =
   const endText = JSON.stringify(gameScreen(finished, self as User, { privateRoleVisible: false, ballotVisible: false }));
   assert.match(endText, /2号.*红孩儿/);
 });
+
+test('only the host sees the rematch action after a game ends', () => {
+  const finished = room('finished');
+  assert.ok(gameScreen(finished, self as User, { privateRoleVisible: false, ballotVisible: false }).rows.some(row => row.id === 'rematch'));
+  assert.ok(!gameScreen(finished, other as User, { privateRoleVisible: false, ballotVisible: false }).rows.some(row => row.id === 'rematch'));
+});

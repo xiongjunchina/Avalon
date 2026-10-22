@@ -86,9 +86,9 @@ export function gameScreen(room: RoomView, user: User, ui: GameUiState): ScreenM
   );
   if (game.phase === 'assassination' && self?.role === 'assassin') rows.push({ id: 'assassinate', text: `刺杀所选玩家${ui.targetId ? ' ✓' : ''}` });
   if (game.phase === 'finished' || game.phase === 'aborted') rows.push(
-    { id: 'result', text: `结果：${game.result?.winner ?? '无'} · ${game.result?.reason ?? ''}` },
+    { id: 'result', text: `结果：${game.result?.winner === 'blue' ? '取经阵营获胜' : game.result?.winner === 'red' ? '妖魔阵营获胜' : '对局中止'} · ${game.result?.reason ?? ''}` },
     ...Object.entries(game.revealedRoles ?? {}).map(([id, role]) => ({ id: `revealed:${id}`, text: `${playerLabel(id)} · ${formatRoleName(role)}` })),
-    { id: 'rematch', text: '返回房间再来一局' },
+    ...(room.hostId === user.id ? [{ id: 'rematch', text: '返回房间再来一局' }] : [{ id: 'result:waiting', text: '等待房主返回房间' }]),
   );
   if (!['finished', 'aborted'].includes(game.phase)) {
     if (room.hostId === user.id) rows.push(...(game.abortPoll ? [
