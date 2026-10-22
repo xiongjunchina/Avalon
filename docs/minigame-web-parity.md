@@ -52,3 +52,33 @@ node apps/minigame/scripts/compare-web.mjs
 `npm run package:minigame -- --version=0.2.1` 生成独立工程与 ZIP。开发者工具应导入新产物中的 project，旧导入目录不会自动更新。
 
 本地代码和无界面截图不等于真机验收。真实微信登录、合法域名/端口、多人联机及上传回执仍需在开发者工具与真机验证。本轮未上传或发布，也未更改云服务器。
+
+
+## 2026-10-22 次级页面和交互同步（0.3.0）
+
+基准 `origin/main fb79d84`。本轮仅修改代码、运行独立无界面浏览器；没有连接桌面窗口、微信开发者工具或生产服务器，没有上传。
+
+### 本轮内容
+
+- 私密身份改为横向法相卡、同源身份视野/天机说明、心法、法宝状态及查验确认；关闭或进入后台隐藏私密信息。大图按需加载。
+- 表决采用领队、出征符框、往难记录展开、三张选择卡、显式提交、已落印进度；展开记录不清空已选票。
+- 任务牌保持网页原有内嵌底部区域；蓝方点失败清空先前成功牌并提示，提交前必须明确选择。
+- 终局采用网页内嵌结案横幅、阵营身份标签、公开法相座位、完整复盘及房主再开局入口。
+- 个人中心保留四栏目：战绩、历史、收藏、常用设置；资料草稿明确保存，历史分页及收藏筛选保留。预设可在无房间时新建/编辑，房间内保存当前设置摘要。
+- 仙友三栏目、文字聊天、快捷短语草稿和显式发送、房间邀请；实时语音及语音转文字不接入。公聊采用底部抽屉。
+- 图鉴角色文章、法相大图前后翻阅、完整公开规则文字从网页 GuideRules 生成。开房和等待区设置、辅助确认框和管理员数据分区沿用网页卡片/表单样式。
+- 复盘显示公开身份、逐轮队伍、表决总数及允许公开的票型；任务牌始终只显示汇总。历史战报按所查看难次计算失败阈值。
+- 管理员保留原有内存鉴权、危险操作确认及后台清理；新增兑换码草稿数量/天数/备注表单。
+
+### 验证和复现
+
+- `npm run typecheck`，`npm run test:minigame`，`node --import tsx --test apps/web/test/*.test.ts`，`npm run build`，`npm run build:minigame`。
+- 小游戏测试新增：私密关闭、表决保留选择、任务选牌、独立预设、收藏栏目、资料草稿、发送失败保留草稿、小屏返回/提交可达、固定按钮命中、模态空白拦截、历史规则阈值及匿名票抑制。
+- 无界面截图：`node apps/minigame/scripts/render-preview.mjs`；网页基准：`node --import tsx apps/minigame/scripts/capture-web-reference.mjs`；对比：设置 `PARITY_SCENES=identity,vote,mission,report,result,account` 后执行 `node apps/minigame/scripts/compare-web.mjs`。
+- 脚本支持 `PARITY_WIDTH`（320/390/430）及 `PARITY_SCENES`；依赖 Playwright，可通过 `MINIGAME_PLAYWRIGHT_PATH` / `MINIGAME_CHROMIUM_PATH` 指定独立运行时。
+- `generate-web-guide.mjs` 从真实网页规则生成原生文本；`generate-web-fonts.py` 使用 fonttools 裁剪字体并附带 OFL，避免完整中文字体超包。
+- 对比产物在 `dist/web-parity-review`，仅为同数据、本地 Canvas 与网页渲染截图；没有用截图代替游戏界面。字体光栅化、原生键盘、胶囊安全区及平台控件仍需微信真机验收，未声称逐像素完全一致。
+
+### 发布边界
+
+导入包提供可用的小游戏工程；真实微信登录、生产域名白名单、同房联网及后台管理权限、真机安全区和上传回执仍须发版前验证。包内不包含 AppSecret 或管理员密钥，语音关闭。本轮没有上传或发布。

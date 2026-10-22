@@ -24,6 +24,7 @@ export class AdminPanel {
   private pending?: { label: string; action: () => Promise<unknown> };
   private feedback = '';
   private loadEpoch = 0;
+  private codeDraft={count:'10',days:'30',note:''};
   constructor(readonly api: AdminApi, private readonly copy?: (text: string) => Promise<void>) {}
 
   async open(key: string) {
@@ -35,12 +36,13 @@ export class AdminPanel {
     this.api.onHide(); this.pending = undefined; this.page = 'overview'; this.overviewData = undefined;
     this.usersData = []; this.userTotal = 0; this.roomsData = []; this.gamesData = []; this.moreGames = false;
     this.codesData = []; this.settingsData = undefined; this.user = undefined; this.replayData = undefined;
-    this.friendNames = []; this.query = ''; this.feedback = '';
+    this.friendNames = []; this.query = ''; this.feedback = '';this.codeDraft={count:'10',days:'30',note:''};
   }
 
   model(): ScreenModel {
     const result = this.pageModel();
-    result.web = { page: 'sheet', background: 'library', activeTab: 'page:' + this.page };
+    result.web ??= { page:'sheet',background:'library',activeTab:'page:'+this.page,backId:this.pending?'confirm:no':'back',document:{kind:this.pending?'confirm':'admin',modal:!!this.pending} };
+    if(this.page==='codes'&&!this.pending){result.rows=result.rows.filter(r=>r.id!=='generate');result.rows.splice(6,0,{id:'codeDraft:count',text:'生成数量：'+this.codeDraft.count},{id:'codeDraft:days',text:'有效天数：'+this.codeDraft.days},{id:'codeDraft:note',text:'备注：'+(this.codeDraft.note||'未填写')},{id:'generateDraft',text:'生成兑换码'});}
     return result;
   }
   private pageModel(): ScreenModel {
@@ -113,6 +115,8 @@ export class AdminPanel {
       return;
     }
     if (this.page === 'games' && id.startsWith('replay:')) { const epoch = this.loadEpoch; const result = await this.api.replay(id.slice(7)); if (epoch === this.loadEpoch) { this.replayData = result; this.page = 'replay'; } return; }
+    if(id.startsWith('codeDraft:')){const key=id.slice(10) as keyof typeof this.codeDraft;if(['count','days','note'].includes(key)){const value=await input(key==='note'?'兑换码备注':key==='count'?'生成数量（1-100）':'有效天数（1-365）',key==='note'?100:3);if(value!==undefined)this.codeDraft[key]=value;}return;}
+    if(id==='generateDraft'){const count=Number(this.codeDraft.count),days=Number(this.codeDraft.days);if(!Number.isInteger(count)||count<1||count>100||!Number.isInteger(days)||days<1||days>365){this.feedback='数量或天数超出范围';return;}const result=await this.api.generateCodes(count,days,this.codeDraft.note.trim()||undefined);await this.load('codes');this.feedback=`已生成 ${result.codes.length} 个兑换码`;return;}
     if (id === 'generate') {
       const countInput = await input('生成数量（1-100）', 3); if (countInput === undefined) return;
       const daysInput = await input('有效天数（1-365）', 3); if (daysInput === undefined) return;

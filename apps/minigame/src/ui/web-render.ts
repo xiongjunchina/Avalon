@@ -94,7 +94,120 @@ function rule(ctx: CanvasRenderingContext2D,n:WebNode,color='rgba(212,163,89,.4)
 function soundIcon(ctx: CanvasRenderingContext2D, x:number,y:number) {
   ctx.save();ctx.strokeStyle='#eddcc4';ctx.lineWidth=1.3;ctx.beginPath();ctx.moveTo(x-6,y-3);ctx.lineTo(x-3,y-3);ctx.lineTo(x+1,y-6);ctx.lineTo(x+1,y+6);ctx.lineTo(x-3,y+3);ctx.lineTo(x-6,y+3);ctx.closePath();ctx.stroke();ctx.beginPath();ctx.moveTo(x+4,y-3);ctx.lineTo(x+9,y+3);ctx.moveTo(x+9,y-3);ctx.lineTo(x+4,y+3);ctx.stroke();ctx.restore();
 }
+function drawDocumentNode(ctx:CanvasRenderingContext2D,n:WebNode,model:ScreenModel,artwork?:Artwork) {
+  if(n.kind==='hitbox')return;
+  const cx=n.x+n.width/2,cy=n.y+n.height/2;
+  const family=n.fontFace==='display'?display:n.fontFace==='calligraphy'?calligraphy:sans;
+  const color=n.tone==='red'?'#f87171':n.tone==='green'?'#34d399':n.tone==='blue'?'#7dd3fc':n.tone==='gold'?'#ffd875':n.tone==='muted'?'#cbdbe8':'#fff2d5';
+  const write=(value:string,x:number,y:number,w:number,size=n.fontSize??13,align:CanvasTextAlign=n.align??'center',font=family,weight=n.weight??'400',c=color)=>text(ctx,value,x,y,w,size,c,align,font,weight);
+  const box=(skin=n.skin)=>{
+    const colors:Record<string,string[]>={
+      'dialog-frame':['#152e49e8','#112b44ed'], 'vote-frame':['#240a09','#170505','#0d0202'],
+      'page-heading':['#3a1418ed','#1c0908f7'], 'card':['#3a1418ed','#1c0908f7'], 'knowledge':['#102b43b8','#102b43b8'],
+      'profile':['#14374fda','#14374fda'], 'profile-toggle':['#16344edb','#16344edb'],
+      'hint':['#102a40e8','#102a40e8'],'tip':['#e5b96420','#b48c4614'], 'progress':['#100303','#100303'],
+      'expedition':['#271629','#160d1c'], 'tabs':['#30100ef5','#1c0908f7'], 'metrics':['#3a1418ed','#1c0908f7'],
+      'success-hero':['#104539ee','#09251fee'],'failure-hero':['#5b1b17ee','#2b0c0aee'],
+      'input':['#1e0a09e6','#1e0a09e6'],'accordion':['#3b1409aa','#1e0808ee'],
+      'gold-button':['#ffd875','#f5a623','#d97706'], 'dragon-button':['#6d2718','#32100c'],
+      'vote-prompt':['#2d0b09','#1e0706'], 'setting':['#112c42bb','#112c42bb'],
+      'treasure-entry':['#112b43b0','#112b43b0'],'submitted':['#123c30dd','#0a241ddd'],
+      'faction-blue':['#163354ee','#071d30f5'],'faction-red':['#421221ee','#210810f5'],'cyan-button':['#5ef2ff','#24b8cc'],'toast':['#11273bfa','#0b1929fa'],'warning':['#551812eb','#551812eb'],'captain-banner':['#0b4e64','#16808b'], 'message':['#112a40ed','#112a40ed'],
+    };
+    let radius=['dialog-frame'].includes(skin??'')?24:skin==='page-heading'?0:skin==='vote-frame'?18:skin==='pill'||skin==='tabs'?24:skin==='input'?14:skin==='voter-chip'?5:12;
+    const colorsNow=colors[skin??'']??(n.selected?['#27657b','#15404f']:['#3e1614eb','#1c0908f5']);
+    ctx.save();if(['dialog-frame','vote-frame','card','gold-button'].includes(skin??''))shadow(ctx,'#00000099',skin==='dialog-frame'?24:12,4);
+    fill(ctx,n,gradient(ctx,n,colorsNow),radius,skin==='dialog-frame'?'#e5b964':skin==='vote-frame'?'#e0aa3e':n.selected?'#ffd875':'#d4a35966');ctx.restore();
+  };
+  const image=(path:string|undefined,x:number,y:number,w:number,h:number,round=false)=>{
+    const img=path?artwork?.get(path):undefined;
+    ctx.save();if(round){ctx.beginPath();ctx.arc(x+w/2,y+h/2,w/2,0,Math.PI*2);ctx.clip();}
+    if(img?.width&&img.height){const scale=Math.max(w/img.width,h/img.height);ctx.drawImage(img as CanvasImageSource,x+(w-img.width*scale)/2,y+(h-img.height*scale)/2,img.width*scale,img.height*scale);}else {ctx.fillStyle='#10283b';ctx.fillRect(x,y,w,h);art(ctx,artwork,'cards',x+w*.2,y+h*.2,w*.6,h*.6);}
+    ctx.restore();
+  };
+  if(n.skin==='rule'){rule(ctx,n,'#d0be8d66');return;}
+  if(n.skin==='text'||n.skin==='section-title'||n.skin==='page-heading') {
+    if(n.skin==='section-title'||n.skin==='page-heading'){box(n.skin==='page-heading'?'page-heading':'tip');}
+    const lines=n.lines??n.text.split('\n'),lh=n.lineHeight??(n.fontSize??13)*1.5;
+    lines.forEach((line,i)=>write(line,n.align==='left'?n.x:n.align==='right'?n.x+n.width:cx,n.y+lh/2+i*lh,n.width,n.fontSize??13,n.align??'center'));
+    return;
+  }
+  if(n.skin==='result-hero') {
+    const info=JSON.parse(n.detail??'{}') as {won?:boolean;self?:string;reason?:string;teams?:{team:string;players:string[]}[]};
+    fill(ctx,n,gradient(ctx,n,['#3a1418ed','#1c0908f7']),22,'#e5b964');
+    circle(ctx,n.x+40,n.y+36,23,'#e5b96422','#e5b96477');write(info.won?'🏆':'⚖️',n.x+40,n.y+36,42,27);
+    write(info.won?'VICTORY · 你的阵营获胜':'MATCH RESULT · 本局结算',n.x+76,n.y+23,n.width-90,11,'left',sans,'700','#ffd875');
+    write(n.text,n.x+76,n.y+47,n.width-90,23,'left',display,'700','#ffd875');
+    fill(ctx,{...n,x:n.x+16,y:n.y+70,width:n.width-32,height:36},'#0d111ddd',9,'#d4a35944');write((n.team==='blue'?'🛡 蓝方获胜':n.team==='red'?'⚔ 红方获胜':'本局不计胜负')+'  '+(info.reason??''),n.x+27,n.y+88,n.width-54,12,'left',sans,'600','#e5decb');
+    let gy=n.y+117;
+    for(const group of info.teams??[]){const rows=Math.ceil(group.players.length/2),gh=30+rows*25;fill(ctx,{...n,x:n.x+16,y:gy,width:n.width-32,height:gh},group.team==='blue'?'#14304b80':'#6a151580',10,group.team==='blue'?'#7dd3fc66':'#ef444466');write(group.team==='blue'?'🛡 蓝方阵营':'⚔ 红方阵营',n.x+27,gy+14,n.width-54,12,'left',display,'600',group.team==='blue'?'#7dd3fc':'#fca5a5');
+      group.players.forEach((name,i)=>{const cw=(n.width-56)/2,px=n.x+24+i%2*(cw+8),py=gy+30+Math.floor(i/2)*25;fill(ctx,{...n,x:px,y:py,width:cw,height:20},'#101522dd',4,group.team==='blue'?'#7dd3fc77':'#fca5a577');write(name,px+5,py+10,cw-10,10.5,'left',sans,'600',group.team==='blue'?'#cdeaff':'#ffd0ca');});gy+=gh+8;
+    }return;
+  }
+  if(n.skin==='mission-card'){
+    const success=n.tone==='green';ctx.save();if(n.selected)shadow(ctx,success?'#34d399':'#f87171',12,0);fill(ctx,n,gradient(ctx,n,success?['#123b31','#08231e']:['#4d1715','#270b0a']),12,n.selected?'#ffd875':success?'#34d399aa':'#f87171aa');ctx.restore();
+    write(success?'🪷':'🔥',cx,n.y+20,n.width-10,22);write(n.text,cx,n.y+45,n.width-10,15,'center',display,'700',success?'#7ee7cf':'#fca5a5');write(n.detail??'',cx,n.y+64,n.width-8,10.5,'center',sans,'400','#eddcc4');write(n.selected?'✓ 已选中':'点击选择',cx,n.y+88,n.width-10,10.5,'center',sans,'700','#eddcc4');return;
+  }
+  if(n.skin==='count'){ctx.save();if(n.selected)shadow(ctx,'#5ef2ffaa',12,0);circle(ctx,cx,cy,Math.min(n.width,n.height)/2-1,n.selected?'#246d7b':'#17354b',n.selected?'#b5ffff':'#d0be8d');ctx.restore();write(n.text,cx,cy,n.width-5,n.fontSize??18,'center',display,'700');return;}
+  if(n.skin==='setup-role'){fill(ctx,n,gradient(ctx,n,n.team==='blue'?['#102a4b','#204bae']:['#4b1015','#9c1720']),12,n.team==='blue'?'#488eff':'#d63249');image(n.image,n.x+2,n.y+2,n.width-4,n.height-72);const lines=wrapText(n.text,n.width-10,t=>Array.from(t).length*14);lines.forEach((line,i)=>write(line,cx,n.y+n.height-52+i*18,n.width-8,14,'center',sans,'700'));write(n.detail??'',cx,n.y+n.height-16,n.width-8,11,'center',display,'400');if(n.badge)write(n.badge,n.x+n.width-10,n.y+n.height-40,20,10);return;}
+  if(n.skin==='identity-card') {
+    fill(ctx,n,gradient(ctx,n,['#102b43e0','#081826f5']),14,n.team==='blue'?'#52b0ff88':'#ff5e5788');
+    const diameter=clamp(56,(n.width+54)*.14,68),px=n.x+12,py=cy-diameter/2;
+    image(n.image,px,py,diameter,diameter,true);
+    for(const extra of [0,4]){ctx.beginPath();ctx.arc(px+diameter/2,cy,diameter/2+extra,0,Math.PI*2);ctx.strokeStyle=n.team==='blue'?(extra?'#52b0ff':'#9cd4ff'):(extra?'#ff5e57':'#ff9e96');ctx.lineWidth=2;ctx.stroke();}
+    const tx=px+diameter+14,tw=n.x+n.width-tx-10,[title,motto]=n.detail?.split('|')??[];
+    fill(ctx,{...n,x:tx,y:n.y+10,width:tw,height:24},'#0a1b28cc',6,'#d0be8d66');
+    write((n.badge??(n.team==='blue'?'蓝方 · 取经正果':'红方 · 群妖乱道'))+' · '+(title??''),tx+tw/2,n.y+22,tw-10,11,'center',display,'700','#e5d7ae');
+    write(n.text,tx,n.y+52,tw,22,'left',display,'700','#f1dba7');
+    write(motto??'',tx,n.y+72,tw,10.5,'left',sans,'400','#cbdbe8');
+    write('🔍 点击赏析高清大图',tx,n.y+93,tw,10,'left',sans,'400','#ffd875');return;
+  }
+  if(n.skin==='token'||n.skin==='avatar'||n.skin==='avatar-choice') {
+    if(n.skin==='avatar-choice'){box('button');art(ctx,artwork,n.text,n.x+8,n.y+8,n.width-16,n.height-16);return;}
+    const party=n.detail?.startsWith('出征'),diameter=n.skin==='avatar'?Math.min(n.width,n.height):party?36:Math.min(38,n.width-10),px=cx-diameter/2,py=party?n.y+26:n.y+1;
+    if(party){const frame=artwork?.get('emblems/'+(n.detail?.includes('|我')?'ruyi-self':'ruyi')+'.png');if(frame)ctx.drawImage(frame as CanvasImageSource,n.x,n.y,n.width,n.height);else box('tip');}
+    circle(ctx,cx,py+diameter/2,diameter/2+2,n.skin==='avatar'?'#122b34':'#2b0c0a',party&&n.detail?.includes('|我')?'#00d2ff':'#d0be8d');
+    if(n.image?.startsWith('emblems/')){art(ctx,artwork,n.image.slice(8,-4),px+diameter*.28,py+diameter*.28,diameter*.44,diameter*.44);}else image(n.image,px,py,diameter,diameter,true);
+    if(n.skin!=='avatar'){const caption=party?n.text+(n.detail?.includes('|我')?'（你）':''):String(n.count)+'号 '+n.text;if(!party)fill(ctx,{...n,x:cx-n.width/2,y:py+diameter+5,width:n.width,height:16},'#2b0c0a',8,'#d4a35977');write(caption,cx,party?n.y+81:py+diameter+13,n.width-4,10.5,'center',sans,'600','#f1dba7');if(party)write('⚔️ 出征',cx,n.y+105,n.width-8,10,'center',sans,'400','#7dd3fc');}
+    return;
+  }
+  if(n.skin==='art-image') {image(n.image,n.x,n.y,n.width,n.height);return;}
+  if(n.skin==='captain-banner'){box();const d=44;circle(ctx,n.x+38,cy,d/2+2,'#122b40');if(n.image?.startsWith('emblems/'))art(ctx,artwork,n.image.slice(8,-4),n.x+24,cy-14,28,28);else image(n.image,n.x+16,cy-22,44,44,true);art(ctx,artwork,'imperial-crown',n.x+26,n.y+1,24,16);write(n.text,n.x+74,cy,n.width-84,19,'left',calligraphy,'400','#ffd875');return;}
+  if(n.skin==='vote-choice'){
+    const c=n.tone==='green'?'#10b981':n.tone==='red'?'#ef4444':'#f59e0b';
+    ctx.save();if(n.selected)shadow(ctx,c,16,0);fill(ctx,n,gradient(ctx,n,['#32110f','#1b0807']),16,c);ctx.restore();
+    write(n.badge??'',cx,n.y+25,n.width-10,25,'center',sans,'700',c);write(n.text,cx,n.y+48,n.width-10,18,'center',calligraphy,'700',c);write(n.detail??'',cx,n.y+70,n.width-10,11,'center',sans,'400','#eddcc4');return;
+  }
+  if(n.skin==='voter-chip'||n.skin==='badge'||n.skin==='code-badge'){box(n.skin==='voter-chip'?'progress':'tip');write(n.text,cx,cy,n.width-8,n.fontSize??10.5,'center',sans,'700');return;}
+  if(n.skin==='treasure-entry'){ctx.save();ctx.globalAlpha=n.disabled?.5:1;box();write('📿',n.x+24,cy,32,23);write(n.text,n.x+46,n.y+13,n.width-70,12,'left',display,'700','#ffd875');write(n.detail??'',n.x+46,n.y+31,n.width-70,10,'left',sans,'400','#cbdbe8');write(n.disabled?'🔒':'❯',n.x+n.width-16,cy,20,13);ctx.restore();return;}
+  if(n.skin==='metric'){write(n.text,cx,n.y+20,n.width-4,20,'center',display,'400','#f1deba');write(n.detail??'',cx,n.y+42,n.width-4,11.5,'center',sans,'400','#eddcc4');return;}
+  if(n.skin==='score-card'){
+    fill(ctx,n,n.team==='blue'?'#14374fda':'#402e40da',14,'#d4a35966');
+    const isRole=n.image?.startsWith('roles/'),d=isRole?54:38,py=n.y+12;
+    if(isRole)image(n.image,cx-d/2,py,d,d,true);else if(n.image)art(ctx,artwork,n.image.slice(8,-4),cx-d/2,py,d,d);
+    write(n.text,cx,py+d+17,n.width-10,15,'center',display,'700','#fff2d8');
+    const [rate,record,footer]=n.detail?.split('|')??[];write((rate??'—')+' 胜率',cx,py+d+45,n.width-10,20,'center',display,'400','#f1deba');write(record??'',cx,py+d+72,n.width-10,12,'center',sans,'400','#eddcc4');write(footer??'',cx,n.y+n.height-14,n.width-8,10.5,'center',sans,'400','#eddcc4');return;
+  }
+  if(n.skin==='gallery-card'){fill(ctx,n,gradient(ctx,n,n.team==='blue'?['#204b79','#13325e']:['#641b25','#310d18']),14,n.team==='blue'?'#488eff':'#d63249');image(n.image,n.x+8,n.y+8,n.width-16,n.height-77);write(n.text,cx,n.y+n.height-49,n.width-12,16,'center',display,'700');write(n.detail??'',cx,n.y+n.height-22,n.width-12,11,'center',sans,'400');return;}
+  if(n.skin==='friend-card'){box('profile');circle(ctx,n.x+34,cy,23,'#122d43');if(n.image?.startsWith('emblems/'))art(ctx,artwork,n.image.slice(8,-4),n.x+19,cy-15,30,30);else image(n.image,n.x+11,cy-23,46,46,true);write(n.text,n.x+70,n.y+25,n.width-88,16,'left',display,'700');write(n.detail??'',n.x+70,n.y+52,n.width-88,11,'left',sans,'400','#b7cbd9');return;}
+  if(n.skin==='message'){box(n.selected?'captain-banner':'message');write(n.detail??'',n.x+10,n.y+13,n.width-20,10,'left',sans,'400','#d4a359');(n.lines??[n.text]).forEach((line,i)=>write(line,n.x+10,n.y+34+i*20,n.width-20,13,'left',sans));return;}
+  if(n.kind==='panel'){box();return;}
+  if(n.kind==='button'||n.kind==='tab'||n.kind==='choice'){
+    ctx.save();ctx.globalAlpha=n.disabled?.58:1;box(n.skin==='tab'&&n.selected?'captain-banner':n.skin);
+    if(n.skin==='setting'){write(n.text,n.x+12,cy,n.width-64,13,'left',sans);fill(ctx,{...n,x:n.x+n.width-40,y:cy-10,width:24,height:20},n.selected?'#249c8d':'#12283b',4,n.selected?'#7dd3b4':'#d4a35966');if(n.selected)write('✓',n.x+n.width-28,cy,20,15,'center',sans,'700');}
+    else if(n.skin==='accordion'){write(n.text,n.x+12,cy,n.width-30,12,'left',display,'700','#ffd875');if(n.detail)write(n.detail,n.x+n.width-8,n.y+n.height-12,n.width-20,10,'right',sans,'400','#d4a359');}
+    else {
+      const gold=n.skin==='gold-button'||n.skin==='cyan-button',input=n.skin==='input',lines=n.lines??wrapText(n.text,n.width-20,t=>Array.from(t).length*(n.fontSize??13));
+      if(n.skin==='dragon-button'){art(ctx,artwork,'cloud-left',n.x+8,cy-7,24,14);art(ctx,artwork,'cloud-right',n.x+n.width-32,cy-7,24,14);}
+      lines.forEach((line,i)=>write(line,input?n.x+12:cx,cy+(i-(lines.length-1)/2)*(n.fontSize??13)*1.4,n.width-(input?24:16),n.fontSize??13,input?'left':'center',family,'700',gold?'#1e0908':color));
+    }
+    ctx.restore();return;
+  }
+  box();write(n.text,cx,cy,n.width-12);
+}
+
 function drawNode(ctx: CanvasRenderingContext2D, n: WebNode, model: ScreenModel, artwork?: Artwork) {
+  if(n.skin){drawDocumentNode(ctx,n,model,artwork);return;}
   const cx = n.x + n.width / 2, cy = n.y + n.height / 2;
   if (n.kind === 'metric') {
     fill(ctx, n, '#21110d', 12); const [value, label] = n.text.split('|');
@@ -146,7 +259,7 @@ function drawNode(ctx: CanvasRenderingContext2D, n: WebNode, model: ScreenModel,
     else if(img) portrait(ctx,{...n,x:avatarX+2,y:avatarY+2,width:diameter-4,height:diameter-4},artwork,true);
     else text(ctx,'◇',avatarX+diameter/2,avatarY+diameter/2,diameter,20,webTheme.accent);
     if(n.selected||n.badge){ctx.save();shadow(ctx,n.selected?'#38bdf8':'#ffd875',10,0);ctx.beginPath();ctx.arc(avatarX+diameter/2,avatarY+diameter/2,diameter/2+3,0,Math.PI*2);ctx.strokeStyle=n.selected?'#38bdf8':'#ffd875';ctx.lineWidth=2;ctx.stroke();ctx.restore();}
-    circle(ctx,avatarX+diameter-3,avatarY+diameter-3,3.5,n.online===false?'#64748b':'#22c55e','#1c0808');
+    if(n.online===false)circle(ctx,avatarX+diameter-3,avatarY+diameter-3,3.5,'#64748b','#1c0808');
     if(labelW<82){text(ctx,String(n.count)+'号·'+n.text,labelX+labelW/2,nameY+labelH/2,labelW-5,10,'#f5eedf','center',sans,'600');}
     else {
     const meW=n.selfPlayer?15:0;
@@ -236,10 +349,16 @@ function drawNode(ctx: CanvasRenderingContext2D, n: WebNode, model: ScreenModel,
 
 export function renderWebScreen(model: ScreenModel, canvas: HTMLCanvasElement, v: SafeViewport, artwork?: Artwork): HitRegion[] {
   const ctx = canvas.getContext('2d'); if (!ctx) throw new Error('Canvas 2D is unavailable');
+  const modal=model.web!.document?.modal;
+  if(modal){
+    ctx.save();ctx.filter='blur(4px)';
+    renderWebScreen(model.web!.underlay??{title:'',rows:[],web:{page:'home',user:model.web!.document?.user}},canvas,v,artwork);
+    ctx.restore();ctx.fillStyle='rgba(7,26,44,.78)';ctx.fillRect(0,0,v.width,v.height);
+  }
   const scene = model.web!.background ?? (model.web!.page === 'home' ? 'gate' : model.web!.page === 'setup' ? 'library' : model.web!.page === 'table' ? model.web!.room?.game ? 'sword' : 'pavilion' : 'library');
-  ctx.fillStyle = '#0c0505'; ctx.fillRect(0, 0, v.width, v.height);
+  if(!modal){ctx.fillStyle = '#0c0505'; ctx.fillRect(0, 0, v.width, v.height);}
   const bg = artwork?.get('scenes/' + scene + '.webp');
-  if (bg?.width && bg.height) {
+  if (!modal && bg?.width && bg.height) {
     const scale = Math.max(v.width / bg.width, v.height / bg.height);
     ctx.save();if(scene!=='sword')ctx.filter='saturate(1.05) brightness(1.02)';
     ctx.drawImage(bg as CanvasImageSource, (v.width - bg.width * scale) / 2, (v.height - bg.height * scale) * (scene==='gate'?.46:scene==='sword'?.4:scene==='pavilion'?.55:.5), bg.width * scale, bg.height * scale);ctx.restore();
@@ -256,6 +375,7 @@ export function renderWebScreen(model: ScreenModel, canvas: HTMLCanvasElement, v
     ctx.fillStyle = '#ffd87588'; ctx.fillRect(v.width - 5, layout.contentTop + (model.scroll ?? 0) / layout.maxScroll * (height - thumb), 2, thumb);
   }
   // Reverse paint order so a toast or fixed dock owns the tap instead of a covered seat.
+  if(model.web!.document)return [...layout.nodes.filter(n=>!n.disabled&&['button','choice','tab'].includes(n.kind)&&n.y+n.height>(n.clipTop??v.top)&&n.y<(n.clipBottom??v.height-v.bottom)).reverse().sort((a,b)=>Number(Boolean(b.fixed))-Number(Boolean(a.fixed))),...layout.nodes.filter(n=>n.kind==='hitbox')];
   return [...layout.nodes].sort((a, b) => Number(Boolean(b.fixed)) - Number(Boolean(a.fixed)))
     .filter(node => !node.disabled && !['label', 'panel', 'altar', 'metric'].includes(node.kind)
       && node.y + node.height > (node.clipTop ?? v.top) && node.y < (node.clipBottom ?? v.height - v.bottom));

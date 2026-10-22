@@ -3,9 +3,10 @@ import { ALL_GALLERY_ROLES, WUYUE_MISSIONS } from '../../../web/src/roles.js';
 import { roleDescriptions, roleTreasures } from '../../../web/src/role-descriptions.js';
 import { ROLE_CONFIG, MISSION_SIZES } from '@avalon/game-core';
 
-export function guideScreen(roleId?: string): ScreenModel {
+export function guideScreen(roleId?: string, section: 'rules'|'roles'|'config' = 'rules', art=false): ScreenModel {
   const role = ALL_GALLERY_ROLES.find(item => item.id === roleId);
-  if (role) return { title: role.fullName, portrait: role.artPrefix + '-160.webp', web: { page: 'sheet', background: 'library', backId: 'guide:roles' }, subtitle: role.team === 'blue' ? '取经阵营' : '妖魔阵营', rows: [
+  if(art&&role)return {title:role.fullName,rows:[],web:{page:'sheet',background:'library',backId:'guideArtClose',underlay:guideScreen(undefined,section),document:{kind:'art',modal:true,roleItem:role}}};
+  if (role) return { title: role.fullName, portrait: role.artPrefix + '-160.webp', web: { page: 'sheet', background: 'library', backId: 'guide:roles', document:{kind:'guide-role',roleItem:role,activeTab:section} }, subtitle: role.team === 'blue' ? '取经阵营' : '妖魔阵营', rows: [
     { id: 'role-title', text: role.title }, { id: 'role-motto', text: role.motto },
     { id: 'role-story', text: role.story },
     { id: 'role-ability', text: '身份能力：' + roleDescriptions[role.role].ability },
@@ -14,7 +15,7 @@ export function guideScreen(roleId?: string): ScreenModel {
     { id: 'role-treasure', text: '专属法宝：' + roleTreasures[role.role] },
     { id: 'guide:roles', text: '返回角色图鉴' },
   ] };
-  return { title: '嘻游识妖谱', web: { page: 'sheet', background: 'library' }, subtitle: '嘻游 · 真假猴王', rows: [
+  return { title: '嘻游识妖谱', web: { page: 'sheet', background: 'library',document:{kind:'guide',activeTab:section} }, subtitle: '嘻游 · 真假猴王', rows: [
     { id: 'guide:win', text: '五轮取经任务，蓝方完成三次后还须躲过刺杀' },
     { id: 'guide:loss', text: '红方破坏三次任务、累计五次流局或刺中孙悟空获胜' },
     { id: 'guide:role', text: '每人私下查看身份，讨论时不要展示底牌' },

@@ -7,7 +7,7 @@ export function replayScreen(replay: Replay, backId: string, showFavorite = fals
     const player = replay.players.find(item => item.id === id);
     return player ? `${player.seat}号${player.nickname}` : '未知成员';
   };
-  return { title: '对局复盘', subtitle: `${replay.playerCount}人 · ${replay.result.winner === 'blue' ? '蓝方获胜' : replay.result.winner === 'red' ? '红方获胜' : '中止'}`, rows: [
+  return { web:{page:'sheet',background:'dawn',backId,document:{kind:'replay',replay}},title: '对局复盘', subtitle: `${replay.playerCount}人 · ${replay.result.winner === 'blue' ? '蓝方获胜' : replay.result.winner === 'red' ? '红方获胜' : '中止'}`, rows: [
     { id: 'replay:reason', text: `结案：${replay.result.reason}${replay.result.targetId ? ` · 目标${name(replay.result.targetId)}` : ''}` },
     { id: 'replay:rules', text: `规则 ${replay.rulesetVersion} · ${replay.settings.anonymousTeamVote ? '匿名组队投票' : '公开组队投票'}` },
     ...replay.players.map(player => ({ id: `replay:player:${player.id}`, text: `${name(player.id)} · ${replay.roles[player.id] ? formatRoleName(replay.roles[player.id]!) : '未知身份'}` })),

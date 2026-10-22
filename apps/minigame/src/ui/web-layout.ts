@@ -1,6 +1,9 @@
+import { reasons } from '../../../web/src/game-presentation.js';
+import type { WebDocument } from './web-document.js';
+import { layoutDocument } from './web-document-layout.js';
 import type { RoomView, Settings, User } from '@avalon/contracts';
-import { MISSION_SIZES, ROLE_CONFIG, failuresRequiredFor, teamOf } from '@avalon/game-core';
-import { roleNames, roleMottos, WUYUE_MISSIONS } from '../../../web/src/roles.js';
+import { MISSION_SIZES, ROLE_CONFIG, failuresRequiredFor, teamOf, assignLoyalGuardians, assignFemaleDemons } from '@avalon/game-core';
+import { roleNames, roleMottos, WUYUE_MISSIONS, getRoleGalleryItem, formatRoleName } from '../../../web/src/roles.js';
 import { wrapText, type HitRegion, type SafeViewport } from './layout.js';
 import type { ScreenModel } from './widgets.js';
 
@@ -13,11 +16,17 @@ export interface WebSurface {
   freeAccess?: boolean; practice?: boolean; sheet?: string;
   backId?: string;
   activeTab?: string;
+  document?: WebDocument;
+  underlay?: ScreenModel;
+  missionChoice?: boolean;
+  ownTeam?: 'blue'|'red';
+  warning?: string;
   knownAccounts?: { nickname: string; playerCode: string }[];
 }
 export interface WebNode extends HitRegion {
-  kind: 'label' | 'button' | 'input' | 'portrait' | 'quest' | 'seat' | 'altar' | 'panel' | 'choice' | 'tab' | 'metric';
+  kind: 'label' | 'button' | 'input' | 'portrait' | 'quest' | 'seat' | 'altar' | 'panel' | 'choice' | 'tab' | 'metric' | 'hitbox';
   fixed?: boolean; primary?: boolean; selected?: boolean; disabled?: boolean; muted?: boolean;
+  skin?: string; fontSize?: number; lineHeight?: number; fontFace?: 'sans'|'display'|'calligraphy'; weight?: string; align?: 'left'|'center'|'right'; tone?: 'blue'|'red'|'gold'|'muted'|'green';
   image?: string; detail?: string; badge?: string; selfPlayer?: boolean; online?: boolean; team?: 'blue' | 'red'; passed?: boolean; count?: number;
 }
 export interface WebLayout { nodes: WebNode[]; maxScroll: number; contentTop: number; contentBottom: number }
@@ -25,6 +34,7 @@ const cssClamp = (min: number, value: number, max: number) => Math.max(min, Math
 const showcase = ['merlin', 'assassin', 'percival', 'morgana', 'guinevere', 'mordred', 'oberon', 'loyal', 'minion'] as const;
 
 export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout {
+  if (model.web?.document) return layoutDocument(model,v);
   const web = model.web!, nodes: WebNode[] = [];
   const w = v.width, bottom = v.height - v.bottom - 10, pad = 16, full = w - pad * 2;
   let top = v.top + 12, y = top + 60, contentBottom = bottom;
@@ -119,16 +129,26 @@ export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout 
     const blue = ROLE_CONFIG[count].filter(role => teamOf(role) === 'blue').length;
     const scoreY = y + questH + 8, scoreH = w < 360 ? 43 : 24;
     add('label', 'score', '⚔ 护经 ' + wins + ':' + losses + ' 群妖  ◇  ♨ 流局 ' + (game?.rejectionCount ?? 0) + '/5  ◇  👥 ' + count + '人局  ◇  仙' + blue + ' 妖' + (count - blue), boardX, scoreY, boardW, scoreH);
-    const selected = web.selectedIds ?? game?.draftTeam?.playerIds ?? [];
+    const selected = game&&['mission','team_vote'].includes(game.phase)?game.rounds.at(-1)?.team??[]:web.selectedIds ?? game?.draftTeam?.playerIds ?? [];
     const captain = game?.players.find(player => player.id === game.captainId);
     const size = game?.missionSizes[(game?.mission ?? 1) - 1] ?? 0;
     const stage = game?.phase;
     const proposing = stage === 'proposing' || stage === 'discussion';
     const phaseText = proposing ? (stage === 'proposing' ? '👑 队长【' : '🗣️ 论道中【') + (captain ? captain.seat + '号 ' + captain.nickname : '') + '】 · ' + (stage === 'proposing' ? '正在点将' : '真假论道') + '（已选 ' + selected.length + '/' + size + '人）'
-      : model.rows.find(row => row.id === 'status')?.text ?? '仙友齐聚，静候敕令发牌';
+      : stage==='mission'?'⚔ 取经进行中 · 已出牌 '+(game?.progress.missionVotes??0)+'/'+(game?.rounds.at(-1)?.team.length??0)+' 人':model.rows.find(row => row.id === 'status')?.text ?? '仙友齐聚，静候敕令发牌';
     const ribbonY = scoreY + scoreH + 20;
     add('label','ribbon', phaseText, 10, ribbonY, w - 20, 34);
-    const arenaTop = ribbonY + 56;
+    const ended=Boolean(game?.result);
+    if(ended&&game){
+      const role=game.revealedRoles?.[web.user?.id??''];const ownTeam=role?teamOf(role):web.ownTeam;
+      const headline=game.result!.winner===null?'本局中断':game.result!.winner===ownTeam?'本局胜利！':'本局惜败';
+      const guardian=game.revealedRoles?assignLoyalGuardians(game.id,game.players,game.revealedRoles):{};
+      const demons=game.revealedRoles?assignFemaleDemons(game.id,game.players,game.revealedRoles):{};
+      nodes.splice(nodes.findIndex(n=>n.id==='ribbon'),1);
+      add('label','result-hero',headline,10,ribbonY-2,w-20,279,{skin:'result-hero',team:game.result!.winner??undefined,
+        detail:JSON.stringify({won:game.result!.winner===ownTeam,self:role?formatRoleName(role,guardian[web.user?.id??''],demons[web.user?.id??'']):'',reason:reasons[game.result!.reason]??game.result!.reason,teams:['blue','red'].map(team=>({team,players:game.players.filter(p=>game.revealedRoles?.[p.id]&&teamOf(game.revealedRoles[p.id]!)===team).map(p=>p.seat+'号 '+p.nickname+' · '+formatRoleName(game.revealedRoles![p.id]!,guardian[p.id],demons[p.id]))}))})});
+    }
+    const arenaTop = ended?ribbonY-2+279+18:ribbonY + 56;
     const flankRows = Math.ceil(count / 2), cellH = cssClamp(38, availableH * .05, 46), gap = cssClamp(6, availableH * .013, 14);
     const avatarSize = cssClamp(38, availableH * .05, 44);
     const flankH = flankRows * cellH + (flankRows - 1) * gap;
@@ -150,15 +170,29 @@ export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout 
         { count: index + 1, selected: Boolean(member && (selected.includes(member.id) || web.targetId === member.id)), selfPlayer: member?.id === web.user?.id, online: memberView?.online,
           badge: member?.id === game?.captainId ? '👑 队长' : !game && member?.id === room.hostId ? '房主' : undefined,
           detail: !game ? memberView?.ready ? '已就位' : '待出发' : ballot === true ? '✓' : ballot === false ? '×' : ballot === 'abstain' ? '−' : undefined,
-          image: revealed ? 'roles/' + revealed + '-160.webp' : memberView?.avatarUrl ?? memberView?.wechatAvatarUrl ?? (member ? 'emblems/' + (memberView?.avatar ?? 'cards') + '.png' : undefined) });
+          image: revealed ? 'roles/' + getRoleGalleryItem(revealed,assignLoyalGuardians(game!.id,game!.players,game!.revealedRoles!)[member!.id],assignFemaleDemons(game!.id,game!.players,game!.revealedRoles!)[member!.id]).artPrefix + '-160.webp' : memberView?.avatarUrl ?? memberView?.wechatAvatarUrl ?? (member ? 'emblems/' + (memberView?.avatar ?? 'cards') + '.png' : undefined) });
     }
     const altarW = cssClamp(74,w * .19,92);
     add('altar','altar','☯',(10+arenaInset+rightEnd-altarW)/2,arenaTop + (arenaH - altarW)/2,altarW,altarW,{ detail: (game?.draftTeam?.direction === 'counterclockwise' ? '⟲ 逆时针' : '⟳ 顺时针'), count: game?.mission ?? 1 });
-    const dockY = arenaTop + arenaH + 18, dockH = w < 360 ? 196 : 181;
+    const missionEligible=game?.phase==='mission'&&model.rows.some(row=>row.id==='mission-choice:success');
+    const dockY = arenaTop + arenaH + 18, dockH = ended?215:missionEligible?307.4+(web.warning?44:0):w < 360 ? 196 : 181;
     add('panel','action-dock','',10,dockY,w-20,dockH);
     const panelX = 26, panelW = w - 52, panelY = dockY + 14, panelH = dockH - 94;
     add('panel','dock-inner','',panelX,panelY,panelW,panelH);
-    if (proposing && captain?.id === web.user?.id) {
+    if(game?.result){
+      add('label','result-summary',game.result.winner===null?'本局不计胜负':game.result.winner==='blue'?'蓝方获胜':'红方获胜',panelX+10,panelY+8,panelW-20,24,{skin:'text',fontSize:17,fontFace:'display',tone:'gold'});
+      add('label','result-reason',reasons[game.result.reason]??'',panelX+10,panelY+37,panelW-20,24,{skin:'text',fontSize:12});
+      if(!web.practice)add('button','openReplay','查看完整复盘',panelX+10,panelY+69,(panelW-26)/2,42,{skin:'button'});
+      if(room.hostId===web.user?.id)add('button','rematch','回到仙境等待区，再开一局',web.practice?panelX+10:panelX+16+(panelW-26)/2,panelY+69,web.practice?panelW-20:(panelW-26)/2,42,{skin:'gold-button',primary:true});
+    } else if(missionEligible&&game){
+      add('label','mission-hint','—◇ '+(game.failuresRequired===2?'需至少 2 张失败牌，任务方告失败':'只要出现 1 张失败牌，任务即失败')+' ◇—',panelX+4,panelY+8,panelW-8,22,{skin:'text',fontSize:13,fontFace:'display',tone:'gold',align:'center'});
+      const cw=(panelW-36)/2,cardY=panelY+37.9;
+      add('choice','mission-choice:success','任务成功',panelX+13,cardY,cw,106.5,{skin:'mission-card',selected:web.missionChoice===true,tone:'green',detail:'诚心助道 · 愿力圆满'});
+      add('choice','mission-choice:fail','任务失败',panelX+23+cw,cardY,cw,106.5,{skin:'mission-card',selected:web.missionChoice===false,tone:'red',detail:web.ownTeam==='blue'?'蓝方阵营不可出失败牌':'妖魔作祟 · 破坏任务'});
+      if(web.warning)add('label','mission-warning',web.warning,panelX+13,cardY+112,panelW-26,36,{skin:'warning',fontSize:11,tone:'red'});
+      const submit=model.rows.find(row=>row.id==='submitMission');
+      add('button','submitMission',submit?.text??'确认提交任务牌',panelX+13,cardY+120.5+(web.warning?44:0),panelW-26,48,{skin:'dragon-button',primary:true,disabled:web.missionChoice===undefined});
+    } else if (proposing && captain?.id === web.user?.id) {
       add('label','dock-rule',stage === 'proposing' ? '—◇ 可调整同行人，确认后进入讨论 ◇—' : '—◇ 真假论道 · 听取陈述后发起表决 ◇—',panelX+4,panelY+10,panelW-8,17);
       const directionW=cssClamp(100,w*.28,118), controlsX=panelX+13, controlsW=panelW-26;
       add('button','direction',(game?.draftTeam?.direction === 'counterclockwise' ? '逆时针' : '顺时针')+'发言',controlsX,panelY+28,directionW,48);
@@ -170,7 +204,7 @@ export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout 
     }
     const utilityY=dockY+dockH-59;
     add('label','dock-divider','',26,utilityY-9,w-52,1);
-    const utility=game ? [['role','查验真身'],['history','取经录'],['chat','💬 传音'],[web.practice?'practiceSeats':'guide',web.practice?'切换视角':'识妖谱'],[web.practice?'exitPractice':game.result?'leave':room.hostId===web.user?.id?'endGame':'requestAbort',web.practice?'结束演练':game.result?'退出房间':room.hostId===web.user?.id?'结束游戏':'申请结束']]
+    const utility=game ? [...(!ended?[['role','查验真身']]:[]),['history','取经录'],['chat','💬 传音'],[web.practice?'practiceSeats':'guide',web.practice?'切换视角':'识妖谱'],...(!ended?[[web.practice?'exitPractice':room.hostId===web.user?.id?'endGame':'requestAbort',web.practice?'结束演练':room.hostId===web.user?.id?'结束游戏':'申请结束']]:[])]
       : [['settings','房间设置'],['share','邀请仙友'],['chat','传音'],['friends','仙友录']];
     const uw=(w-52-(utility.length-1)*6)/utility.length;
     utility.forEach(([id,title],index)=>add('button',id!,title!,26+index*(uw+6),utilityY,uw,44,{badge:'utility'}));

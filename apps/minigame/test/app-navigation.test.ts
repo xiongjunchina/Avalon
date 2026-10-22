@@ -73,13 +73,13 @@ test('built client logs in, opens a clean join form and creates the selected web
   assert.ok(frame.some(item => item.text.includes('请输入房间号或邀请链接')));
   await tap('输入房间号或邀请链接');
   confirmKeyboard({ value: '654321' }); await settle();
-  await tap('‹'); await tap('加入房间');
+  await tap('返回法坛'); await tap('加入房间');
   assert.ok(frame.some(item => item.text === '输入房间号或邀请链接'));
-  await tap('‹'); await tap('开常规房'); await tap('9');
-  for (let index = 0; index < 8 && !frame.some(item => item.text === '敕令开坛 · 创建房间' && item.y < 790); index++) {
+  await tap('返回法坛'); await tap('开常规房'); await tap('9');
+  for (let index = 0; index < 8 && !frame.some(item => item.text === '开启线下常规房' && item.y < 790); index++) {
     start({ touches: [{ clientY: 760 }] }); end({ changedTouches: [{ clientX: 350, clientY: 240 }] }); await settle();
   }
-  await tap('敕令开坛 · 创建房间');
+  await tap('开启线下常规房');
   assert.equal(requests.find(item => item.path === '/rooms')?.data.settings.playerCount, 9);
   assert.ok(frame.some(item => item.text.includes('房号 123456')));
   room = parityFixture().room; room.version = 2;

@@ -64,8 +64,8 @@ export function hitTest(rows: HitRegion[], x: number, y: number): HitRegion | un
   return rows.find(row => y >= (row.clipTop ?? row.y) && y <= (row.clipBottom ?? row.y + row.height)
     && x >= row.x && x <= row.x + row.width && y >= row.y && y <= row.y + row.height);
 }
-export function hideSensitiveView(state: { privateRoleVisible: boolean; ballotVisible: boolean; overlay?: string }): void {
+export function hideSensitiveView(state: { privateRoleVisible: boolean; ballotVisible: boolean; overlay?: string;overlayReturn?:string }): void {
   state.privateRoleVisible = false;
-  state.ballotVisible = false;
+  state.ballotVisible = false;delete state.overlayReturn;
   if (state.overlay !== undefined) state.overlay = undefined;
 }

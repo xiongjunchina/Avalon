@@ -3,7 +3,7 @@ import { commandId } from './lobby.js';
 import { formatRoleName } from '../../../web/src/roles.js';
 import type { ScreenModel } from '../ui/widgets.js';
 import { roleDescriptions } from '../../../web/src/role-descriptions.js';
-import { WUYUE_MISSIONS } from '../../../web/src/roles.js';
+import { getRoleGalleryItem, WUYUE_MISSIONS } from '../../../web/src/roles.js';
 
 export interface GameUiState {
   privateRoleVisible: boolean;
@@ -13,7 +13,9 @@ export interface GameUiState {
   targetId?: string;
   snapshotKey?: string;
   draftKey?: string;
-  overlay?: 'identity' | 'vote' | 'mission' | 'history' | 'report' | 'treasures' | 'result' | 'more';
+  overlay?: 'identity' | 'vote' | 'mission' | 'history' | 'report' | 'treasures' | 'result' | 'more' | 'art';
+  overlayReturn?: 'identity'|'treasures';
+  historyExpanded?: boolean;
   voteChoice?: boolean | 'abstain';
   missionChoice?: boolean;
   reportMission?: number;
@@ -33,10 +35,8 @@ export function syncGameUi(ui: GameUiState, room: RoomView, allowAutoReveal = tr
     ui.selectedIds = [];
     ui.direction = 'clockwise';
     ui.snapshotKey = key;
-    ui.voteChoice = undefined; ui.missionChoice = undefined; ui.warning = undefined;
-    ui.overlay = ui.privateRoleVisible ? 'identity' : game.phase === 'team_vote' ? 'vote'
-      : game.phase === 'mission' && userId && game.rounds.at(-1)?.team.includes(userId) ? 'mission' : undefined;
-    if (game.phase === 'finished' || game.phase === 'aborted') ui.overlay = 'result';
+    ui.voteChoice = undefined; ui.missionChoice = undefined; ui.warning = undefined; ui.overlayReturn = undefined; ui.historyExpanded = false;
+    ui.overlay = ui.privateRoleVisible ? 'identity' : game.phase === 'team_vote' && game.self ? 'vote' : undefined;
   }
   const completed = game.rounds.filter(round => round.result).length;
   if (ui.completedCount !== undefined && completed > ui.completedCount && !game.result) { ui.overlay = 'report'; ui.reportMission = game.rounds.filter(round => round.result).at(-1)?.mission; }
@@ -100,6 +100,12 @@ export function gameScreen(room: RoomView, user: User, ui: GameUiState, now = Da
   if (game.phase === 'role_reveal' && self?.confirmed) rows.push({ id: 'submitted', text: `身份已确认，等待其余仙友（${game.progress.confirmed}/${game.players.length}）` });
   if (game.phase === 'team_vote' && self?.teamVoted) rows.push({ id: 'submitted', text: '已提交组队投票，等待其余仙友' });
   if (game.phase === 'mission') rows.push({ id: 'submitted', text: self?.missionVoted ? '已提交任务牌，等待其余队员' : round?.team.includes(user.id) ? '请提交本次任务牌' : '本轮无需出牌，等待出征队员完成任务' });
+  if (game.phase === 'mission' && self && round?.team.includes(user.id) && !self.missionVoted) rows.push(
+    { id:'mission-choice:success',text:(ui.missionChoice===true?'✓ ':'')+'任务成功' },
+    { id:'mission-choice:fail',text:(ui.missionChoice===false?'✓ ':'')+'任务失败' },
+    { id:'submitMission',text:ui.missionChoice===undefined?'请先点击选择【任务成功】或【任务失败】':ui.missionChoice?'✨ 确认提交【任务成功】':'🔥 确认提交【任务失败】' },
+    ...(ui.warning?[{id:'error',text:ui.warning}]:[]),
+  );
   const ballots = game.teamVote?.ballots ?? round?.vote?.ballots;
   if (ballots) rows.push(...Object.entries(ballots).map(([id, ballot]) => ({ id: `ballot:${id}`, text: `${playerLabel(id)}：${ballot === 'abstain' ? '弃权' : ballot ? '赞成' : '反对'}` })));
   if (game.phase === 'role_reveal' && self && !self.confirmed) rows.push({ id: 'confirmRole', text: '已看清身份' });
@@ -145,23 +151,25 @@ export function gameScreen(room: RoomView, user: User, ui: GameUiState, now = Da
   if (game.phase === 'mission' && self && round?.team.includes(user.id)) ordered.push({ id: 'openMission', text: self.missionVoted ? '任务牌已提交' : '祭出任务牌' });
   ordered.push({ id: 'history', text: '取经战况' }, { id: 'guide', text: '识妖谱' });
   const base: ScreenModel = { title: `房间 ${room.code}`, subtitle: `${game.players.length}人 · ${phaseName[game.phase]}`, rows: ordered,
-    web: { page: 'table', room: { ...room, game: { ...game, self: undefined } }, user, selectedIds: ui.selectedIds, targetId: ui.targetId } };
+    web: { page: 'table', room: { ...room, game: { ...game, self: undefined } }, user, selectedIds: ui.selectedIds, targetId: ui.targetId, missionChoice: ui.missionChoice, ownTeam:self?.team, warning:ui.warning } };
   if (game.phase === 'dealing') return { title: '即将发牌', rows: ordered.filter(row => ['dealCountdown', 'status'].includes(row.id)),
     web: { page: 'sheet', sheet: 'dealing', background: 'sword', backId: 'noop' } };
-  return ui.overlay ? gameOverlayScreen(room, user, ui, base) : base;
+  return ui.overlay && ui.overlay!=='result' ? gameOverlayScreen(room, user, ui, base) : base;
 }
 
 export function handleGameOverlay(ui: GameUiState, room: RoomView, id: string): boolean {
-  if (id === 'overlayClose') { ui.overlay = undefined; ui.privateRoleVisible = false; ui.ballotVisible = false; ui.warning = undefined; return true; }
+  if (id === 'overlayClose') { ui.overlay = ui.overlayReturn; ui.overlayReturn = undefined; ui.privateRoleVisible = ui.overlay === 'identity' || ui.overlay === 'treasures'; ui.ballotVisible = false; ui.warning = undefined; return true; }
+  if (id === 'identityArt' && ui.privateRoleVisible && room.game?.self) { ui.overlayReturn='identity'; ui.overlay='art'; return true; }
+  if (id === 'voteHistory') { ui.historyExpanded=!ui.historyExpanded; return true; }
   if (id === 'role') { ui.overlay = 'identity'; ui.privateRoleVisible = true; return true; }
   const overlays: Record<string, GameUiState['overlay']> = { openVote: 'vote', openMission: 'mission', history: 'history', treasures: 'treasures', more: 'more' };
-  if (overlays[id]) { ui.overlay = overlays[id]; ui.ballotVisible = id === 'openVote'; if (id !== 'treasures') ui.privateRoleVisible = false; return true; }
-  if (id.startsWith('mission:')) { ui.overlay = 'report'; ui.reportMission = Number(id.slice(8)); return true; }
-  if (id.startsWith('vote-choice:') && room.game?.phase === 'team_vote' && !room.game.self?.teamVoted) {
+  if (overlays[id]) { if(id==='treasures'&&ui.overlay==='identity')ui.overlayReturn='identity';else ui.overlayReturn=undefined; if(id==='history')ui.reportMission=undefined; ui.overlay = overlays[id]; ui.ballotVisible = id === 'openVote'; if (id !== 'treasures') ui.privateRoleVisible = false; return true; }
+  if (id.startsWith('mission:')) { ui.reportMission = Number(id.slice(8)); ui.overlay = room.game?.rounds.some(r=>r.mission===ui.reportMission&&r.result)?'report':'history'; return true; }
+  if (id.startsWith('vote-choice:') && room.game?.phase === 'team_vote' && room.game.self && !room.game.self.teamVoted) {
     ui.voteChoice = id.endsWith('approve') ? true : id.endsWith('reject') ? false : 'abstain'; return true;
   }
-  if (id.startsWith('mission-choice:') && room.game?.phase === 'mission' && !room.game.self?.missionVoted) {
-    if (id.endsWith('fail') && room.game.self?.team === 'blue') { ui.warning = '蓝方取经人只能提交任务成功'; return true; }
+  if (id.startsWith('mission-choice:') && room.game?.phase === 'mission' && room.game.self && !room.game.self.missionVoted) {
+    if (id.endsWith('fail') && room.game.self?.team === 'blue') { ui.warning = '⚠️ 蓝方（好人）阵营只能出成功牌，不可出失败牌'; ui.missionChoice = undefined; return true; }
     ui.missionChoice = !id.endsWith('fail'); ui.warning = undefined; return true;
   }
   return false;
@@ -180,7 +188,7 @@ function gameOverlayScreen(room: RoomView, user: User, ui: GameUiState, base: Sc
       { id: 'role-ability', text: '身份能力：' + description.ability }, { id: 'role-visibility', text: '身份关联：' + description.visibility },
       ...base.rows.filter(row => row.id === 'clue' || row.id === 'evil' || row.id.endsWith('Candidates') || row.id.startsWith('inspection:')),
       { id: 'role-tip', text: '取经锦囊：' + description.tip }, { id: 'treasures', text: '专属法宝与神兵' },
-      ...base.rows.filter(row => row.id === 'confirmRole')];
+      ...base.rows.filter(row => ['confirmRole','confirmInspection','earlyAttempt','earlySkip'].includes(row.id))];
   } else if (ui.overlay === 'vote') {
     title = '出征组队表决';
     rows = [{ id: 'notice', text: `第${game.mission}难 · ${WUYUE_MISSIONS[game.mission - 1]?.subtitle ?? ''}` },
@@ -217,12 +225,20 @@ function gameOverlayScreen(room: RoomView, user: User, ui: GameUiState, base: Sc
     rows = rounds.flatMap(item => [
       { id: 'replay:round:' + item.number, text: `第${item.mission}难 · 第${item.number}次组队\n领队：${name(item.captainId)}\n出征：${item.team.map(name).join('、')}` },
       ...(item.vote ? [{ id: 'replay:vote:' + item.number, text: `准行${item.vote.approvals} · 封驳${item.vote.rejections} · 旁观${item.vote.abstentions ?? 0} · ${item.vote.passed ? '通过' : '流局'}` }] : []),
+      ...(!room.settings.anonymousTeamVote&&item.vote?.ballots?Object.entries(item.vote.ballots).map(([id,ballot])=>({id:'replay:ballot:'+item.number+':'+id,text:name(id)+' · '+(ballot==='abstain'?'旁观':ballot?'准行':'封驳')})):[]),
       ...(item.result ? [{ id: 'replay:mission:' + item.number, text: `任务${item.result.passed ? '成功' : '失败'} · 成功牌${item.result.successes} / 失败牌${item.result.failures}` }] : []),
     ]);
     if (!rows.length) rows.push({ id: 'empty', text: '这一难尚无组队记录' });
     if (ui.overlay === 'result') rows.unshift(...base.rows.filter(row => row.id === 'result' || row.id.startsWith('revealed:') || row.id === 'rematch'));
   }
-  return { title, rows, portrait, web: { page: 'sheet', sheet: ui.overlay, background: ui.overlay === 'result' ? 'dawn' : ui.overlay === 'identity' ? 'mirror' : 'sword', backId: 'overlayClose' } };
+  const kind = ui.overlay === 'more' ? 'tools' : ui.overlay === 'mission' ? 'history' : ui.overlay === 'result' ? 'history' : ui.overlay!;
+  const underlay = ui.overlayReturn === 'identity' && ui.overlay !== 'identity'
+    ? gameOverlayScreen(room,user,{...ui,overlay:'identity',overlayReturn:undefined,privateRoleVisible:true},base) : base;
+  return { title, rows, portrait, web: { page:'sheet',sheet:ui.overlay,background:ui.overlay==='identity'?'mirror':'sword',backId:'overlayClose',underlay,
+    document: {kind,modal:true,game:{...game,self:undefined},...(ui.privateRoleVisible && ['identity','treasures','art'].includes(ui.overlay??'')?{self}:{}),user,
+      roleItem:ui.overlay==='art'&&self?getRoleGalleryItem(self.role,self.loyalGuardian,self.femaleDemon):undefined,
+      voteChoice:ui.voteChoice,submitted:self?.teamVoted,historyExpanded:ui.historyExpanded,reportMission:ui.reportMission} } };
+
 }
 
 export function gameAction(room: RoomView, user: User, action: string, ui: Partial<GameUiState> = {}): Command | undefined {

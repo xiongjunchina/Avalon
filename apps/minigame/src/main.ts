@@ -11,7 +11,7 @@ import { LobbyController, lobbyScreen, readyReminder } from './screens/lobby.js'
 import { settingsScreen, toggleSetting } from './screens/settings.js';
 import { gameAction, gameScreen, handleGameOverlay, syncGameUi, type GameUiState } from './screens/game.js';
 import { layoutWebScreen } from './ui/web-layout.js';
-import { formatRoleName } from '../../web/src/roles.js';
+import { ALL_GALLERY_ROLES, formatRoleName } from '../../web/src/roles.js';
 import { AdminApi } from './screens/admin/auth.js';
 import { AdminPanel } from './screens/admin/panel.js';
 import { PlayerExtras } from './screens/player-extras.js';
@@ -53,6 +53,9 @@ let lobby: LobbyController | undefined;
 let playerPanel: PlayerPanel | undefined;
 let practice: PracticeSession | undefined;
 let guideRoleId: string | undefined;
+let guideSection: 'rules'|'roles'|'config' = 'rules';
+let guideArt = false;
+const overlayScrolls: Record<string,number> = {};
 let connection: MiniGameRoomConnection | undefined;
 let view: 'entry' | 'lobby' | 'game' | 'settings' | 'admin' | 'player' | 'practice' | 'guide' = 'entry';
 let previousView: 'entry' | 'lobby' | 'game' = 'entry';
@@ -61,7 +64,7 @@ let connectionStatus = '';
 let error = '';
 let notice = '';
 let announcement = '';
-let pendingConfirm: { label: string; execute: () => void } | undefined;
+let pendingConfirm: { label: string; execute: () => void; underlay?:ScreenModel } | undefined;
 let rows: HitRegion[] = [];
 let scroll = 0;
 let countdownTimer: ReturnType<typeof setTimeout> | undefined;
@@ -93,28 +96,28 @@ function feedback(result: ScreenModel): ScreenModel {
 
 function model(): ScreenModel {
   if (pendingConfirm) return feedback({ title: '确认操作',
-    rows: [{ id: 'notice', text: pendingConfirm.label }, { id: 'confirm:yes', text: '确认执行' }, { id: 'confirm:no', text: '取消' }], web: { page: 'sheet', background: 'sword', backId: 'confirm:no' } });
+    rows: [{ id: 'notice', text: pendingConfirm.label }, { id: 'confirm:yes', text: '确认执行' }, { id: 'confirm:no', text: '取消' }], web: { page: 'sheet', background:'sword',backId:'confirm:no',document:{kind:'confirm',modal:true},underlay:pendingConfirm.underlay } });
   let result: ScreenModel;
   if (view === 'lobby' && room && user && !auxiliary && reminderDismissed !== room.id && readyReminder(room, user.id)) return feedback({
     title: '大家都在等你', rows: [{ id: 'guide:ready', text: '其他玩家均已准备，只差你一位。' }, { id: 'ready', text: '我已准备' }, { id: 'readyLater', text: '稍后准备' }],
-    web: { page: 'sheet', sheet: 'ready', background: 'pavilion', backId: 'readyLater' },
+    web: { page: 'sheet', sheet: 'ready', background: 'pavilion', backId: 'readyLater',document:{kind:'tools',modal:true},underlay:lobbyScreen(room,user) },
   });
   if (auxiliary === 'join') return feedback({ title: '加入朋友的房间', rows: [
     { id: 'input:join', text: joinKey || '输入房间号或邀请链接' },
     { id: 'guide:join', text: '请向朋友索取房间号或邀请链接。每次打开此页均为空，不会填入历史邀请。' },
     { id: 'joinSubmit', text: '入座取经' },
-  ], web: { page: 'sheet', background: 'gate', backId: 'auxiliaryClose' } });
+  ], web: { page: 'sheet', background: 'gate', backId: 'auxiliaryClose',document:{kind:'tools',modal:true},underlay:entryScreen(user) } });
   if (auxiliary === 'switchAccount') return feedback({ ...entryScreen(), web: { page: 'home', authMode, nickname, switchCode, knownAccounts: knownAccounts.list(), backId: 'auxiliaryClose' } });
   if (auxiliary === 'sound') return feedback({ title: '声音设置', rows: [
     { id: 'sound:music', text: '背景音乐：' + (sound.preferences.music ? '开' : '关') },
     { id: 'sound:effects', text: '游戏音效：' + (sound.preferences.effects ? '开' : '关') },
     { id: 'guide:sound', text: '沿用网页端原曲与音效。实时语音本轮不提供。' },
-  ], web: { page: 'sheet', background: 'library', backId: 'auxiliaryClose' } });
-  if (auxiliary === 'practiceSeats' && practice) return feedback({ title: '选择演练视角', rows: practice.perspectives().map(player => ({ id: 'practiceSeat:' + player.id, text: `${player.seat}号 · ${player.nickname} · ${formatRoleName(player.role)}` })), web: { page: 'sheet', background: 'sword', backId: 'auxiliaryClose' } });
-  if (auxiliary === 'roomTools' && room && user) return feedback({ ...lobbyScreen(room, user), title: '房间工具', web: { page: 'sheet', backId: 'auxiliaryClose', background: 'pavilion' } });
+  ], web: { page: 'sheet', background: 'library', backId: 'auxiliaryClose',document:{kind:'tools',modal:true} } });
+  if (auxiliary === 'practiceSeats' && practice) return feedback({ title: '选择演练视角', rows: practice.perspectives().map(player => ({ id: 'practiceSeat:' + player.id, text: `${player.seat}号 · ${player.nickname} · ${formatRoleName(player.role)}` })), web: { page: 'sheet', background: 'sword', backId: 'auxiliaryClose',document:{kind:'tools',modal:true},underlay:gameScreen(practice.view(),practice.user,{privateRoleVisible:false,ballotVisible:false}) } });
+  if (auxiliary === 'roomTools' && room && user) return feedback({ ...lobbyScreen(room, user), title: '房间工具', web: { page: 'sheet', backId: 'auxiliaryClose', background: 'pavilion',document:{kind:'tools',modal:true},underlay:lobbyScreen(room,user) } });
   if (view === 'admin') result = adminPanel.model();
-  else if (view === 'guide') result = guideScreen(guideRoleId);
-  else if (view === 'player' && playerPanel) result = playerPanel.model();
+  else if (view === 'guide') result = guideScreen(guideRoleId,guideSection,guideArt);
+  else if (view === 'player' && playerPanel) {result = playerPanel.model();if(result.web?.document?.modal&&room&&user)result.web.underlay=room.game?gameScreen(room,user,{privateRoleVisible:false,ballotVisible:false}):lobbyScreen(room,user);}
   else if (view === 'practice' && practice) {
     const local = practice.view();
     result = gameScreen(local, practice.user, gameUi);
@@ -124,7 +127,7 @@ function model(): ScreenModel {
   }
   else if (view === 'settings') {
     result = settingsScreen(editableSettings);
-    result.web = { page: 'setup', settings: editableSettings, background: 'library' };
+    result.web = {page:'setup',settings:editableSettings,background:'library',backId:'cancelSettings',document:{kind:'settings',settings:editableSettings,activeTab:!room||setupIntent==='practice'?'setup':'room',modal:!!room&&setupIntent==='room'},underlay:room&&user?lobbyScreen(room,user):undefined};
     if (!room || setupIntent === 'practice') result.rows = result.rows.filter(row => row.id !== 'apply').concat([...(setupIntent === 'room' ? [{ id: 'createRoom', text: '敕令开坛 · 创建房间' }] : []), { id: 'startPractice', text: '幻化分身试玩此板子' }]);
   }
   else if (room?.game && view === 'game' && user) result = gameScreen(room, user, gameUi);
@@ -155,7 +158,7 @@ function navigate(next: typeof view) { view = next; auxiliary = undefined; scrol
 function connect(next: RoomView) {
   connection?.stop();
   room = next;
-  playerPanel?.setChatRoom(next.id);
+  playerPanel?.setChatRoom(next.id,next.code);
   syncGameUi(gameUi, next, !suspended, user?.id);
   lobby?.setRoom(next);
   connection = new MiniGameRoomConnection({ api, platform, roomId: next.id, baseUrl, handlers: {
@@ -201,13 +204,17 @@ async function run(action: () => Promise<void>) {
 }
 
 async function select(id: string) {
+  if(id==='noop')return;
   if (busy || commandBusy) return;
   if (id === 'readyLater') { reminderDismissed = room?.id ?? ''; render(); return; }
   if (id === 'leave' && view === 'game' && ['finished', 'aborted'].includes(room?.game?.phase ?? '')) { lobby?.leave(); return; }
   if (id === 'leave' && view === 'game') id = room?.hostId === user?.id ? 'endGame' : 'requestAbort';
   if (id === 'admin') return run(async () => { const key = await askText(wx, '', 256); if (!key) return; await adminPanel.open(key); navigate('admin'); });
+  if(id==='openReplay'&&room?.game&&playerPanel)return run(async()=>{previousView='game';await playerPanel!.openReplay(room!.game!.id,'back');navigate('player');});
+  if(id==='switch'&&view==='player'){authMode='switch';switchCode='';navigate('entry');auxiliary='switchAccount';render();return;}
   if (id === 'copyCode' && user?.playerCode && wx.setClipboardData) { wx.setClipboardData({ data: user.playerCode, success: () => { notice = '仙友码已复制'; render(); }, fail: () => { error = '复制失败，请重试'; render(); } }); return; }
   sound.activate(); sound.effect('tap');
+  if(id==='share'&&room){if(wx.shareAppMessage)wx.shareAppMessage({title:`来嘻游 · 真假猴王房间 ${room.code} 一起论剑`,query:`invite=${encodeURIComponent(room.code)}`});else{notice=`请告知好友房间号 ${room.code}`;render();}return;}
   if (id === 'copyRoom' && room && wx.setClipboardData) { wx.setClipboardData({ data: baseUrl + '/?invite=' + encodeURIComponent(room.code), success: () => { notice = '房间邀请链接已复制'; render(); }, fail: () => { error = '复制失败，请重试'; render(); } }); return; }
   if (id === 'sound') { auxiliary = 'sound'; scroll = 0; render(); return; }
   if (id.startsWith('sound:')) { const key = id.slice(6) as 'music' | 'effects'; sound.configure(key, !sound.preferences[key]); render(); return; }
@@ -221,7 +228,8 @@ async function select(id: string) {
   if (id.startsWith('practiceSeat:') && practice) { practice.switchSeat(id.slice(13)); hideSensitiveView(gameUi); gameUi.snapshotKey = undefined; syncGameUi(gameUi, practice.view(), false, practice.user.id); auxiliary = undefined; scroll = 0; render(); return; }
   if ((view === 'game' || view === 'practice') && id === 'guide') { guideReturn = view; navigate('guide'); return; }
   const activeRoom = view === 'practice' ? practice?.view() : view === 'game' ? room : undefined;
-  if (activeRoom && handleGameOverlay(gameUi, activeRoom, id)) { scroll = 0; render(); return; }
+  const priorOverlay=gameUi.overlay;
+  if (activeRoom && handleGameOverlay(gameUi, activeRoom, id)) { overlayScrolls[priorOverlay??'table']=scroll;scroll=priorOverlay===gameUi.overlay?scroll:overlayScrolls[gameUi.overlay??'table']??0;render();return; }
   if (id === 'back' && (view === 'practice' || view === 'game')) { gameUi.overlay = undefined; hideSensitiveView(gameUi); render(); return; }
   if (pendingConfirm) {
     const pending = pendingConfirm;
@@ -278,9 +286,13 @@ async function select(id: string) {
     }
   });
   if (view === 'guide') {
-    if (id === 'back') { guideRoleId = undefined; navigate(guideReturn); }
-    else if (id === 'guide:roles') { guideRoleId = undefined; scroll = 0; render(); }
-    else if (id.startsWith('guide-role:')) { guideRoleId = id.slice('guide-role:'.length); scroll = 0; render(); }
+    if (id === 'back') { guideRoleId=undefined;guideArt=false;navigate(guideReturn); }
+    else if (id==='guideArt'){guideArt=true;scroll=0;render();}
+    else if(id==='guideArtClose'){guideArt=false;guideRoleId=undefined;scroll=0;render();}
+    else if(id==='guide:rules'||id==='guide:config'){guideSection=id==='guide:rules'?'rules':'config';guideRoleId=undefined;scroll=0;render();}
+    else if (id === 'guide:roles') { guideRoleId=undefined;guideArt=false;guideSection='roles';scroll=0;render(); }
+    else if (id.startsWith('guide-role:')) { guideRoleId = id.slice('guide-role:'.length);guideArt=true;scroll = 0; render(); }
+    else if(id==='guideArtPrev'||id==='guideArtNext'){const i=ALL_GALLERY_ROLES.findIndex(r=>r.id===guideRoleId);guideRoleId=ALL_GALLERY_ROLES[(i+(id==='guideArtNext'?1:-1)+ALL_GALLERY_ROLES.length)%ALL_GALLERY_ROLES.length]!.id;scroll=0;render();}
     return;
   }
   if (view === 'entry') {
@@ -318,7 +330,7 @@ async function select(id: string) {
     else if (id === 'presets' && playerPanel && room.hostId === user?.id) return run(async () => { previousView = 'lobby'; await playerPanel!.open('presets', { roomId: room!.id, settings: room!.settings, canApplyPreset: true }); navigate('player'); });
     else if (id.startsWith('member:') && room.hostId === user?.id && id.slice(7) !== user.id) {
       const targetId = id.slice(7), member = room.members.find(item => item.id === targetId);
-      if (member) { pendingConfirm = { label: `移除 ${member.nickname}？`, execute: () => { if (room?.hostId === user?.id) lobby?.kick(targetId); } }; render(); }
+      if (member) { pendingConfirm = { underlay:model(),label: `移除 ${member.nickname}？`, execute: () => { if (room?.hostId === user?.id) lobby?.kick(targetId); } }; render(); }
     }
     else if (id === 'chat' && playerPanel) return run(async () => { previousView = 'lobby'; await playerPanel!.open('roomchat', { roomId: room!.id }); navigate('player'); });
     return;
@@ -343,7 +355,7 @@ async function select(id: string) {
       error = '当前法宝不可用，或所选目标不符合条件'; render(); return;
     }
     if (command && (['endGame', 'voteAbort', 'assassinate'].includes(command.type) || id === 'earlyAttempt')) {
-      pendingConfirm = { label: command.type === 'endGame' ? '结束游戏并关闭房间？' : command.type === 'assassinate' ? '确认刺杀所选目标？提交后不可撤回。' : id === 'earlyAttempt' ? '确认启用提前刺杀？刺错将立即判负。' : '确认处理结束申请？',
+      pendingConfirm = { underlay:model(),label: command.type === 'endGame' ? '结束游戏并关闭房间？' : command.type === 'assassinate' ? '确认刺杀所选目标？提交后不可撤回。' : id === 'earlyAttempt' ? '确认启用提前刺杀？刺错将立即判负。' : '确认处理结束申请？',
         execute: () => { if (room && user) { const fresh = gameAction(room, user, id, gameUi); if (fresh && !connection?.send(fresh)) { error = '正在等待上一操作确认'; } } } };
       render(); return;
     }
