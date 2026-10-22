@@ -5446,9 +5446,258 @@ dialog.table-modal-backdrop::backdrop { background: #081b2d55; }
   box-sizing: border-box !important;
 }
 
-.presets .preset-list li {
-  width: 100% !important;
+/* ==========================================================================
+   Dedicated Room Settings Sheet (Classical Fantasy & Ultra Compact)
+   ========================================================================== */
+.table-modal-sheet.settings-sheet {
+  width: min(100%, 480px) !important;
+  max-height: min(88dvh, 720px) !important;
+  padding: 14px 16px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  background: linear-gradient(165deg, rgba(46, 15, 13, 0.98) 0%, rgba(20, 6, 6, 0.99) 100%) !important;
+  border: 1.5px solid #d4a359 !important;
+  border-radius: 18px !important;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.85), inset 0 1px 0 rgba(255, 230, 150, 0.35) !important;
+  overscroll-behavior: contain !important;
   box-sizing: border-box !important;
+}
+
+.settings-sheet .table-modal-head {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding-bottom: 8px !important;
+  margin-bottom: 4px !important;
+  border-bottom: 1.5px solid rgba(212, 163, 89, 0.4) !important;
+  flex-shrink: 0 !important;
+}
+
+.settings-sheet .table-modal-head strong {
+  font-family: var(--display) !important;
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  color: #ffd875 !important;
+  letter-spacing: 1.5px !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8) !important;
+}
+
+.settings-sheet .table-modal-head .tool-pill {
+  min-height: 30px !important;
+  padding: 3px 12px !important;
+  font-family: var(--sans) !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  background: linear-gradient(180deg, #441715 0%, #200908 100%) !important;
+  border: 1px solid #d4a359 !important;
+  color: #fff2d5 !important;
+  border-radius: 14px !important;
+  cursor: pointer !important;
+}
+
+.settings-sheet .settings-body {
+  flex: 1 1 auto !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  padding-right: 2px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+  min-height: 0 !important;
+}
+
+.settings-sheet .settings-hint {
+  font-size: 11.5px !important;
+  color: #eddcc4 !important;
+  margin: 0 0 4px !important;
+  line-height: 1.35 !important;
+}
+
+/* Compact Player Count Medallions */
+.settings-sheet .player-count-field {
+  margin: 2px 0 4px !important;
+  padding: 0 !important;
+  border: 0 !important;
+}
+
+.settings-sheet .player-count-field legend {
+  font-family: var(--display) !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: #ffd875 !important;
+  letter-spacing: 1px !important;
+  margin-bottom: 4px !important;
+}
+
+.settings-sheet .count-medallions {
+  display: grid !important;
+  grid-template-columns: repeat(8, minmax(0, 1fr)) !important;
+  gap: 4px !important;
+  padding: 2px 0 !important;
+  width: 100% !important;
+}
+
+.settings-sheet .count-medallions span {
+  width: 100% !important;
+  max-width: 38px !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  border-radius: 50% !important;
+  font-family: var(--display) !important;
+  font-size: 14.5px !important;
+  font-weight: 700 !important;
+  border: 1.5px solid rgba(212, 163, 89, 0.6) !important;
+  background: linear-gradient(180deg, #381312 0%, #1a0808 100%) !important;
+  color: #fff2d5 !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4) !important;
+}
+
+.settings-sheet .count-medallions input:checked + span {
+  border-color: #ffd875 !important;
+  background: linear-gradient(180deg, #8a2520 0%, #561613 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 8px rgba(255, 216, 117, 0.6), inset 0 1px 0 rgba(255, 240, 180, 0.5) !important;
+  outline: none !important;
+}
+
+/* Compact Select Dropdowns */
+.settings-sheet label:not(.check label) {
+  font-family: var(--display) !important;
+  font-size: 12.5px !important;
+  font-weight: 700 !important;
+  color: #eddcc4 !important;
+  letter-spacing: 0.5px !important;
+  margin: 4px 0 1px !important;
+  display: block !important;
+}
+
+.settings-sheet select {
+  width: 100% !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  padding: 3px 8px !important;
+  margin: 0 0 2px !important;
+  font-family: var(--sans) !important;
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+  color: #fff8ef !important;
+  background: linear-gradient(180deg, #3d1413 0%, #1f0908 100%) !important;
+  border: 1.5px solid #d4a359 !important;
+  border-radius: 8px !important;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.6) !important;
+}
+
+/* Compact Chinese Talisman Switches */
+.settings-sheet .check {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  width: 100% !important;
+  min-height: 38px !important;
+  padding: 4px 2px !important;
+  margin: 0 !important;
+  border-bottom: 1px solid rgba(212, 163, 89, 0.2) !important;
+  box-sizing: border-box !important;
+}
+
+.settings-sheet .check label {
+  font-family: var(--sans) !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: #fff2d5 !important;
+  letter-spacing: 0.3px !important;
+  margin: 0 !important;
+  flex: 1 1 auto !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.settings-sheet .check input {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  position: relative !important;
+  width: 44px !important;
+  height: 24px !important;
+  min-height: 24px !important;
+  border: 1.5px solid rgba(212, 163, 89, 0.55) !important;
+  border-radius: 14px !important;
+  background: linear-gradient(180deg, #2b0d0c 0%, #170606 100%) !important;
+  margin: 0 !important;
+  flex-shrink: 0 !important;
+  cursor: pointer !important;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.7) !important;
+  transition: all 0.2s ease !important;
+}
+
+.settings-sheet .check input::before {
+  content: '' !important;
+  position: absolute !important;
+  width: 18px !important;
+  height: 18px !important;
+  top: 1.5px !important;
+  left: 2px !important;
+  background: #c5b294 !important;
+  border-radius: 50% !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.6) !important;
+  transition: transform 0.2s ease, background 0.2s ease !important;
+}
+
+.settings-sheet .check input:checked {
+  background: linear-gradient(135deg, #176558 0%, #208574 100%) !important;
+  border-color: #5ef2ff !important;
+  box-shadow: 0 0 8px rgba(94, 242, 255, 0.35), inset 0 1px 2px rgba(0, 0, 0, 0.4) !important;
+}
+
+.settings-sheet .check input:checked::before {
+  transform: translateX(19px) !important;
+  background: #ffffff !important;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Presets Details Accordion */
+.settings-sheet .preset-details {
+  margin: 4px 0 2px !important;
+  padding: 4px 8px !important;
+  background: rgba(30, 10, 9, 0.6) !important;
+  border: 1px solid rgba(212, 163, 89, 0.35) !important;
+  border-radius: 10px !important;
+}
+
+.settings-sheet .preset-details summary {
+  font-family: var(--display) !important;
+  font-size: 12.5px !important;
+  font-weight: 700 !important;
+  color: #ffd875 !important;
+  cursor: pointer !important;
+  padding: 3px 0 !important;
+}
+
+/* Return to Table Button */
+.settings-sheet .return-table-btn {
+  width: 100% !important;
+  min-height: 40px !important;
+  margin: 8px 0 0 !important;
+  font-family: var(--sans) !important;
+  font-size: 14.5px !important;
+  font-weight: 800 !important;
+  letter-spacing: 1px !important;
+  background: var(--gold-primary) !important;
+  color: #1e0908 !important;
+  border: 1.5px solid #ffe599 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+  transition: all 0.15s ease !important;
+}
+
+.settings-sheet .return-table-btn:hover {
+  filter: brightness(1.08) !important;
+  box-shadow: 0 6px 16px rgba(245, 166, 35, 0.45), inset 0 1px 0 #ffffff !important;
 }
 
 /* ==========================================================================

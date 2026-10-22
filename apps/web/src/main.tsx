@@ -1808,7 +1808,7 @@ function App() {
           {/* Room Settings Modal */}
           {settingsModalOpen && (
             <Modal label="房间设置" scene="library" onClose={() => setSettingsModalOpen(false)}>
-              <div className="table-modal-sheet">
+              <div className="table-modal-sheet settings-sheet dedicated-settings-sheet">
                 <div className="table-modal-head">
                   <strong>本局房间设置</strong>
                   <button
@@ -1819,73 +1819,75 @@ function App() {
                     关闭
                   </button>
                 </div>
-                <p className="hint">
-                  {room.phase !== 'waiting'
-                    ? '对局进行中设置已锁定，结束后返回等待区可调整。'
-                    : host
-                      ? '修改玩法设置会清除准备状态，接纳开关不会。'
-                      : '由房主调整，所有玩家实时同步。'}
-                </p>
-                <div className="check">
-                  <Label.Root htmlFor="admission">允许新成员加入</Label.Root>
-                  <input
-                    id="admission"
-                    type="checkbox"
-                    disabled={!host || disabled || room.phase !== 'waiting'}
-                    checked={room.acceptingNewMembers}
-                    onChange={e =>
-                      command({
-                        type: 'setAdmission',
-                        payload: { acceptingNewMembers: e.target.checked },
-                      })
-                    }
-                  />
-                </div>
-                <fieldset disabled={!host || disabled || room.phase !== 'waiting'}>
-                  <legend className="sr-only">房间规则设置</legend>
-                  <SettingsFields settings={settings!} onChange={updateSettings} />
-                </fieldset>
-                {host && room.phase !== 'playing' && room.members.some(m => m.id !== user.id) && (
-                  <div className="settings-member-list">
-                    <strong>房间成员管理</strong>
-                    <div className="settings-member-rows">
-                      {room.members
-                        .filter(m => m.id !== user.id)
-                        .map(m => (
-                          <div key={m.id} className="settings-member-row">
-                            <span>
-                              {String(m.seat).padStart(2, '0')}号 · {m.nickname}
-                              {room.members.filter(x => x.nickname === m.nickname).length > 1 && m.playerCode ? ` #${m.playerCode.slice(-4)}` : ''}{' '}
-                              <small className="hint">({m.online ? '在线' : '离线'})</small>
-                            </span>
-                            <button
-                              type="button"
-                              className="seat-kick-btn"
-                              disabled={disabled}
-                              onClick={() => {
-                                setSettingsModalOpen(false);
-                                setKickTarget(m);
-                              }}
-                            >
-                              踢出房间
-                            </button>
-                          </div>
-                        ))}
-                    </div>
-                  </div>
-                )}
-                {room.phase === 'waiting' && (
-                  <details className="preset-details">
-                    <summary>常用设置 · 保存与应用</summary>
-                    <PresetsPanel
-                      currentSettings={settings!}
-                      disabled={disabled}
-                      canApply={!!host}
-                      onApply={s => command({ type: 'updateSettings', payload: s })}
+                <div className="settings-body">
+                  <p className="hint settings-hint">
+                    {room.phase !== 'waiting'
+                      ? '对局进行中设置已锁定，结束后返回等待区可调整。'
+                      : host
+                        ? '修改玩法设置会清除准备状态，接纳开关不会。'
+                        : '由房主调整，所有玩家实时同步。'}
+                  </p>
+                  <div className="check">
+                    <Label.Root htmlFor="admission">允许新成员加入</Label.Root>
+                    <input
+                      id="admission"
+                      type="checkbox"
+                      disabled={!host || disabled || room.phase !== 'waiting'}
+                      checked={room.acceptingNewMembers}
+                      onChange={e =>
+                        command({
+                          type: 'setAdmission',
+                          payload: { acceptingNewMembers: e.target.checked },
+                        })
+                      }
                     />
-                  </details>
-                )}
-                <button type="button" onClick={() => setSettingsModalOpen(false)}>返回法坛</button>
+                  </div>
+                  <fieldset disabled={!host || disabled || room.phase !== 'waiting'}>
+                    <legend className="sr-only">房间规则设置</legend>
+                    <SettingsFields settings={settings!} onChange={updateSettings} />
+                  </fieldset>
+                  {host && room.phase !== 'playing' && room.members.some(m => m.id !== user.id) && (
+                    <div className="settings-member-list">
+                      <strong>房间成员管理</strong>
+                      <div className="settings-member-rows">
+                        {room.members
+                          .filter(m => m.id !== user.id)
+                          .map(m => (
+                            <div key={m.id} className="settings-member-row">
+                              <span>
+                                {String(m.seat).padStart(2, '0')}号 · {m.nickname}
+                                {room.members.filter(x => x.nickname === m.nickname).length > 1 && m.playerCode ? ` #${m.playerCode.slice(-4)}` : ''}{' '}
+                                <small className="hint">({m.online ? '在线' : '离线'})</small>
+                              </span>
+                              <button
+                                type="button"
+                                className="seat-kick-btn"
+                                disabled={disabled}
+                                onClick={() => {
+                                  setSettingsModalOpen(false);
+                                  setKickTarget(m);
+                                }}
+                              >
+                                踢出房间
+                              </button>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  )}
+                  {room.phase === 'waiting' && (
+                    <details className="preset-details">
+                      <summary>常用设置 · 保存与应用</summary>
+                      <PresetsPanel
+                        currentSettings={settings!}
+                        disabled={disabled}
+                        canApply={!!host}
+                        onApply={s => command({ type: 'updateSettings', payload: s })}
+                      />
+                    </details>
+                  )}
+                </div>
+                <button type="button" className="return-table-btn" onClick={() => setSettingsModalOpen(false)}>返回法坛</button>
               </div>
             </Modal>
           )}
