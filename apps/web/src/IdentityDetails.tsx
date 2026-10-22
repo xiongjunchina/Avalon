@@ -6,6 +6,7 @@ import { PlayerToken } from './PlayerToken';
 import { getRoleGalleryItem } from './roles';
 import { RoleViewerModal } from './RoleViewerModal';
 import { TreasureModal } from './TreasureModal';
+import { roleDescriptions } from './GuidePanel';
 
 /** Only the server-projected, private self view is accepted. Never infer other roles. */
 export function IdentityDetails({
@@ -119,6 +120,14 @@ export function IdentityDetails({
         })}</div>}
         <p>{description}</p>
       </section>
+
+      {/* Role Strategy Tip */}
+      {roleDescriptions[self.role]?.tip && (
+        <div className="identity-tip-capsule" title="本角色的取经心法秘诀">
+          <span className="tip-capsule-badge">💡 玩法心法</span>
+          <p className="tip-capsule-text">{roleDescriptions[self.role].tip}</p>
+        </div>
+      )}
 
       {/* Unified Treasure Entry Button inside Identity Sheet */}
       <div className="identity-treasure-row">
