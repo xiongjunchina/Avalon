@@ -85,6 +85,24 @@ test('incoming direct chat appears in the open conversation', async () => {
   assert.ok(panel.model().rows.some(row => row.text.includes('你好')));
 });
 
+test('friend invitation uses the current room and clears its context from the entry page', async () => {
+  const calls: { path: string; body?: unknown }[] = [];
+  const api = { request: async (path: string, body?: unknown) => {
+    calls.push({ path, body });
+    if (path === '/friends') return { friends: [{ id: 'f', nickname: '仙友', status: 'accepted' }] };
+    return { messages: [] };
+  } } as any;
+  const panel = new PlayerPanel(new PlayerExtras(api), { id: 'u', nickname: '我' });
+  await panel.open('friends', { roomId: 'room-current' });
+  await panel.handle('friend:f', async () => undefined);
+  assert.ok(panel.model().rows.some(row => row.id === 'invite'));
+  await panel.handle('invite', async () => undefined);
+  assert.ok(calls.some(call => call.path === '/rooms/room-current/invite' && (call.body as { targetUserId?: string })?.targetUserId === 'f'));
+  await panel.open('friends');
+  await panel.handle('friend:f', async () => undefined);
+  assert.ok(!panel.model().rows.some(row => row.id === 'invite'));
+});
+
 test('account panel can save a cropped custom avatar from the mini game picker', async () => {
   let saved: unknown;
   const api = { request: async (path: string, body?: unknown) => {

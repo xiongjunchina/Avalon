@@ -211,6 +211,7 @@ async function select(id: string) {
     else if (id === 'settings') { editableSettings = { ...room.settings }; navigate('settings'); }
     else if (id === 'leave') lobby.leave();
     else if (id === 'share') { if (wx.shareAppMessage) wx.shareAppMessage({ title: `来嘻游 · 真假猴王房间 ${room.code} 一起论剑`, query: `invite=${encodeURIComponent(room.code)}` }); else { error = `请告知好友房间号 ${room.code}`; render(); } }
+    else if (id === 'friends' && playerPanel) return run(async () => { previousView = 'lobby'; await playerPanel!.open('friends', { roomId: room!.id }); navigate('player'); });
     else if (id.startsWith('member:') && room.hostId === user?.id && id.slice(7) !== user.id) {
       const targetId = id.slice(7), member = room.members.find(item => item.id === targetId);
       if (member) { pendingConfirm = { label: `移除 ${member.nickname}？`, execute: () => { if (room?.hostId === user?.id) lobby?.kick(targetId); } }; render(); }

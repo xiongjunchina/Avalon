@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { defaultSettings, type RoomView, type User } from '@avalon/contracts';
-import { LobbyController } from '../src/screens/lobby.js';
+import { LobbyController, lobbyScreen } from '../src/screens/lobby.js';
 import { settingsScreen, toggleSetting } from '../src/screens/settings.js';
 
 const user = { id: '11111111-1111-4111-8111-111111111111', nickname: '玩家' } as User;
@@ -40,4 +40,8 @@ test('all web room settings are offered and toggleable', () => {
     assert.ok(rows.some(row => row.id === key), key);
     assert.notDeepEqual(toggleSetting(defaultSettings, key), defaultSettings, key);
   }
+});
+
+test('room exposes the existing friend invitation flow', () => {
+  assert.ok(lobbyScreen(room, user).rows.some(row => row.id === 'friends'));
 });

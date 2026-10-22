@@ -37,7 +37,8 @@ export class PlayerPanel {
   }
   async open(page: Page, options: { roomId?: string; settings?: Settings; canApplyPreset?: boolean } = {}): Promise<void> {
     this.page = page;
-    this.roomId = options.roomId ?? this.roomId;
+    if (page === 'friends' || page === 'account') this.roomId = options.roomId;
+    else if (options.roomId !== undefined) this.roomId = options.roomId;
     this.roomSettings = options.settings ?? this.roomSettings;
     this.canApplyPreset = options.canApplyPreset ?? this.canApplyPreset;
     if (page === 'stats') this.stats = await this.api.statistics();
@@ -97,8 +98,8 @@ export class PlayerPanel {
   async handle(id: string, input: Input): Promise<'back' | void> {
     if (id === 'back') return 'back';
     if (id === 'confirm:no') { this.pending = undefined; return; }
-    if (id === 'confirm:yes' && this.pending) { const action = this.pending.action; this.pending = undefined; await action(); await this.open(this.page === 'direct' ? 'friends' : this.page); return; }
-    if (id.startsWith('page:')) { await this.open(id.slice(5) as Page); return; }
+    if (id === 'confirm:yes' && this.pending) { const action = this.pending.action; this.pending = undefined; await action(); await this.open(this.page === 'direct' ? 'friends' : this.page, { roomId: this.roomId }); return; }
+    if (id.startsWith('page:')) { await this.open(id.slice(5) as Page, { roomId: this.roomId }); return; }
     if (id === 'nickname') { const nickname = await input('新昵称', 20); if (nickname) this.user = (await this.api.updateProfile({ nickname, avatar: this.user.avatar ?? 'leaf', avatarUrl: this.user.avatarUrl ?? null, wechatAvatarUrl: this.user.wechatAvatarUrl ?? null })).user; return; }
     if (id === 'avatar') { const next = avatarOrder[(avatarOrder.indexOf(this.user.avatar ?? 'leaf') + 1) % avatarOrder.length]!; this.user = (await this.api.updateProfile({ nickname: this.user.nickname, avatar: next, avatarUrl: null, wechatAvatarUrl: null })).user; return; }
     if (id === 'uploadAvatar') { if (!this.avatarPicker) throw new Error('当前微信版本不支持上传头像'); const avatarUrl = await this.avatarPicker(); this.user = (await this.api.updateProfile({ nickname: this.user.nickname, avatar: this.user.avatar ?? 'leaf', avatarUrl, wechatAvatarUrl: null })).user; return; }
@@ -109,10 +110,10 @@ export class PlayerPanel {
     if (id === 'save' && this.roomSettings) { const name = await input('预设名称', 24); if (name) { await this.api.savePreset(name, this.roomSettings); await this.open('presets'); } return; }
     if (id.startsWith('apply:')) { const preset = this.presets.find(item => item.id === id.slice(6)); if (preset && this.canApplyPreset) this.appliedSettings = preset.settings; return; }
     if (id.startsWith('delete:')) { const preset = this.presets.find(item => item.id === id.slice(7)); if (preset) this.pending = { label: `删除预设 ${preset.name}？`, action: () => this.api.deletePreset(preset.id) }; return; }
-    if (id === 'add') { const query = await input('仙友码或昵称', 50); if (query) { await this.api.requestFriend(query); await this.open('friends'); } return; }
+    if (id === 'add') { const query = await input('仙友码或昵称', 50); if (query) { await this.api.requestFriend(query); await this.open('friends', { roomId: this.roomId }); } return; }
     if (id.startsWith('friend:')) { this.selectedFriend = this.friends.find(friend => friend.id === id.slice(7)); if (this.selectedFriend) { this.direct = (await this.api.directChat(this.selectedFriend.id)).messages; this.page = 'direct'; } return; }
     if (id === 'send' && this.selectedFriend) { const text = await input('私聊消息', 500); if (text) { await this.api.sendDirect(this.selectedFriend.id, text); this.direct = (await this.api.directChat(this.selectedFriend.id)).messages; } return; }
-    if (id === 'accept' && this.selectedFriend) { await this.api.acceptFriend(this.selectedFriend.id); await this.open('friends'); return; }
+    if (id === 'accept' && this.selectedFriend) { await this.api.acceptFriend(this.selectedFriend.id); await this.open('friends', { roomId: this.roomId }); return; }
     if (id === 'invite' && this.selectedFriend && this.roomId) { await this.api.invite(this.roomId, this.selectedFriend.id); return; }
     if (id === 'remove' && this.selectedFriend) { const friend = this.selectedFriend; this.pending = { label: `删除仙友 ${friend.nickname}？`, action: () => this.api.removeFriend(friend.id) }; return; }
     if (id === 'sendroom' && this.roomId) { const text = await input('房间消息', 200); if (text) await this.api.roomChat(this.roomId, text); }
