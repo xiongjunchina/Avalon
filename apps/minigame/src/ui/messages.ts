@@ -1,6 +1,18 @@
 import { errors } from '../../../web/src/api.js';
 
 const miniGameErrors: Record<string, string> = {
+  WECHAT_LOGIN_FAILED: '微信身份验证未完成，请重新登录或先体验单人演练。',
+  WECHAT_LOGIN_TIMEOUT: '微信身份验证超时，请检查网络后重新登录。',
+  WECHAT_LOGIN_CANCELLED: '已取消微信身份验证，可重新登录或体验单人演练。',
+  NETWORK: '暂时无法连接游戏服务。请检查网络，或先体验单人演练。',
+  NETWORK_DOMAIN: '连接地址未通过微信域名校验，请联系管理员检查域名及端口配置。',
+  NETWORK_TLS: '安全连接失败，请联系管理员检查 HTTPS 证书和服务入口。',
+  NETWORK_RESPONSE: '游戏服务返回了非接口页面，请联系管理员检查备案接入和网关。',
+  WECHAT_UNAVAILABLE: '微信登录服务暂不可用，请联系管理员检查服务配置，或先体验单人演练。',
+  WECHAT_CODE_INVALID: '微信登录凭证已过期，请重新点击登录。',
+  HTTP_404: '当前服务入口没有这个接口，请联系管理员检查后端版本。',
+  HTTP_502: '游戏服务暂未就绪，请稍后重试。',
+  HTTP_503: '游戏服务暂不可用，请稍后重试。',
   UNAUTHENTICATED: '登录已失效，请返回首页重新微信登录。',
   NETWORK_TIMEOUT: '请求超时，请检查网络后重试。',
   ACK_PENDING: '正在确认操作结果，重连后将自动同步，请稍候。',

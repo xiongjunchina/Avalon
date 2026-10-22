@@ -48,7 +48,7 @@ try {
         if (scene === 'guest') model = app.entryScreen();
         if (scene === 'setup') model = { ...app.settingsScreen(app.defaultSettings), web: { page: 'setup', settings: app.defaultSettings } };
         if (scene === 'entry') model = { ...app.entryScreen(user), scene: 'entry' };
-        if (scene === 'lobby') model = { ...app.lobbyScreen(room, user, '已连接'), scene: 'game' };
+        if (scene === 'lobby') model = { ...app.lobbyScreen({...parityRoom,game:undefined,phase:'waiting'}, user, '已连接'), scene: 'game' };
         if (['game','identity','vote','vote-submitted','mission','mission-submitted','report','result','art','treasures','battle'].includes(scene)) {
           const overlay=['identity','art','treasures'].includes(scene)?scene:scene.startsWith('vote')?'vote':scene==='report'?'report':scene==='battle'?'history':undefined;
           model=app.gameScreen(parityRoom,user,{privateRoleVisible:['identity','art','treasures'].includes(scene),ballotVisible:false,overlay,reportMission:1,overlayReturn:scene==='art'?'identity':undefined});

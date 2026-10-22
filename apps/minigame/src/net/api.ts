@@ -2,6 +2,14 @@ import type { User } from '@avalon/contracts';
 import type { WechatPlatform } from '../platform/wechat.js';
 import { MiniGameSession } from './session.js';
 
+export function networkCode(error: unknown): string {
+  const message = error && typeof error === 'object' && 'errMsg' in error ? String(error.errMsg) : '';
+  if (/not in domain list|url not in|合法域名/i.test(message)) return 'NETWORK_DOMAIN';
+  if (/ssl|tls|certificate|hand.?shake/i.test(message)) return 'NETWORK_TLS';
+  if (/timeout|timed out/i.test(message)) return 'NETWORK_TIMEOUT';
+  return 'NETWORK';
+}
+
 export class MiniGameApi {
   readonly session: MiniGameSession;
   constructor(
@@ -36,9 +44,11 @@ export class MiniGameApi {
             const error = response.data && typeof response.data === 'object' && 'error' in response.data
               ? String(response.data.error) : `HTTP_${response.statusCode}`;
             reject(new Error(error));
+          } else if (typeof response.data === 'string' || response.data == null) {
+            reject(new Error('NETWORK_RESPONSE'));
           } else resolve(response.data as T);
         }),
-        fail: () => finish(() => reject(new Error('NETWORK'))),
+        fail: cause => finish(() => reject(new Error(networkCode(cause)))),
       });
     });
   }

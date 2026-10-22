@@ -1,6 +1,6 @@
 import type { Artwork } from './assets.js';
 import { hitTest, wrapText, type HitRegion, type SafeViewport } from './layout.js';
-import { layoutWebScreen, type WebNode } from './web-layout.js';
+import { layoutWebScreen, type WebNode, type WebLayout } from './web-layout.js';
 import type { ScreenModel } from './widgets.js';
 
 // Matches apps/web/src/scenes.css (Scheme A-2). No alternate Mini Game visual theme.
@@ -149,6 +149,7 @@ function drawDocumentNode(ctx:CanvasRenderingContext2D,n:WebNode,model:ScreenMod
     write(success?'🪷':'🔥',cx,n.y+20,n.width-10,22);write(n.text,cx,n.y+45,n.width-10,15,'center',display,'700',success?'#7ee7cf':'#fca5a5');write(n.detail??'',cx,n.y+64,n.width-8,10.5,'center',sans,'400','#eddcc4');write(n.selected?'✓ 已选中':'点击选择',cx,n.y+88,n.width-10,10.5,'center',sans,'700','#eddcc4');return;
   }
   if(n.skin==='count'){ctx.save();if(n.selected)shadow(ctx,'#5ef2ffaa',12,0);circle(ctx,cx,cy,Math.min(n.width,n.height)/2-1,n.selected?'#246d7b':'#17354b',n.selected?'#b5ffff':'#d0be8d');ctx.restore();write(n.text,cx,cy,n.width-5,n.fontSize??18,'center',display,'700');return;}
+  if(n.skin==='setup-mode') {fill(ctx,n,gradient(ctx,n,n.selected?['#235467','#123440']:['#191c27','#111520']),16,'#d4a359');const [title,sub]=n.text.split('\n');write(title??'',cx,n.y+17,n.width-12,13.5,'center',sans,'700',n.selected?'#ffd54f':'#b8a99b');write(sub??'',cx,n.y+36,n.width-10,10.5,'center',sans,'400','#b5cddd');return;}
   if(n.skin==='setup-role'){fill(ctx,n,gradient(ctx,n,n.team==='blue'?['#102a4b','#204bae']:['#4b1015','#9c1720']),12,n.team==='blue'?'#488eff':'#d63249');image(n.image,n.x+2,n.y+2,n.width-4,n.height-72);const lines=wrapText(n.text,n.width-10,t=>Array.from(t).length*14);lines.forEach((line,i)=>write(line,cx,n.y+n.height-52+i*18,n.width-8,14,'center',sans,'700'));write(n.detail??'',cx,n.y+n.height-16,n.width-8,11,'center',display,'400');if(n.badge)write(n.badge,n.x+n.width-10,n.y+n.height-40,20,10);return;}
   if(n.skin==='identity-card') {
     fill(ctx,n,gradient(ctx,n,['#102b43e0','#081826f5']),14,n.team==='blue'?'#52b0ff88':'#ff5e5788');
@@ -162,6 +163,18 @@ function drawDocumentNode(ctx:CanvasRenderingContext2D,n:WebNode,model:ScreenMod
     write(motto??'',tx,n.y+72,tw,10.5,'left',sans,'400','#cbdbe8');
     write('🔍 点击赏析高清大图',tx,n.y+93,tw,10,'left',sans,'400','#ffd875');return;
   }
+  if(n.skin==='waiting-seat') {
+    const d=Math.min(54,n.width*.48),py=n.y+25;
+    if(n.image){ctx.save();if(n.selected)shadow(ctx,'#ffd875',13,0);circle(ctx,cx,py+d/2,d/2+2,'#2b0c0a','#e5b964');ctx.restore();
+      if(n.image.startsWith('emblems/'))art(ctx,artwork,n.image.slice(8,-4),cx-14,py+d/2-14,28,28);else image(n.image,cx-d/2,py,d,d,true);
+    } else {circle(ctx,cx,py+d/2,d/2,'#16344e55','#d4a35966');write('+',cx,py+d/2,40,25);}
+    if(n.badge){fill(ctx,{...n,x:cx-24,y:n.y+7,width:48,height:17},n.badge==='房主'?'#ffd875':'#9b3434',7,'#d4a359');write(n.badge,cx,n.y+16,46,10,'center',sans,'600',n.badge==='房主'?'#392012':'#fff');}
+    fill(ctx,{...n,x:n.x+12,y:py+d+10,width:n.width-24,height:23},'#2b0c0a',10,'#d4a35977');write(n.text,cx,py+d+22,n.width-28,12,'center',display,'600',n.selfPlayer?'#ffd875':'#fff3d6');
+    if(n.selected)fill(ctx,{...n,x:cx-34,y:py+d+36,width:68,height:20},'#0eaa75',10,'#b1ffe0');
+    write(n.detail??'',cx,py+d+46,n.width-12,12,'center',sans,'600',n.selected?'#fff':'#ead8b8');return;
+  }
+  if(n.skin==='waiting-option'){fill(ctx,n,'#15334caa',8,'#d4a35988');write(n.text,cx,n.y+14,n.width-8,12,'center',sans,'400','#ede2cb');write(n.detail??'',cx,n.y+32,n.width-8,10,'center',sans,'600','#ffd875');return;}
+  if(n.skin==='waiting-primary'){fill(ctx,n,gradient(ctx,n,n.selected?['#294c59','#17323c']:['#258298','#155366']),16,'#dec895');write(n.text,cx,cy,n.width-12,13,'center',display,'600','#fff1ce');return;}
   if(n.skin==='token'||n.skin==='avatar'||n.skin==='avatar-choice') {
     if(n.skin==='avatar-choice'){box('button');art(ctx,artwork,n.text,n.x+8,n.y+8,n.width-16,n.height-16);return;}
     const party=n.detail?.startsWith('出征'),diameter=n.skin==='avatar'?Math.min(n.width,n.height):party?36:Math.min(38,n.width-10),px=cx-diameter/2,py=party?n.y+26:n.y+1;
@@ -193,13 +206,15 @@ function drawDocumentNode(ctx:CanvasRenderingContext2D,n:WebNode,model:ScreenMod
   if(n.skin==='message'){box(n.selected?'captain-banner':'message');write(n.detail??'',n.x+10,n.y+13,n.width-20,10,'left',sans,'400','#d4a359');(n.lines??[n.text]).forEach((line,i)=>write(line,n.x+10,n.y+34+i*20,n.width-20,13,'left',sans));return;}
   if(n.kind==='panel'){box();return;}
   if(n.kind==='button'||n.kind==='tab'||n.kind==='choice'){
-    ctx.save();ctx.globalAlpha=n.disabled?.58:1;box(n.skin==='tab'&&n.selected?'captain-banner':n.skin);
+    ctx.save();ctx.globalAlpha=n.disabled?.58:1;if(n.skin==='account-tab'){if(n.selected)fill(ctx,n,'#27657b',24,'transparent');}else box(n.skin==='tab'&&n.selected?'captain-banner':n.skin);
     if(n.skin==='setting'){write(n.text,n.x+12,cy,n.width-64,13,'left',sans);fill(ctx,{...n,x:n.x+n.width-40,y:cy-10,width:24,height:20},n.selected?'#249c8d':'#12283b',4,n.selected?'#7dd3b4':'#d4a35966');if(n.selected)write('✓',n.x+n.width-28,cy,20,15,'center',sans,'700');}
+    else if(n.skin==='profile-toggle'){write(n.text,n.x+14,cy,n.width-28,15,'left',sans,'400','#fbe1ad');}
+    else if(n.skin==='account-tab'){write(n.text,cx,cy,n.width-8,13,'center',sans,n.selected?'700':'500',n.selected?'#e5fbff':'#eddcc4');}
     else if(n.skin==='accordion'){write(n.text,n.x+12,cy,n.width-30,12,'left',display,'700','#ffd875');if(n.detail)write(n.detail,n.x+n.width-8,n.y+n.height-12,n.width-20,10,'right',sans,'400','#d4a359');}
     else {
       const gold=n.skin==='gold-button'||n.skin==='cyan-button',input=n.skin==='input',lines=n.lines??wrapText(n.text,n.width-20,t=>Array.from(t).length*(n.fontSize??13));
       if(n.skin==='dragon-button'){art(ctx,artwork,'cloud-left',n.x+8,cy-7,24,14);art(ctx,artwork,'cloud-right',n.x+n.width-32,cy-7,24,14);}
-      lines.forEach((line,i)=>write(line,input?n.x+12:cx,cy+(i-(lines.length-1)/2)*(n.fontSize??13)*1.4,n.width-(input?24:16),n.fontSize??13,input?'left':'center',family,'700',gold?'#1e0908':color));
+      lines.forEach((line,i)=>write(line,input?n.x+12:cx,cy+(i-(lines.length-1)/2)*(n.fontSize??13)*1.4,n.width-(input?24:16),n.fontSize??13,input?'left':'center',family,n.weight??(gold?'500':'500'),gold?'#1e0908':color));
     }
     ctx.restore();return;
   }
@@ -284,7 +299,7 @@ function drawNode(ctx: CanvasRenderingContext2D, n: WebNode, model: ScreenModel,
     } else if(n.id==='mode-frame') fill(ctx,n,'rgba(15,25,31,.88)',24,'#d4a35966');
     else {shadow(ctx,'rgba(0,0,0,.75)',22,n.id==='action-dock'?-8:3);fill(ctx,n,gradient(ctx,n,['rgba(58,20,18,.96)','rgba(28,9,8,.98)']),n.id==='action-dock'?26:18,n.id==='action-dock'?'#e5b964':'#e5b96488');}
     ctx.restore();
-    if(n.id==='action-dock'){
+    if(n.id==='action-dock'&&model.web?.room?.game){
       edge(ctx,n,26);
       const dw=clamp(70,n.width*.18,105),dh=clamp(38,n.width*.1,58);
       art(ctx,artwork,'dragon-left',n.x-4,n.y+n.height-dh,dw,dh);art(ctx,artwork,'dragon-right',n.x+n.width-dw+4,n.y+n.height-dh,dw,dh);
@@ -301,7 +316,7 @@ function drawNode(ctx: CanvasRenderingContext2D, n: WebNode, model: ScreenModel,
       const g=ctx.createLinearGradient(n.x,n.y,n.x+n.width,n.y);for(const [p,c] of [[0,'transparent'],[.15,'#5f1816eb'],[.5,'#87221ef7'],[.85,'#5f1816eb'],[1,'transparent']] as const)g.addColorStop(p,c);
       ctx.fillStyle=g;ctx.fillRect(n.x,n.y,n.width,n.height);rule(ctx,n,'#ffd875');rule(ctx,{...n,y:n.y+n.height},'#ffd875');
       art(ctx,artwork,'cloud-left',n.x+3,n.y+9,26,14);art(ctx,artwork,'cloud-right',n.x+n.width-29,n.y+9,26,14);
-      text(ctx,n.text,cx,cy,n.width-48,clamp(12.5,(n.width+20)*.034,15),'#fff4d6','center',calligraphy,'700');
+      text(ctx,n.text,cx,cy,n.width-48,model.web?.room&&!model.web.room.game?21:clamp(12.5,(n.width+20)*.034,15),'#fff4d6','center',calligraphy,'700');
     } else if(n.id==='free-access') {
       ctx.save();shadow(ctx,'#ffd87566',12,0);fill(ctx,n,gradient(ctx,n,['#a81e18f0','#780f0cfa']),14,'#ffd875');ctx.restore();
       text(ctx,n.text,cx,cy,n.width-20,clamp(11.5,(n.width-45.1)/16.49,13),'#fff9e6','center',sans,'700',.8);
@@ -347,7 +362,7 @@ function drawNode(ctx: CanvasRenderingContext2D, n: WebNode, model: ScreenModel,
   }
 }
 
-export function renderWebScreen(model: ScreenModel, canvas: HTMLCanvasElement, v: SafeViewport, artwork?: Artwork): HitRegion[] {
+export function renderWebScreen(model: ScreenModel, canvas: HTMLCanvasElement, v: SafeViewport, artwork?: Artwork, preparedLayout?: WebLayout): HitRegion[] {
   const ctx = canvas.getContext('2d'); if (!ctx) throw new Error('Canvas 2D is unavailable');
   const modal=model.web!.document?.modal;
   if(modal){
@@ -364,8 +379,10 @@ export function renderWebScreen(model: ScreenModel, canvas: HTMLCanvasElement, v
     ctx.drawImage(bg as CanvasImageSource, (v.width - bg.width * scale) / 2, (v.height - bg.height * scale) * (scene==='gate'?.46:scene==='sword'?.4:scene==='pavilion'?.55:.5), bg.width * scale, bg.height * scale);ctx.restore();
   }
   // Web scene is shown at full opacity; do not add an extra Mini Game dark veil.
-  const layout = layoutWebScreen(model, v);
+  const layout = preparedLayout ?? layoutWebScreen(model, v);
   for (const node of [...layout.nodes.filter(item => item.fixed && item.kind === 'panel'), ...layout.nodes.filter(item => !item.fixed), ...layout.nodes.filter(item => item.fixed && item.kind !== 'panel')]) {
+    // Clipping alone still issues all text/image draw calls for long documents.
+    if (node.y + node.height < (node.clipTop ?? v.top) - 24 || node.y > (node.clipBottom ?? v.height-v.bottom) + 24) continue;
     ctx.save();
     if (!node.fixed) { ctx.beginPath(); ctx.rect(0, node.clipTop ?? layout.contentTop, v.width, (node.clipBottom ?? layout.contentBottom) - (node.clipTop ?? layout.contentTop)); ctx.clip(); }
     drawNode(ctx, node, model, artwork); ctx.restore();

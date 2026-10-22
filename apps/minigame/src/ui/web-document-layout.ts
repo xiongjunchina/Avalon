@@ -30,7 +30,7 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
   const heading=(id:string,text:string)=>{const lines=wrapText(text,w-16,t=>measure(t,17)),h=Math.max(30,lines.length*25.5);add('label',id,text,x,y,w,h,{skin:'section-title',fontSize:17,fontFace:'display',align:'center',tone:'gold',lines,lineHeight:25.5});y+=h+8;};
   const token=(id:string,p:Player,px:number,py:number,pw:number,ph=72,badge?:string)=>add('portrait',id,p.nickname,px,py,pw,ph,{skin:'token',image:p.avatarUrl??p.wechatAvatarUrl??'emblems/'+(p.avatar??'cards')+'.png',count:p.seat,detail:badge});
   const rowButtons=(items:{id:string;text:string;primary?:boolean;disabled?:boolean}[],py:number,ph=42)=>items.forEach((item,i)=>button(item.id,item.text,py,{primary:item.primary,disabled:item.disabled},x+i*(w+8)/items.length,(w-8*(items.length-1))/items.length,ph));
-  const feedback=model.rows.filter(r=>r.id==='error'||!['vote','identity','report','history','confirm'].includes(doc.kind)&&['notice','announcement'].includes(r.id));
+  const feedback=model.rows.filter(r=>['status','error'].includes(r.id)||!['vote','identity','report','history','confirm'].includes(doc.kind)&&['notice','announcement'].includes(r.id));
   const modalHeader=(title:string,subtitle?:string)=>{
     headerH=subtitle?51.9:39;
     add('label','dialog-title',title,x,y,w-96,subtitle?18:32,{fontSize:subtitle?11:17,fontFace:'display',tone:'gold',align:'left',fixed:true});
@@ -108,11 +108,11 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
       const user=doc.user!;panel('account-profile',y,208,'profile');
       add('portrait','account-avatar',user.nickname,x+16,y+30,84,84,{skin:'avatar',image:user.avatarUrl??user.wechatAvatarUrl??'emblems/'+(user.avatar??'leaf')+'.png'});
       txt('account-kicker','嘻游 · 真假猴王 / 个人中心',y+17,10,{tone:'gold'},x+108,w-120);
-      txt('account-name',user.nickname,y+43,28,{fontFace:'display'},x+108,w-120);
-      button('copyCode','#'+(user.playerCode??'')+' 📋 复制',y+50,{skin:'code-badge',fontSize:11},x+176,Math.max(95,w-192),24);
+      add('label','account-name',user.nickname,x+108,y+43,68,38,{skin:'text',fontSize:28,fontFace:'display',lines:[user.nickname],lineHeight:38,align:'left'});
+      button('copyCode','#'+(user.playerCode??'')+' 📋 复制',y+50,{skin:'code-badge',fontSize:11},x+176,Math.max(90,w-208),24);
       txt('account-help','专属仙友码全局唯一 · 微信小程序静默对应 · 换号凭此码随时找回战绩',y+89,11.5,{},x+108,w-120);
       button('switch','🚪 更换身份',y+145,{skin:'pill'},x+16,116,48);button('back','返回原页面',y+145,{skin:'pill'},x+140,108,48);y+=222;
-      button('profileToggle',(doc.profileEditing?'▼':'▶')+' 修仙功果与仙位资料',y,{skin:'profile-toggle',fontSize:15},x,w,65);y+=67;
+      button('profileToggle',(doc.profileEditing?'▼':'▶')+' 修仙功果与仙位资料',y,{skin:'profile-toggle',fontSize:15},x,w,65);y+=78;
       if(doc.profileEditing){
         para('vip',user.isVip?'⭐ 尊享 VIP 仙友 · 有效期至 '+(user.vipUntil??''):'🎉 公测全员畅玩阶段\n全员零门槛免费畅享战绩复盘与高级板子！',13);
         button('redeem','输入 VIP 授权兑换码 · 核销兑换',y,{skin:'input'});y+=50;
@@ -124,7 +124,7 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
       }
       button('sound','▶ 声音设置',y,{skin:'profile-toggle',fontSize:15},x,w,67);y+=85;
       const tabs=[['stats','我的战绩'],['history','历史对局'],['favorites','我的收藏'],['presets','常用设置']];
-      panel('account-tab-frame',y,56,'tabs');tabs.forEach(([id,text],i)=>button('page:'+id,text!,y+4,{skin:'tab',selected:id===doc.activeTab,fontSize:13},x+4+i*(w-8)/4,(w-8)/4,48));y+=64;
+      panel('account-tab-frame',y,56,'tabs');tabs.forEach(([id,text],i)=>button('page:'+id,text!,y+4,{skin:'account-tab',selected:id===doc.activeTab,fontSize:13},x+4+i*(w-8)/4,(w-8)/4,48));y+=64;
       if(doc.kind==='presets') {
         para('preset-hint','最多 10 个；同名保存会更新原预设。只保存玩法，不包含房间、成员或接纳开关。',13);
         button('preset:name',doc.presetName||'预设名称，例如：七人宝镜局',y,{skin:'input'});y+=50;
@@ -146,8 +146,10 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
         heading('role-heading','角色战绩');
         Object.entries(roleNames).forEach(([role,name],i)=>{scoreCard('role:'+role,name,s.byRole[role as Role],x+(i%2)*(w+8)/2,y+Math.floor(i/2)*198,(w-8)/2,'roles/'+role+'-160.webp',teamOf(role as Role));});y+=Math.ceil(Object.keys(roleNames).length/2)*198;
       }
+      if(model.rows.some(r=>r.id==='admin')){button('admin','管理员入口',y,{skin:'pill'});y+=52;}
     } else if(doc.kind==='friends') {
       modalHeader('仙友录 · 召集与好友');
+      button('refresh:friends','刷新仙友与申请',y,{skin:'pill'},x,w,32);y+=40;
       const tabs=[['invite','房间召集'],['friends','我的仙友'],['add','添加仙友']];tabs.forEach(([id,text],i)=>button('friendTab:'+id,text!,y,{skin:'tab',selected:doc.friendTab===id},x+i*(w+6)/3,(w-12)/3,40));y+=54;
       if(doc.friendTab==='invite') {
         if(doc.roomCode){heading('invite-title','邀请仙友 · 同入法坛');para('invite-room','房间号：'+doc.roomCode,24);rowButtons([{id:'copyRoom',text:'复制邀请链接'},{id:'share',text:'微信分享房间'}],y);y+=54;}
@@ -160,7 +162,9 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
           txt('friend-group:'+key,label+'（'+list.length+'）',y,13,{tone:'gold'});y+=30;
           for(const friend of list){add('label','friend-card:'+friend.id,friend.nickname,x,y,w,84,{skin:'friend-card',image:friend.avatarUrl??'emblems/'+(friend.avatar??'cards')+'.png',detail:friend.status==='pending'?'申请与你结为仙友':friend.online?'大厅闲逛':'离线',badge:friend.playerCode});
             if(key==='incoming')button('acceptFriend:'+friend.id,'结为仙友',y+22,{skin:'gold-button'},x+w-92,80,44);
-            else if(key==='accepted'){button('friend:'+friend.id,'✉ 密札',y+22,{skin:'cyan-button'},x+w-130,76,44);button('removeFriend:'+friend.id,'×',y+22,{skin:'pill',tone:'red'},x+w-48,38,44);}y+=96;
+            else if(key==='accepted'){button('friend:'+friend.id,'✉ 密札',y+22,{skin:'cyan-button'},x+w-130,76,44);button('removeFriend:'+friend.id,'×',y+22,{skin:'pill',tone:'red'},x+w-48,38,44);}
+            if(key==='accepted'&&doc.canInvite){button('inviteFriend:'+friend.id,'邀请加入当前房间',y+88,{skin:'cyan-button'},x,w,36);y+=40;}
+            y+=96;
           }y+=8;
         }
         if(!doc.friends?.length)para('empty','还没有仙友，前往「添加仙友」发送申请吧。');
@@ -192,8 +196,8 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
       else webGuideRules.forEach((block,i)=>{if(block.heading)heading('guide-rule:'+i,block.text);else para('guide-rule:'+i,block.text,13);});
     } else if(doc.kind==='settings') {
       if(doc.activeTab==='setup'&&doc.settings){
-        y=12;button('cancelSettings','❮',y,{skin:'pill'},16,38,38);add('label','setup-title','🏛 开启常规房',70,y,w-95,40,{skin:'text',fontSize:25,fontFace:'display',tone:'gold',align:'center'});y=74;
-        button('noop','🏛 线下常规房\n同桌聚会 · 面杀无语音',y,{skin:'tab',selected:true},16,(v.width-42)/2,52);button('noop','🎙️ 远端语音房\n本轮暂不提供',y,{skin:'tab',disabled:true},26+(v.width-42)/2,(v.width-42)/2,52);y=143;
+        y=12;button('cancelSettings','❮',y,{skin:'pill'},16,38,38);button('sound','♫',y,{skin:'pill'},v.width-94,32,32);button('guide','规则',y,{skin:'pill'},v.width-56,40,32);add('label','setup-title','🏛 开启常规房',62,y,v.width-162,40,{skin:'text',fontSize:22,fontFace:'display',tone:'gold',align:'center'});y=74;
+        button('noop','🏛 线下常规房\n同桌聚会 · 面杀无语音',y,{skin:'setup-mode',selected:true},16,(v.width-42)/2,52);button('noop','🎙️ 远端语音房\n本轮暂不提供',y,{skin:'setup-mode',disabled:true},26+(v.width-42)/2,(v.width-42)/2,52);y=143;
         panel('setup-count-frame',y,120,'profile',53,v.width-106);
         for(let count=5;count<=12;count++)button('count:'+count,String(count),y+10+Math.floor((count-5)/4)*56,{skin:'count',selected:doc.settings.playerCount===count,fontSize:18},70+(count-5)%4*(v.width-140)/4,(v.width-160)/4,48);y+=135;
         for(const team of ['blue','red'] as const){

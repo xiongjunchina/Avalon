@@ -1,3 +1,4 @@
+import { networkCode } from '../../net/api.js';
 import type { AdminGameSummary, AdminOverview, AdminRoomSummary, AdminUserSummary, RedemptionCodeItem, Replay } from '@avalon/contracts';
 import type { WechatPlatform } from '../../platform/wechat.js';
 
@@ -20,9 +21,10 @@ export class AdminApi {
           finish(() => {
             if (response.statusCode === 401 || response.statusCode === 403) { this.clear(); reject(new Error('ADMIN_UNAUTHORIZED')); return; }
             if (response.statusCode < 200 || response.statusCode >= 300) { reject(new Error(String((response.data as { error?: string })?.error ?? `HTTP_${response.statusCode}`))); return; }
+            if (typeof response.data === 'string' || response.data == null) { reject(new Error('NETWORK_RESPONSE')); return; }
             resolve(response.data as T);
           });
-        }, fail: () => finish(() => reject(new Error('NETWORK'))),
+        }, fail: cause => finish(() => reject(new Error(networkCode(cause)))),
       });
     });
   }

@@ -1,3 +1,4 @@
+import { attachTouchNavigation } from './ui/touch.js';
 import { defaultSettings, defaultAnonymousTeamVote, type RoomView, type Settings, type User } from '@avalon/contracts';
 import { WechatPlatform, type WxRuntime } from './platform/wechat.js';
 import { MiniGameApi } from './net/api.js';
@@ -77,7 +78,7 @@ let authMode: 'create' | 'switch' = 'create';
 let auxiliary: 'roomTools' | 'practiceSeats' | 'sound' | 'switchAccount' | 'join' | undefined;
 let joinKey = '';
 let reminderDismissed = '';
-let guideReturn: 'entry' | 'lobby' | 'game' | 'practice' = 'entry';
+let guideReturn: 'entry' | 'lobby' | 'game' | 'practice' | 'settings' = 'entry';
 let freeAccess = true;
 let setupIntent: 'room' | 'practice' = 'room';
 let editableSettings: Settings = { ...defaultSettings, captainMode: 'random_order', anonymousTeamVote: true, earlyAssassinationEnabled: true };
@@ -147,8 +148,9 @@ function render() {
   clearTimeout(countdownTimer);
   sound.update(view === 'practice' ? practice?.view().game : view === 'game' ? room?.game : undefined, !suspended && (view === 'practice' || view === 'game' && connectionStatus === '已连接'));
   const current = model();
-  scroll = current.web ? Math.max(0, Math.min(scroll, layoutWebScreen(current, viewport).maxScroll)) : clampScroll(current.rows, viewport, scroll, current.scene);
-  rows = renderScreen({ ...current, scroll }, canvas, viewport, artwork);
+  const layout = current.web ? layoutWebScreen(current, viewport) : undefined;
+  scroll = layout ? Math.max(0, Math.min(scroll, layout.maxScroll)) : clampScroll(current.rows, viewport, scroll, current.scene);
+  rows = renderScreen({ ...current, scroll }, canvas, viewport, artwork, layout);
   if (!suspended && view === 'entry' && user) countdownTimer = setTimeout(() => { roleIndex++; render(); }, 3_800);
   else if (!suspended && view === 'game' && room?.game?.phase === 'dealing') countdownTimer = setTimeout(render, 1_000);
 }
@@ -225,7 +227,7 @@ async function select(id: string) {
   if (id === 'joinSubmit' && lobby) return run(async () => { const encoded = /(?:\?|&)invite=([^&#]+)/.exec(joinKey)?.[1]; const key = encoded ? decodeURIComponent(encoded) : joinKey.trim(); if (!key) throw new Error('请输入房间号或邀请链接'); connect(await lobby!.join(key)); });
   if (id === 'practiceSeats' && practice) { auxiliary = 'practiceSeats'; scroll = 0; render(); return; }
   if (id.startsWith('practiceSeat:') && practice) { practice.switchSeat(id.slice(13)); hideSensitiveView(gameUi); gameUi.snapshotKey = undefined; syncGameUi(gameUi, practice.view(), false, practice.user.id); auxiliary = undefined; scroll = 0; render(); return; }
-  if ((view === 'game' || view === 'practice') && id === 'guide') { guideReturn = view; navigate('guide'); return; }
+  if ((view === 'game' || view === 'practice' || view === 'lobby' || view === 'settings') && id === 'guide') { guideReturn = view; navigate('guide'); return; }
   const activeRoom = view === 'practice' ? practice?.view() : view === 'game' ? room : undefined;
   const priorOverlay=gameUi.overlay;
   if (activeRoom && handleGameOverlay(gameUi, activeRoom, id)) { overlayScrolls[priorOverlay??'table']=scroll;scroll=priorOverlay===gameUi.overlay?scroll:overlayScrolls[gameUi.overlay??'table']??0;render();return; }
@@ -308,6 +310,7 @@ async function select(id: string) {
     if ((id === 'account' || id === 'friends') && playerPanel) return run(async () => { previousView = 'entry'; await playerPanel!.open(id); navigate('player'); });
   }
   if (view === 'settings') {
+    if (id.startsWith('setupRole:')) { guideReturn='settings'; guideRoleId=id.slice(10); guideSection='roles'; guideArt=false; navigate('guide'); return; }
     if (id === 'cancelSettings') { navigate(setupIntent === 'practice' && practice ? 'practice' : room ? 'lobby' : 'entry'); return; }
     if (id.startsWith('count:')) { const count = Number(id.slice(6)); if (count >= 5 && count <= 12) editableSettings = { ...editableSettings, playerCount: count, anonymousTeamVote: defaultAnonymousTeamVote(count) }; render(); return; }
     if (id === 'createRoom' && lobby) return run(async () => { connect(await lobby!.create(editableSettings)); });
@@ -319,6 +322,7 @@ async function select(id: string) {
   if (view === 'lobby' && room && lobby) {
     if (id === 'practice') { practice = new PracticeSession(room.settings, user?.nickname ?? '我'); syncGameUi(gameUi, practice.view(), true, practice.user.id); navigate('practice'); return; }
     if (id === 'more') { auxiliary = 'roomTools'; scroll = 0; render(); return; }
+    if (id==='waiting:lady'||id==='waiting:early') { if(room.hostId===user?.id) lobby.updateSettings({...room.settings,...(id==='waiting:lady'?{ladyEnabled:!room.settings.ladyEnabled}:{earlyAssassinationEnabled:!room.settings.earlyAssassinationEnabled})}); return; }
     if (id === 'ready') lobby.ready(!room.members.find(member => member.id === user?.id)?.ready);
     else if (id === 'start') lobby.start();
     else if (id === 'admission') lobby.admission(!room.acceptingNewMembers);
@@ -363,14 +367,9 @@ async function select(id: string) {
   }
 }
 
-let touchY = 0;
-wx.onTouchStart?.(event => { touchY = event.touches[0]?.clientY ?? 0; });
-wx.onTouchEnd?.(event => {
-  const point = event.changedTouches[0];
-  if (!point) return;
-  const delta = point.clientY - touchY;
-  if (Math.abs(delta) > 15) { scroll = Math.max(0, scroll - delta); render(); }
-  else { const row = hitTest(rows, point.clientX, point.clientY); if (row) void select(row.id); }
+attachTouchNavigation(wx, {
+  scrollBy(delta) { scroll = Math.max(0, scroll + delta); render(); },
+  tap(x,y) { const row=hitTest(rows,x,y); if(row) void select(row.id); },
 });
 platform.onHide(() => { suspended = true; sound.foreground(false); cancelTextInput(); hideSensitiveView(gameUi); pendingConfirm = undefined; adminPanel.onHide(); if (view === 'admin') view = 'entry'; render(); });
 platform.onShow(options => { suspended = false; sound.foreground(true); hideSensitiveView(gameUi); invites.receive(options?.query?.invite); connection?.resume(); render(); });

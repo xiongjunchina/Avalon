@@ -26,6 +26,7 @@ export interface WebDocument {
   friendTab?: 'invite' | 'friends' | 'add';
   friendQuery?: string;
   roomCode?: string;
+  canInvite?: boolean;
   messages?: { id: string; text: string; name: string; self: boolean; timestamp?: string }[];
   chatDraft?: string;
   quickExpanded?: boolean;

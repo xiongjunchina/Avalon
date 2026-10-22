@@ -55,6 +55,8 @@ export interface WxRuntime {
   onKeyboardComplete?(callback: () => void): void;
   offKeyboardComplete?(callback: () => void): void;
   onTouchStart?(callback: (event: { touches: { clientX: number; clientY: number }[] }) => void): void;
+  onTouchMove?(callback: (event: { touches: { clientX: number; clientY: number }[] }) => void): void;
+  onTouchCancel?(callback: () => void): void;
   onTouchEnd?(callback: (event: { changedTouches: { clientX: number; clientY: number }[] }) => void): void;
   createInnerAudioContext?(): { src: string; loop?: boolean; volume?: number; play(): void; pause(): void; stop(): void; destroy(): void; onEnded?(callback: () => void): void; onError?(callback: () => void): void };
   onShow(callback: (options?: { query?: { invite?: string } }) => void): void;
@@ -87,7 +89,7 @@ export class WechatPlatform {
   request(options: WxRequestOptions) { this.runtime.request(options); }
   socket(url: string, header?: Record<string, string>) { return this.runtime.connectSocket({ url, header }); }
   login(): Promise<string> {
-    return new Promise((resolve, reject) => this.runtime.login({ success: value => resolve(value.code), fail: reject }));
+    return new Promise((resolve, reject) => this.runtime.login({ success: value => value.code?.trim() ? resolve(value.code) : reject(new Error('WECHAT_LOGIN_FAILED')), fail: cause => { const message = cause && typeof cause === 'object' && 'errMsg' in cause ? String(cause.errMsg) : ''; reject(new Error(/timeout/i.test(message) ? 'WECHAT_LOGIN_TIMEOUT' : /cancel/i.test(message) ? 'WECHAT_LOGIN_CANCELLED' : 'WECHAT_LOGIN_FAILED')); } }));
   }
   onShow(callback: (options?: { query?: { invite?: string } }) => void) { this.runtime.onShow(callback); }
   onHide(callback: () => void) { this.runtime.onHide(callback); }

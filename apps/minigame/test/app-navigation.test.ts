@@ -77,7 +77,7 @@ test('built client logs in, opens a clean join form and creates the selected web
   assert.ok(frame.some(item => item.text === '输入房间号或邀请链接'));
   await tap('返回法坛'); await tap('开常规房'); await tap('9');
   for (let index = 0; index < 8 && !frame.some(item => item.text === '开启线下常规房' && item.y < 790); index++) {
-    start({ touches: [{ clientY: 760 }] }); end({ changedTouches: [{ clientX: 350, clientY: 240 }] }); await settle();
+    start({ touches: [{ clientX: 350, clientY: 760 }] }); end({ changedTouches: [{ clientX: 350, clientY: 240 }] }); await settle();
   }
   await tap('开启线下常规房');
   assert.equal(requests.find(item => item.path === '/rooms')?.data.settings.playerCount, 9);

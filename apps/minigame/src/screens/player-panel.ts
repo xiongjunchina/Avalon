@@ -97,7 +97,7 @@ export class PlayerPanel {
       result.web={...result.web!,backId:this.page==='direct'?'page:friends':this.page==='replay'?this.replayBack:'back',document:{kind,modal:['friends','chat'].includes(kind),
         user:this.user,activeTab:this.page==='account'||this.page==='stats'?'stats':this.page==='history'&&this.favoritesOnly?'favorites':this.page,
         stats:this.stats,games:this.games,presets:this.presets,settings:this.roomSettings??this.presetSettings,presetName:this.presetName,canApplyPreset:this.canApplyPreset,roomPreset:!!this.roomSettings,
-        profileEditing:this.profileEditing,profileDraft:this.profileDraft,friends:this.friends,friendTab:this.friendTab,friendQuery:this.friendQuery,roomCode:this.roomId?this.roomCode:undefined,
+        profileEditing:this.profileEditing,profileDraft:this.profileDraft,friends:this.friends,friendTab:this.friendTab,friendQuery:this.friendQuery,canInvite:!!this.roomId,roomCode:this.roomId?this.roomCode:undefined,
         chatDraft:this.chatDraft,quickExpanded:this.quickExpanded,replay:this.replay,
         messages:this.page==='direct'?this.direct.map(m=>({id:m.id,text:m.message,name:m.isSelf?'我':this.selectedFriend?.nickname??'',self:Boolean(m.isSelf),timestamp:m.createdAt})):this.roomMessages.map(m=>({id:m.messageId,text:m.text,name:m.seat+'号 '+m.nickname,self:m.fromUserId===this.user.id,timestamp:m.timestamp}))}};
       if(['direct','roomchat'].includes(this.page))result.rows.push(...(this.page==='direct'?['来开一局？','马上上线！','稍等我两分钟','今晚几点开战？','速来，三缺一！','上局打得漂亮！']:['我是取经好人','建议本轮流局','队长选我，必是红心','我看见假猴了！','刺客别急，听我一言','全票准行，即刻出征','有人在浑水摸鱼','这局必须查验他！','平票也算流局，谨慎投！','相信我，我带飞']).map((text,i)=>({id:'quick:'+i,text})));
@@ -173,6 +173,7 @@ export class PlayerPanel {
     if(id==='profile:save'&&this.profileDraft){if(!this.profileDraft.nickname.trim())throw new Error('请填写尊号');this.user=(await this.api.updateProfile(this.profileDraft)).user;this.profileDraft=undefined;this.profileEditing=false;this.feedback='资料已保存';return;}
     if(id==='uploadAvatar'&&this.profileEditing&&this.profileDraft){if(!this.avatarPicker)throw new Error('当前微信版本不支持上传头像');this.profileDraft.avatarUrl=await this.avatarPicker();this.profileDraft.wechatAvatarUrl=null;return;}
     if(id.startsWith('acceptFriend:')){await this.api.acceptFriend(id.slice(13));await this.open('friends',{roomId:this.roomId});return;}
+    if(id.startsWith('inviteFriend:')&&this.roomId){const friend=this.friends.find(f=>f.id===id.slice(13)&&f.status==='accepted');if(friend){const result=await this.api.invite(this.roomId,friend.id);this.feedback=result.online?'邀请已发送':'仙友暂不在线，可通过微信分享房间号';}return;}
     if(id.startsWith('removeFriend:')){const friend=this.friends.find(f=>f.id===id.slice(13));if(friend)this.pending={label:'删除仙友 '+friend.nickname+'？',action:()=>this.api.removeFriend(friend.id)};return;}
     if(id==='quickToggle'){this.quickExpanded=!this.quickExpanded;return;}
     if(id.startsWith('quick:')){const text=this.model().rows.find(r=>r.id===id)?.text;if(text)this.chatDraft=text;return;}

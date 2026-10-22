@@ -124,6 +124,35 @@ export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout 
         { count: size, passed: result?.passed, selected: game?.mission === index + 1 && !game.result,
           detail: failuresRequiredFor(count, index + 1) >= 2 ? '需2败' : game?.mission === index + 1 ? '进行中' : '第' + (index + 1) + '难' });
     });
+    if (!game) {
+      const host=room.hostId===web.user?.id, me=room.members.find(m=>m.id===web.user?.id);
+      y+=questH+8;
+      add('label','waiting-summary',count+'人 · 常规房 · '+(room.settings.anonymousTeamVote?'匿名表决':'公开表决')+' · '+(room.settings.captainMode==='seat_order'?'座位队长':'随机队长'),12,y,w-24,42,{skin:'text',fontSize:12,align:'left',lines:[count+'人 · 常规房 · '+(room.settings.anonymousTeamVote?'匿名表决':'公开表决'),(room.settings.captainMode==='seat_order'?'座位队长':'随机队长')+' · '+(room.settings.rejectionScope==='game'?'全局流局':'单难流局')]});
+      y+=55;
+      add('label','ribbon','等待仙友入座 '+room.members.length+'/'+count,10,y,w-20,46);y+=60;
+      const cols=count>8?4:3, cellW=(w-24)/cols, cellH=134;
+      for(let i=0;i<count;i++){
+        const m=room.members.find(p=>p.seat===i+1);
+        add('seat',m?'member:'+m.id:'share',m?m.nickname+(m.id===web.user?.id?'（你）':''):'虚位以待',12+i%cols*cellW,y+Math.floor(i/cols)*cellH,cellW,cellH,{skin:'waiting-seat',disabled:!!m,count:i+1,selected:!!m?.ready,selfPlayer:m?.id===web.user?.id,online:m?.online,badge:m?.id===room.hostId?'房主':host&&m?'踢出':undefined,detail:m?(m.ready?'✓ 已准备':'未准备'):'邀请仙友',image:m?(m.avatarUrl??m.wechatAvatarUrl??'emblems/'+(m.avatar??'cards')+'.png'):undefined});
+      }
+      if(host)for(const m of room.members.filter(m=>m.id!==web.user?.id)){const i=m.seat-1;add('hitbox','member:'+m.id,'踢出',12+i%cols*cellW+cellW/2-24,y+Math.floor(i/cols)*cellH+7,48,17,{skin:'hitbox'});}
+      y+=Math.ceil(count/cols)*cellH+4;
+      for(const [i,id,title] of [[0,'waiting:lady','☯ 照妖宝镜'],[1,'waiting:early','🗡 提前刺杀'],[2,'settings','⚙ '+count+'人局配置']] as const){
+        add('button',id,title,10+i*(w-14)/3,y,(w-32)/3,46,{skin:'waiting-option',disabled:!host,detail:i===2?'切换人数/规则':(i===0?room.settings.ladyEnabled:room.settings.earlyAssassinationEnabled)?'已开启':'点击开启'});
+      }
+      y+=64;
+      add('panel','waiting-tools','',10,y,w-20,34,{skin:'tabs'});
+      add('label','waiting-mode','🏛 线下常规房 · 无语音',18,y,w*.47,34,{skin:'text',fontSize:11,lineHeight:34});
+      add('button','chat','💬 传音',w*.52,y+3,64,28,{skin:'pill',fontSize:11});
+      add('button','friends','👥 仙友',w-90,y+3,72,28,{skin:'pill',fontSize:11});y+=90;
+      const canStart=host&&room.members.length===count&&room.members.every(m=>m.ready);
+      add('panel','action-dock','',10,y,w-20,76);
+      add('button','ready',me?.ready?'取消取经':'✋ 出发取经',26,y+14,(w-60)*.42,48,{skin:'waiting-primary',selected:!!me?.ready});
+      add('button',canStart?'start':'practice',canStart?'📜 仙友齐聚 · 敕令发牌':'幻境单人演练',34+(w-60)*.42,y+14,(w-60)*.58,48,{skin:'waiting-primary'});y+=90;
+      const maxScroll=Math.max(0,y-bottom), offset=Math.min(model.scroll??0,maxScroll);
+      for(const n of nodes)if(!n.fixed){n.y-=offset;n.clipTop=top+38;n.clipBottom=bottom;}
+      appendAlerts();return {nodes,maxScroll,contentTop:top+38,contentBottom:bottom};
+    }
     const wins = game?.rounds.filter(round => round.result?.passed).length ?? 0;
     const losses = game?.rounds.filter(round => round.result && !round.result.passed).length ?? 0;
     const blue = ROLE_CONFIG[count].filter(role => teamOf(role) === 'blue').length;
@@ -287,7 +316,7 @@ export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout 
 
   function appendAlerts() {
     if (web.page === 'sheet' || web.page === 'setup') return;
-    const alerts = model.rows.filter(row => ['notice', 'error', 'announcement', 'invitation'].includes(row.id));
-    alerts.slice(0, 2).forEach((row, index) => add('button', row.id, row.text, pad, v.top + 48 + index * 52, full, 48, { fixed: true, lines: wrapText(row.text, full - 24).slice(0, 2) }));
+    const alerts = model.rows.filter(row => ['status', 'notice', 'error', 'announcement', 'invitation'].includes(row.id));
+    alerts.slice(0, 2).forEach((row, index) => add('button', row.id, row.text, pad, v.top + 48 + index * 52, full, 48, { fixed: true, disabled:row.id==='status', lines: wrapText(row.text, full - 24).slice(0, 2) }));
   }
 }

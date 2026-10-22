@@ -20,8 +20,8 @@ test('waiting table preserves five mission medallions, vacant seats and scrollin
   const result = layoutWebScreen(model, { width: 390, height: 844, top: 44, bottom: 34 });
   assert.equal(result.nodes.filter(node => node.kind === 'quest').length, 5);
   assert.equal(result.nodes.filter(node => node.kind === 'seat').length, defaultSettings.playerCount);
-  assert.ok(result.nodes.some(node => node.id === 'altar'));
-  assert.ok(result.nodes.some(node => node.id === 'ready' && node.y > result.nodes.find(n => n.id === 'arena-frame')!.y));
+  assert.equal(result.nodes.some(node => node.id === 'altar'), false);
+  assert.ok(result.nodes.some(node => node.id === 'ready' && node.y > result.nodes.find(n => n.skin === 'waiting-seat')!.y));
 });
 
 
