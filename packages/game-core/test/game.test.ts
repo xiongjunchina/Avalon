@@ -1,9 +1,19 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
-import { defaultSettings, commandSchema, type Command, type Settings } from '@avalon/contracts';
+import { defaultSettings, settingsSchema, commandSchema, type Command, type Settings } from '@avalon/contracts';
 import { createGame, transition, projectGame, captain, ROLE_CONFIG, MISSION_SIZES, teamOf, type GameState } from '../src/index.js';
 function game(n=5, patch:Partial<Settings>={}) { return createGame(randomUUID(),Array.from({length:n},(_,i)=>({id:randomUUID(),nickname:`玩家${i+1}`,seat:i+1})),{...defaultSettings,playerCount:n,...patch},values=>values); }
+
+test('room defaults include optional auto reveal role disabled', () => {
+  assert.equal(defaultSettings.autoRevealRoleEnabled, false);
+  const parsed = settingsSchema.parse({
+    playerCount: 6, captainMode: 'seat_order', anonymousTeamVote: true,
+    rejectionScope: 'game', ladyEnabled: false, earlyAssassinationEnabled: false,
+    guardianPerksEnabled: false, voiceChatEnabled: false,
+  });
+  assert.equal(parsed.autoRevealRoleEnabled, false);
+});
 function act(g:GameState,id:string,type:Command['type'],payload:Command['payload']={}) {return transition(g,id,{type,payload},g.players.map(p=>p.id));}
 function ready(g:GameState) {for(const p of g.players)g=act(g,p.id,'confirmRole');return g;}
 function propose(g:GameState, ids=g.players.slice(0,MISSION_SIZES[g.players.length][g.mission-1]).map(p=>p.id)) {g=act(g,captain(g),'proposeTeam',{playerIds:ids,direction:'clockwise'});return act(g,captain(g),'startTeamVote');}
@@ -52,6 +62,34 @@ test('silent anti-3-streak loyal protection guarantees vision role to protected 
       assert.notEqual(protectedGame.roles[pid],'loyal');
       assert.notEqual(protectedGame.roles[pid],'oberon');
     }
+    assert.equal(Object.values(protectedGame.roles).sort().join(','), [...ROLE_CONFIG[n]].sort().join(','));
+  }
+});
+
+test('boss cooldown and blue guaranteed anti-streak protections prevent repeated boss and red streaks',()=>{
+  for(let n=5;n<=12;n++){
+    const players=Array.from({length:n},(_,i)=>({id:`u-${i+1}`,nickname:`玩家${i+1}`,seat:i+1}));
+    const baseline=createGame(randomUUID(),players,{...defaultSettings,playerCount:n},values=>values);
+    // Find players who drew boss roles (merlin, morgana)
+    const bossIds=players.filter(p=>['merlin','morgana','mordred'].includes(baseline.roles[p.id])).map(p=>p.id);
+    const redIds=players.filter(p=>teamOf(baseline.roles[p.id])==='red').map(p=>p.id);
+    assert.ok(bossIds.length>=2);
+    assert.ok(redIds.length>=2);
+
+    // Apply boss cooldown to the first boss, and blue guaranteed to the first red player
+    const cooledBossId = bossIds[0];
+    const guaranteedBlueId = redIds[0];
+
+    const protectedGame=createGame(randomUUID(),players,{...defaultSettings,playerCount:n},values=>values,{
+      bossCooldownUserIds: [cooledBossId],
+      blueGuaranteedUserIds: [guaranteedBlueId],
+    });
+
+    // The cooled boss player must not receive merlin, morgana or mordred
+    assert.ok(!['merlin','morgana','mordred'].includes(protectedGame.roles[cooledBossId]));
+    // The guaranteed blue player must receive a blue role
+    assert.equal(teamOf(protectedGame.roles[guaranteedBlueId]),'blue');
+    // Total role configuration must remain intact
     assert.equal(Object.values(protectedGame.roles).sort().join(','), [...ROLE_CONFIG[n]].sort().join(','));
   }
 });

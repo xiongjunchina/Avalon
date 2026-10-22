@@ -1758,32 +1758,57 @@ main.app-shell.is-live-table {
   flex: 1 1 0 !important;
   min-width: 0 !important;
   width: 0 !important;
-  min-height: 42px !important;
-  padding: 4px 2px !important;
+  min-height: 44px !important;
+  padding: 5px 2px !important;
   margin: 0 !important;
-  font-family: var(--calligraphy) !important;
-  font-size: clamp(11px, 3.1vw, 13.5px) !important;
-  font-weight: 700 !important;
-  letter-spacing: -0.3px !important;
+  font-family: var(--sans) !important;
+  font-size: clamp(13px, 3.8vw, 15px) !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.3px !important;
   white-space: nowrap !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
   text-align: center !important;
   justify-content: center !important;
-  background: linear-gradient(180deg, #421614 0%, #1e0908 100%) !important;
-  border: 1.5px solid #d4a359 !important;
-  color: #fff2d5 !important;
+  align-items: center !important;
+  display: inline-flex !important;
+  background: linear-gradient(180deg, #441715 0%, #200908 100%) !important;
+  border: 1.5px solid #e5b567 !important;
+  color: #ffffff !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.95) !important;
   border-radius: 6px !important;
-  clip-path: polygon(6px 0%, calc(100% - 6px) 0%, 100% 50%, calc(100% - 6px) 100%, 6px 100%, 0% 50%) !important;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 220, 140, 0.3) !important;
+  clip-path: polygon(4px 0%, calc(100% - 4px) 0%, 100% 50%, calc(100% - 4px) 100%, 4px 100%, 0% 50%) !important;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 230, 150, 0.45) !important;
   cursor: pointer !important;
   position: relative !important;
   z-index: 2 !important;
+  transition: all 0.15s ease !important;
 }
-.is-live-table .dock-utility-btn:hover:not(:disabled) {
-  background: linear-gradient(180deg, #5c1e1c 0%, #2b0d0c 100%) !important;
-  color: #ffffff !important;
+.is-live-table .dock-utility-btn:hover:not(:disabled),
+.is-live-table .dock-utility-btn:active:not(:disabled) {
+  background: linear-gradient(180deg, #5c1f1c 0%, #2e0d0c 100%) !important;
+  color: #fff9e6 !important;
   border-color: #ffd875 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 240, 180, 0.6) !important;
+}
+.is-live-table .dock-utility-btn.identity-trigger-btn {
+  background: linear-gradient(180deg, #4c1d1a 0%, #250d0b 100%) !important;
+  border-color: #f2bf6c !important;
+}
+.is-live-table .dock-utility-btn.identity-trigger-btn.pulse-action {
+  background: linear-gradient(180deg, #66261f 0%, #3a1310 100%) !important;
+  border-color: #ffd875 !important;
+  box-shadow: 0 0 12px rgba(255, 216, 117, 0.6), inset 0 1px 0 rgba(255, 245, 200, 0.7) !important;
+}
+.is-live-table .dock-utility-btn.abort-trigger-btn {
+  background: linear-gradient(180deg, #3d1414 0%, #1d0808 100%) !important;
+  border-color: rgba(215, 135, 120, 0.75) !important;
+  color: #ffe6e2 !important;
+}
+.is-live-table .dock-utility-btn.abort-trigger-btn:hover:not(:disabled) {
+  background: linear-gradient(180deg, #541919 0%, #290b0b 100%) !important;
+  border-color: #f87171 !important;
+  color: #ffffff !important;
 }
 .is-live-table .table-action-dock .dock-panel {
   flex: 1;
@@ -2551,6 +2576,29 @@ dialog.table-modal-backdrop::backdrop { background: #081b2d55; }
 .identity-footer { border-top: 1px solid #d0be8d66; padding-top: 10px; flex-shrink: 0; }
 .identity-footer p { text-align: center; color: #bdcfde; font-size: 11px; margin: 0 0 8px; }
 .identity-footer button { margin: 0; min-height: 40px; font-size: 14px; }
+.identity-footer .return-table-btn {
+  width: 100% !important;
+  margin: 0 !important;
+  min-height: 44px !important;
+  font-family: var(--sans) !important;
+  font-size: 15px !important;
+  font-weight: 800 !important;
+  letter-spacing: 1px !important;
+  color: #1e0908 !important;
+  background: var(--gold-primary) !important;
+  border: 1.5px solid #ffe599 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.15s ease !important;
+}
+.identity-footer .return-table-btn:hover {
+  filter: brightness(1.08) !important;
+  box-shadow: 0 6px 16px rgba(245, 166, 35, 0.4), inset 0 1px 0 #ffffff !important;
+}
 
 /* Guide Panel Sub-figures Section */
 .guide-role-interactive {
@@ -5398,9 +5446,258 @@ dialog.table-modal-backdrop::backdrop { background: #081b2d55; }
   box-sizing: border-box !important;
 }
 
-.presets .preset-list li {
-  width: 100% !important;
+/* ==========================================================================
+   Dedicated Room Settings Sheet (Classical Fantasy & Ultra Compact)
+   ========================================================================== */
+.table-modal-sheet.settings-sheet {
+  width: min(100%, 480px) !important;
+  max-height: min(88dvh, 720px) !important;
+  padding: 14px 16px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  background: linear-gradient(165deg, rgba(46, 15, 13, 0.98) 0%, rgba(20, 6, 6, 0.99) 100%) !important;
+  border: 1.5px solid #d4a359 !important;
+  border-radius: 18px !important;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.85), inset 0 1px 0 rgba(255, 230, 150, 0.35) !important;
+  overscroll-behavior: contain !important;
   box-sizing: border-box !important;
+}
+
+.settings-sheet .table-modal-head {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding-bottom: 8px !important;
+  margin-bottom: 4px !important;
+  border-bottom: 1.5px solid rgba(212, 163, 89, 0.4) !important;
+  flex-shrink: 0 !important;
+}
+
+.settings-sheet .table-modal-head strong {
+  font-family: var(--display) !important;
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  color: #ffd875 !important;
+  letter-spacing: 1.5px !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8) !important;
+}
+
+.settings-sheet .table-modal-head .tool-pill {
+  min-height: 30px !important;
+  padding: 3px 12px !important;
+  font-family: var(--sans) !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  background: linear-gradient(180deg, #441715 0%, #200908 100%) !important;
+  border: 1px solid #d4a359 !important;
+  color: #fff2d5 !important;
+  border-radius: 14px !important;
+  cursor: pointer !important;
+}
+
+.settings-sheet .settings-body {
+  flex: 1 1 auto !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  padding-right: 2px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+  min-height: 0 !important;
+}
+
+.settings-sheet .settings-hint {
+  font-size: 11.5px !important;
+  color: #eddcc4 !important;
+  margin: 0 0 4px !important;
+  line-height: 1.35 !important;
+}
+
+/* Compact Player Count Medallions */
+.settings-sheet .player-count-field {
+  margin: 2px 0 4px !important;
+  padding: 0 !important;
+  border: 0 !important;
+}
+
+.settings-sheet .player-count-field legend {
+  font-family: var(--display) !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: #ffd875 !important;
+  letter-spacing: 1px !important;
+  margin-bottom: 4px !important;
+}
+
+.settings-sheet .count-medallions {
+  display: grid !important;
+  grid-template-columns: repeat(8, minmax(0, 1fr)) !important;
+  gap: 4px !important;
+  padding: 2px 0 !important;
+  width: 100% !important;
+}
+
+.settings-sheet .count-medallions span {
+  width: 100% !important;
+  max-width: 38px !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  border-radius: 50% !important;
+  font-family: var(--display) !important;
+  font-size: 14.5px !important;
+  font-weight: 700 !important;
+  border: 1.5px solid rgba(212, 163, 89, 0.6) !important;
+  background: linear-gradient(180deg, #381312 0%, #1a0808 100%) !important;
+  color: #fff2d5 !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4) !important;
+}
+
+.settings-sheet .count-medallions input:checked + span {
+  border-color: #ffd875 !important;
+  background: linear-gradient(180deg, #8a2520 0%, #561613 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 8px rgba(255, 216, 117, 0.6), inset 0 1px 0 rgba(255, 240, 180, 0.5) !important;
+  outline: none !important;
+}
+
+/* Compact Select Dropdowns */
+.settings-sheet label:not(.check label) {
+  font-family: var(--display) !important;
+  font-size: 12.5px !important;
+  font-weight: 700 !important;
+  color: #eddcc4 !important;
+  letter-spacing: 0.5px !important;
+  margin: 4px 0 1px !important;
+  display: block !important;
+}
+
+.settings-sheet select {
+  width: 100% !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  padding: 3px 8px !important;
+  margin: 0 0 2px !important;
+  font-family: var(--sans) !important;
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+  color: #fff8ef !important;
+  background: linear-gradient(180deg, #3d1413 0%, #1f0908 100%) !important;
+  border: 1.5px solid #d4a359 !important;
+  border-radius: 8px !important;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.6) !important;
+}
+
+/* Compact Chinese Talisman Switches */
+.settings-sheet .check {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  width: 100% !important;
+  min-height: 38px !important;
+  padding: 4px 2px !important;
+  margin: 0 !important;
+  border-bottom: 1px solid rgba(212, 163, 89, 0.2) !important;
+  box-sizing: border-box !important;
+}
+
+.settings-sheet .check label {
+  font-family: var(--sans) !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: #fff2d5 !important;
+  letter-spacing: 0.3px !important;
+  margin: 0 !important;
+  flex: 1 1 auto !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.settings-sheet .check input {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  position: relative !important;
+  width: 44px !important;
+  height: 24px !important;
+  min-height: 24px !important;
+  border: 1.5px solid rgba(212, 163, 89, 0.55) !important;
+  border-radius: 14px !important;
+  background: linear-gradient(180deg, #2b0d0c 0%, #170606 100%) !important;
+  margin: 0 !important;
+  flex-shrink: 0 !important;
+  cursor: pointer !important;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.7) !important;
+  transition: all 0.2s ease !important;
+}
+
+.settings-sheet .check input::before {
+  content: '' !important;
+  position: absolute !important;
+  width: 18px !important;
+  height: 18px !important;
+  top: 1.5px !important;
+  left: 2px !important;
+  background: #c5b294 !important;
+  border-radius: 50% !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.6) !important;
+  transition: transform 0.2s ease, background 0.2s ease !important;
+}
+
+.settings-sheet .check input:checked {
+  background: linear-gradient(135deg, #176558 0%, #208574 100%) !important;
+  border-color: #5ef2ff !important;
+  box-shadow: 0 0 8px rgba(94, 242, 255, 0.35), inset 0 1px 2px rgba(0, 0, 0, 0.4) !important;
+}
+
+.settings-sheet .check input:checked::before {
+  transform: translateX(19px) !important;
+  background: #ffffff !important;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Presets Details Accordion */
+.settings-sheet .preset-details {
+  margin: 4px 0 2px !important;
+  padding: 4px 8px !important;
+  background: rgba(30, 10, 9, 0.6) !important;
+  border: 1px solid rgba(212, 163, 89, 0.35) !important;
+  border-radius: 10px !important;
+}
+
+.settings-sheet .preset-details summary {
+  font-family: var(--display) !important;
+  font-size: 12.5px !important;
+  font-weight: 700 !important;
+  color: #ffd875 !important;
+  cursor: pointer !important;
+  padding: 3px 0 !important;
+}
+
+/* Return to Table Button */
+.settings-sheet .return-table-btn {
+  width: 100% !important;
+  min-height: 40px !important;
+  margin: 8px 0 0 !important;
+  font-family: var(--sans) !important;
+  font-size: 14.5px !important;
+  font-weight: 800 !important;
+  letter-spacing: 1px !important;
+  background: var(--gold-primary) !important;
+  color: #1e0908 !important;
+  border: 1.5px solid #ffe599 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+  transition: all 0.15s ease !important;
+}
+
+.settings-sheet .return-table-btn:hover {
+  filter: brightness(1.08) !important;
+  box-shadow: 0 6px 16px rgba(245, 166, 35, 0.45), inset 0 1px 0 #ffffff !important;
 }
 
 /* ==========================================================================
@@ -5486,6 +5783,280 @@ dialog.table-modal-backdrop::backdrop { background: #081b2d55; }
 
 .global-announcement-close:active {
   transform: scale(0.92) !important;
+}
+
+/* Identity Treasure Entry Button */
+.identity-treasure-row {
+  margin: 10px 0 4px;
+}
+.identity-treasure-entry-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  text-align: left;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+.identity-treasure-entry-btn.is-enabled {
+  background: linear-gradient(135deg, rgba(74, 30, 20, 0.85) 0%, rgba(44, 18, 12, 0.95) 100%);
+  border: 1.5px solid rgba(229, 185, 100, 0.6);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 220, 150, 0.2);
+}
+.identity-treasure-entry-btn.is-enabled:hover {
+  border-color: rgba(255, 215, 0, 0.85);
+  box-shadow: 0 6px 16px rgba(229, 185, 100, 0.35);
+  transform: translateY(-1px);
+}
+.identity-treasure-entry-btn.is-locked {
+  background: rgba(20, 30, 45, 0.5);
+  border: 1px dashed rgba(160, 180, 200, 0.25);
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+.treasure-entry-icon {
+  font-size: 22px;
+  line-height: 1;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+}
+.treasure-entry-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.treasure-entry-info strong {
+  font: 700 14px/1.3 var(--display);
+  color: #f7e0b5;
+  letter-spacing: 0.5px;
+}
+.treasure-entry-info small {
+  font-size: 11px;
+  color: #ffd875;
+  line-height: 1.3;
+}
+.identity-treasure-entry-btn.is-locked .treasure-entry-info small {
+  color: #8fa2b8;
+}
+.treasure-entry-chevron {
+  font-size: 16px;
+  color: #ffd875;
+  font-weight: bold;
+}
+
+/* Treasure Modal Sheet */
+.treasure-sheet {
+  max-width: 440px;
+  width: 92vw;
+  background: linear-gradient(180deg, #1f110e 0%, #150a08 100%);
+  border: 1.5px solid rgba(229, 185, 100, 0.45);
+  border-radius: 18px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.7);
+  padding: 16px;
+  color: #f3e5c8;
+}
+.treasure-sheet-title {
+  color: #fce8bc !important;
+  font-size: 16px;
+  letter-spacing: 1px;
+}
+.treasure-body {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-height: 65vh;
+  overflow-y: auto;
+}
+.treasure-empty-card {
+  text-align: center;
+  padding: 24px 16px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 14px;
+  border: 1px dashed rgba(229, 185, 100, 0.25);
+}
+.treasure-icon-large {
+  font-size: 36px;
+  display: block;
+  margin-bottom: 8px;
+}
+.treasure-empty-card h4 {
+  font: 700 16px var(--display);
+  color: #e5b964;
+  margin: 0 0 8px;
+}
+.treasure-card {
+  background: rgba(35, 18, 14, 0.75);
+  border: 1.5px solid rgba(229, 185, 100, 0.35);
+  border-radius: 14px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+.treasure-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(229, 185, 100, 0.2);
+  padding-bottom: 8px;
+}
+.treasure-card-header h3 {
+  font: 700 16px/1.3 var(--display);
+  color: #ffd875;
+  margin: 0;
+}
+.treasure-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: rgba(229, 185, 100, 0.2);
+  color: #ffd875;
+  border: 1px solid rgba(229, 185, 100, 0.3);
+}
+.treasure-desc {
+  font-size: 13px;
+  line-height: 1.55;
+  color: #e8d7b8;
+  margin: 0;
+}
+.treasure-action-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(229, 185, 100, 0.2);
+}
+.treasure-action-box label {
+  font-size: 12px;
+  color: #ffd875;
+  font-weight: 600;
+}
+.treasure-action-box select {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #2a1512;
+  border: 1px solid rgba(229, 185, 100, 0.4);
+  color: #f7e0b5;
+  font-size: 13px;
+}
+.treasure-confirm-btn {
+  width: 100%;
+  min-height: 42px;
+  font-size: 14px;
+  font-weight: 700;
+  border-radius: 10px;
+  cursor: pointer;
+  background: linear-gradient(135deg, #f5a623 0%, #d97706 100%);
+  color: #240a08;
+  border: 1.5px solid #ffe599;
+  box-shadow: 0 4px 10px rgba(245, 166, 35, 0.35);
+  transition: all 0.15s ease;
+}
+.treasure-confirm-btn:hover:not(:disabled) {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+.treasure-confirm-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: grayscale(0.6);
+}
+.treasure-confirm-btn.fire-btn {
+  background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+  border-color: #fca5a5;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+}
+.treasure-confirm-btn.gold-btn {
+  background: linear-gradient(135deg, #eab308 0%, #ca8a04 100%);
+  border-color: #fef08a;
+  color: #1e0908;
+}
+.treasure-confirm-btn.arm-fan-btn {
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  border-color: #fed7aa;
+  color: #fff;
+}
+.treasure-confirm-btn.cancel-fan-btn {
+  background: linear-gradient(135deg, #475569 0%, #334155 100%);
+  border-color: #94a3b8;
+  color: #f1f5f9;
+}
+.treasure-result-box {
+  background: rgba(16, 43, 67, 0.7);
+  border: 1.5px solid rgba(229, 185, 100, 0.5);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+.treasure-result-box.seal-alliance-box {
+  background: rgba(45, 25, 10, 0.7);
+  border-color: #eab308;
+}
+.result-label {
+  font-size: 12px;
+  color: #ffd875;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.result-content {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #e2e8f0;
+}
+.treasure-status-idle {
+  padding: 8px 10px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  font-size: 12px;
+  color: #cbd5e1;
+  text-align: center;
+}
+.treasure-status-idle p {
+  margin: 0;
+}
+.fan-status-indicator {
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+.text-blue {
+  color: #60a5fa !important;
+}
+.text-red {
+  color: #f87171 !important;
+}
+
+/* Banner for Banana Fan & Banned Badge */
+.table-banana-fan-banner {
+  background: linear-gradient(90deg, rgba(234, 88, 12, 0.9) 0%, rgba(194, 65, 12, 0.95) 100%);
+  border: 1px solid #fed7aa;
+  color: #fff;
+  border-radius: 10px;
+  padding: 6px 14px;
+  margin: 4px 12px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(234, 88, 12, 0.4);
+  animation: fanPulse 0.4s ease-out;
+}
+@keyframes fanPulse {
+  0% { transform: scale(0.96); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.seat-badge.badge-banned {
+  background: #b45309 !important;
+  color: #fff !important;
+  border: 1px solid #fef08a !important;
+  box-shadow: 0 0 6px rgba(245, 158, 11, 0.6) !important;
 }
 
 

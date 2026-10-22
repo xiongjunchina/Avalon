@@ -328,7 +328,18 @@ export class PostgresStore {
         await c.query('UPDATE room_members SET ready=$3 WHERE room_id=$1 AND user_id=$2',[roomId,userId,command.payload.ready]);
       } else if (command.type==='updateSettings') {
         if (r.host_id!==userId) throw new DomainError('FORBIDDEN',403);
-        if (members.length>command.payload.playerCount || members.some(m=>m.seat>command.payload.playerCount)) throw new DomainError('SEATS_OCCUPIED');
+        if (members.length>command.payload.playerCount) throw new DomainError('SEATS_OCCUPIED');
+        const overflow = members.filter(m => m.seat > command.payload.playerCount);
+        if (overflow.length > 0) {
+          const occupied = new Set(members.filter(m => m.seat <= command.payload.playerCount).map(m => m.seat));
+          const vacant: number[] = [];
+          for (let s = 1; s <= command.payload.playerCount; s++) {
+            if (!occupied.has(s)) vacant.push(s);
+          }
+          for (let i = 0; i < overflow.length; i++) {
+            await c.query('UPDATE room_members SET seat=$3 WHERE room_id=$1 AND user_id=$2', [roomId, overflow[i].user_id, vacant[i]]);
+          }
+        }
         await c.query('UPDATE rooms SET settings=$2 WHERE id=$1',[roomId,command.payload]);
         await c.query('UPDATE room_members SET ready=false WHERE room_id=$1',[roomId]);
       } else if (command.type==='setAdmission') {
@@ -356,8 +367,8 @@ export class PostgresStore {
       if (command.type==='startGame') {
         if(r.host_id!==userId) throw new DomainError('FORBIDDEN',403);
         if(members.length!==r.settings.playerCount || !members.every(m=>m.ready)) throw new DomainError('NOT_READY',409);
-        const recentRoles=await c.query<{user_id:string;role:string}>(
-          `SELECT user_id,role FROM (
+        const recentRoles=await c.query<{user_id:string;role:string;rn:number}>(
+          `SELECT user_id,role,rn FROM (
              SELECT p.user_id,g.state->'roles'->>(p.user_id::text) AS role,
                     ROW_NUMBER() OVER (PARTITION BY p.user_id ORDER BY g.created_at DESC,g.id DESC) AS rn
              FROM game_participants p JOIN games g ON g.id=p.game_id
@@ -365,11 +376,27 @@ export class PostgresStore {
            ) t WHERE rn<=2`,
           [members.map(m=>m.user_id)]
         );
-        const protectedUserIds=members.map(m=>m.user_id).filter(uid=>{
-          const hist=recentRoles.rows.filter(row=>row.user_id===uid);
-          return hist.length===2&&hist.every(row=>row.role==='loyal');
+        const redRoles = ['morgana', 'assassin', 'oberon', 'mordred', 'minion'];
+        const bossRoles = ['merlin', 'morgana', 'mordred'];
+        const visionGuaranteedUserIds: string[] = [];
+        const bossCooldownUserIds: string[] = [];
+
+        for (const m of members) {
+          const hist = recentRoles.rows
+            .filter(row => row.user_id === m.user_id)
+            .sort((a,b) => Number(a.rn) - Number(b.rn));
+          if (hist.length === 2 && hist.every(row => row.role === 'loyal')) {
+            visionGuaranteedUserIds.push(m.user_id);
+          }
+          const lastGame = hist.find(row => Number(row.rn) === 1);
+          if (lastGame && bossRoles.includes(lastGame.role)) {
+            bossCooldownUserIds.push(m.user_id);
+          }
+        }
+        const game=createGame(randomUUID(),members.map(m=>({id:m.user_id,nickname:m.nickname,seat:m.seat})),r.settings,secureShuffle,{
+          visionGuaranteedUserIds,
+          bossCooldownUserIds,
         });
-        const game=createGame(randomUUID(),members.map(m=>({id:m.user_id,nickname:m.nickname,seat:m.seat})),r.settings,secureShuffle,protectedUserIds);
         dealEndsAt=new Date(this.now()+DEAL_MS).toISOString();
         game.phase='dealing';game.dealEndsAt=dealEndsAt;
         await c.query('INSERT INTO games(id,room_id,ruleset_version,state,created_at) VALUES($1,$2,$3,$4,$5)',[game.id,roomId,game.rulesetVersion,game,this.date()]);

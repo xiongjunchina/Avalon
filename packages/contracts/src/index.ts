@@ -9,6 +9,8 @@ export const settingsSchema = z.object({
   earlyAssassinationEnabled: z.boolean(),
   guardianPerksEnabled: z.boolean().default(false),
   voiceChatEnabled: z.boolean().default(false),
+  autoRevealRoleEnabled: z.boolean().default(false),
+  treasuresEnabled: z.boolean().default(false),
 }).strict();
 export type Settings = z.infer<typeof settingsSchema>;
 export const defaultSettings: Settings = {
@@ -16,6 +18,8 @@ export const defaultSettings: Settings = {
   rejectionScope: 'game', ladyEnabled: false, earlyAssassinationEnabled: false,
   guardianPerksEnabled: false,
   voiceChatEnabled: false,
+  autoRevealRoleEnabled: false,
+  treasuresEnabled: false,
 };
 export const defaultAnonymousTeamVote = (playerCount: number) => playerCount < 8;
 export type TeamBallot = boolean | 'abstain';
@@ -34,6 +38,17 @@ export const commandSchema = z.discriminatedUnion('type', [
   z.object({ ...base, type: z.literal('inspectAlignment'), payload: z.object({ targetId: z.string().uuid() }).strict() }).strict(),
   z.object({ ...base, type: z.literal('earlyAssassinationDecision'), payload: z.object({ attempt: z.boolean() }).strict() }).strict(),
   z.object({ ...base, type: z.literal('assassinate'), payload: z.object({ targetId: z.string().uuid() }).strict() }).strict(),
+  z.object({
+    ...base,
+    type: z.literal('useTreasure'),
+    payload: z.discriminatedUnion('action', [
+      z.object({ action: z.literal('tinStaff'), targetId: z.string().uuid() }).strict(),
+      z.object({ action: z.literal('guanyinMirror'), targetId: z.string().uuid() }).strict(),
+      z.object({ action: z.literal('humanBag'), targetId: z.string().uuid() }).strict(),
+      z.object({ action: z.literal('jinguSeal') }).strict(),
+      z.object({ action: z.literal('bananaFan'), armed: z.boolean() }).strict(),
+    ]),
+  }).strict(),
   z.object({ ...base, type: z.literal('voteAbort'), payload: z.object({ approve: z.boolean() }).strict() }).strict(),
   z.object({ ...base, type: z.literal('leaveRoom'), payload: z.object({}).strict() }).strict(),
   z.object({ ...base, type: z.literal('kickMember'), payload: z.object({ userId: z.string().uuid() }).strict() }).strict(),
@@ -215,6 +230,35 @@ export interface GuardianClue {
   description: string;
   targetIds: string[];
 }
+export interface SelfTreasures {
+  enabled: boolean;
+  tinStaff?: {
+    used: boolean;
+    available: boolean;
+    result?: { targetId: string; team: Team };
+  };
+  guanyinMirror?: {
+    used: boolean;
+    available: boolean;
+    result?: { targetId: string; alignment: 'pure' | 'evil' };
+  };
+  humanBag?: {
+    used: boolean;
+    available: boolean;
+    targetId?: string;
+  };
+  jinguSeal?: {
+    used: boolean;
+    available: boolean;
+    activatedBy?: string;
+  };
+  jinguAllyId?: string;
+  bananaFan?: {
+    used: boolean;
+    armed: boolean;
+    available: boolean;
+  };
+}
 export interface GameView {
   id: string; rulesetVersion: string; phase: GamePhase; players: Player[];
   dealEndsAt?: string;
@@ -227,12 +271,15 @@ export interface GameView {
   earlyAssassination?: { used: boolean; windows: EarlyWindow[] };
   assassinationMode?: 'normal' | 'early';
   assassinId?: string;
+  humanBagBannedPlayerId?: string;
+  bananaFanNotice?: string;
   result?: GameResult; revealedRoles?: Record<string, Role>;
   abortPoll?: { requestedBy: string; approvals: number; required: number; voted: boolean };
   self?: { role: Role; loyalGuardian?: LoyalGuardian; femaleDemon?: FemaleDemon; team: Team; evilIds: string[]; merlinCandidates: string[]; guinevereCandidates?: string[];
     guardianClue?: GuardianClue;
     confirmed: boolean; teamVoted: boolean; missionVoted: boolean;
-    inspections: PrivateInspection[]; canInspect: boolean; canConfirmInspection: boolean; canDecideEarly: boolean };
+    inspections: PrivateInspection[]; canInspect: boolean; canConfirmInspection: boolean; canDecideEarly: boolean;
+    treasures?: SelfTreasures };
 }
 
 export interface Score { completed:number; wins:number; losses:number; aborted:number; winRate:number|null }

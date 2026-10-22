@@ -127,3 +127,27 @@ test('12-player room deals Guinevere and database-backed 2-game loyal streak gua
   assert.equal(allRoles.filter(r=>r==='loyal').length,4);
 });
 
+test('database-backed boss cooldown prevents repeated boss in next game',async t=>{
+  const f=await gameFixture(t,false,{playerCount:5});
+  const bossUserId=f.people[0].user.id;
+
+  // Seed 1 previous game where bossUserId was 'merlin'
+  const gid1=randomUUID();
+  await f.pool.query(
+    `INSERT INTO games (id,room_id,ruleset_version,state,created_at,ended_at) VALUES ($1,$2,'2',$3::jsonb,now() - '5 minutes'::interval,now())`,
+    [gid1,f.room.id,JSON.stringify({roles:{[bossUserId]:'merlin'}})]
+  );
+  await f.pool.query(
+    `INSERT INTO game_participants (game_id,user_id) VALUES ($1,$2)`,
+    [gid1,bossUserId]
+  );
+
+  await f.command(f.people[0].user.id,'startGame');
+  await f.finishDeal();
+
+  const bossView=(await f.state(bossUserId)).game!;
+
+  // bossUserId was merlin last game, so cannot be merlin or morgana in this game
+  assert.ok(!['merlin','morgana','mordred'].includes(bossView.self!.role));
+});
+
