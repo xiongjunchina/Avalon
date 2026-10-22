@@ -20,7 +20,8 @@ for name, family, directory in [('calligraphy', 'Ma Shan Zheng', 'mashanzheng'),
         raise ValueError('Expected TrueType font')
     (out / (name + '.ttf')).write_bytes(data)
     license_url = 'https://raw.githubusercontent.com/google/fonts/main/ofl/' + directory + '/OFL.txt'
-    (out / (name + '-OFL.txt')).write_bytes(urllib.request.urlopen(license_url, timeout=30).read())
+    license_text = urllib.request.urlopen(license_url, timeout=30).read().decode('utf-8')
+    (out / (name + '-OFL.txt')).write_text('\n'.join(line.rstrip() for line in license_text.splitlines()) + '\n', encoding='utf-8')
     records.append({'file': name + '.ttf', 'family': family, 'source': url, 'sha256': hashlib.sha256(data).hexdigest(), 'glyphs': len(chars), 'bytes': len(data)})
 (out / 'source.json').write_text(json.dumps(records, indent=2), encoding='utf-8')
 print('Web font subsets generated:', sum(r['bytes'] for r in records), 'bytes')
