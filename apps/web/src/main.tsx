@@ -1706,25 +1706,6 @@ function App() {
                   </span>
                 </button>
 
-                {room.settings.playerCount >= 9 && (
-                  <button
-                    type="button"
-                    disabled={!host || disabled}
-                    className={`waiting-ext-orb ${room.settings.treasuresEnabled ? 'is-enabled' : ''}`}
-                    onClick={() =>
-                      updateSettings({
-                        treasuresEnabled: !room.settings.treasuresEnabled,
-                      })
-                    }
-                  >
-                    <span className="orb-icon">📿</span>
-                    <span className="orb-text">
-                      <strong>专属法宝</strong>
-                      <small>{room.settings.treasuresEnabled ? '已开启' : '点击开启'}</small>
-                    </span>
-                  </button>
-                )}
-
                 <button
                   type="button"
                   className="waiting-ext-orb"
