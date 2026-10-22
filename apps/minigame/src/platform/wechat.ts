@@ -40,6 +40,7 @@ export interface WxRuntime {
     success(result: { tempFilePaths: string[]; tempFiles?: { size: number }[] }): void; fail(error: unknown): void }): void;
   getFileSystemManager?(): { readFileSync(path: string, encoding: 'base64'): string | ArrayBuffer };
   getSystemInfoSync(): { screenWidth: number; screenHeight: number; pixelRatio: number; safeArea?: { top: number; bottom: number } };
+  getMenuButtonBoundingClientRect?(): { top: number; bottom: number };
   getStorageSync(key: string): unknown;
   setStorageSync(key: string, value: unknown): void;
   removeStorageSync(key: string): void;
@@ -67,6 +68,19 @@ export class WechatPlatform {
   constructor(readonly runtime: WxRuntime) {}
   canvas() { return this.runtime.createCanvas(); }
   screen() { return this.runtime.getSystemInfoSync(); }
+  viewport() {
+    const screen = this.screen();
+    const statusTop = screen.safeArea?.top ?? 0;
+    // The native capsule occupies its own row below the device status bar.
+    let top = statusTop + 44;
+    try {
+      const capsule = this.runtime.getMenuButtonBoundingClientRect?.();
+      if (capsule && Number.isFinite(capsule.bottom) && capsule.bottom > statusTop && capsule.bottom < screen.screenHeight / 2)
+        top = Math.max(top, capsule.bottom + 8);
+    } catch { /* Older runtimes use the conservative navigation-row reserve. */ }
+    return { width: screen.screenWidth, height: screen.screenHeight, top,
+      bottom: screen.screenHeight - (screen.safeArea?.bottom ?? screen.screenHeight) };
+  }
   get(key: string) { return this.runtime.getStorageSync(key); }
   set(key: string, value: unknown) { this.runtime.setStorageSync(key, value); }
   remove(key: string) { this.runtime.removeStorageSync(key); }

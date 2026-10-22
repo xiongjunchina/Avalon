@@ -44,8 +44,7 @@ const adminPanel = new AdminPanel(new AdminApi(platform, baseUrl, () => api.sess
   wx.setClipboardData({ data: text, success: resolve, fail: reject });
 }));
 const extras = new PlayerExtras(api);
-const screen = platform.screen();
-const viewport = { width: screen.screenWidth, height: screen.screenHeight, top: screen.safeArea?.top ?? 0, bottom: screen.screenHeight - (screen.safeArea?.bottom ?? screen.screenHeight) };
+const viewport = platform.viewport();
 
 let user: User | undefined;
 let room: RoomView | undefined;

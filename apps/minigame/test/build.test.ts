@@ -73,7 +73,7 @@ test('built bundle starts with only WeChat Mini Game APIs available', async t =>
   assert.doesNotThrow(() => runInNewContext(bundle, { wx, console, setTimeout, clearTimeout, crypto: globalThis.crypto }));
   assert.ok(calls.includes('fillText'));
   assert.ok(labels.some(label => label.includes('幻境单人试玩')));
-  const button = layoutWebScreen(entryScreen(), { width: 390, height: 844, top: 44, bottom: 34 }).nodes.find(node => node.id === 'practice')!;
+  const button = layoutWebScreen(entryScreen(), { width: 390, height: 844, top: 88, bottom: 34 }).nodes.find(node => node.id === 'practice')!;
   touchStart?.({ touches: [{ clientX: button.x + 10, clientY: button.y + 15 }] });
   touchEnd?.({ changedTouches: [{ clientX: button.x + 10, clientY: button.y + 15 }] });
   assert.ok(labels.some(label => label.includes('幻境演练')));
