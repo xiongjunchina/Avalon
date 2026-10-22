@@ -1,4 +1,4 @@
-import { hitTest, layoutRows, type HitRegion, type SafeViewport } from './layout.js';
+import { hitTest, layoutRows, contentTop, clampScroll, type HitRegion, type SafeViewport } from './layout.js';
 import type { Artwork } from './assets.js';
 import { theme } from './theme.js';
 
@@ -14,13 +14,14 @@ export interface ScreenModel {
 export type RowTone = 'primary' | 'danger' | 'secret' | 'info' | 'seat' | 'standard';
 
 export function rowTone(id: string): RowTone {
-  if (id.startsWith('player:')) return 'seat';
-  if (['login', 'create', 'start', 'propose', 'startTeamVote', 'confirmRole', 'approve', 'missionSuccess', 'confirmInspection', 'rematch', 'confirm:yes', 'apply', 'generate'].includes(id)) return 'primary';
-  if (['endGame', 'requestAbort', 'leave', 'logout', 'reject', 'missionFail', 'assassinate', 'confirm:no', 'cleanup'].includes(id)
+  if (id.startsWith('player:') || id.startsWith('member:')) return 'seat';
+  if (['login', 'create', 'start', 'ready', 'propose', 'startTeamVote', 'confirmRole', 'approve', 'missionSuccess', 'confirmInspection', 'rematch', 'confirm:yes', 'apply', 'generate'].includes(id)) return 'primary';
+  if (['endGame', 'requestAbort', 'leave', 'logout', 'reject', 'missionFail', 'assassinate', 'confirm:no', 'cleanup', 'error'].includes(id)
     || ['ban:', 'delete:', 'reset:', 'room:'].some(prefix => id.startsWith(prefix))) return 'danger';
   if (id === 'role' || id === 'clue' || id.startsWith('inspection:') || id === 'evil' || id.endsWith('Candidates')
     || (id.startsWith('treasure:') && !['treasure:banNotice', 'treasure:fanNotice'].includes(id))) return 'secret';
   if (['status', 'progress', 'result', 'team', 'teamVoteProgress', 'missionProgress', 'dealCountdown', 'notice', 'invitation', 'treasure:banNotice', 'treasure:fanNotice'].includes(id)
+    || id === 'empty' || id === 'announcement' || id === 'submitted' || id.startsWith('ballot:') || id.startsWith('guide:') && id !== 'guide:roles' || id.startsWith('role-')
     || ['round:', 'revealed:', 'stats:', 'replay:'].some(prefix => id.startsWith(prefix))) return 'info';
   return 'standard';
 }
@@ -61,7 +62,7 @@ function background(ctx: CanvasRenderingContext2D, viewport: SafeViewport, artwo
   if (image?.width && image.height) cover(ctx, image, width, height);
   const shade = ctx.createLinearGradient(0, 0, 0, height);
   shade.addColorStop(0, 'rgba(5, 9, 24, 0.38)');
-  shade.addColorStop(0.32, 'rgba(6, 8, 20, 0.68)');
+  shade.addColorStop(0.32, 'rgba(6, 8, 20, 0.82)');
   shade.addColorStop(1, 'rgba(8, 6, 15, 0.97)');
   ctx.fillStyle = shade;
   ctx.fillRect(0, 0, width, height);
@@ -125,8 +126,11 @@ function card(ctx: CanvasRenderingContext2D, row: HitRegion) {
     ctx.strokeStyle = theme.border; ctx.stroke();
     ctx.textAlign = 'center'; ctx.fillStyle = selected ? '#3d270f' : theme.accent;
     ctx.font = 'bold 16px sans-serif'; ctx.fillText(seat, row.x + 30, row.y + 39);
-    ctx.textAlign = 'left'; ctx.fillStyle = theme.text; ctx.font = '14px sans-serif';
-    ctx.fillText(fitRowText(label, row.width - 71, text => ctx.measureText(text).width), row.x + 60, row.y + 38);
+    const [name, ...badges] = label.split(' · ');
+    ctx.textAlign = 'left'; ctx.fillStyle = theme.text; ctx.font = 'bold 14px sans-serif';
+    ctx.fillText(fitRowText(name!, row.width - 71, text => ctx.measureText(text).width), row.x + 60, row.y + 29);
+    ctx.fillStyle = selected ? theme.accent : theme.muted; ctx.font = '11px sans-serif';
+    ctx.fillText(fitRowText(badges.join(' · ') || '等待行动', row.width - 71, text => ctx.measureText(text).width), row.x + 60, row.y + 49);
     return;
   }
   const active = tone !== 'info';
@@ -134,11 +138,11 @@ function card(ctx: CanvasRenderingContext2D, row: HitRegion) {
   if (tone === 'primary') { gradient.addColorStop(0, '#ffe5a0'); gradient.addColorStop(1, '#d9973f'); }
   else if (tone === 'danger') { gradient.addColorStop(0, 'rgba(89, 31, 35, 0.94)'); gradient.addColorStop(1, 'rgba(47, 16, 28, 0.96)'); }
   else if (tone === 'secret') { gradient.addColorStop(0, 'rgba(27, 55, 72, 0.96)'); gradient.addColorStop(1, 'rgba(16, 30, 46, 0.96)'); }
-  else { gradient.addColorStop(0, tone === 'info' ? 'rgba(18, 30, 46, 0.88)' : 'rgba(52, 29, 31, 0.94)'); gradient.addColorStop(1, 'rgba(21, 16, 30, 0.96)'); }
+  else { gradient.addColorStop(0, tone === 'info' ? 'rgba(18, 30, 46, 0.88)' : 'rgba(31, 37, 54, 0.96)'); gradient.addColorStop(1, 'rgba(16, 20, 34, 0.96)'); }
   roundedRect(ctx, row.x, row.y, row.width, row.height, tone === 'primary' ? 17 : 11);
   ctx.fillStyle = gradient;
   ctx.fill();
-  ctx.strokeStyle = tone === 'primary' ? '#fff0b6' : tone === 'danger' ? '#b96b63' : 'rgba(219, 177, 102, 0.72)';
+  ctx.strokeStyle = tone === 'primary' ? '#fff0b6' : tone === 'danger' ? '#b96b63' : 'rgba(219, 177, 102, 0.36)';
   ctx.lineWidth = tone === 'primary' ? 1.5 : 1;
   ctx.stroke();
   if (tone !== 'primary') {
@@ -150,7 +154,9 @@ function card(ctx: CanvasRenderingContext2D, row: HitRegion) {
   ctx.font = tone === 'primary' ? 'bold 18px STKaiti, KaiTi, serif' : active ? '16px sans-serif' : '15px sans-serif';
   const x = tone === 'primary' ? row.x + row.width / 2 : row.x + 16;
   const textWidth = row.width - (tone === 'primary' ? 30 : active ? 46 : 30);
-  ctx.fillText(fitRowText(row.text, textWidth, text => ctx.measureText(text).width), x, row.y + 33);
+  const lines = row.lines ?? [fitRowText(row.text, textWidth, text => ctx.measureText(text).width)];
+  const firstBaseline = row.y + (row.height - lines.length * 23) / 2 + 17;
+  lines.forEach((line, index) => ctx.fillText(line, x, firstBaseline + index * 23));
   if (active && tone !== 'primary') {
     ctx.fillStyle = tone === 'danger' ? '#efa99d' : theme.accent;
     ctx.font = '20px sans-serif';
@@ -165,7 +171,21 @@ export function renderScreen(model: ScreenModel, canvas: HTMLCanvasElement, view
   background(ctx, viewport, artwork);
   header(ctx, model, viewport, artwork);
   const rows = layoutRows(model.rows, viewport, model.scroll ?? 0, model.scene ?? 'standard');
+  ctx.save();
+  ctx.beginPath();
+  const top = contentTop(viewport, model.scene ?? 'standard');
+  ctx.rect(0, top, viewport.width, Math.max(0, viewport.height - viewport.bottom - top));
+  ctx.clip();
   for (const row of rows) card(ctx, row);
+  ctx.restore();
+  const maxScroll = clampScroll(model.rows, viewport, Number.MAX_SAFE_INTEGER, model.scene ?? 'standard');
+  if (maxScroll > 0) {
+    const visible = viewport.height - viewport.bottom - top;
+    const thumb = Math.max(24, visible * visible / (visible + maxScroll));
+    const y = top + ((model.scroll ?? 0) / maxScroll) * (visible - thumb);
+    ctx.fillStyle = 'rgba(255, 216, 117, 0.55)';
+    ctx.fillRect(viewport.width - 7, y, 3, thumb);
+  }
   return rows;
 }
 

@@ -82,6 +82,11 @@ export function gameScreen(room: RoomView, user: User, ui: GameUiState, now = Da
       : `芭蕉扇：${treasure.bananaFan.armed ? '已蓄力，点击取消' : '点击蓄力'}` });
   }
   if (game.abortPoll) rows.push({ id: 'abortPoll', text: `终止投票 ${game.abortPoll.approvals}/${game.abortPoll.required}` });
+  if (game.phase === 'role_reveal' && self?.confirmed) rows.push({ id: 'submitted', text: `身份已确认，等待其余仙友（${game.progress.confirmed}/${game.players.length}）` });
+  if (game.phase === 'team_vote' && self?.teamVoted) rows.push({ id: 'submitted', text: '已提交组队投票，等待其余仙友' });
+  if (game.phase === 'mission') rows.push({ id: 'submitted', text: self?.missionVoted ? '已提交任务牌，等待其余队员' : round?.team.includes(user.id) ? '请提交本次任务牌' : '本轮无需出牌，等待出征队员完成任务' });
+  const ballots = game.teamVote?.ballots ?? round?.vote?.ballots;
+  if (ballots) rows.push(...Object.entries(ballots).map(([id, ballot]) => ({ id: `ballot:${id}`, text: `${playerLabel(id)}：${ballot === 'abstain' ? '弃权' : ballot ? '赞成' : '反对'}` })));
   if (game.phase === 'role_reveal' && self && !self.confirmed) rows.push({ id: 'confirmRole', text: '已看清身份' });
   if (game.phase === 'proposing' && game.captainId === user.id) rows.push(
     { id: 'direction', text: `方向：${ui.direction === 'counterclockwise' ? '逆时针' : '顺时针'}` },
@@ -101,9 +106,10 @@ export function gameScreen(room: RoomView, user: User, ui: GameUiState, now = Da
   );
   if (game.phase === 'lady' && self?.canInspect) rows.push({ id: 'inspect', text: `查验所选玩家${ui.targetId ? ' ✓' : ''}` });
   if (game.phase === 'lady_reveal' && self?.canConfirmInspection) rows.push({ id: 'confirmInspection', text: '确认查验结果' });
-  if (game.phase === 'early_window' && self?.canDecideEarly) rows.push(
-    { id: 'earlyAttempt', text: '提前刺杀' }, { id: 'earlySkip', text: '继续对局' },
-  );
+  if (ui.privateRoleVisible && self?.canDecideEarly) {
+    rows.push({ id: 'earlyAttempt', text: '启用提前刺杀（刺错立即失败）' });
+    if (game.phase === 'early_window') rows.push({ id: 'earlySkip', text: '继续对局' });
+  }
   if (game.phase === 'assassination' && self?.role === 'assassin') rows.push({ id: 'assassinate', text: `刺杀所选玩家${ui.targetId ? ' ✓' : ''}` });
   if (game.phase === 'finished' || game.phase === 'aborted') rows.push(
     { id: 'result', text: `结果：${game.result?.winner === 'blue' ? '取经阵营获胜' : game.result?.winner === 'red' ? '妖魔阵营获胜' : '对局中止'} · ${game.result?.reason ?? ''}` },
@@ -116,7 +122,11 @@ export function gameScreen(room: RoomView, user: User, ui: GameUiState, now = Da
     ] : [{ id: 'endGame', text: '结束游戏并关闭房间' }]));
     else if (!game.abortPoll) rows.push({ id: 'requestAbort', text: '向房主申请结束对局' });
   }
-  return { title: `房间 ${room.code}`, subtitle: `${game.players.length}人 · ${phaseName[game.phase]}`, rows };
+  rows.push({ id: 'chat', text: '房间聊天' });
+  // Keep the current decision and private identity above the seat board on small phones.
+  const first = new Set(['status', 'dealCountdown', 'progress', 'role', 'confirmRole', 'submitted', 'approve', 'reject', 'abstain', 'missionSuccess', 'missionFail', 'confirmInspection', 'earlyAttempt', 'earlySkip']);
+  const ordered = [...rows.filter(row => first.has(row.id)), ...rows.filter(row => !first.has(row.id))];
+  return { title: `房间 ${room.code}`, subtitle: `${game.players.length}人 · ${phaseName[game.phase]}`, rows: ordered };
 }
 
 export function gameAction(room: RoomView, user: User, action: string, ui: Partial<GameUiState> = {}): Command | undefined {
@@ -133,7 +143,9 @@ export function gameAction(room: RoomView, user: User, action: string, ui: Parti
   if (game.phase === 'mission' && self && !self.missionVoted && round?.team.includes(user.id) && ['missionSuccess', 'missionFail'].includes(action) && (action !== 'missionFail' || self.team === 'red')) command = { type: 'missionVote', payload: { success: action === 'missionSuccess' } };
   if (action === 'inspect' && game.phase === 'lady' && self?.canInspect && ui.targetId && ui.targetId !== user.id) command = { type: 'inspectAlignment', payload: { targetId: ui.targetId } };
   if (action === 'confirmInspection' && game.phase === 'lady_reveal' && self?.canConfirmInspection) command = { type: 'confirmInspection', payload: {} };
-  if (game.phase === 'early_window' && self?.canDecideEarly && ['earlyAttempt', 'earlySkip'].includes(action)) command = { type: 'earlyAssassinationDecision', payload: { attempt: action === 'earlyAttempt' } };
+  if (ui.privateRoleVisible && self?.canDecideEarly && !['dealing', 'role_reveal', 'assassination', 'finished', 'aborted'].includes(game.phase)
+    && (action === 'earlyAttempt' || action === 'earlySkip' && game.phase === 'early_window'))
+    command = { type: 'earlyAssassinationDecision', payload: { attempt: action === 'earlyAttempt' } };
   if (action === 'assassinate' && game.phase === 'assassination' && self?.role === 'assassin' && ui.targetId && ui.targetId !== user.id) command = { type: 'assassinate', payload: { targetId: ui.targetId } };
   const treasures = self?.treasures;
   if (action.startsWith('treasure:') && ui.privateRoleVisible && room.settings.treasuresEnabled && game.players.length >= 9 && self && treasures?.enabled) {

@@ -37,6 +37,19 @@ test('account panel loads player statistics and history', async () => {
   assert.ok(panel.model().rows.some(row => row.text.includes('2')));
 });
 
+test('room presets can be applied without leaving the room and stale settings clear from entry', async () => {
+  const api = { request: async () => ({ presets: [{ id: 'p', name: '常用', settings: defaultSettings }] }) } as any;
+  const panel = new PlayerPanel(new PlayerExtras(api), { id: 'u', nickname: '我' });
+  await panel.open('presets', { roomId: 'r', settings: defaultSettings, canApplyPreset: true });
+  await panel.handle('apply:p', async () => undefined);
+  assert.deepEqual(panel.takeAppliedSettings(), defaultSettings);
+  await panel.open('account');
+  await panel.handle('page:presets', async () => undefined);
+  assert.ok(!panel.model().rows.some(row => row.id === 'save'));
+  await panel.handle('apply:p', async () => undefined);
+  assert.equal(panel.takeAppliedSettings(), undefined);
+});
+
 test('player replay shows full round details and favorite action', () => {
   const replay = { id: 'g', playerCount: 2, rulesetVersion: 'v1', result: { winner: 'blue', reason: 'merlin_survived' },
     settings: { anonymousTeamVote: true }, favorite: false,
@@ -113,4 +126,25 @@ test('account panel can save a cropped custom avatar from the mini game picker',
   assert.ok(panel.model().rows.some(row => row.id === 'uploadAvatar'));
   await panel.handle('uploadAvatar', async () => undefined);
   assert.equal((saved as { avatarUrl: string }).avatarUrl, 'data:image/jpeg;base64,AAAA');
+});
+
+test('favorites filter is retained during history pagination', async () => {
+  const paths: string[] = [];
+  const api = { request: async (path: string) => { paths.push(path); return { games: [], nextCursor: 'next page' }; } } as any;
+  const panel = new PlayerPanel(new PlayerExtras(api), { id: 'u', nickname: '我' });
+  await panel.open('history');
+  await panel.handle('favorites', async () => undefined);
+  await panel.handle('more', async () => undefined);
+  assert.ok(paths.includes('/me/games?favorites=true'));
+  assert.ok(paths.includes('/me/games?favorites=true&cursor=next%20page'));
+});
+
+test('live room chat deduplicates messages and clears when changing rooms', async () => {
+  const panel = new PlayerPanel(new PlayerExtras({} as any), { id: 'u', nickname: '我' });
+  await panel.open('roomchat', { roomId: 'one' });
+  const message = { messageId: 'm', seat: 1, nickname: '仙友', text: '你好' } as any;
+  panel.onRoomChat(message); panel.onRoomChat(message);
+  assert.equal(panel.model().rows.filter(row => row.id === 'roommessage:m').length, 1);
+  await panel.open('roomchat', { roomId: 'two' });
+  assert.equal(panel.model().rows.filter(row => row.id === 'roommessage:m').length, 0);
 });

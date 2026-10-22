@@ -5,7 +5,7 @@ export function guideScreen(roleId?: string): ScreenModel {
   const role = ALL_GALLERY_ROLES.find(item => item.id === roleId);
   if (role) return { title: role.fullName, subtitle: role.team === 'blue' ? '取经阵营' : '妖魔阵营', rows: [
     { id: 'role-title', text: role.title }, { id: 'role-motto', text: role.motto },
-    ...Array.from({ length: Math.ceil(role.story.length / 16) }, (_, index) => ({ id: `role-story:${index}`, text: role.story.slice(index * 16, (index + 1) * 16) })),
+    { id: 'role-story', text: role.story },
     { id: 'guide:roles', text: '返回角色图鉴' },
   ] };
   return { title: '玩法说明', subtitle: '嘻游 · 真假猴王', rows: [

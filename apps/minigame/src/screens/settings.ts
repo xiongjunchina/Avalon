@@ -10,7 +10,7 @@ export function settingsScreen(settings: Settings): ScreenModel {
     { id: 'ladyEnabled', text: `照妖宝镜：${settings.ladyEnabled ? '开' : '关'}` },
     { id: 'earlyAssassinationEnabled', text: `提前刺杀：${settings.earlyAssassinationEnabled ? '开' : '关'}` },
     { id: 'guardianPerksEnabled', text: `护法天机：${settings.guardianPerksEnabled ? '开' : '关'}` },
-    { id: 'voiceChatEnabled', text: `实时语音：${settings.voiceChatEnabled ? '开' : '关'}` },
+    { id: 'voiceChatEnabled', text: `网页端语音：${settings.voiceChatEnabled ? '开' : '关'}（小游戏暂不提供）` },
     { id: 'autoRevealRoleEnabled', text: `自动亮身份：${settings.autoRevealRoleEnabled ? '开' : '关'}` },
     { id: 'treasuresEnabled', text: `9–12人法宝：${settings.treasuresEnabled ? '开' : '关'}（仅9人以上生效）` },
     { id: 'apply', text: '应用设置并返回' },

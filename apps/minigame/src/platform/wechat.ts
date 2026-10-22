@@ -50,6 +50,8 @@ export interface WxRuntime {
   hideKeyboard?(): void;
   onKeyboardConfirm?(callback: (event: { value: string }) => void): void;
   offKeyboardConfirm?(callback: (event: { value: string }) => void): void;
+  onKeyboardComplete?(callback: () => void): void;
+  offKeyboardComplete?(callback: () => void): void;
   onTouchStart?(callback: (event: { touches: { clientX: number; clientY: number }[] }) => void): void;
   onTouchEnd?(callback: (event: { changedTouches: { clientX: number; clientY: number }[] }) => void): void;
   createInnerAudioContext?(): { src: string; play(): void; pause(): void; stop(): void; destroy(): void };

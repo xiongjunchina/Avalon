@@ -50,14 +50,15 @@ export class LobbyController {
 export function lobbyScreen(room: RoomView, user: User, status = ''): ScreenModel {
   const me = room.members.find(member => member.id === user.id);
   return { title: `房间 ${room.code}`, subtitle: `${room.settings.playerCount}人 · ${status}`, rows: [
-    ...room.members.map(member => ({ id: `member:${member.id}`, text: `${member.seat}号 ${member.nickname} ${member.ready ? '已准备' : '未准备'} ${member.online ? '' : '离线'}` })),
+    ...room.members.map(member => ({ id: `member:${member.id}`, text: `${member.seat}号 ${member.nickname} · ${member.ready ? '已准备' : '未准备'} · ${member.online ? '在线' : '离线'}` })),
     { id: 'ready', text: me?.ready ? '取消准备' : '准备' },
     ...(room.hostId === user.id ? [
       { id: 'start', text: '开始游戏' },
       { id: 'settings', text: '房间玩法设置' },
+      { id: 'presets', text: '保存或应用玩法预设' },
       { id: 'admission', text: room.acceptingNewMembers ? '关闭新玩家加入' : '允许新玩家加入' },
     ] : []),
-    { id: 'share', text: '邀请微信好友' }, { id: 'friends', text: '邀请仙友入房' }, { id: 'chat', text: '房间聊天' }, { id: 'voice', text: '语音控制' },
+    { id: 'share', text: '邀请微信好友' }, { id: 'friends', text: '邀请仙友入房' }, { id: 'chat', text: '房间聊天' },
     { id: 'leave', text: '离开房间' },
   ] };
 }

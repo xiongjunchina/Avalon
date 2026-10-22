@@ -39,7 +39,7 @@ export class AdminPanel {
   }
 
   model(): ScreenModel {
-    if (this.pending) return { title: '确认管理操作', subtitle: this.pending.label, rows: [{ id: 'confirm:yes', text: '确认执行' }, { id: 'confirm:no', text: '取消' }] };
+    if (this.pending) return { title: '确认管理操作', rows: [{ id: 'notice', text: this.pending.label }, { id: 'confirm:yes', text: '确认执行' }, { id: 'confirm:no', text: '取消' }] };
     if (this.page === 'user' && this.user) return adminUserScreen(this.user);
     if (this.page === 'replay' && this.replayData) return adminReplayScreen(this.replayData);
     if (this.page === 'friends') return { title: '用户仙友', rows: [...this.friendNames.map((name, index) => ({ id: `friend:${index}`, text: name })), { id: 'page:users', text: '返回用户列表' }] };

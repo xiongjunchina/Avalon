@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { layoutRows, hitTest, hideSensitiveView } from '../src/ui/layout.js';
+import { layoutRows, hitTest, hideSensitiveView, clampScroll, wrapText } from '../src/ui/layout.js';
 import { fitRowText, rowTone } from '../src/ui/widgets.js';
 
 test('rows respect safe area, scroll and touch target size', () => {
@@ -11,7 +11,23 @@ test('rows respect safe area, scroll and touch target size', () => {
   assert.equal(hitTest(first, first[0]!.x + 2, first[0]!.y + 2)?.id, '0');
   const scrolled = layoutRows(rows, { width: 320, height: 480, top: 36, bottom: 20 }, 200);
   assert.notEqual(scrolled[0]?.id, '0');
-  assert.ok(scrolled.every(row => row.y + row.height <= 460));
+  assert.ok(scrolled.every(row => row.y < 460 && row.y + row.height > 144));
+});
+
+test('long descriptions wrap without losing characters and remain scrollable below the header', () => {
+  const text = '任务记录：' + '孙悟空与唐僧共同出征，完成取经任务。'.repeat(12);
+  const measure = (value: string) => Array.from(value).length * 15;
+  const lines = wrapText(text, 280, measure);
+  assert.equal(lines.join(''), text);
+  assert.ok(lines.every(line => measure(line) <= 280));
+  const viewport = { width: 320, height: 480, top: 36, bottom: 20 };
+  const input = [{ id: 'replay:long', text }, { id: 'back', text: '返回' }];
+  const end = clampScroll(input, viewport, 100000);
+  assert.ok(end > 0);
+  const rows = layoutRows(input, viewport, end);
+  assert.ok(rows.some(row => row.id === 'back'));
+  assert.equal(hitTest(rows, 30, 60), undefined);
+  assert.equal(clampScroll(input, viewport, -20), 0);
 });
 
 test('backgrounding hides private role and ballot overlays', () => {
@@ -73,4 +89,15 @@ test('admin navigation stays above long lists in a touchable two-column grid', (
   assert.ok(placed[0]!.x < placed[1]!.x);
   assert.ok(placed.find(row => row.id === 'user:0')!.y > placed.find(row => row.id === 'back')!.y);
   assert.equal(hitTest(placed, placed[1]!.x + 5, placed[1]!.y + 5)?.id, 'page:users');
+});
+
+test('entry groups secondary actions into a compact grid while keeping primary actions full width', () => {
+  const viewport = { width: 390, height: 844, top: 44, bottom: 34 };
+  const rows = layoutRows([
+    { id: 'create', text: '创建房间' }, { id: 'join', text: '输入房间号加入' },
+    { id: 'account', text: '我的账户' }, { id: 'friends', text: '仙友' },
+  ], viewport, 0, 'entry');
+  assert.equal(rows[0]!.width, 354);
+  assert.equal(rows[2]!.y, rows[3]!.y);
+  assert.ok(rows[2]!.x < rows[3]!.x);
 });

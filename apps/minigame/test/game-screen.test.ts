@@ -30,6 +30,30 @@ test('game actions use typed versioned commands and reject unauthorized actions'
   assert.equal(gameAction(room('role_reveal'), self as User, 'confirmRole')?.type, 'confirmRole');
 });
 
+test('game shows submitted state and only server-projected public ballots', () => {
+  const r = room('team_vote');
+  r.game!.self!.teamVoted = true;
+  r.game!.teamVote = { votedIds: [self.id], ballots: { [self.id]: 'abstain' } };
+  let screen = gameScreen(r, self, { privateRoleVisible: false, ballotVisible: false });
+  assert.ok(screen.rows.some(row => row.text.includes('已提交组队投票')));
+  assert.ok(screen.rows.some(row => row.id.startsWith('ballot:') && row.text.includes('弃权')));
+  r.game!.teamVote.ballots = undefined;
+  screen = gameScreen(r, self, { privateRoleVisible: false, ballotVisible: false });
+  assert.ok(!screen.rows.some(row => row.id.startsWith('ballot:')));
+});
+
+test('unlocked early assassination works during proposing and stays inside the private identity view', () => {
+  const r = room('proposing');
+  r.game!.self!.role = 'assassin';
+  r.game!.self!.canDecideEarly = true;
+  const hidden = { privateRoleVisible: false, ballotVisible: false };
+  assert.ok(!gameScreen(r, self, hidden).rows.some(row => row.id === 'earlyAttempt'));
+  const shown = { privateRoleVisible: true, ballotVisible: false };
+  assert.ok(gameScreen(r, self, shown).rows.some(row => row.id === 'earlyAttempt'));
+  assert.equal(gameAction(r, self, 'earlyAttempt', shown)?.type, 'earlyAssassinationDecision');
+  assert.equal(gameAction(r, self, 'earlyAttempt', hidden), undefined);
+});
+
 test('captain can update a partial draft and host can resolve an abort request', () => {
   const proposing = room('proposing');
   assert.equal(gameAction(proposing, self as User, 'draft', { selectedIds: [self.id] })?.type, 'updateTeamDraft');
