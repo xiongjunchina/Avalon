@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { runInNewContext } from 'node:vm';
@@ -19,7 +19,9 @@ test('builds an importable project without server or admin secrets', async t => 
   const bundle = await readFile(join(outDir, 'bundle.js'), 'utf8');
   assert.doesNotMatch(bundle, /WECHAT_MINIGAME_APP_SECRET|ADMIN_KEY|server-only-secret/);
   const art = await readdir(join(outDir, 'art'));
-  assert.ok(art.includes('moonlit.png'));
+  assert.ok(art.includes('fonts'));
+  assert.ok(art.includes('scenes'));
+  assert.equal(art.includes('moonlit.png'), false, 'unused legacy artwork must not consume font package budget');
   assert.ok((await readdir(join(outDir, 'art', 'roles'))).includes('merlin-160.webp'));
 });
 
@@ -75,4 +77,17 @@ test('built bundle starts with only WeChat Mini Game APIs available', async t =>
   touchStart?.({ touches: [{ clientX: button.x + 10, clientY: button.y + 15 }] });
   touchEnd?.({ changedTouches: [{ clientX: button.x + 10, clientY: button.y + 15 }] });
   assert.ok(labels.some(label => label.includes('幻境演练')));
+});
+
+
+test('incremental builds remove only obsolete artwork and keep the new font budget', async t => {
+  const outDir=await mkdtemp(join(tmpdir(),'avalon-minigame-incremental-'));
+  t.after(()=>rm(outDir,{recursive:true,force:true}));
+  await buildMiniGame({outDir});
+  await writeFile(join(outDir,'art/moonlit.png'),new Uint8Array(2_080_000));
+  await writeFile(join(outDir,'art/gate.webp'),new Uint8Array(130_000));
+  const result=await buildMiniGame({outDir});
+  assert.ok(result.size<4*1024*1024);
+  assert.equal((await readdir(join(outDir,'art'))).includes('moonlit.png'),false);
+  assert.ok((await readFile(join(outDir,'art/fonts/calligraphy.ttf'))).length>0);
 });

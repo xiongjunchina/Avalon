@@ -33,6 +33,7 @@ export interface WxAvatarCanvas {
 
 export interface WxRuntime {
   createCanvas(): HTMLCanvasElement;
+  loadFont?(path: string): string | null;
   createOffscreenCanvas?(options: { type: '2d'; width: number; height: number }): WxAvatarCanvas;
   createImage?(): WxImage;
   chooseImage?(options: { count: number; sizeType: string[]; sourceType: string[];

@@ -2,7 +2,7 @@
 
 ## 基准
 
-本轮以 origin/main `6835184` 为网页端基准，合并到 `codex/wechat-minigame` 后实施。仅后台代码开发，未操作桌面、开发者工具或发布后台。
+本轮以 origin/main `edf53a0` 为网页端基准，合并到 `codex/wechat-minigame` 后实施。仅后台代码开发，未操作桌面、开发者工具或发布后台。
 
 ## 已同步
 
@@ -18,14 +18,37 @@
 ## 验证
 
 - TypeScript 类型检查通过；网页构建通过。
-- 小游戏 75 项测试、网页 32 项测试通过。
+- 小游戏 81 项测试、网页 32 项测试通过。
 - 构建产物 VM 测试验证登录、空白加入表单、校验提示及按所选人数建房。
 - 本地演练覆盖 5–12 人完整流程。
 - 无界面 Canvas 截图覆盖 320/390/430 宽度：首页、登录、配置、候场、6人/12人牌局、身份、投票、任务、图鉴、管理。
 - 最终审查修复终局退出无效、管理兑换码反馈不可见。
 
+## 首页与组队牌局的本轮校准
+
+- 使用同一个 `scripts/parity-fixture.ts`：6 人，1号行者为队长，proposing 阶段，0/2 已选。两端人数、身份展示状态、座位、方向、字体与截图尺寸一致。
+- 对齐顶部工具栏、品牌字、活动条、圆形角色图、名牌与箴言、模式与主按钮。
+- 对齐五行任务牌、摘要带、云纹阶段带、奇偶左右座位、中央八卦盘及龙纹底座。底部面板随内容滚动，短屏不再用固定小面板挤压正文。
+- 采用网页相同字体的本地 TrueType 子集，附 SIL OFL 许可证；运行时不依赖 Google Fonts 网络。旧 runtime 不支持自定义字体时降级为系统字体。
+- 新增实际构建产物点击测试：选择两位队员、实时草稿回执、确认阵容、进入讨论。
+- 新增 320/390/430 宽度、5–12 人及安全区下的横向边界与滚动可达性检查。
+- `scripts/compare-web.mjs` 校验 390×844 下角色圆像、两个首页主按钮、第一张任务牌、座位框及动作面板，六个矩形边界的最大误差均小于 1 CSS 像素。这个数值只衡量这六个区域的几何位置，不代表整图像素完全相同。
+- 对比图位于 `dist/web-parity-review/entry-comparison.png` 与 `game-comparison.png`。图中左为网页、右为原生 Canvas。本轮没有真机截图；不同运行时的文字抗锯齿仍需真机验收。
+
+### 后台重现截图
+
+使用环境变量 `MINIGAME_PLAYWRIGHT_PATH`、`MINIGAME_CHROMIUM_PATH` 指定 Playwright 与 Chromium，执行：
+
+```text
+node --import tsx apps/minigame/scripts/capture-web-reference.mjs
+node apps/minigame/scripts/render-preview.mjs
+node apps/minigame/scripts/compare-web.mjs
+```
+
+三个脚本仅启动独立 headless Chromium；不连接用户浏览器，不操作微信开发者工具，API 和 WebSocket 均为本地测试数据。
+
 ## 产物和后续验收
 
-`npm run package:minigame -- --version=0.2.0` 生成独立工程与 ZIP。开发者工具应导入新产物中的 project，旧导入目录不会自动更新。
+`npm run package:minigame -- --version=0.2.1` 生成独立工程与 ZIP。开发者工具应导入新产物中的 project，旧导入目录不会自动更新。
 
 本地代码和无界面截图不等于真机验收。真实微信登录、合法域名/端口、多人联机及上传回执仍需在开发者工具与真机验证。本轮未上传或发布，也未更改云服务器。

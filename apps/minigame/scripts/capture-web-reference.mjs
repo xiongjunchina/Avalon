@@ -1,9 +1,9 @@
 import { createServer } from 'vite';
-import { mkdir } from 'node:fs/promises';
+import { mkdir, writeFile, readFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { defaultSettings } from '@avalon/contracts';
-import { createGame, projectGame } from '@avalon/game-core';
+import { parityFixture } from './parity-fixture.ts';
 
 const root = resolve(import.meta.dirname, '../../..');
 const { chromium } = await import(process.env.MINIGAME_PLAYWRIGHT_PATH ? pathToFileURL(process.env.MINIGAME_PLAYWRIGHT_PATH).href : 'playwright');
@@ -12,15 +12,17 @@ await server.listen();
 const browser = await chromium.launch({ headless: true, ...(process.env.MINIGAME_CHROMIUM_PATH ? { executablePath: process.env.MINIGAME_CHROMIUM_PATH } : {}) });
 const out = join(root, 'dist/web-reference');
 await mkdir(out, { recursive: true });
-const user = { id: '11111111-1111-4111-8111-111111111111', nickname: '行者', playerCode: '123456', avatar: 'leaf' };
-const members = Array.from({ length: 6 }, (_, index) => ({ id: index ? '00000000-0000-4000-8000-' + String(index).padStart(12, '0') : user.id, nickname: index ? '仙友' + index : user.nickname, seat: index + 1, ready: index > 0, online: true }));
-const game = createGame('11111111-2222-4333-8444-555555555555', members, defaultSettings, values => [...values]);
-const room = { id: '22222222-2222-4222-8222-222222222222', code: '123456', version: 1, hostId: user.id, settings: defaultSettings, acceptingNewMembers: true, members, phase: 'waiting', serverTime: new Date().toISOString() };
+const fontCss = (await Promise.all([['calligraphy','Ma Shan Zheng'],['display','ZCOOL XiaoWei'],['sans','Noto Sans SC']].map(async ([file,family]) => `@font-face{font-family:"${family}";src:url(data:font/ttf;base64,${(await readFile(join(root,'apps/minigame/assets/fonts',file+'.ttf'))).toString('base64')});font-weight:400;font-style:normal;font-display:block;}`))).join('');
+const { user, room } = parityFixture();
 try {
-  for (const scene of ['guest', 'entry', 'setup', 'lobby', 'game']) {
-    const page = await browser.newPage({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' });
+  for (const width of (process.env.PARITY_WIDTH ? [Number(process.env.PARITY_WIDTH)] : [320, 390, 430])) {
+  const height = width === 320 ? 568 : width === 390 ? 844 : 932;
+  for (const scene of (process.env.PARITY_SCENES?.split(',') ?? ['guest', 'entry', 'setup', 'lobby', 'game'])) {
+    const page = await browser.newPage({ viewport: { width, height }, reducedMotion: 'reduce' });
+    await page.addInitScript(() => { const interval = window.setInterval; window.setInterval = (fn, delay, ...args) => interval(fn, delay === 3800 ? 3600000 : delay, ...args); });
+    await page.route('https://fonts.googleapis.com/**', route => route.fulfill({contentType:'text/css',body:fontCss}));
     const activeRoom = ['lobby', 'game'].includes(scene);
-    const snapshot = scene === 'game' ? { ...room, phase: 'playing', game: projectGame(game, user.id) } : room;
+    const snapshot = scene === 'game' ? room : { ...room, phase: 'waiting', game: undefined };
     await page.route('**/api/**', async route => {
       const url = new URL(route.request().url());
       let status = 200, body = {};
@@ -35,8 +37,14 @@ try {
     await page.goto('http://127.0.0.1:6017', { waitUntil: 'networkidle' });
     if (scene === 'setup') await page.getByRole('button', { name: '开常规房', exact: true }).click();
     await page.locator(scene === 'guest' ? '.guest-login-card' : scene === 'setup' ? '.mp-setup-screen' : activeRoom ? '.quest-circles-row' : '.mp-medallion-stage').waitFor();
-    await page.screenshot({ path: join(out, scene + '-390.png') });
+    await page.evaluate(() => document.fonts.ready);
+    await page.evaluate(() => document.getAnimations().forEach(a => a.pause()));
+    const metrics = await page.evaluate(() => [...document.querySelectorAll('button,.mp-logo-block,.mp-avalon-logo,.mp-avalon-sub,.lobby-free-access-banner,.mp-medallion-circle,.mp-medallion-name,.mp-medallion-motto,.mp-home-footer,.lobby-mode-switch,.room-code-badge,.quest-medallion-wrap,.quest-circle,.quest-vote-track-zone,.slim-status-banner,.slim-status-bar,.slim-game-status-bar,.table-seats-grid,.scheme-a-main-arena,.scheme-a-center-altar,.scheme-a-flank,.flank-seat,.flank-avatar-wrap,.flank-nameplate,.table-action-dock,.dock-panel,.dock-utility-row,.altar-bagua-disc,.dock-rule-hint')].map(el => { const r=el.getBoundingClientRect(),c=getComputedStyle(el); return { tag:el.tagName, class:el.className, text:el.textContent.trim().slice(0,110), x:r.x,y:r.y,width:r.width,height:r.height,font:c.font,fontWeight:c.fontWeight,fontFamily:c.fontFamily,fontSize:c.fontSize,letterSpacing:c.letterSpacing,color:c.color,background:c.background,border:c.border,shadow:c.boxShadow,padding:c.padding }; }).filter(r=>r.width>0&&r.height>0));
+    if(process.env.PARITY_DEBUG) console.log(scene,await page.evaluate(()=>({fonts:[...document.fonts].map(f=>({family:f.family,status:f.status,weight:f.weight})),width:(()=>{const c=document.createElement('canvas').getContext('2d');c.font='700 13px "Ma Shan Zheng"';return c.measureText('五行揭帖').width;})()})));
+    await writeFile(join(out, scene + '-' + width + '.json'), JSON.stringify(metrics,null,2));
+    await page.screenshot({ path: join(out, scene + '-' + width + '.png') });
     await page.close();
+  }
   }
 } finally { await browser.close(); await server.close(); }
 console.log('Actual latest web reference: ' + out);

@@ -1,5 +1,5 @@
 import { build } from 'esbuild';
-import { copyFile, mkdir, readFile, readdir, stat, writeFile } from 'node:fs/promises';
+import { copyFile, mkdir, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -49,8 +49,12 @@ export async function buildMiniGame({
     await copyFile(join(minigameRoot, 'assets/emblems', name), join(outDir, 'art/emblems', name));
   for (const name of ['gate', 'sword', 'pavilion', 'library', 'mirror', 'dawn'])
     await copyFile(join(repoRoot, 'apps/web/public/art/scenes', name + '.webp'), join(outDir, 'art/scenes', name + '.webp'));
-  await copyFile(join(repoRoot, 'apps', 'web', 'public', 'art', 'scenes', 'gate.webp'), join(outDir, 'art', 'gate.webp'));
-  await copyFile(join(repoRoot, 'apps', 'web', 'public', 'art', 'avalon-moonlit.png'), join(outDir, 'art', 'moonlit.png'));
+  // Remove only the two named legacy build outputs, including on incremental rebuilds.
+  await rm(join(outDir, 'art/moonlit.png'), { force: true });
+  await rm(join(outDir, 'art/gate.webp'), { force: true });
+  await mkdir(join(outDir, 'art/fonts'), { recursive: true });
+  for (const name of await readdir(join(minigameRoot, 'assets/fonts')))
+    if (name.endsWith('.ttf') || name.endsWith('-OFL.txt')) await copyFile(join(minigameRoot, 'assets/fonts', name), join(outDir, 'art/fonts', name));
   const rolesRoot = join(repoRoot, 'apps', 'web', 'public', 'art', 'roles');
   await mkdir(join(outDir, 'art', 'roles'), { recursive: true });
   for (const name of await readdir(rolesRoot)) {

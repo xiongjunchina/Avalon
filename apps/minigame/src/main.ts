@@ -23,12 +23,14 @@ import { chooseAvatar } from './platform/avatar.js';
 import { createArtwork } from './ui/assets.js';
 import { describeMiniGameError } from './ui/messages.js';
 import { MiniGameSound } from './platform/sound.js';
+import { installWebFonts } from './platform/fonts.js';
 import { KnownAccounts } from './net/known-accounts.js';
 
 declare const wx: WxRuntime;
 declare const __MINIGAME_API_BASE_URL__: string;
 
 const baseUrl = __MINIGAME_API_BASE_URL__;
+installWebFonts(wx);
 const platform = new WechatPlatform(wx);
 const canvas = drawShell(platform);
 const artwork = createArtwork(wx, () => render(), baseUrl);
@@ -206,6 +208,7 @@ async function select(id: string) {
   if (id === 'admin') return run(async () => { const key = await askText(wx, '', 256); if (!key) return; await adminPanel.open(key); navigate('admin'); });
   if (id === 'copyCode' && user?.playerCode && wx.setClipboardData) { wx.setClipboardData({ data: user.playerCode, success: () => { notice = '仙友码已复制'; render(); }, fail: () => { error = '复制失败，请重试'; render(); } }); return; }
   sound.activate(); sound.effect('tap');
+  if (id === 'copyRoom' && room && wx.setClipboardData) { wx.setClipboardData({ data: baseUrl + '/?invite=' + encodeURIComponent(room.code), success: () => { notice = '房间邀请链接已复制'; render(); }, fail: () => { error = '复制失败，请重试'; render(); } }); return; }
   if (id === 'sound') { auxiliary = 'sound'; scroll = 0; render(); return; }
   if (id.startsWith('sound:')) { const key = id.slice(6) as 'music' | 'effects'; sound.configure(key, !sound.preferences[key]); render(); return; }
   if (id.startsWith('known:')) return run(async () => { if (!api.session.get()) await api.login(); user = await api.switchAccount(id.slice(6)); knownAccounts.remember(user); lobby = new LobbyController(api, user); playerPanel = new PlayerPanel(extras, user, () => chooseAvatar(wx)); const existing = await lobby.resume(); if (existing) connect(existing); else navigate('entry'); });
