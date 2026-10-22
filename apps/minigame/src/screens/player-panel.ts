@@ -172,6 +172,8 @@ export class PlayerPanel {
     if(id==='profile:wechat'&&this.profileDraft){const idx=Number(/wx-(\d+)/.exec(this.profileDraft.wechatAvatarUrl??'')?.[1]??0)%12+1;this.profileDraft.wechatAvatarUrl='/art/avatars/wx-'+idx+'.webp?v=artifact1';this.profileDraft.avatarUrl=null;return;}
     if(id==='profile:save'&&this.profileDraft){if(!this.profileDraft.nickname.trim())throw new Error('请填写尊号');this.user=(await this.api.updateProfile(this.profileDraft)).user;this.profileDraft=undefined;this.profileEditing=false;this.feedback='资料已保存';return;}
     if(id==='uploadAvatar'&&this.profileEditing&&this.profileDraft){if(!this.avatarPicker)throw new Error('当前微信版本不支持上传头像');this.profileDraft.avatarUrl=await this.avatarPicker();this.profileDraft.wechatAvatarUrl=null;return;}
+    if(id.startsWith('acceptFriend:')){await this.api.acceptFriend(id.slice(13));await this.open('friends',{roomId:this.roomId});return;}
+    if(id.startsWith('removeFriend:')){const friend=this.friends.find(f=>f.id===id.slice(13));if(friend)this.pending={label:'删除仙友 '+friend.nickname+'？',action:()=>this.api.removeFriend(friend.id)};return;}
     if(id==='quickToggle'){this.quickExpanded=!this.quickExpanded;return;}
     if(id.startsWith('quick:')){const text=this.model().rows.find(r=>r.id===id)?.text;if(text)this.chatDraft=text;return;}
     if(id==='chat:input'){const text=await input('写下你要说的话',this.page==='direct'?500:200);if(text!==undefined)this.chatDraft=text;return;}

@@ -155,14 +155,17 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
         button('copyCode','我的仙友码：'+(doc.user?.playerCode??'')+' · 复制',y,{skin:'code-badge'});y+=54;
       } else if(doc.friendTab==='add') {para('friend-code','我的仙友码：'+(doc.user?.playerCode??'')+' · 将仙友码告知朋友即可互相添加');button('input:friend',doc.friendQuery||'输入仙友码或尊号',y,{skin:'input'});y+=50;button('friend:add','发送仙友申请',y,{skin:'gold-button',primary:true,disabled:!doc.friendQuery?.trim()});y+=54;}
       else {
-        button('refresh:friends','🔄 刷新仙友与申请',y,{skin:'pill'});y+=50;
-        for(const group of [['accepted','我的仙友'],['incoming','待处理的仙友申请'],['outgoing','已发送的申请']]) {
-          const list=(doc.friends??[]).filter(f=>group[0]==='accepted'?f.status==='accepted':f.status==='pending'&&f.isSender===(group[0]==='outgoing'));
-          if(!list.length)continue;heading('friend-group:'+group[0],group[1]!);
-          list.forEach(friend=>{add('button','friend:'+friend.id,friend.nickname,x,y,w,78,{skin:'friend-card',image:friend.avatarUrl??'emblems/'+(friend.avatar??'cards')+'.png',detail:friend.status==='pending'?'待确认':friend.online?'在线 · 点击私聊':'离线 · 点击私聊',badge:friend.playerCode});y+=88;});
+        const groups=[['incoming','待处理的仙申令'],['accepted','仙友列表'],['outgoing','已发送的申请']];
+        for(const [key,label] of groups){const list=(doc.friends??[]).filter(f=>key==='accepted'?f.status==='accepted':f.status==='pending'&&f.isSender===(key==='outgoing'));if(!list.length)continue;
+          txt('friend-group:'+key,label+'（'+list.length+'）',y,13,{tone:'gold'});y+=30;
+          for(const friend of list){add('label','friend-card:'+friend.id,friend.nickname,x,y,w,84,{skin:'friend-card',image:friend.avatarUrl??'emblems/'+(friend.avatar??'cards')+'.png',detail:friend.status==='pending'?'申请与你结为仙友':friend.online?'大厅闲逛':'离线',badge:friend.playerCode});
+            if(key==='incoming')button('acceptFriend:'+friend.id,'结为仙友',y+22,{skin:'gold-button'},x+w-92,80,44);
+            else if(key==='accepted'){button('friend:'+friend.id,'✉ 密札',y+22,{skin:'cyan-button'},x+w-130,76,44);button('removeFriend:'+friend.id,'×',y+22,{skin:'pill',tone:'red'},x+w-48,38,44);}y+=96;
+          }y+=8;
         }
         if(!doc.friends?.length)para('empty','还没有仙友，前往「添加仙友」发送申请吧。');
       }
+
     } else if(doc.kind==='chat') {
       const direct=doc.activeTab==='direct';modalHeader(direct?'私聊密札':'法坛传音');
       for(const msg of doc.messages??[]){const tw=Math.min(w*.8,Math.max(100,measure(msg.text,13)+24)),lines=wrapText(msg.text,tw-20,t=>measure(t,13)),h=lines.length*20+38;add('label','chat:'+msg.id,msg.text,msg.self?x+w-tw:x,y,tw,h,{skin:'message',lines,fontSize:13,detail:msg.name,selected:msg.self,align:'left'});y+=h+12;}

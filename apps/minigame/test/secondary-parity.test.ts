@@ -81,3 +81,10 @@ test('fixed guide return wins the tap over a scrolled character card; modal blan
  const {room,user}=parityFixture('vote'),ui=state();syncGameUi(ui,room,true,user.id);const m=gameScreen(room,user,ui),nodes=layoutWebScreen(m,v).nodes,frame=nodes.find(n=>n.id==='dialog-frame')!;
  assert.equal(hitTest(renderScreen(m,canvas,v),frame.x+4,frame.y+100)?.id,'noop');
 });
+
+test('incoming friend can be accepted directly and deletion remains explicitly confirmed',async()=>{
+ const data=parityPlayerData(),writes:string[]=[],p=new PlayerPanel({friends:async()=>({friends:data.friends}),acceptFriend:async(id:string)=>{writes.push('accept:'+id);},removeFriend:async(id:string)=>{writes.push('remove:'+id);}} as any,parityFixture().user);
+ await p.open('friends');await p.handle('friendTab:friends',async()=>undefined);const incoming=data.friends[1]!.id,accepted=data.friends[0]!.id;
+ assert.ok(layoutWebScreen(p.model(),{width:390,height:844,top:0,bottom:0}).nodes.some(n=>n.id==='acceptFriend:'+incoming));
+ await p.handle('acceptFriend:'+incoming,async()=>undefined);assert.deepEqual(writes,['accept:'+incoming]);await p.handle('removeFriend:'+accepted,async()=>undefined);assert.equal(writes.length,1);await p.handle('confirm:yes',async()=>undefined);assert.equal(writes[1],'remove:'+accepted);
+});
