@@ -43,7 +43,7 @@ export const ROLE_CONFIG: Record<number, Role[]> = {
   5: ['merlin','percival','loyal','morgana','assassin'],
   6: ['merlin','percival','loyal','loyal','morgana','assassin'],
   7: ['merlin','percival','loyal','loyal','morgana','assassin','oberon'],
-  8: ['merlin','percival','loyal','loyal','loyal','morgana','assassin','minion'],
+  8: ['merlin','percival','loyal','loyal','loyal','morgana','assassin','mordred'],
   9: ['merlin','percival','guinevere','loyal','loyal','morgana','assassin','mordred','oberon'],
   10: ['merlin','percival','guinevere','loyal','loyal','loyal','morgana','assassin','mordred','oberon'],
   11: ['merlin','percival','guinevere','loyal','loyal','loyal','morgana','assassin','mordred','minion','oberon'],

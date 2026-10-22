@@ -48,9 +48,9 @@ test('treasures: disabled for playerCount < 8 or when setting is false', () => {
 });
 
 test('treasures: enabled and usable for 8-player matches', () => {
-  // 8-player roles: merlin, percival, loyal x3, morgana, assassin, minion
-  // Assign: 0:percival, 1:merlin, 2:morgana, 3:loyal, 4:loyal, 5:loyal, 6:assassin, 7:minion
-  const roles = ['percival', 'merlin', 'morgana', 'loyal', 'loyal', 'loyal', 'assassin', 'minion'];
+  // 8-player roles: merlin, percival, loyal x3, morgana, assassin, mordred
+  // Assign: 0:percival, 1:merlin, 2:morgana, 3:loyal, 4:loyal, 5:loyal, 6:assassin, 7:mordred
+  const roles = ['percival', 'merlin', 'morgana', 'loyal', 'loyal', 'loyal', 'assassin', 'mordred'];
   const players = makePlayers(8);
   const settings8 = { ...defaultSettings, playerCount: 8, treasuresEnabled: true };
   let g = createGame('g8', players, settings8, values => roles as unknown as typeof values);
@@ -67,7 +67,8 @@ test('treasures: enabled and usable for 8-player matches', () => {
   const merlinId = players[1].id;
   const morganaId = players[2].id;
   const loyalId = players[3].id;
-  const minionId = players[7].id;
+  const assassinId = players[6].id;
+  const mordredId = players[7].id;
 
   // Complete mission 1 (size for 8p: 3)
   const cap1 = g.captainOrder[g.captainIndex];
@@ -103,12 +104,16 @@ test('treasures: enabled and usable for 8-player matches', () => {
     transition(g, percivalId, { type: 'useTreasure', payload: { action: 'tinStaff', targetId: morganaId } }, players.map(x => x.id));
   }, (err: unknown) => err instanceof RuleError && err.message === 'CANNOT_INSPECT_CANDIDATE');
 
-  // Percival inspects minion -> reveals red
-  g = transition(g, percivalId, { type: 'useTreasure', payload: { action: 'tinStaff', targetId: minionId } }, players.map(x => x.id));
+  // Percival inspects assassin -> reveals red
+  g = transition(g, percivalId, { type: 'useTreasure', payload: { action: 'tinStaff', targetId: assassinId } }, players.map(x => x.id));
   const percivalView = projectGame(g, percivalId);
   assert.equal(percivalView.self?.treasures?.tinStaff?.used, true);
   assert.equal(percivalView.self?.treasures?.tinStaff?.result?.team, 'red');
-  assert.equal(percivalView.self?.treasures?.tinStaff?.result?.targetId, minionId);
+  assert.equal(percivalView.self?.treasures?.tinStaff?.result?.targetId, assassinId);
+
+  // In 8-player, Mordred has humanBag and can use it in mission 3
+  const projectedMordred = projectGame(g, mordredId);
+  assert.equal(projectedMordred.self?.treasures?.humanBag?.available, true);
 });
 
 test('treasures: Percival tinStaff cannot inspect candidates or before 2 missions, masks Mordred as blue', () => {
