@@ -21,8 +21,8 @@ export function identityKnowledge(self: NonNullable<GameView['self']>, count: nu
 }
 
 export function identityTreasure(self: NonNullable<GameView['self']>, count: number, treasuresEnabled: boolean, game?: GameView) {
-  const is9Plus = count >= 9;
-  const isTreasureModeActive = Boolean(treasuresEnabled && is9Plus);
+  const is8Plus = count >= 8;
+  const isTreasureModeActive = Boolean(treasuresEnabled && is8Plus);
   const canClickTreasure = isTreasureModeActive || self.role === 'assassin';
 
   let treasureSub = '';

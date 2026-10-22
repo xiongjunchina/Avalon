@@ -205,7 +205,7 @@ export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout 
     const utilityY=dockY+dockH-59;
     add('label','dock-divider','',26,utilityY-9,w-52,1);
     const utility=game ? [...(!ended?[['role','查验真身']]:[]),['history','取经录'],['chat','💬 传音'],[web.practice?'practiceSeats':'guide',web.practice?'切换视角':'识妖谱'],...(!ended?[[web.practice?'exitPractice':room.hostId===web.user?.id?'endGame':'requestAbort',web.practice?'结束演练':room.hostId===web.user?.id?'结束游戏':'申请结束']]:[])]
-      : [['settings','房间设置'],['share','邀请仙友'],['chat','传音'],['friends','仙友录']];
+      : [['settings','房间设置'],['share','邀请仙友'],['chat','传音'],['friends','仙友']];
     const uw=(w-52-(utility.length-1)*6)/utility.length;
     utility.forEach(([id,title],index)=>add('button',id!,title!,26+index*(uw+6),utilityY,uw,44,{badge:'utility'}));
     const maxScroll=Math.max(0,dockY+dockH+48-(v.height-v.bottom));

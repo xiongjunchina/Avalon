@@ -150,6 +150,25 @@ test('9-player treasure actions use private availability and valid targets', () 
   assert.ok(JSON.stringify(gameScreen(next, self as User, ui)).includes('锡杖查验'));
 });
 
+test('8-player treasure actions use private availability and valid targets', () => {
+  const next = room('proposing');
+  next.settings.playerCount = 8;
+  next.settings.treasuresEnabled = true;
+  next.game!.players = [self, other, ...Array.from({ length: 6 }, (_, index) => ({ id: `00000000-0000-4000-8000-${String(index + 3).padStart(12, '0')}`, seat: index + 3, nickname: `仙友${index + 3}` }))] as any;
+  const target = next.game!.players[2]!.id;
+  const selfView = next.game!.self!;
+  selfView.role = 'percival';
+  selfView.merlinCandidates = [other.id];
+  selfView.treasures = { enabled: true, tinStaff: { used: false, available: true } };
+  const ui = { privateRoleVisible: true, ballotVisible: false, targetId: target };
+  assert.ok(gameScreen(next, self as User, ui).rows.some(row => row.id === 'treasure:tinStaff'));
+  assert.deepEqual(gameAction(next, self as User, 'treasure:tinStaff', ui)?.payload, { action: 'tinStaff', targetId: target });
+  assert.equal(gameAction(next, self as User, 'treasure:tinStaff', { ...ui, targetId: other.id }), undefined);
+  selfView.treasures.tinStaff = { used: true, available: false, result: { targetId: target, team: 'red' } };
+  assert.ok(!JSON.stringify(gameScreen(next, self as User, { ...ui, privateRoleVisible: false })).includes('锡杖查验'));
+  assert.ok(JSON.stringify(gameScreen(next, self as User, ui)).includes('锡杖查验'));
+});
+
 test('all five treasure commands are gated by the private server projection', () => {
   const next = room('proposing');
   next.settings.playerCount = 9;

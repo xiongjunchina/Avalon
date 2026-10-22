@@ -1723,7 +1723,7 @@ function App() {
               <div className="waiting-voice-social-row">
                 {room.settings.voiceChatEnabled ? (
                   <div className="waiting-voice-capsule">
-                    <span className="waiting-voice-label">🎙️ 语音房</span>
+                    <span className="waiting-voice-label">🎙️ 语音</span>
                     <VoiceControls
                       voiceState={voiceState}
                       onJoin={handleJoinVoice}
@@ -1756,7 +1756,7 @@ function App() {
                   title="仙友录 · 召集与好友"
                 >
                   <span className="friends-btn-icon">👥</span>
-                  <span className="friends-btn-label">仙友录</span>
+                  <span className="friends-btn-label">仙友</span>
                   {incomingFriendRequestsCount > 0 && (
                     <span className="friends-badge-dot">{incomingFriendRequestsCount}</span>
                   )}

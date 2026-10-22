@@ -22,7 +22,7 @@ test('guide includes the five missions and win conditions', () => {
   const view = guideScreen();
   assert.ok(view.rows.some(row => row.text.includes('五轮')));
   assert.ok(view.rows.some(row => row.text.includes('刺杀')));
-  assert.ok(view.rows.some(row => row.text.includes('9–12人法宝')));
+  assert.ok(view.rows.some(row => row.text.includes('8–12人法宝')));
   assert.equal(view.rows.filter(row => row.id.startsWith('mission:')).length, 5);
   assert.ok(view.rows.some(row => row.id === 'guide-role:merlin'));
   assert.ok(guideScreen('merlin').rows.some(row => row.text.includes('火眼金睛')));

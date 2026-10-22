@@ -79,7 +79,7 @@ export function gameScreen(room: RoomView, user: User, ui: GameUiState, now = Da
   if (ui.privateRoleVisible && self?.merlinCandidates.length) rows.push({ id: 'merlinCandidates', text: `真假悟空候选：${self.merlinCandidates.map(playerLabel).join('、')}` });
   if (ui.privateRoleVisible && self?.guinevereCandidates?.length) rows.push({ id: 'guinevereCandidates', text: `线索候选：${self.guinevereCandidates.map(playerLabel).join('、')}` });
   if (ui.privateRoleVisible && self?.inspections.length) rows.push(...self.inspections.map(value => ({ id: `inspection:${value.afterMission}`, text: `查验结果：${playerLabel(value.targetId)}属${value.team === 'red' ? '妖魔' : '取经'}阵营` })));
-  if (ui.privateRoleVisible && room.settings.treasuresEnabled && game.players.length >= 9 && self?.treasures?.enabled) {
+  if (ui.privateRoleVisible && room.settings.treasuresEnabled && game.players.length >= 8 && self?.treasures?.enabled) {
     const treasure = self.treasures;
     if (treasure.tinStaff) rows.push({ id: 'treasure:tinStaff', text: treasure.tinStaff.result
       ? `锡杖查验：${playerLabel(treasure.tinStaff.result.targetId)}属${treasure.tinStaff.result.team === 'red' ? '妖魔' : '取经'}阵营`
@@ -262,7 +262,7 @@ export function gameAction(room: RoomView, user: User, action: string, ui: Parti
     command = { type: 'earlyAssassinationDecision', payload: { attempt: action === 'earlyAttempt' } };
   if (action === 'assassinate' && game.phase === 'assassination' && self?.role === 'assassin' && ui.targetId && ui.targetId !== user.id) command = { type: 'assassinate', payload: { targetId: ui.targetId } };
   const treasures = self?.treasures;
-  if (action.startsWith('treasure:') && ui.privateRoleVisible && room.settings.treasuresEnabled && game.players.length >= 9 && self && treasures?.enabled) {
+  if (action.startsWith('treasure:') && ui.privateRoleVisible && room.settings.treasuresEnabled && game.players.length >= 8 && self && treasures?.enabled) {
     const targetId = ui.targetId;
     const validTarget = Boolean(targetId && game.players.some(player => player.id === targetId) && targetId !== user.id);
     if (action === 'treasure:tinStaff' && treasures.tinStaff?.available && validTarget && !self.merlinCandidates.includes(targetId!))

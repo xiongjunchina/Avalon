@@ -33,15 +33,16 @@ export function generateVoiceToken(
   token: string;
   uid: number;
 } {
-  const privilegeExpiredTs = Math.floor(Date.now() / 1000) + 86400; // 24 hours
+  const tokenExpireSeconds = 86400; // 24 hours in seconds
+  const privilegeExpireSeconds = 86400; // 24 hours in seconds
   const token = RtcTokenBuilder.buildTokenWithUid(
     config.appId,
     config.certificate,
     channelName,
     uid,
     RtcRole.PUBLISHER,
-    privilegeExpiredTs,
-    privilegeExpiredTs
+    tokenExpireSeconds,
+    privilegeExpireSeconds
   );
 
   return {

@@ -116,3 +116,46 @@ test('IdentityDetails treasure button shows role-specific status when treasures 
   assert.ok(oberonHtml.includes('芭蕉神扇'));
 });
 
+test('IdentityDetails treasure button supports 8-player game with treasuresEnabled', () => {
+  const players = Array.from({ length: 8 }, (_, i) => ({ id: `p${i + 1}`, seat: i + 1, nickname: `仙友${i + 1}` }));
+  const gameEnabled = createGame('treasure-test-8-on', players, { ...defaultSettings, playerCount: 8, treasuresEnabled: true }, a => a);
+
+  // Percival with treasures enabled in 8-player game
+  const percivalP = players.find(p => gameEnabled.roles[p.id] === 'percival')!;
+  const percivalSelf = projectGame(gameEnabled, percivalP.id).self!;
+  const percivalHtml = renderToStaticMarkup(createElement(IdentityDetails, {
+    self: percivalSelf,
+    players,
+    game: projectGame(gameEnabled, percivalP.id),
+    treasuresEnabled: true,
+  }));
+  assert.ok(percivalHtml.includes('is-enabled'));
+  assert.ok(percivalHtml.includes('九环锡杖'));
+
+  // Loyal with treasures enabled in 8-player game
+  const loyalP = players.find(p => gameEnabled.roles[p.id] === 'loyal')!;
+  const loyalSelf = projectGame(gameEnabled, loyalP.id).self!;
+  const loyalHtml = renderToStaticMarkup(createElement(IdentityDetails, {
+    self: loyalSelf,
+    players,
+    game: projectGame(gameEnabled, loyalP.id),
+    treasuresEnabled: true,
+  }));
+  assert.ok(loyalHtml.includes('is-enabled'));
+  assert.ok(loyalHtml.includes('紧箍信物'));
+
+  // Loyal with treasures disabled in 8-player game
+  const gameDisabled = createGame('treasure-test-8-off', players, { ...defaultSettings, playerCount: 8, treasuresEnabled: false }, a => a);
+  const loyalDisabledP = players.find(p => gameDisabled.roles[p.id] === 'loyal')!;
+  const loyalDisabledSelf = projectGame(gameDisabled, loyalDisabledP.id).self!;
+  const loyalDisabledHtml = renderToStaticMarkup(createElement(IdentityDetails, {
+    self: loyalDisabledSelf,
+    players,
+    game: projectGame(gameDisabled, loyalDisabledP.id),
+    treasuresEnabled: false,
+  }));
+  assert.ok(loyalDisabledHtml.includes('is-locked'));
+  assert.ok(loyalDisabledHtml.includes('未开启法宝模式'));
+});
+
+

@@ -12,7 +12,7 @@ export function settingsScreen(settings: Settings): ScreenModel {
     { id: 'guardianPerksEnabled', text: `护法天机：${settings.guardianPerksEnabled ? '开' : '关'}` },
     { id: 'voiceChatEnabled', text: `网页端语音：${settings.voiceChatEnabled ? '开' : '关'}（小游戏暂不提供）` },
     { id: 'autoRevealRoleEnabled', text: `自动亮身份：${settings.autoRevealRoleEnabled ? '开' : '关'}` },
-    { id: 'treasuresEnabled', text: `9–12人法宝：${settings.treasuresEnabled ? '开' : '关'}（仅9人以上生效）` },
+    { id: 'treasuresEnabled', text: `8–12人法宝：${settings.treasuresEnabled ? '开' : '关'}（仅8人以上生效）` },
     { id: 'apply', text: '应用设置并返回' },
   ] };
 }

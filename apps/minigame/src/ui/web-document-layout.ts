@@ -270,7 +270,7 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
     for(let count=5;count<=12;count++)button(prefix+'count:'+count,String(count),y,{skin:'count',selected:settings.playerCount===count},x+(count-5)*w/8,w/8-4,44);y+=58;
     const fields=[['captainMode','队长分配',settings.captainMode==='seat_order'?'按座位循环':'开局打乱一次，整局循环'],['rejectionScope','流局计数',settings.rejectionScope==='game'?'全局累计，5 次判负':'单次任务累计，5 次判负']];
     for(const [id,label,value] of fields){txt('field:'+id,label!,y,13);y+=25;button(prefix+id,value!,y,{skin:'input'});y+=52;}
-    for(const [id,label] of [['anonymousTeamVote','匿名组队投票'],['ladyEnabled','照妖宝镜'],['earlyAssassinationEnabled','提前刺杀'],['guardianPerksEnabled','护法天机（建议7-12人）'],['autoRevealRoleEnabled','倒计时后亮明真身'],['treasuresEnabled','专属法宝（9-12人专属）']] as const){button(prefix+id,label,y,{skin:'setting',selected:settings[id]});y+=50;}
+    for(const [id,label] of [['anonymousTeamVote','匿名组队投票'],['ladyEnabled','照妖宝镜'],['earlyAssassinationEnabled','提前刺杀'],['guardianPerksEnabled','护法天机（建议7-12人）'],['autoRevealRoleEnabled','倒计时后亮明真身'],['treasuresEnabled','专属法宝（8-12人专属）']] as const){button(prefix+id,label,y,{skin:'setting',selected:settings[id]});y+=50;}
   }
   function scoreCard(id:string,name:string,score:Score|undefined,px:number,py:number,pw:number,image:string,team:'blue'|'red') {
     add('label',id,name,px,py,pw,id.startsWith('role:')?186:204,{skin:'score-card',image,team,detail:(score?.winRate==null?'—':Math.round(score.winRate*100)+'%')+'|'+(score?.wins??0)+' 胜 · '+(score?.losses??0)+' 负|'+(score?.completed??0)+' 局完成 · '+(score?.aborted??0)+' 局中断'});

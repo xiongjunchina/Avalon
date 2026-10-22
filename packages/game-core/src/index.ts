@@ -204,7 +204,7 @@ export function createGame(
     ...(guardianClues ? { guardianClues } : {}),
     ...(settings.ladyEnabled ? { lady: { holderId: initialHolder, holderIds: [initialHolder], inspections: [] } } : {}),
     ...(settings.earlyAssassinationEnabled ? { earlyAssassination: { used: false, windows: [] } } : {}),
-    ...(settings.treasuresEnabled && sorted.length >= 9 ? { treasuresState: {} } : {}),
+    ...(settings.treasuresEnabled && sorted.length >= 8 ? { treasuresState: {} } : {}),
     captainIndex: 0, confirmed: [], teamVotes: {}, missionVotes: {}, rounds: [] };
 }
 export const isEnded = (g: GameState) => g.phase === 'finished' || g.phase === 'aborted';
@@ -396,7 +396,7 @@ export function transition(state: GameState, userId: string, action: Pick<Comman
       break;
     }
     case 'useTreasure': {
-      requireRule(g.settings.treasuresEnabled && g.players.length >= 9, 'TREASURES_DISABLED');
+      requireRule(g.settings.treasuresEnabled && g.players.length >= 8, 'TREASURES_DISABLED');
       if (!g.treasuresState) g.treasuresState = {};
       const payload = action.payload as {
         action: 'tinStaff' | 'guanyinMirror' | 'humanBag' | 'jinguSeal' | 'bananaFan';
@@ -473,7 +473,7 @@ export function projectGame(g: GameState, userId?: string): GameView {
     ? g.players.filter(p => teamOf(g.roles[p.id]) === 'red' && g.roles[p.id] !== 'mordred').map(p => p.id)
     : role && teamOf(role) === 'red' && role !== 'oberon'
       ? g.players.filter(p => p.id !== userId && teamOf(g.roles[p.id]) === 'red' && g.roles[p.id] !== 'oberon').map(p => p.id) : [];
-  const treasuresEnabled = Boolean(g.settings.treasuresEnabled && g.players.length >= 9);
+  const treasuresEnabled = Boolean(g.settings.treasuresEnabled && g.players.length >= 8);
   const completedMissions = g.rounds.filter(r => r.result).length;
   const failedMissions = g.rounds.filter(r => r.result && !r.result.passed).length;
   const currentRound = g.rounds.at(-1);
