@@ -26,6 +26,8 @@ export interface VoiceState {
   deafened: boolean;
   error?: string;
   speakingUids: Set<number>;
+  onlineUids: Set<number>;
+  micOpenUids: Set<number>;
   channel?: string;
   uid?: number;
 }
@@ -40,6 +42,8 @@ export class AgoraVoiceManager {
   private channel?: string;
   private uid?: number;
   private speakingUids = new Set<number>();
+  private onlineUids = new Set<number>();
+  private micOpenUids = new Set<number>();
   private speakerTimeouts = new Map<number, ReturnType<typeof setTimeout>>();
   private listeners = new Set<(state: VoiceState) => void>();
   private duckingCallback?: (ducking: boolean) => void;
@@ -51,6 +55,8 @@ export class AgoraVoiceManager {
       deafened: this.deafened,
       error: this.error,
       speakingUids: new Set(this.speakingUids),
+      onlineUids: new Set(this.onlineUids),
+      micOpenUids: new Set(this.micOpenUids),
       channel: this.channel,
       uid: this.uid,
     };
@@ -108,7 +114,25 @@ export class AgoraVoiceManager {
       const client = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
       this.client = client;
 
+      client.on('user-joined', (user: IAgoraRTCRemoteUser) => {
+        const rUid = Number(user.uid);
+        if (rUid) {
+          this.onlineUids.add(rUid);
+          if (user.hasAudio) {
+            this.micOpenUids.add(rUid);
+          }
+          this.notify();
+        }
+      });
+
       client.on('user-published', async (user: IAgoraRTCRemoteUser, mediaType: 'audio' | 'video') => {
+        const rUid = Number(user.uid);
+        if (rUid) {
+          this.onlineUids.add(rUid);
+          if (mediaType === 'audio') {
+            this.micOpenUids.add(rUid);
+          }
+        }
         try {
           await client.subscribe(user, mediaType);
           if (mediaType === 'audio') {
@@ -121,11 +145,38 @@ export class AgoraVoiceManager {
         } catch (err) {
           console.warn('Failed to subscribe to remote user audio:', err);
         }
+        this.notify();
       });
 
       client.on('user-unpublished', (user: IAgoraRTCRemoteUser, mediaType: 'audio' | 'video') => {
         if (mediaType === 'audio') {
+          const rUid = Number(user.uid);
+          if (rUid) {
+            this.micOpenUids.delete(rUid);
+            this.speakingUids.delete(rUid);
+            const existing = this.speakerTimeouts.get(rUid);
+            if (existing) {
+              clearTimeout(existing);
+              this.speakerTimeouts.delete(rUid);
+            }
+          }
           user.audioTrack?.stop();
+          this.notify();
+        }
+      });
+
+      client.on('user-left', (user: IAgoraRTCRemoteUser) => {
+        const rUid = Number(user.uid);
+        if (rUid) {
+          this.onlineUids.delete(rUid);
+          this.micOpenUids.delete(rUid);
+          this.speakingUids.delete(rUid);
+          const existing = this.speakerTimeouts.get(rUid);
+          if (existing) {
+            clearTimeout(existing);
+            this.speakerTimeouts.delete(rUid);
+          }
+          this.notify();
         }
       });
 
@@ -171,6 +222,25 @@ export class AgoraVoiceManager {
       // Join RTC Channel
       await client.join(config.appId, config.channel, config.token, config.uid);
 
+      // Record local user presence
+      this.onlineUids.add(config.uid);
+      if (!this.muted) {
+        this.micOpenUids.add(config.uid);
+      } else {
+        this.micOpenUids.delete(config.uid);
+      }
+
+      // Snapshot existing remote users in channel
+      for (const remoteUser of client.remoteUsers) {
+        const rUid = Number(remoteUser.uid);
+        if (rUid) {
+          this.onlineUids.add(rUid);
+          if (remoteUser.hasAudio) {
+            this.micOpenUids.add(rUid);
+          }
+        }
+      }
+
       // Attempt to acquire microphone and publish local track
       try {
         const localTrack = await AgoraRTC.createMicrophoneAudioTrack({
@@ -180,13 +250,17 @@ export class AgoraVoiceManager {
         });
         this.localAudioTrack = localTrack;
         if (this.muted) {
-          await localTrack.setEnabled(false);
+          await localTrack.setMuted(true);
+          this.micOpenUids.delete(config.uid);
+        } else {
+          this.micOpenUids.add(config.uid);
         }
         await client.publish([localTrack]);
       } catch (micErr) {
         // If microphone permission denied or no mic device, degrade gracefully to listen-only
         console.warn('Microphone not available or permission denied; entering listen-only mode', micErr);
         this.muted = true;
+        this.micOpenUids.delete(config.uid);
       }
 
       this.status = 'connected';
@@ -227,9 +301,9 @@ export class AgoraVoiceManager {
 
     if (this.localAudioTrack) {
       try {
-        await this.localAudioTrack.setEnabled(!nextMuted);
+        await this.localAudioTrack.setMuted(nextMuted);
       } catch (err) {
-        console.warn('Failed to toggle local audio track:', err);
+        console.warn('Failed to toggle local audio track muted state:', err);
       }
     } else if (!nextMuted && this.client && this.status === 'connected') {
       // Try to acquire mic if not created previously
@@ -248,8 +322,13 @@ export class AgoraVoiceManager {
       }
     }
 
-    if (this.muted && this.uid) {
-      this.speakingUids.delete(this.uid);
+    if (this.uid) {
+      if (this.muted) {
+        this.micOpenUids.delete(this.uid);
+        this.speakingUids.delete(this.uid);
+      } else {
+        this.micOpenUids.add(this.uid);
+      }
     }
     this.notify();
     return this.muted;
@@ -263,14 +342,17 @@ export class AgoraVoiceManager {
       // Deafen: Mute mic as well, and stop all remote audio
       this.muted = true;
       if (this.localAudioTrack) {
-        await this.localAudioTrack.setEnabled(false);
+        await this.localAudioTrack.setMuted(true);
       }
       if (this.client) {
         for (const user of this.client.remoteUsers) {
           user.audioTrack?.stop();
         }
       }
-      if (this.uid) this.speakingUids.delete(this.uid);
+      if (this.uid) {
+        this.micOpenUids.delete(this.uid);
+        this.speakingUids.delete(this.uid);
+      }
     } else {
       // Undeafen: resume remote audio
       if (this.client) {
@@ -290,6 +372,8 @@ export class AgoraVoiceManager {
     }
     this.speakerTimeouts.clear();
     this.speakingUids.clear();
+    this.onlineUids.clear();
+    this.micOpenUids.clear();
 
     if (this.localAudioTrack) {
       this.localAudioTrack.stop();

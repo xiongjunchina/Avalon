@@ -43,6 +43,7 @@ import { RolePortrait } from './RolePortrait';
 import { FEMALE_DEMONS, WUYUE_MISSIONS, roleMottos, roleNames, roleTitles } from './roles';
 import { SoundProvider, SoundButton, useSound, useGameSound, useNavigationSound } from './SoundSettings';
 import { VoiceControls } from './VoiceControls';
+import { SeatMicBadge } from './SeatMicBadge';
 import { FriendsModal, RoomInvitationToast, DirectChatToast } from './FriendsModal';
 import { voiceManager, type VoiceState } from './agora-voice';
 import { uuidToRtcUid, type VoiceTokenResponse, type FriendSummary, type RoomChatMessage } from '@avalon/contracts';
@@ -1506,6 +1507,8 @@ function App() {
                   setPage('account');
                 }}
                 speakingUids={voiceState.speakingUids}
+                voiceState={voiceState}
+                onToggleMute={handleToggleMute}
                 chatBubbles={chatBubbles}
                 onOpenChat={handleOpenChatDrawer}
                 hasUnreadChat={unreadChatCount > 0}
@@ -1649,6 +1652,15 @@ function App() {
                             fallbackKind="cards"
                           />
                         </div>
+                        {m && (
+                          <SeatMicBadge
+                            playerId={m.id}
+                            userId={user.id}
+                            voiceChatEnabled={room.settings.voiceChatEnabled}
+                            voiceState={voiceState}
+                            onToggleMute={m.id === user.id ? handleToggleMute : undefined}
+                          />
+                        )}
                         <span className="seat-num-badge">{i + 1}</span>
                       </div>
                       <strong className="seat-card-name">

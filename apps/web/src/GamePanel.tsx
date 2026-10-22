@@ -14,6 +14,8 @@ import { MissionReportDialog } from './MissionReportDialog';
 import { PartyBanner } from './PlayerToken';
 import { Modal } from './Modal';
 import { IdentityDetails } from './IdentityDetails';
+import { SeatMicBadge } from './SeatMicBadge';
+import type { VoiceState } from './agora-voice';
 import type { EffectCue } from './audio-events';
 export { roleNames } from './roles';
 
@@ -54,6 +56,8 @@ export function GamePanel({
   onOpenReplay,
   onSound,
   speakingUids,
+  voiceState,
+  onToggleMute,
   chatBubbles,
   onOpenChat,
   hasUnreadChat,
@@ -67,6 +71,8 @@ export function GamePanel({
   onOpenReplay?: (gameId: string) => void;
   onSound?: (cue: EffectCue) => void;
   speakingUids?: Set<number>;
+  voiceState?: VoiceState;
+  onToggleMute?: () => void;
   chatBubbles?: Record<string, { text: string; expiresAt: number }>;
   onOpenChat?: () => void;
   hasUnreadChat?: boolean;
@@ -745,6 +751,13 @@ export function GamePanel({
                 <span
                   className={`seat-online-dot ${member?.online === false ? 'is-offline' : 'is-online'}`}
                   title={member?.online === false ? '离线' : '在线'}
+                />
+                <SeatMicBadge
+                  playerId={p.id}
+                  userId={userId}
+                  voiceChatEnabled={room.settings.voiceChatEnabled}
+                  voiceState={voiceState}
+                  onToggleMute={p.id === userId ? onToggleMute : undefined}
                 />
                 {/* Floating role/captain badge over avatar */}
                 {isCaptain && (
