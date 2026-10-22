@@ -88,8 +88,23 @@ export class AgoraVoiceManager {
     this.error = undefined;
     this.notify();
 
+    if (typeof window !== 'undefined' && !window.isSecureContext && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+      const msg = '浏览器安全限制：实时语音需使用 HTTPS 加密访问（HTTP无法使用麦克风）';
+      this.status = 'error';
+      this.error = msg;
+      this.notify();
+      throw new Error(msg);
+    }
+
     try {
       const AgoraRTC = await getAgoraRTC();
+      if (typeof AgoraRTC.checkSystemRequirements === 'function' && !AgoraRTC.checkSystemRequirements()) {
+        const msg = '当前浏览器环境不支持 WebRTC 实时语音，请尝试使用 Chrome、Safari 或内置安全浏览器';
+        this.status = 'error';
+        this.error = msg;
+        this.notify();
+        throw new Error(msg);
+      }
       const client = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
       this.client = client;
 
@@ -176,11 +191,29 @@ export class AgoraVoiceManager {
 
       this.status = 'connected';
       this.notify();
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to join Agora voice channel:', err);
       this.status = 'error';
-      this.error = err instanceof Error ? err.message : '语音连接失败';
+      let errorMsg = '语音连接失败';
+      if (err instanceof Error) {
+        const msg = err.message || '';
+        if (msg.includes('CAN_NOT_GET_GATEWAY_SERVER')) {
+          errorMsg = '无法连接声网服务器，请检查网络或防火墙';
+        } else if (msg.includes('INVALID_TOKEN') || msg.includes('DYNAMIC_KEY_EXPIRED')) {
+          errorMsg = '语音鉴权凭据无效或已过期，请重新开启';
+        } else if (msg.includes('INVALID_APP_ID')) {
+          errorMsg = '声网 App ID 无效或未启用语音服务';
+        } else if (msg.includes('NOT_SUPPORTED') || (typeof window !== 'undefined' && !window.isSecureContext && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1')) {
+          errorMsg = '浏览器安全限制：实时语音需使用 HTTPS 加密访问';
+        } else if (msg.includes('PERMISSION_DENIED') || msg.includes('Permission denied')) {
+          errorMsg = '麦克风权限被拒绝，请在手机设置或浏览器中允许录音权限';
+        } else {
+          errorMsg = msg;
+        }
+      }
+      this.error = errorMsg;
       this.notify();
+      throw new Error(errorMsg);
     }
   }
 

@@ -51,7 +51,12 @@ export function VoiceControls({
     return (
       <div className="voice-error-cluster">
         <span
-          className="voice-status-dot error"
+          className="voice-status-dot is-error"
+          onClick={() => {
+            if (voiceState.error) {
+              alert(`语音异常提示：${voiceState.error}`);
+            }
+          }}
           title={`语音连接异常 (${voiceState.error || '点击重新连接'})`}
         />
         <button
