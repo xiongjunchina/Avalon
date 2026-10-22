@@ -18,6 +18,7 @@ import { PracticeSession } from './screens/practice.js';
 import { guideScreen } from './screens/guide.js';
 import { InviteInbox } from './screens/invites.js';
 import { chooseAvatar } from './platform/avatar.js';
+import { createArtwork } from './ui/assets.js';
 
 declare const wx: WxRuntime;
 declare const __MINIGAME_API_BASE_URL__: string;
@@ -25,6 +26,7 @@ declare const __MINIGAME_API_BASE_URL__: string;
 const baseUrl = __MINIGAME_API_BASE_URL__;
 const platform = new WechatPlatform(wx);
 const canvas = drawShell(platform);
+const artwork = createArtwork(wx, () => render());
 const api = new MiniGameApi(platform, baseUrl);
 const invites = new InviteInbox();
 invites.receive(wx.getLaunchOptionsSync?.().query?.invite);
@@ -70,9 +72,15 @@ function model(): ScreenModel {
   if (error && view !== 'entry') result.subtitle = error;
   if (notice) result.rows.unshift({ id: 'notice', text: notice });
   if (invites.code) result.rows.unshift({ id: 'invitation', text: invites.label()! });
-  return { ...result, scroll };
+  const privateSelf = gameUi.privateRoleVisible
+    ? view === 'game' ? room?.game?.self : view === 'practice' ? practice?.view().game?.self : undefined
+    : undefined;
+  const portraitRole = privateSelf?.loyalGuardian ? `${privateSelf.loyalGuardian}-loyal`
+    : privateSelf?.femaleDemon ? `minion-${privateSelf.femaleDemon}` : privateSelf?.role;
+  return { ...result, scroll, scene: view === 'entry' ? 'entry' : view === 'game' || view === 'practice' ? 'game' : 'standard',
+    ...(portraitRole ? { portrait: `${portraitRole}-160.webp` } : view === 'guide' && guideRoleId ? { portrait: `${guideRoleId}-160.webp` } : {}) };
 }
-function render() { rows = renderScreen(model(), canvas, viewport); }
+function render() { rows = renderScreen(model(), canvas, viewport, artwork); }
 function navigate(next: typeof view) { view = next; scroll = 0; error = ''; notice = ''; pendingConfirm = undefined; render(); }
 
 function connect(next: RoomView) {

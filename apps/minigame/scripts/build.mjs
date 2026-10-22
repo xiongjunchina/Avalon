@@ -42,6 +42,12 @@ export async function buildMiniGame({
   await writeFile(join(outDir, 'project.config.json'), JSON.stringify(project, null, 2));
   await mkdir(join(outDir, 'art'), { recursive: true });
   await copyFile(join(repoRoot, 'apps', 'web', 'public', 'art', 'scenes', 'gate.webp'), join(outDir, 'art', 'gate.webp'));
+  await copyFile(join(repoRoot, 'apps', 'web', 'public', 'art', 'avalon-moonlit.png'), join(outDir, 'art', 'moonlit.png'));
+  const rolesRoot = join(repoRoot, 'apps', 'web', 'public', 'art', 'roles');
+  await mkdir(join(outDir, 'art', 'roles'), { recursive: true });
+  for (const name of await readdir(rolesRoot)) {
+    if (name.endsWith('-160.webp')) await copyFile(join(rolesRoot, name), join(outDir, 'art', 'roles', name));
+  }
   const size = await bytesIn(outDir);
   if (size > maxBytes) throw new Error(`PACKAGE_TOO_LARGE: ${size} > ${maxBytes}`);
   return { outDir, size, appId };

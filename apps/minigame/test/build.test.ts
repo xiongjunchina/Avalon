@@ -15,6 +15,9 @@ test('builds an importable project without server or admin secrets', async t => 
   assert.equal(config.appid, 'wx-test-appid');
   const bundle = await readFile(join(outDir, 'bundle.js'), 'utf8');
   assert.doesNotMatch(bundle, /WECHAT_MINIGAME_APP_SECRET|ADMIN_KEY|server-only-secret/);
+  const art = await readdir(join(outDir, 'art'));
+  assert.ok(art.includes('moonlit.png'));
+  assert.ok((await readdir(join(outDir, 'art', 'roles'))).includes('merlin-160.webp'));
 });
 
 test('build embeds the configured HTTPS API origin only', async t => {
