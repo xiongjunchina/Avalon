@@ -9,6 +9,7 @@ export const settingsSchema = z.object({
   earlyAssassinationEnabled: z.boolean(),
   guardianPerksEnabled: z.boolean().default(false),
   voiceChatEnabled: z.boolean().default(false),
+  autoRevealRoleEnabled: z.boolean().default(false),
 }).strict();
 export type Settings = z.infer<typeof settingsSchema>;
 export const defaultSettings: Settings = {
@@ -16,6 +17,7 @@ export const defaultSettings: Settings = {
   rejectionScope: 'game', ladyEnabled: false, earlyAssassinationEnabled: false,
   guardianPerksEnabled: false,
   voiceChatEnabled: false,
+  autoRevealRoleEnabled: false,
 };
 export const defaultAnonymousTeamVote = (playerCount: number) => playerCount < 8;
 export type TeamBallot = boolean | 'abstain';

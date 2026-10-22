@@ -484,6 +484,7 @@ function App() {
         room.settings.ladyEnabled !== target.ladyEnabled ||
         room.settings.earlyAssassinationEnabled !== target.earlyAssassinationEnabled ||
         room.settings.guardianPerksEnabled !== target.guardianPerksEnabled ||
+        room.settings.autoRevealRoleEnabled !== target.autoRevealRoleEnabled ||
         room.settings.anonymousTeamVote !== target.anonymousTeamVote ||
         room.settings.captainMode !== target.captainMode ||
         room.settings.rejectionScope !== target.rejectionScope;

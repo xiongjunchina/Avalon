@@ -117,13 +117,27 @@ export function GamePanel({
     if (!connected) setIdentityOpen(false);
   }, [connected]);
 
+  const prevPhaseRef = useRef(g.phase);
+  const autoRevealedGameIdRef = useRef<string | null>(null);
+
   useEffect(() => {
     setVoteDismissed(false);
     setChoice(null);
     setBlueFailWarning(false);
     setTarget('');
-    setIdentityOpen(false);
-  }, [g.id, g.phase, round?.number]);
+
+    const justFinishedDealing = prevPhaseRef.current === 'dealing' && g.phase !== 'dealing';
+    const isInitialReveal = g.phase === 'role_reveal' && autoRevealedGameIdRef.current !== g.id;
+
+    if (room.settings.autoRevealRoleEnabled && (justFinishedDealing || isInitialReveal) && autoRevealedGameIdRef.current !== g.id) {
+      autoRevealedGameIdRef.current = g.id;
+      setIdentityOpen(true);
+    } else if (prevPhaseRef.current !== g.phase) {
+      setIdentityOpen(false);
+    }
+
+    prevPhaseRef.current = g.phase;
+  }, [g.id, g.phase, round?.number, room.settings.autoRevealRoleEnabled]);
 
   const abortRequester = g.abortPoll?.requestedBy;
   useEffect(() => {
@@ -165,7 +179,15 @@ export function GamePanel({
   };
 
   if (g.phase === 'dealing') {
-    return <DealCountdown deadline={g.dealEndsAt} serverTime={room.serverTime} connected={connected} onTick={() => onSound?.('tick')} />;
+    return (
+      <DealCountdown
+        deadline={g.dealEndsAt}
+        serverTime={room.serverTime}
+        connected={connected}
+        onTick={() => onSound?.('tick')}
+        autoRevealRoleEnabled={room.settings.autoRevealRoleEnabled}
+      />
+    );
   }
 
   const needsIdentityAction =
@@ -1203,8 +1225,8 @@ export function GamePanel({
           <div className="table-modal-sheet identity-content">
             <div className="table-modal-head">
               <strong>真身法相底牌</strong>
-              <button type="button" className="secondary tool-pill" onClick={() => setIdentityOpen(false)}>
-                关闭底牌
+              <button type="button" className="secondary tool-pill return-table-head-btn" onClick={() => setIdentityOpen(false)}>
+                返回对局
               </button>
             </div>
             <div className="identity-body">
@@ -1221,7 +1243,11 @@ export function GamePanel({
             </div>
             <footer className="identity-footer">
               <p title="身份仅你可见，切换页面或断线时会自动收起">出牌权限：{self.team === 'blue' ? '仅能护经（成功）' : '可护经（成功）/ 作祟（失败）'} · 离页自动收起</p>
-              {!self.canConfirmInspection && <button type="button" onClick={() => setIdentityOpen(false)}>收起真身，返回对局</button>}
+              {!self.canConfirmInspection && (
+                <button type="button" className="return-table-btn" onClick={() => setIdentityOpen(false)}>
+                  返回对局页面
+                </button>
+              )}
             </footer>
           </div>
         </Modal>

@@ -2576,6 +2576,29 @@ dialog.table-modal-backdrop::backdrop { background: #081b2d55; }
 .identity-footer { border-top: 1px solid #d0be8d66; padding-top: 10px; flex-shrink: 0; }
 .identity-footer p { text-align: center; color: #bdcfde; font-size: 11px; margin: 0 0 8px; }
 .identity-footer button { margin: 0; min-height: 40px; font-size: 14px; }
+.identity-footer .return-table-btn {
+  width: 100% !important;
+  margin: 0 !important;
+  min-height: 44px !important;
+  font-family: var(--sans) !important;
+  font-size: 15px !important;
+  font-weight: 800 !important;
+  letter-spacing: 1px !important;
+  color: #1e0908 !important;
+  background: var(--gold-primary) !important;
+  border: 1.5px solid #ffe599 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.15s ease !important;
+}
+.identity-footer .return-table-btn:hover {
+  filter: brightness(1.08) !important;
+  box-shadow: 0 6px 16px rgba(245, 166, 35, 0.4), inset 0 1px 0 #ffffff !important;
+}
 
 /* Guide Panel Sub-figures Section */
 .guide-role-interactive {

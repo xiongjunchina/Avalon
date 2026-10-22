@@ -197,3 +197,21 @@ test('host can directly shrink room player count after member leaves, auto-compa
   assert.ok(updatedSnap.members.every(m => m.seat >= 1 && m.seat <= 10));
 });
 
+test('host can toggle autoRevealRoleEnabled in room settings', async t => {
+  const { app, guest, create, store } = await fixture(t);
+  const host = await guest();
+  const room = await create(host.cookie);
+  const initial = (await store.snapshot(room.id))!;
+  assert.equal(initial.settings.autoRevealRoleEnabled, false);
+
+  await store.execute(host.user.id, room.id, {
+    expectedVersion: initial.version,
+    type: 'updateSettings',
+    commandId: randomUUID(),
+    payload: { ...initial.settings, autoRevealRoleEnabled: true },
+  });
+
+  const updated = (await store.snapshot(room.id))!;
+  assert.equal(updated.settings.autoRevealRoleEnabled, true);
+});
+

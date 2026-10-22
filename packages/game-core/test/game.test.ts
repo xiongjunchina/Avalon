@@ -1,9 +1,19 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
-import { defaultSettings, commandSchema, type Command, type Settings } from '@avalon/contracts';
+import { defaultSettings, settingsSchema, commandSchema, type Command, type Settings } from '@avalon/contracts';
 import { createGame, transition, projectGame, captain, ROLE_CONFIG, MISSION_SIZES, teamOf, type GameState } from '../src/index.js';
 function game(n=5, patch:Partial<Settings>={}) { return createGame(randomUUID(),Array.from({length:n},(_,i)=>({id:randomUUID(),nickname:`玩家${i+1}`,seat:i+1})),{...defaultSettings,playerCount:n,...patch},values=>values); }
+
+test('room defaults include optional auto reveal role disabled', () => {
+  assert.equal(defaultSettings.autoRevealRoleEnabled, false);
+  const parsed = settingsSchema.parse({
+    playerCount: 6, captainMode: 'seat_order', anonymousTeamVote: true,
+    rejectionScope: 'game', ladyEnabled: false, earlyAssassinationEnabled: false,
+    guardianPerksEnabled: false, voiceChatEnabled: false,
+  });
+  assert.equal(parsed.autoRevealRoleEnabled, false);
+});
 function act(g:GameState,id:string,type:Command['type'],payload:Command['payload']={}) {return transition(g,id,{type,payload},g.players.map(p=>p.id));}
 function ready(g:GameState) {for(const p of g.players)g=act(g,p.id,'confirmRole');return g;}
 function propose(g:GameState, ids=g.players.slice(0,MISSION_SIZES[g.players.length][g.mission-1]).map(p=>p.id)) {g=act(g,captain(g),'proposeTeam',{playerIds:ids,direction:'clockwise'});return act(g,captain(g),'startTeamVote');}
