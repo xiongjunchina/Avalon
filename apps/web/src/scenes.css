@@ -2039,7 +2039,7 @@ main.app-shell.is-live-table {
 }
 /* Native dialogs live in the top layer and restore focus to their trigger. */
 dialog.table-modal-backdrop:not([open]) { display: none; }
-dialog.table-modal-backdrop[open] { display: grid; margin: 0; width: 100%; max-width: none; height: 100dvh; max-height: none; padding: 14px; border: none; color: inherit; background: #071a2c70; backdrop-filter: none; }
+dialog.table-modal-backdrop[open] { display: flex !important; align-items: center !important; justify-content: center !important; margin: 0 !important; width: 100% !important; max-width: none !important; height: 100dvh !important; max-height: 100dvh !important; padding: 10px !important; border: none !important; color: inherit !important; background: rgba(7, 26, 44, 0.78) !important; backdrop-filter: blur(4px) !important; overflow: hidden !important; box-sizing: border-box !important; }
 dialog.table-modal-backdrop::backdrop { background: #081b2d55; }
 .table-modal-sheet { width: min(100%, 570px); max-height: calc(100dvh - 28px); padding: 22px; border-radius: 24px; background: linear-gradient(#152e49d9, #112b44db), var(--scene) var(--scene-position) / cover; box-shadow: var(--frame-shadow); overscroll-behavior: contain; }
 .table-modal-head { border-bottom: 1px solid #e3c88e77; padding-bottom: 14px; margin-bottom: 16px; gap: 14px; align-items: start; }
@@ -5491,101 +5491,119 @@ dialog.table-modal-backdrop::backdrop { background: #081b2d55; }
    Dedicated Room Settings Sheet (Classical Fantasy & Ultra Compact)
    ========================================================================== */
 .table-modal-sheet.settings-sheet {
-  width: min(100%, 480px) !important;
-  max-height: min(88dvh, 720px) !important;
-  padding: 14px 16px !important;
+  width: min(100%, 460px) !important;
+  max-height: calc(100dvh - 20px) !important;
+  padding: 12px 14px 10px !important;
   display: flex !important;
   flex-direction: column !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
   background: linear-gradient(165deg, rgba(46, 15, 13, 0.98) 0%, rgba(20, 6, 6, 0.99) 100%) !important;
   border: 1.5px solid #d4a359 !important;
-  border-radius: 18px !important;
+  border-radius: 16px !important;
   box-shadow: 0 12px 36px rgba(0, 0, 0, 0.85), inset 0 1px 0 rgba(255, 230, 150, 0.35) !important;
-  overscroll-behavior: contain !important;
-  box-sizing: border-box !important;
 }
 
 .settings-sheet .table-modal-head {
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
-  padding-bottom: 8px !important;
-  margin-bottom: 4px !important;
+  padding-bottom: 6px !important;
+  margin-bottom: 2px !important;
   border-bottom: 1.5px solid rgba(212, 163, 89, 0.4) !important;
   flex-shrink: 0 !important;
 }
 
 .settings-sheet .table-modal-head strong {
   font-family: var(--display) !important;
-  font-size: 18px !important;
+  font-size: 17px !important;
   font-weight: 700 !important;
   color: #ffd875 !important;
-  letter-spacing: 1.5px !important;
+  letter-spacing: 1px !important;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8) !important;
 }
 
 .settings-sheet .table-modal-head .tool-pill {
-  min-height: 30px !important;
-  padding: 3px 12px !important;
+  min-height: 28px !important;
+  height: 28px !important;
+  padding: 2px 10px !important;
   font-family: var(--sans) !important;
   font-size: 12px !important;
   font-weight: 700 !important;
   background: linear-gradient(180deg, #441715 0%, #200908 100%) !important;
   border: 1px solid #d4a359 !important;
   color: #fff2d5 !important;
-  border-radius: 14px !important;
+  border-radius: 12px !important;
   cursor: pointer !important;
 }
 
 .settings-sheet .settings-body {
   flex: 1 1 auto !important;
+  min-height: 0 !important;
   overflow-y: auto !important;
   -webkit-overflow-scrolling: touch !important;
-  padding-right: 2px !important;
+  padding-right: 4px !important;
   display: flex !important;
   flex-direction: column !important;
-  gap: 4px !important;
-  min-height: 0 !important;
+  gap: 2px !important;
+  overscroll-behavior: contain !important;
+}
+
+.settings-sheet .settings-body::-webkit-scrollbar {
+  width: 4px !important;
+}
+
+.settings-sheet .settings-body::-webkit-scrollbar-thumb {
+  background: rgba(212, 163, 89, 0.45) !important;
+  border-radius: 4px !important;
 }
 
 .settings-sheet .settings-hint {
+  font-family: var(--sans) !important;
   font-size: 11.5px !important;
-  color: #eddcc4 !important;
-  margin: 0 0 4px !important;
-  line-height: 1.35 !important;
+  color: #eeddc4 !important;
+  margin: 1px 0 4px !important;
+  line-height: 1.45 !important;
+  letter-spacing: 0.2px !important;
+  padding: 3px 8px !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-radius: 6px !important;
+  border-left: 2px solid #ffd875 !important;
+  text-shadow: none !important;
 }
 
 /* Compact Player Count Medallions */
 .settings-sheet .player-count-field {
-  margin: 2px 0 4px !important;
+  margin: 1px 0 3px !important;
   padding: 0 !important;
   border: 0 !important;
 }
 
 .settings-sheet .player-count-field legend {
   font-family: var(--display) !important;
-  font-size: 13px !important;
+  font-size: 12.5px !important;
   font-weight: 700 !important;
   color: #ffd875 !important;
-  letter-spacing: 1px !important;
-  margin-bottom: 4px !important;
+  letter-spacing: 0.5px !important;
+  margin-bottom: 3px !important;
 }
 
 .settings-sheet .count-medallions {
   display: grid !important;
   grid-template-columns: repeat(8, minmax(0, 1fr)) !important;
-  gap: 4px !important;
-  padding: 2px 0 !important;
+  gap: 3px !important;
+  padding: 1px 0 !important;
   width: 100% !important;
 }
 
 .settings-sheet .count-medallions span {
   width: 100% !important;
-  max-width: 38px !important;
-  height: 32px !important;
-  min-height: 32px !important;
+  max-width: 34px !important;
+  height: 28px !important;
+  min-height: 28px !important;
   border-radius: 50% !important;
   font-family: var(--display) !important;
-  font-size: 14.5px !important;
+  font-size: 13.5px !important;
   font-weight: 700 !important;
   border: 1.5px solid rgba(212, 163, 89, 0.6) !important;
   background: linear-gradient(180deg, #381312 0%, #1a0808 100%) !important;
@@ -5604,22 +5622,22 @@ dialog.table-modal-backdrop::backdrop { background: #081b2d55; }
 /* Compact Select Dropdowns */
 .settings-sheet label:not(.check label) {
   font-family: var(--display) !important;
-  font-size: 12.5px !important;
+  font-size: 12px !important;
   font-weight: 700 !important;
   color: #eddcc4 !important;
-  letter-spacing: 0.5px !important;
-  margin: 4px 0 1px !important;
+  letter-spacing: 0.3px !important;
+  margin: 3px 0 1px !important;
   display: block !important;
 }
 
 .settings-sheet select {
   width: 100% !important;
-  height: 34px !important;
-  min-height: 34px !important;
-  padding: 3px 8px !important;
+  height: 31px !important;
+  min-height: 31px !important;
+  padding: 2px 8px !important;
   margin: 0 0 2px !important;
   font-family: var(--sans) !important;
-  font-size: 12.5px !important;
+  font-size: 12px !important;
   font-weight: 600 !important;
   color: #fff8ef !important;
   background: linear-gradient(180deg, #3d1413 0%, #1f0908 100%) !important;
@@ -5634,19 +5652,19 @@ dialog.table-modal-backdrop::backdrop { background: #081b2d55; }
   align-items: center !important;
   justify-content: space-between !important;
   width: 100% !important;
-  min-height: 38px !important;
-  padding: 4px 2px !important;
+  min-height: 33px !important;
+  padding: 2px 1px !important;
   margin: 0 !important;
-  border-bottom: 1px solid rgba(212, 163, 89, 0.2) !important;
+  border-bottom: 1px solid rgba(212, 163, 89, 0.15) !important;
   box-sizing: border-box !important;
 }
 
 .settings-sheet .check label {
   font-family: var(--sans) !important;
-  font-size: 13px !important;
+  font-size: 12.5px !important;
   font-weight: 600 !important;
   color: #fff2d5 !important;
-  letter-spacing: 0.3px !important;
+  letter-spacing: 0.2px !important;
   margin: 0 !important;
   flex: 1 1 auto !important;
   white-space: nowrap !important;
@@ -5658,11 +5676,11 @@ dialog.table-modal-backdrop::backdrop { background: #081b2d55; }
   appearance: none !important;
   -webkit-appearance: none !important;
   position: relative !important;
-  width: 44px !important;
-  height: 24px !important;
-  min-height: 24px !important;
+  width: 40px !important;
+  height: 22px !important;
+  min-height: 22px !important;
   border: 1.5px solid rgba(212, 163, 89, 0.55) !important;
-  border-radius: 14px !important;
+  border-radius: 12px !important;
   background: linear-gradient(180deg, #2b0d0c 0%, #170606 100%) !important;
   margin: 0 !important;
   flex-shrink: 0 !important;
@@ -5674,8 +5692,8 @@ dialog.table-modal-backdrop::backdrop { background: #081b2d55; }
 .settings-sheet .check input::before {
   content: '' !important;
   position: absolute !important;
-  width: 18px !important;
-  height: 18px !important;
+  width: 16px !important;
+  height: 16px !important;
   top: 1.5px !important;
   left: 2px !important;
   background: #c5b294 !important;
@@ -5691,43 +5709,44 @@ dialog.table-modal-backdrop::backdrop { background: #081b2d55; }
 }
 
 .settings-sheet .check input:checked::before {
-  transform: translateX(19px) !important;
+  transform: translateX(18px) !important;
   background: #ffffff !important;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5) !important;
 }
 
 /* Presets Details Accordion */
 .settings-sheet .preset-details {
-  margin: 4px 0 2px !important;
-  padding: 4px 8px !important;
+  margin: 3px 0 2px !important;
+  padding: 3px 6px !important;
   background: rgba(30, 10, 9, 0.6) !important;
   border: 1px solid rgba(212, 163, 89, 0.35) !important;
-  border-radius: 10px !important;
+  border-radius: 8px !important;
 }
 
 .settings-sheet .preset-details summary {
   font-family: var(--display) !important;
-  font-size: 12.5px !important;
+  font-size: 12px !important;
   font-weight: 700 !important;
   color: #ffd875 !important;
   cursor: pointer !important;
-  padding: 3px 0 !important;
+  padding: 2px 0 !important;
 }
 
 /* Return to Table Button */
 .settings-sheet .return-table-btn {
   width: 100% !important;
-  min-height: 40px !important;
-  margin: 8px 0 0 !important;
+  min-height: 38px !important;
+  height: 38px !important;
+  margin: 6px 0 0 !important;
   font-family: var(--sans) !important;
-  font-size: 14.5px !important;
+  font-size: 14px !important;
   font-weight: 800 !important;
-  letter-spacing: 1px !important;
+  letter-spacing: 0.5px !important;
   background: var(--gold-primary) !important;
   color: #1e0908 !important;
   border: 1.5px solid #ffe599 !important;
-  border-radius: 12px !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
   cursor: pointer !important;
   display: flex !important;
   align-items: center !important;
@@ -5738,7 +5757,7 @@ dialog.table-modal-backdrop::backdrop { background: #081b2d55; }
 
 .settings-sheet .return-table-btn:hover {
   filter: brightness(1.08) !important;
-  box-shadow: 0 6px 16px rgba(245, 166, 35, 0.45), inset 0 1px 0 #ffffff !important;
+  box-shadow: 0 5px 14px rgba(245, 166, 35, 0.45), inset 0 1px 0 #ffffff !important;
 }
 
 /* ==========================================================================
