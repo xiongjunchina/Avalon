@@ -9,13 +9,14 @@ import { hitTest, renderScreen, type ScreenModel } from './ui/widgets.js';
 import { entryScreen } from './screens/entry.js';
 import { LobbyController, lobbyScreen } from './screens/lobby.js';
 import { settingsScreen, toggleSetting } from './screens/settings.js';
-import { gameAction, gameScreen, type GameUiState } from './screens/game.js';
+import { gameAction, gameScreen, syncGameUi, type GameUiState } from './screens/game.js';
 import { AdminApi } from './screens/admin/auth.js';
 import { AdminPanel } from './screens/admin/panel.js';
 import { PlayerExtras } from './screens/player-extras.js';
 import { PlayerPanel } from './screens/player-panel.js';
 import { PracticeSession } from './screens/practice.js';
 import { guideScreen } from './screens/guide.js';
+import { InviteInbox } from './screens/invites.js';
 
 declare const wx: WxRuntime;
 declare const __MINIGAME_API_BASE_URL__: string;
@@ -24,7 +25,8 @@ const baseUrl = __MINIGAME_API_BASE_URL__;
 const platform = new WechatPlatform(wx);
 const canvas = drawShell(platform);
 const api = new MiniGameApi(platform, baseUrl);
-const launchInvite = wx.getLaunchOptionsSync?.().query?.invite;
+const invites = new InviteInbox();
+invites.receive(wx.getLaunchOptionsSync?.().query?.invite);
 const adminPanel = new AdminPanel(new AdminApi(platform, baseUrl, () => api.session.get()));
 const extras = new PlayerExtras(api);
 const screen = platform.screen();
@@ -66,6 +68,7 @@ function model(): ScreenModel {
   else result = entryScreen(user, error);
   if (error && view !== 'entry') result.subtitle = error;
   if (notice) result.rows.unshift({ id: 'notice', text: notice });
+  if (invites.code) result.rows.unshift({ id: 'invitation', text: invites.label()! });
   return { ...result, scroll };
 }
 function render() { rows = renderScreen(model(), canvas, viewport); }
@@ -74,6 +77,7 @@ function navigate(next: typeof view) { view = next; scroll = 0; error = ''; noti
 function connect(next: RoomView) {
   connection?.stop();
   room = next;
+  syncGameUi(gameUi, next);
   lobby?.setRoom(next);
   connection = new MiniGameRoomConnection({ api, platform, roomId: next.id, baseUrl, handlers: {
     snapshot: snapshot => {
@@ -81,6 +85,7 @@ function connect(next: RoomView) {
       room = snapshot;
       lobby?.setRoom(snapshot);
       if (changedGame) hideSensitiveView(gameUi);
+      syncGameUi(gameUi, snapshot);
       if (view !== 'player' && view !== 'admin') {
         if (snapshot.game && snapshot.phase !== 'waiting') view = 'game';
         else if (view !== 'settings') view = 'lobby';
@@ -92,7 +97,7 @@ function connect(next: RoomView) {
     message: message => {
       if (message.type === 'roomChat') { playerPanel?.onRoomChat(message); if (view === 'player') render(); }
       if (message.type === 'directChat') { playerPanel?.onDirectChat(message); notice = `${message.fromUser.nickname}：${message.text}`; render(); }
-      if (message.type === 'roomInvitation') { notice = `${message.fromUser.nickname} 邀请你加入房间 ${message.roomCode}`; render(); }
+      if (message.type === 'roomInvitation') { invites.receive(message.roomCode, message.fromUser.nickname); render(); }
       if (message.type === 'systemAnnouncement' && message.enabled) { notice = message.text; render(); }
     },
     ended: () => { connection = undefined; room = undefined; navigate('entry'); },
@@ -118,9 +123,14 @@ async function select(id: string) {
     if (id === 'confirm:yes') pending.execute();
     render(); return;
   }
+  if (id === 'invitation') {
+    if (room) { error = room.game && !['finished', 'aborted'].includes(room.game.phase) ? '当前牌局结束后再加入邀请' : '请先离开当前房间'; render(); return; }
+    if (!lobby) { error = '请先微信登录，再点击邀请'; render(); return; }
+    return run(async () => { const code = invites.code; if (code) { connect(await lobby!.join(code)); invites.take(); } });
+  }
   if (view === 'practice' && practice) {
     if (id === 'exitPractice') { practice = undefined; navigate('entry'); return; }
-    if (id === 'bot') { practice.stepBot(); render(); return; }
+    if (id === 'bot') { practice.stepBot(); syncGameUi(gameUi, practice.view()); render(); return; }
     if (id === 'role') { gameUi.privateRoleVisible = !gameUi.privateRoleVisible; render(); return; }
     if (id === 'direction') { gameUi.direction = gameUi.direction === 'clockwise' ? 'counterclockwise' : 'clockwise'; render(); return; }
     if (id.startsWith('player:')) {
@@ -131,9 +141,9 @@ async function select(id: string) {
       } else gameUi.targetId = targetId;
       render(); return;
     }
-    if (id === 'rematch') { practice = new PracticeSession(practice.settings, user?.nickname ?? '我'); hideSensitiveView(gameUi); render(); return; }
+    if (id === 'rematch') { practice = new PracticeSession(practice.settings, user?.nickname ?? '我'); syncGameUi(gameUi, practice.view()); render(); return; }
     const command = gameAction(practice.view(), practice.user, id, gameUi);
-    if (command) { try { practice.act(command); } catch (cause) { error = cause instanceof Error ? cause.message : '练习操作失败'; } render(); }
+    if (command) { try { practice.act(command); syncGameUi(gameUi, practice.view()); } catch (cause) { error = cause instanceof Error ? cause.message : '练习操作失败'; } render(); }
     return;
   }
   if (view === 'player' && playerPanel) return run(async () => {
@@ -155,8 +165,8 @@ async function select(id: string) {
   }
   if (view === 'entry') {
     if (id === 'guide') { navigate('guide'); return; }
-    if (id === 'practice') { practice = new PracticeSession(editableSettings, user?.nickname ?? '我'); hideSensitiveView(gameUi); navigate('practice'); return; }
-    if (id === 'login') return run(async () => { const result = await api.login(); user = result.user; lobby = new LobbyController(api, user); playerPanel = new PlayerPanel(extras, user); const existing = await lobby.resume(); if (existing) connect(existing); else if (launchInvite) connect(await lobby.join(launchInvite)); else render(); });
+    if (id === 'practice') { practice = new PracticeSession(editableSettings, user?.nickname ?? '我'); syncGameUi(gameUi, practice.view()); navigate('practice'); return; }
+    if (id === 'login') return run(async () => { const result = await api.login(); user = result.user; lobby = new LobbyController(api, user); playerPanel = new PlayerPanel(extras, user); const existing = await lobby.resume(); if (existing) connect(existing); else if (invites.code) { connect(await lobby.join(invites.code)); invites.take(); } else render(); });
     if (id === 'create' && lobby) return run(async () => { connect(await lobby!.create(editableSettings)); });
     if (id === 'join' && lobby) return run(async () => { const key = await askText(wx, '', 200); if (key) connect(await lobby!.join(key)); });
     if (id === 'switch') return run(async () => { const code = await askText(wx, '', 6); if (!code) return; connection?.stop(); connection = undefined; room = undefined; user = await api.switchAccount(code); lobby = new LobbyController(api, user); playerPanel = new PlayerPanel(extras, user); const existing = await lobby.resume(); if (existing) connect(existing); });
@@ -215,7 +225,7 @@ wx.onTouchEnd?.(event => {
   else { const row = hitTest(rows, point.clientX, point.clientY); if (row) void select(row.id); }
 });
 platform.onHide(() => { hideSensitiveView(gameUi); pendingConfirm = undefined; adminPanel.onHide(); if (view === 'admin') view = 'entry'; render(); });
-platform.onShow(() => { connection?.resume(); render(); });
+platform.onShow(options => { invites.receive(options?.query?.invite); connection?.resume(); render(); });
 render();
 if (api.session.get()) void run(async () => {
   user = await api.refresh();
@@ -223,6 +233,6 @@ if (api.session.get()) void run(async () => {
   playerPanel = new PlayerPanel(extras, user);
   const existing = await lobby.resume();
   if (existing) connect(existing);
-  else if (launchInvite) connect(await lobby.join(launchInvite));
+  else if (invites.code) { connect(await lobby.join(invites.code)); invites.take(); }
 });
 wx.onShareAppMessage?.(() => ({ title: room ? `来嘻游 · 真假猴王房间 ${room.code} 一起论剑` : '嘻游 · 真假猴王', ...(room ? { query: `invite=${encodeURIComponent(room.code)}` } : {}) }));

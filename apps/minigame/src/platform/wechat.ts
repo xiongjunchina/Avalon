@@ -32,7 +32,7 @@ export interface WxRuntime {
   onTouchStart?(callback: (event: { touches: { clientX: number; clientY: number }[] }) => void): void;
   onTouchEnd?(callback: (event: { changedTouches: { clientX: number; clientY: number }[] }) => void): void;
   createInnerAudioContext?(): { src: string; play(): void; pause(): void; stop(): void; destroy(): void };
-  onShow(callback: () => void): void;
+  onShow(callback: (options?: { query?: { invite?: string } }) => void): void;
   onHide(callback: () => void): void;
   onShareAppMessage?(callback: () => { title: string; query?: string }): void;
   shareAppMessage?(options: { title: string; query: string }): void;
@@ -51,6 +51,6 @@ export class WechatPlatform {
   login(): Promise<string> {
     return new Promise((resolve, reject) => this.runtime.login({ success: value => resolve(value.code), fail: reject }));
   }
-  onShow(callback: () => void) { this.runtime.onShow(callback); }
+  onShow(callback: (options?: { query?: { invite?: string } }) => void) { this.runtime.onShow(callback); }
   onHide(callback: () => void) { this.runtime.onHide(callback); }
 }

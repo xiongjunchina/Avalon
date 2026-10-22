@@ -9,6 +9,29 @@ export interface GameUiState {
   selectedIds?: string[];
   direction?: 'clockwise' | 'counterclockwise';
   targetId?: string;
+  snapshotKey?: string;
+  draftKey?: string;
+}
+
+export function syncGameUi(ui: GameUiState, room: RoomView): void {
+  const game = room.game;
+  if (!game) { ui.snapshotKey = undefined; ui.draftKey = undefined; ui.selectedIds = []; ui.targetId = undefined; return; }
+  const key = `${game.id}:${game.mission}:${game.captainId}:${game.phase}`;
+  const changed = ui.snapshotKey !== key;
+  if (changed) {
+    ui.privateRoleVisible = false;
+    ui.ballotVisible = false;
+    ui.targetId = undefined;
+    ui.selectedIds = [];
+    ui.direction = 'clockwise';
+    ui.snapshotKey = key;
+  }
+  const draftKey = game.draftTeam ? JSON.stringify(game.draftTeam) : '';
+  if (changed || ui.draftKey !== draftKey) {
+    ui.selectedIds = [...(game.draftTeam?.playerIds ?? [])];
+    ui.direction = game.draftTeam?.direction ?? 'clockwise';
+    ui.draftKey = draftKey;
+  }
 }
 
 const phaseName: Record<GameView['phase'], string> = {
@@ -22,12 +45,22 @@ export function gameScreen(room: RoomView, user: User, ui: GameUiState): ScreenM
   if (!game) return { title: '等待牌局', rows: [{ id: 'back', text: '返回房间' }] };
   const self = game.self;
   const round = game.rounds?.at(-1);
+  const playerLabel = (id: string) => { const player = game.players.find(value => value.id === id); return player ? `${player.seat}号 ${player.nickname}` : '未知玩家'; };
   const rows = [
     { id: 'status', text: `第${game.mission}轮 · ${phaseName[game.phase]}` },
+    { id: 'progress', text: `流局 ${game.rejectionCount}/5 · 本轮需${game.missionSizes[game.mission - 1] ?? 0}人 · ${game.failuresRequired}张失败牌才失败` },
+    ...game.rounds.filter(value => value.result).map(value => ({ id: `round:${value.number}`, text: `第${value.number}轮任务${value.result!.passed ? '成功' : '失败'} · ${value.result!.failures}张失败牌` })),
+    ...(round?.team.length ? [{ id: 'team', text: `出征队伍：${round.team.map(playerLabel).join('、')}` }] : []),
+    ...(game.phase === 'team_vote' ? [{ id: 'teamVoteProgress', text: `组队表决 ${game.progress.teamVotes}/${game.players.length}` }] : []),
+    ...(game.phase === 'mission' ? [{ id: 'missionProgress', text: `任务投票 ${game.progress.missionVotes}/${round?.team.length ?? 0}` }] : []),
     ...game.players.map(player => ({ id: `player:${player.id}`, text: `${player.seat}号 ${player.nickname}${player.id === game.captainId ? ' · 队长' : ''}${ui.selectedIds?.includes(player.id) ? ' · 已选队员' : ''}${ui.targetId === player.id ? ' · 已选目标' : ''}` })),
     { id: 'role', text: ui.privateRoleVisible && self ? `你的身份：${formatRoleName(self.role, self.loyalGuardian, self.femaleDemon)} · ${self.team === 'blue' ? '取经阵营' : '妖魔阵营'}` : '点此查看自己的身份' },
   ];
   if (ui.privateRoleVisible && self?.guardianClue) rows.push({ id: 'clue', text: self.guardianClue.description });
+  if (ui.privateRoleVisible && self?.evilIds.length) rows.push({ id: 'evil', text: `已知妖魔：${self.evilIds.map(playerLabel).join('、')}` });
+  if (ui.privateRoleVisible && self?.merlinCandidates.length) rows.push({ id: 'merlinCandidates', text: `真假悟空候选：${self.merlinCandidates.map(playerLabel).join('、')}` });
+  if (ui.privateRoleVisible && self?.guinevereCandidates?.length) rows.push({ id: 'guinevereCandidates', text: `线索候选：${self.guinevereCandidates.map(playerLabel).join('、')}` });
+  if (ui.privateRoleVisible && self?.inspections.length) rows.push(...self.inspections.map(value => ({ id: `inspection:${value.afterMission}`, text: `查验结果：${playerLabel(value.targetId)}属${value.team === 'red' ? '妖魔' : '取经'}阵营` })));
   if (game.abortPoll) rows.push({ id: 'abortPoll', text: `终止投票 ${game.abortPoll.approvals}/${game.abortPoll.required}` });
   if (game.phase === 'role_reveal' && self && !self.confirmed) rows.push({ id: 'confirmRole', text: '已看清身份' });
   if (game.phase === 'proposing' && game.captainId === user.id) rows.push(
@@ -54,6 +87,7 @@ export function gameScreen(room: RoomView, user: User, ui: GameUiState): ScreenM
   if (game.phase === 'assassination' && self?.role === 'assassin') rows.push({ id: 'assassinate', text: `刺杀所选玩家${ui.targetId ? ' ✓' : ''}` });
   if (game.phase === 'finished' || game.phase === 'aborted') rows.push(
     { id: 'result', text: `结果：${game.result?.winner ?? '无'} · ${game.result?.reason ?? ''}` },
+    ...Object.entries(game.revealedRoles ?? {}).map(([id, role]) => ({ id: `revealed:${id}`, text: `${playerLabel(id)} · ${formatRoleName(role)}` })),
     { id: 'rematch', text: '返回房间再来一局' },
   );
   if (!['finished', 'aborted'].includes(game.phase)) {

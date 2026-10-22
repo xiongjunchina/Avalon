@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { defaultSettings, type GamePhase, type RoomView, type User } from '@avalon/contracts';
-import { gameScreen, gameAction } from '../src/screens/game.js';
+import { gameScreen, gameAction, syncGameUi } from '../src/screens/game.js';
 
 const self = { id: '11111111-1111-4111-8111-111111111111', nickname: '我', seat: 1 };
 const other = { id: '22222222-2222-4222-8222-222222222222', nickname: '他', seat: 2 };
@@ -42,4 +42,47 @@ test('captain can update a partial draft and host can resolve an abort request',
   assert.equal(gameAction(pending, other as User, 'approveAbort'), undefined);
   assert.equal(gameAction(room('mission'), self as User, 'endGame')?.type, 'endGame');
   assert.equal(gameAction(room('mission'), other as User, 'endGame'), undefined);
+});
+
+test('game screen shows public progress and private clues only after reveal', () => {
+  const current = room('lady_reveal');
+  current.game!.rejectionCount = 2;
+  current.game!.rounds[0]!.result = { successes: 1, failures: 1, passed: false };
+  current.game!.self!.inspections = [{ afterMission: 1, inspectorId: self.id, targetId: other.id, team: 'red' }];
+  const hidden = JSON.stringify(gameScreen(current, self as User, { privateRoleVisible: false, ballotVisible: false }));
+  assert.match(hidden, /流局 2\/5/);
+  assert.match(hidden, /第1轮任务失败/);
+  assert.doesNotMatch(hidden, /inspection:1|属妖魔阵营/);
+  const revealed = JSON.stringify(gameScreen(current, self as User, { privateRoleVisible: true, ballotVisible: false }));
+  assert.match(revealed, /查验结果.*妖魔/);
+  assert.match(revealed, /2号/);
+});
+
+test('game UI adopts server draft and clears selections when round or game changes', () => {
+  const first = room('proposing');
+  first.game!.draftTeam = { playerIds: [self.id, other.id], direction: 'counterclockwise' };
+  const ui = { privateRoleVisible: true, ballotVisible: false, selectedIds: [] as string[], direction: 'clockwise' as const, targetId: other.id };
+  syncGameUi(ui, first);
+  assert.deepEqual(ui.selectedIds, [self.id, other.id]);
+  assert.equal(ui.direction, 'counterclockwise');
+  const next = room('proposing');
+  next.game!.mission = 2;
+  next.game!.draftTeam = { playerIds: [], direction: 'clockwise' };
+  syncGameUi(ui, next);
+  assert.deepEqual(ui.selectedIds, []);
+  assert.equal(ui.targetId, undefined);
+  assert.equal(ui.privateRoleVisible, false);
+});
+
+test('game screen shows team, voting progress and end-of-game role reveal', () => {
+  const voting = room('team_vote');
+  voting.game!.progress.teamVotes = 1;
+  voting.game!.teamVote = { votedIds: [other.id] };
+  const voteText = JSON.stringify(gameScreen(voting, self as User, { privateRoleVisible: false, ballotVisible: false }));
+  assert.match(voteText, /出征队伍.*1号.*2号/);
+  assert.match(voteText, /组队表决 1\/2/);
+  const finished = room('finished');
+  finished.game!.revealedRoles = { [self.id]: 'merlin', [other.id]: 'assassin' };
+  const endText = JSON.stringify(gameScreen(finished, self as User, { privateRoleVisible: false, ballotVisible: false }));
+  assert.match(endText, /2号.*红孩儿/);
 });
