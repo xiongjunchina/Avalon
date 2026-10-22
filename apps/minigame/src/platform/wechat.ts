@@ -16,8 +16,28 @@ export interface WxSocketTask {
   onError(callback: (error: unknown) => void): void;
 }
 
+export interface WxImage {
+  width: number;
+  height: number;
+  src: string;
+  onload: (() => void) | null;
+  onerror: (() => void) | null;
+}
+
+export interface WxAvatarCanvas {
+  width: number;
+  height: number;
+  getContext(type: '2d'): Pick<CanvasRenderingContext2D, 'drawImage'> | null;
+  toTempFilePathSync(options: { fileType: 'jpg'; quality: number }): string;
+}
+
 export interface WxRuntime {
   createCanvas(): HTMLCanvasElement;
+  createOffscreenCanvas?(options: { type: '2d'; width: number; height: number }): WxAvatarCanvas;
+  createImage?(): WxImage;
+  chooseImage?(options: { count: number; sizeType: string[]; sourceType: string[];
+    success(result: { tempFilePaths: string[]; tempFiles?: { size: number }[] }): void; fail(error: unknown): void }): void;
+  getFileSystemManager?(): { readFileSync(path: string, encoding: 'base64'): string | ArrayBuffer };
   getSystemInfoSync(): { screenWidth: number; screenHeight: number; pixelRatio: number; safeArea?: { top: number; bottom: number } };
   getStorageSync(key: string): unknown;
   setStorageSync(key: string, value: unknown): void;

@@ -5,6 +5,7 @@ import { PlayerExtras } from './player-extras.js';
 
 type Page = 'account' | 'stats' | 'history' | 'replay' | 'presets' | 'friends' | 'direct' | 'roomchat' | 'guide';
 type Input = (label: string, maxLength?: number) => Promise<string | undefined>;
+type AvatarPicker = () => Promise<string>;
 const avatarOrder: Avatar[] = ['leaf', 'moon', 'sun', 'mountain', 'wave', 'star'];
 
 export class PlayerPanel {
@@ -23,7 +24,7 @@ export class PlayerPanel {
   private appliedSettings?: Settings;
   private canApplyPreset = false;
   private pending?: { label: string; action: () => Promise<unknown> };
-  constructor(private readonly api: PlayerExtras, public user: User) {}
+  constructor(private readonly api: PlayerExtras, public user: User, private readonly avatarPicker?: AvatarPicker) {}
 
   onRoomChat(message: RoomChatMessage) { this.roomMessages.push(message); this.roomMessages = this.roomMessages.slice(-50); }
   onDirectChat(message: Extract<ServerMessage, { type: 'directChat' }>): void {
@@ -48,7 +49,8 @@ export class PlayerPanel {
     if (this.pending) return { title: '确认操作', subtitle: this.pending.label, rows: [{ id: 'confirm:yes', text: '确认执行' }, { id: 'confirm:no', text: '取消' }] };
     if (this.page === 'guide') return guideScreen();
     if (this.page === 'account') return { title: '我的账户', subtitle: `${this.user.nickname} · ${this.user.playerCode ?? ''}`, rows: [
-      { id: 'nickname', text: `昵称：${this.user.nickname}` }, { id: 'avatar', text: `头像徽章：${this.user.avatar ?? 'leaf'}` },
+      { id: 'nickname', text: `昵称：${this.user.nickname}` }, { id: 'avatar', text: this.user.avatarUrl ? '当前头像：自定义照片 · 点击改用徽章' : `头像徽章：${this.user.avatar ?? 'leaf'}` },
+      { id: 'uploadAvatar', text: '上传自定义头像' },
       { id: 'redeem', text: '兑换 VIP 码' }, { id: 'page:stats', text: '战绩统计' },
       { id: 'page:history', text: '对局历史与收藏' }, { id: 'page:presets', text: '常用玩法预设' },
       { id: 'back', text: '返回' },
@@ -103,6 +105,7 @@ export class PlayerPanel {
     if (id.startsWith('page:')) { await this.open(id.slice(5) as Page); return; }
     if (id === 'nickname') { const nickname = await input('新昵称', 20); if (nickname) this.user = (await this.api.updateProfile({ nickname, avatar: this.user.avatar ?? 'leaf', avatarUrl: this.user.avatarUrl ?? null, wechatAvatarUrl: this.user.wechatAvatarUrl ?? null })).user; return; }
     if (id === 'avatar') { const next = avatarOrder[(avatarOrder.indexOf(this.user.avatar ?? 'leaf') + 1) % avatarOrder.length]!; this.user = (await this.api.updateProfile({ nickname: this.user.nickname, avatar: next, avatarUrl: null, wechatAvatarUrl: null })).user; return; }
+    if (id === 'uploadAvatar') { if (!this.avatarPicker) throw new Error('当前微信版本不支持上传头像'); const avatarUrl = await this.avatarPicker(); this.user = (await this.api.updateProfile({ nickname: this.user.nickname, avatar: this.user.avatar ?? 'leaf', avatarUrl, wechatAvatarUrl: null })).user; return; }
     if (id === 'redeem') { const code = await input('兑换码', 64); if (code) await this.api.redeem(code); return; }
     if (id === 'more' && this.cursor) { const result = await this.api.history(this.cursor); this.games.push(...result.games); this.cursor = result.nextCursor; return; }
     if (id.startsWith('game:')) { this.replay = await this.api.replay(id.slice(5)); this.page = 'replay'; return; }

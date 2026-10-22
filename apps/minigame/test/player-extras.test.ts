@@ -68,3 +68,15 @@ test('incoming direct chat appears in the open conversation', async () => {
   panel.onDirectChat({ type: 'directChat', messageId: 'm', fromUser: { id: 'f', nickname: '仙友' }, text: '你好', timestamp: '2026-10-22T00:00:00Z' });
   assert.ok(panel.model().rows.some(row => row.text.includes('你好')));
 });
+
+test('account panel can save a cropped custom avatar from the mini game picker', async () => {
+  let saved: unknown;
+  const api = { request: async (path: string, body?: unknown) => {
+    if (path === '/me') { saved = body; return { user: { id: 'u', nickname: '我', avatar: 'leaf', avatarUrl: 'data:image/jpeg;base64,AAAA' } }; }
+    return {};
+  } } as any;
+  const panel = new PlayerPanel(new PlayerExtras(api), { id: 'u', nickname: '我', avatar: 'leaf' }, async () => 'data:image/jpeg;base64,AAAA');
+  assert.ok(panel.model().rows.some(row => row.id === 'uploadAvatar'));
+  await panel.handle('uploadAvatar', async () => undefined);
+  assert.equal((saved as { avatarUrl: string }).avatarUrl, 'data:image/jpeg;base64,AAAA');
+});

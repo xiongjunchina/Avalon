@@ -17,6 +17,7 @@ import { PlayerPanel } from './screens/player-panel.js';
 import { PracticeSession } from './screens/practice.js';
 import { guideScreen } from './screens/guide.js';
 import { InviteInbox } from './screens/invites.js';
+import { chooseAvatar } from './platform/avatar.js';
 
 declare const wx: WxRuntime;
 declare const __MINIGAME_API_BASE_URL__: string;
@@ -166,10 +167,10 @@ async function select(id: string) {
   if (view === 'entry') {
     if (id === 'guide') { navigate('guide'); return; }
     if (id === 'practice') { practice = new PracticeSession(editableSettings, user?.nickname ?? '我'); syncGameUi(gameUi, practice.view()); navigate('practice'); return; }
-    if (id === 'login') return run(async () => { const result = await api.login(); user = result.user; lobby = new LobbyController(api, user); playerPanel = new PlayerPanel(extras, user); const existing = await lobby.resume(); if (existing) connect(existing); else if (invites.code) { connect(await lobby.join(invites.code)); invites.take(); } else render(); });
+    if (id === 'login') return run(async () => { const result = await api.login(); user = result.user; lobby = new LobbyController(api, user); playerPanel = new PlayerPanel(extras, user, () => chooseAvatar(wx)); const existing = await lobby.resume(); if (existing) connect(existing); else if (invites.code) { connect(await lobby.join(invites.code)); invites.take(); } else render(); });
     if (id === 'create' && lobby) return run(async () => { connect(await lobby!.create(editableSettings)); });
     if (id === 'join' && lobby) return run(async () => { const key = await askText(wx, '', 200); if (key) connect(await lobby!.join(key)); });
-    if (id === 'switch') return run(async () => { const code = await askText(wx, '', 6); if (!code) return; connection?.stop(); connection = undefined; room = undefined; user = await api.switchAccount(code); lobby = new LobbyController(api, user); playerPanel = new PlayerPanel(extras, user); const existing = await lobby.resume(); if (existing) connect(existing); });
+    if (id === 'switch') return run(async () => { const code = await askText(wx, '', 6); if (!code) return; connection?.stop(); connection = undefined; room = undefined; user = await api.switchAccount(code); lobby = new LobbyController(api, user); playerPanel = new PlayerPanel(extras, user, () => chooseAvatar(wx)); const existing = await lobby.resume(); if (existing) connect(existing); });
     if (id === 'logout') return run(async () => { connection?.stop(); connection = undefined; room = undefined; user = undefined; lobby = undefined; playerPanel = undefined; await api.logout(); render(); });
     if (id === 'admin') return run(async () => { const key = await askText(wx, '', 256); if (!key) return; await adminPanel.open(key); navigate('admin'); });
     if ((id === 'account' || id === 'friends') && playerPanel) return run(async () => { previousView = 'entry'; await playerPanel!.open(id); navigate('player'); });
@@ -230,7 +231,7 @@ render();
 if (api.session.get()) void run(async () => {
   user = await api.refresh();
   lobby = new LobbyController(api, user);
-  playerPanel = new PlayerPanel(extras, user);
+  playerPanel = new PlayerPanel(extras, user, () => chooseAvatar(wx));
   const existing = await lobby.resume();
   if (existing) connect(existing);
   else if (invites.code) { connect(await lobby.join(invites.code)); invites.take(); }
