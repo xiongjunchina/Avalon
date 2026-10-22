@@ -58,3 +58,61 @@ test('IdentityDetails renders guardian perk clue for loyal players when guardian
   }
 });
 
+test('IdentityDetails treasure button is locked for non-assassins when treasures disabled, but available for assassin', () => {
+  const players = Array.from({ length: 6 }, (_, i) => ({ id: `p${i + 1}`, seat: i + 1, nickname: `仙友${i + 1}` }));
+  const game = createGame('treasure-test-6', players, { ...defaultSettings, playerCount: 6, treasuresEnabled: false }, a => a);
+
+  // Loyal player
+  const loyalP = players.find(p => game.roles[p.id] === 'loyal')!;
+  const loyalSelf = projectGame(game, loyalP.id).self!;
+  const loyalHtml = renderToStaticMarkup(createElement(IdentityDetails, {
+    self: loyalSelf,
+    players,
+    game: projectGame(game, loyalP.id),
+    treasuresEnabled: false,
+  }));
+  assert.ok(loyalHtml.includes('is-locked'));
+  assert.ok(loyalHtml.includes('未开启法宝模式'));
+
+  // Assassin player
+  const assassinP = players.find(p => game.roles[p.id] === 'assassin')!;
+  const assassinSelf = projectGame(game, assassinP.id).self!;
+  const assassinHtml = renderToStaticMarkup(createElement(IdentityDetails, {
+    self: assassinSelf,
+    players,
+    game: projectGame(game, assassinP.id),
+    treasuresEnabled: false,
+  }));
+  assert.ok(assassinHtml.includes('is-enabled'));
+  assert.ok(assassinHtml.includes('火尖枪'));
+});
+
+test('IdentityDetails treasure button shows role-specific status when treasures enabled in 10-player game', () => {
+  const players = Array.from({ length: 10 }, (_, i) => ({ id: `p${i + 1}`, seat: i + 1, nickname: `仙友${i + 1}` }));
+  const game = createGame('treasure-test-10', players, { ...defaultSettings, playerCount: 10, treasuresEnabled: true }, a => a);
+
+  // Percival
+  const percivalP = players.find(p => game.roles[p.id] === 'percival')!;
+  const percivalSelf = projectGame(game, percivalP.id).self!;
+  const percivalHtml = renderToStaticMarkup(createElement(IdentityDetails, {
+    self: percivalSelf,
+    players,
+    game: projectGame(game, percivalP.id),
+    treasuresEnabled: true,
+  }));
+  assert.ok(percivalHtml.includes('is-enabled'));
+  assert.ok(percivalHtml.includes('九环锡杖'));
+
+  // Oberon
+  const oberonP = players.find(p => game.roles[p.id] === 'oberon')!;
+  const oberonSelf = projectGame(game, oberonP.id).self!;
+  const oberonHtml = renderToStaticMarkup(createElement(IdentityDetails, {
+    self: oberonSelf,
+    players,
+    game: projectGame(game, oberonP.id),
+    treasuresEnabled: true,
+  }));
+  assert.ok(oberonHtml.includes('is-enabled'));
+  assert.ok(oberonHtml.includes('芭蕉神扇'));
+});
+

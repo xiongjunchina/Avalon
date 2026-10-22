@@ -642,6 +642,12 @@ export function GamePanel({
         })()
       )}
 
+      {g.bananaFanNotice && (
+        <div className="table-banana-fan-banner" role="alert">
+          <span>🌪️ {g.bananaFanNotice}</span>
+        </div>
+      )}
+
       {/* 3. Scheme A: Dual-Flank Altar Arena (Hidden for non-assassins during assassination phase) */}
       {!(g.phase === 'assassination' && self?.role !== 'assassin') && (() => {
         const leftPlayers = g.players.filter((_, idx) => idx % 2 === 0);
@@ -749,6 +755,11 @@ export function GamePanel({
                 {isLadyHolder && (
                   <span className="seat-badge badge-lady" title="持有湖中女神（照妖宝镜）">
                     ☯️ 宝镜
+                  </span>
+                )}
+                {g.humanBagBannedPlayerId === p.id && (
+                  <span className="seat-badge badge-banned" title="被收入后天人种袋，本轮禁选上车">
+                    🎒 禁选
                   </span>
                 )}
                 {isTargeted && (
@@ -1230,7 +1241,14 @@ export function GamePanel({
               </button>
             </div>
             <div className="identity-body">
-              <IdentityDetails self={self} players={publicPlayers} />
+              <IdentityDetails
+                self={self}
+                players={publicPlayers}
+                game={g}
+                disabled={disabled}
+                send={send}
+                treasuresEnabled={room.settings.treasuresEnabled}
+              />
             <PrivateExtensions
               game={g}
               disabled={disabled}

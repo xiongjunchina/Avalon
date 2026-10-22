@@ -485,6 +485,7 @@ function App() {
         room.settings.earlyAssassinationEnabled !== target.earlyAssassinationEnabled ||
         room.settings.guardianPerksEnabled !== target.guardianPerksEnabled ||
         room.settings.autoRevealRoleEnabled !== target.autoRevealRoleEnabled ||
+        room.settings.treasuresEnabled !== target.treasuresEnabled ||
         room.settings.anonymousTeamVote !== target.anonymousTeamVote ||
         room.settings.captainMode !== target.captainMode ||
         room.settings.rejectionScope !== target.rejectionScope;
@@ -1668,6 +1669,25 @@ function App() {
                     <small>{room.settings.earlyAssassinationEnabled ? '已开启' : '点击开启'}</small>
                   </span>
                 </button>
+
+                {room.settings.playerCount >= 9 && (
+                  <button
+                    type="button"
+                    disabled={!host || disabled}
+                    className={`waiting-ext-orb ${room.settings.treasuresEnabled ? 'is-enabled' : ''}`}
+                    onClick={() =>
+                      updateSettings({
+                        treasuresEnabled: !room.settings.treasuresEnabled,
+                      })
+                    }
+                  >
+                    <span className="orb-icon">📿</span>
+                    <span className="orb-text">
+                      <strong>专属法宝</strong>
+                      <small>{room.settings.treasuresEnabled ? '已开启' : '点击开启'}</small>
+                    </span>
+                  </button>
+                )}
 
                 <button
                   type="button"
