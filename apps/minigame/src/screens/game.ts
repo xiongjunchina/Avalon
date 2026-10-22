@@ -13,13 +13,13 @@ export interface GameUiState {
   draftKey?: string;
 }
 
-export function syncGameUi(ui: GameUiState, room: RoomView): void {
+export function syncGameUi(ui: GameUiState, room: RoomView, allowAutoReveal = true): void {
   const game = room.game;
   if (!game) { ui.snapshotKey = undefined; ui.draftKey = undefined; ui.selectedIds = []; ui.targetId = undefined; return; }
   const key = `${game.id}:${game.mission}:${game.captainId}:${game.phase}`;
   const changed = ui.snapshotKey !== key;
   if (changed) {
-    ui.privateRoleVisible = false;
+    ui.privateRoleVisible = Boolean(allowAutoReveal && room.settings.autoRevealRoleEnabled && game.phase === 'role_reveal' && game.self);
     ui.ballotVisible = false;
     ui.targetId = undefined;
     ui.selectedIds = [];
@@ -40,7 +40,7 @@ const phaseName: Record<GameView['phase'], string> = {
   early_window: '提前刺杀', assassination: '终局刺杀', finished: '对局结束', aborted: '对局中止',
 };
 
-export function gameScreen(room: RoomView, user: User, ui: GameUiState): ScreenModel {
+export function gameScreen(room: RoomView, user: User, ui: GameUiState, now = Date.now()): ScreenModel {
   const game = room.game;
   if (!game) return { title: '等待牌局', rows: [{ id: 'back', text: '返回房间' }] };
   const self = game.self;
@@ -48,11 +48,14 @@ export function gameScreen(room: RoomView, user: User, ui: GameUiState): ScreenM
   const playerLabel = (id: string) => { const player = game.players.find(value => value.id === id); return player ? `${player.seat}号 ${player.nickname}` : '未知玩家'; };
   const rows = [
     { id: 'status', text: `第${game.mission}轮 · ${phaseName[game.phase]}` },
+    ...(game.phase === 'dealing' && game.dealEndsAt ? [{ id: 'dealCountdown', text: `正在发牌，还需${Math.max(0, Math.ceil((Date.parse(game.dealEndsAt) - now) / 1000))}秒` }] : []),
     { id: 'progress', text: `流局 ${game.rejectionCount}/5 · 本轮需${game.missionSizes[game.mission - 1] ?? 0}人 · ${game.failuresRequired}张失败牌才失败` },
     ...game.rounds.filter(value => value.result).map(value => ({ id: `round:${value.number}`, text: `第${value.number}轮任务${value.result!.passed ? '成功' : '失败'} · ${value.result!.failures}张失败牌` })),
     ...(round?.team.length ? [{ id: 'team', text: `出征队伍：${round.team.map(playerLabel).join('、')}` }] : []),
     ...(game.phase === 'team_vote' ? [{ id: 'teamVoteProgress', text: `组队表决 ${game.progress.teamVotes}/${game.players.length}` }] : []),
     ...(game.phase === 'mission' ? [{ id: 'missionProgress', text: `任务投票 ${game.progress.missionVotes}/${round?.team.length ?? 0}` }] : []),
+    ...(game.humanBagBannedPlayerId ? [{ id: 'treasure:banNotice', text: `本轮人种袋禁选：${playerLabel(game.humanBagBannedPlayerId)}` }] : []),
+    ...(game.bananaFanNotice ? [{ id: 'treasure:fanNotice', text: game.bananaFanNotice }] : []),
     ...game.players.map(player => ({ id: `player:${player.id}`, text: `${player.seat}号 ${player.nickname}${player.id === game.captainId ? ' · 队长' : ''}${ui.selectedIds?.includes(player.id) ? ' · 已选队员' : ''}${ui.targetId === player.id ? ' · 已选目标' : ''}` })),
     { id: 'role', text: ui.privateRoleVisible && self ? `你的身份：${formatRoleName(self.role, self.loyalGuardian, self.femaleDemon)} · ${self.team === 'blue' ? '取经阵营' : '妖魔阵营'}` : '点此查看自己的身份' },
   ];
@@ -61,6 +64,23 @@ export function gameScreen(room: RoomView, user: User, ui: GameUiState): ScreenM
   if (ui.privateRoleVisible && self?.merlinCandidates.length) rows.push({ id: 'merlinCandidates', text: `真假悟空候选：${self.merlinCandidates.map(playerLabel).join('、')}` });
   if (ui.privateRoleVisible && self?.guinevereCandidates?.length) rows.push({ id: 'guinevereCandidates', text: `线索候选：${self.guinevereCandidates.map(playerLabel).join('、')}` });
   if (ui.privateRoleVisible && self?.inspections.length) rows.push(...self.inspections.map(value => ({ id: `inspection:${value.afterMission}`, text: `查验结果：${playerLabel(value.targetId)}属${value.team === 'red' ? '妖魔' : '取经'}阵营` })));
+  if (ui.privateRoleVisible && room.settings.treasuresEnabled && game.players.length >= 9 && self?.treasures?.enabled) {
+    const treasure = self.treasures;
+    if (treasure.tinStaff) rows.push({ id: 'treasure:tinStaff', text: treasure.tinStaff.result
+      ? `锡杖查验：${playerLabel(treasure.tinStaff.result.targetId)}属${treasure.tinStaff.result.team === 'red' ? '妖魔' : '取经'}阵营`
+      : treasure.tinStaff.available ? '九环锡杖：选一名非候选仙友查验' : `九环锡杖：${treasure.tinStaff.used ? '已使用' : '完成两轮任务后可用'}` });
+    if (treasure.guanyinMirror) rows.push({ id: 'treasure:guanyinMirror', text: treasure.guanyinMirror.result
+      ? `观音镜查验：${playerLabel(treasure.guanyinMirror.result.targetId)}心性${treasure.guanyinMirror.result.alignment === 'evil' ? '妖魔' : '纯良'}`
+      : treasure.guanyinMirror.available ? '观音镜：选一名出征队员查验' : `观音镜：${treasure.guanyinMirror.used ? '已使用' : '发车后可用'}` });
+    if (treasure.humanBag) rows.push({ id: 'treasure:humanBag', text: treasure.humanBag.targetId
+      ? `人种袋已禁选：${playerLabel(treasure.humanBag.targetId)}`
+      : treasure.humanBag.available ? '人种袋：选一名非队长仙友禁选' : `人种袋：${treasure.humanBag.used ? '已使用' : '第三轮提名前可用'}` });
+    if (treasure.jinguSeal) rows.push({ id: 'treasure:jinguSeal', text: treasure.jinguSeal.available ? '紧箍佛印：向圣僧自证身份'
+      : `紧箍佛印：${treasure.jinguSeal.used ? '已使用' : '两次任务失败后可用'}` });
+    if (treasure.jinguAllyId) rows.push({ id: 'treasure:ally', text: `紧箍佛印盟友：${playerLabel(treasure.jinguAllyId)}` });
+    if (treasure.bananaFan) rows.push({ id: 'treasure:bananaFan', text: treasure.bananaFan.used ? '芭蕉扇：已使用'
+      : `芭蕉扇：${treasure.bananaFan.armed ? '已蓄力，点击取消' : '点击蓄力'}` });
+  }
   if (game.abortPoll) rows.push({ id: 'abortPoll', text: `终止投票 ${game.abortPoll.approvals}/${game.abortPoll.required}` });
   if (game.phase === 'role_reveal' && self && !self.confirmed) rows.push({ id: 'confirmRole', text: '已看清身份' });
   if (game.phase === 'proposing' && game.captainId === user.id) rows.push(
@@ -115,6 +135,21 @@ export function gameAction(room: RoomView, user: User, action: string, ui: Parti
   if (action === 'confirmInspection' && game.phase === 'lady_reveal' && self?.canConfirmInspection) command = { type: 'confirmInspection', payload: {} };
   if (game.phase === 'early_window' && self?.canDecideEarly && ['earlyAttempt', 'earlySkip'].includes(action)) command = { type: 'earlyAssassinationDecision', payload: { attempt: action === 'earlyAttempt' } };
   if (action === 'assassinate' && game.phase === 'assassination' && self?.role === 'assassin' && ui.targetId && ui.targetId !== user.id) command = { type: 'assassinate', payload: { targetId: ui.targetId } };
+  const treasures = self?.treasures;
+  if (action.startsWith('treasure:') && ui.privateRoleVisible && room.settings.treasuresEnabled && game.players.length >= 9 && self && treasures?.enabled) {
+    const targetId = ui.targetId;
+    const validTarget = Boolean(targetId && game.players.some(player => player.id === targetId) && targetId !== user.id);
+    if (action === 'treasure:tinStaff' && treasures.tinStaff?.available && validTarget && !self.merlinCandidates.includes(targetId!))
+      command = { type: 'useTreasure', payload: { action: 'tinStaff', targetId: targetId! } };
+    if (action === 'treasure:guanyinMirror' && treasures.guanyinMirror?.available && validTarget && round?.team.includes(targetId!))
+      command = { type: 'useTreasure', payload: { action: 'guanyinMirror', targetId: targetId! } };
+    if (action === 'treasure:humanBag' && treasures.humanBag?.available && validTarget && targetId !== game.captainId)
+      command = { type: 'useTreasure', payload: { action: 'humanBag', targetId: targetId! } };
+    if (action === 'treasure:jinguSeal' && treasures.jinguSeal?.available)
+      command = { type: 'useTreasure', payload: { action: 'jinguSeal' } };
+    if (action === 'treasure:bananaFan' && treasures.bananaFan?.available)
+      command = { type: 'useTreasure', payload: { action: 'bananaFan', armed: !treasures.bananaFan.armed } };
+  }
   if (action === 'rematch' && (game.phase === 'finished' || game.phase === 'aborted') && room.hostId === user.id) command = { type: 'returnToLobby', payload: {} };
   if (action === 'requestAbort' && !['finished', 'aborted'].includes(game.phase)) command = { type: 'requestAbort', payload: {} };
   if (action === 'endGame' && room.hostId === user.id && !['finished', 'aborted'].includes(game.phase)) command = { type: 'endGame', payload: {} };

@@ -11,6 +11,8 @@ export function settingsScreen(settings: Settings): ScreenModel {
     { id: 'earlyAssassinationEnabled', text: `提前刺杀：${settings.earlyAssassinationEnabled ? '开' : '关'}` },
     { id: 'guardianPerksEnabled', text: `护法天机：${settings.guardianPerksEnabled ? '开' : '关'}` },
     { id: 'voiceChatEnabled', text: `实时语音：${settings.voiceChatEnabled ? '开' : '关'}` },
+    { id: 'autoRevealRoleEnabled', text: `自动亮身份：${settings.autoRevealRoleEnabled ? '开' : '关'}` },
+    { id: 'treasuresEnabled', text: `9–12人法宝：${settings.treasuresEnabled ? '开' : '关'}（仅9人以上生效）` },
     { id: 'apply', text: '应用设置并返回' },
   ] };
 }
@@ -22,7 +24,7 @@ export function toggleSetting(settings: Settings, key: keyof Settings): Settings
   }
   if (key === 'captainMode') return { ...settings, captainMode: settings.captainMode === 'seat_order' ? 'random_order' : 'seat_order' };
   if (key === 'rejectionScope') return { ...settings, rejectionScope: settings.rejectionScope === 'game' ? 'mission' : 'game' };
-  if (key === 'anonymousTeamVote' || key === 'ladyEnabled' || key === 'earlyAssassinationEnabled' || key === 'guardianPerksEnabled' || key === 'voiceChatEnabled')
+  if (key === 'anonymousTeamVote' || key === 'ladyEnabled' || key === 'earlyAssassinationEnabled' || key === 'guardianPerksEnabled' || key === 'voiceChatEnabled' || key === 'autoRevealRoleEnabled' || key === 'treasuresEnabled')
     return { ...settings, [key]: !settings[key] };
   return settings;
 }

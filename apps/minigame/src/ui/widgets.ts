@@ -18,8 +18,9 @@ export function rowTone(id: string): RowTone {
   if (['login', 'create', 'start', 'propose', 'startTeamVote', 'confirmRole', 'approve', 'missionSuccess', 'confirmInspection', 'rematch', 'confirm:yes', 'apply', 'generate'].includes(id)) return 'primary';
   if (['endGame', 'requestAbort', 'leave', 'logout', 'reject', 'missionFail', 'assassinate', 'confirm:no', 'cleanup'].includes(id)
     || ['ban:', 'delete:', 'reset:', 'room:'].some(prefix => id.startsWith(prefix))) return 'danger';
-  if (id === 'role' || id === 'clue' || id.startsWith('inspection:') || id === 'evil' || id.endsWith('Candidates')) return 'secret';
-  if (['status', 'progress', 'result', 'team', 'teamVoteProgress', 'missionProgress', 'notice', 'invitation'].includes(id)
+  if (id === 'role' || id === 'clue' || id.startsWith('inspection:') || id === 'evil' || id.endsWith('Candidates')
+    || (id.startsWith('treasure:') && !['treasure:banNotice', 'treasure:fanNotice'].includes(id))) return 'secret';
+  if (['status', 'progress', 'result', 'team', 'teamVoteProgress', 'missionProgress', 'dealCountdown', 'notice', 'invitation', 'treasure:banNotice', 'treasure:fanNotice'].includes(id)
     || ['round:', 'revealed:', 'stats:', 'replay:'].some(prefix => id.startsWith(prefix))) return 'info';
   return 'standard';
 }

@@ -53,6 +53,8 @@ let notice = '';
 let pendingConfirm: { label: string; execute: () => void } | undefined;
 let rows: HitRegion[] = [];
 let scroll = 0;
+let countdownTimer: ReturnType<typeof setTimeout> | undefined;
+let suspended = false;
 let editableSettings: Settings = { ...defaultSettings };
 const gameUi: GameUiState = { privateRoleVisible: false, ballotVisible: false, selectedIds: [], direction: 'clockwise' };
 
@@ -83,13 +85,17 @@ function model(): ScreenModel {
   return { ...result, scroll, scene: view === 'entry' ? 'entry' : view === 'game' || view === 'practice' ? 'game' : view === 'admin' ? 'admin' : 'standard',
     ...(portraitRole ? { portrait: `${portraitRole}-160.webp` } : view === 'guide' && guideRoleId ? { portrait: `${guideRoleId}-160.webp` } : {}) };
 }
-function render() { rows = renderScreen(model(), canvas, viewport, artwork); }
+function render() {
+  clearTimeout(countdownTimer);
+  rows = renderScreen(model(), canvas, viewport, artwork);
+  if (!suspended && view === 'game' && room?.game?.phase === 'dealing') countdownTimer = setTimeout(render, 1_000);
+}
 function navigate(next: typeof view) { view = next; scroll = 0; error = ''; notice = ''; pendingConfirm = undefined; render(); }
 
 function connect(next: RoomView) {
   connection?.stop();
   room = next;
-  syncGameUi(gameUi, next);
+  syncGameUi(gameUi, next, !suspended);
   lobby?.setRoom(next);
   connection = new MiniGameRoomConnection({ api, platform, roomId: next.id, baseUrl, handlers: {
     snapshot: snapshot => {
@@ -97,7 +103,8 @@ function connect(next: RoomView) {
       room = snapshot;
       lobby?.setRoom(snapshot);
       if (changedGame) hideSensitiveView(gameUi);
-      syncGameUi(gameUi, snapshot);
+      syncGameUi(gameUi, snapshot, !suspended);
+      if (suspended) hideSensitiveView(gameUi);
       if (view !== 'player' && view !== 'admin') {
         if (snapshot.game && snapshot.phase !== 'waiting') view = 'game';
         else if (view !== 'settings') view = 'lobby';
@@ -155,7 +162,8 @@ async function select(id: string) {
     }
     if (id === 'rematch') { practice = new PracticeSession(practice.settings, user?.nickname ?? '我'); syncGameUi(gameUi, practice.view()); render(); return; }
     const command = gameAction(practice.view(), practice.user, id, gameUi);
-    if (command) { try { practice.act(command); syncGameUi(gameUi, practice.view()); } catch (cause) { error = cause instanceof Error ? cause.message : '练习操作失败'; } render(); }
+    if (command) { try { practice.act(command); if (command.type === 'useTreasure') gameUi.targetId = undefined; syncGameUi(gameUi, practice.view()); } catch (cause) { error = cause instanceof Error ? cause.message : '练习操作失败'; } render(); }
+    else if (['treasure:tinStaff', 'treasure:guanyinMirror', 'treasure:humanBag', 'treasure:jinguSeal', 'treasure:bananaFan'].includes(id)) { error = '当前法宝不可用，或所选目标不符合条件'; render(); }
     return;
   }
   if (view === 'player' && playerPanel) return run(async () => {
@@ -223,12 +231,16 @@ async function select(id: string) {
       render(); return;
     }
     const command = gameAction(room, user, id, gameUi);
+    if (!command && ['treasure:tinStaff', 'treasure:guanyinMirror', 'treasure:humanBag', 'treasure:jinguSeal', 'treasure:bananaFan'].includes(id)) {
+      error = '当前法宝不可用，或所选目标不符合条件'; render(); return;
+    }
     if (command && ['endGame', 'voteAbort'].includes(command.type)) {
       pendingConfirm = { label: command.type === 'endGame' ? '结束游戏并关闭房间？' : '确认处理结束申请？',
         execute: () => { if (room && user) { const fresh = gameAction(room, user, id, gameUi); if (fresh && !connection?.send(fresh)) { error = '正在等待上一操作确认'; } } } };
       render(); return;
     }
     if (command && !connection?.send(command)) { error = '正在等待上一操作确认'; render(); }
+    else if (command?.type === 'useTreasure') { gameUi.targetId = undefined; render(); }
   }
 }
 
@@ -241,8 +253,8 @@ wx.onTouchEnd?.(event => {
   if (Math.abs(delta) > 15) { scroll = Math.max(0, scroll - delta); render(); }
   else { const row = hitTest(rows, point.clientX, point.clientY); if (row) void select(row.id); }
 });
-platform.onHide(() => { hideSensitiveView(gameUi); pendingConfirm = undefined; adminPanel.onHide(); if (view === 'admin') view = 'entry'; render(); });
-platform.onShow(options => { invites.receive(options?.query?.invite); connection?.resume(); render(); });
+platform.onHide(() => { suspended = true; hideSensitiveView(gameUi); pendingConfirm = undefined; adminPanel.onHide(); if (view === 'admin') view = 'entry'; render(); });
+platform.onShow(options => { suspended = false; hideSensitiveView(gameUi); invites.receive(options?.query?.invite); connection?.resume(); render(); });
 render();
 if (api.session.get()) void run(async () => {
   user = await api.refresh();

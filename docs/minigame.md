@@ -1,20 +1,19 @@
 # 微信小游戏客户端：构建和联调
 
-本工程以 `origin/main` 的 `7ccaaa157ea05f3bd4d9ed10a9819e1baeb773b3` 为基线。小游戏源码位于 `apps/minigame`，构建输出位于 `dist/minigame`。服务端复用现有 PostgreSQL、房间协议和游戏规则。
+本工程已合入 `origin/main` 的 `0ab22eb`（含 9–12 人法宝、自动亮身份及最新牌局规则）。小游戏源码位于 `apps/minigame`，构建输出位于 `dist/minigame`。服务端复用现有 PostgreSQL、房间协议和游戏规则。
 
 ## 构建
 
 在仓库根目录执行：
 
 ```powershell
-$env:WECHAT_MINIGAME_APP_ID='wxdb4e422c14adab3f'
 $env:WECHAT_MINIGAME_API_BASE_URL='https://avalon.ccnepower.com:8443'
 npm ci
 npm run typecheck
 npm run build:minigame
 ```
 
-微信开发者工具选择“小游戏”并导入 `dist/minigame`。`project.config.json` 保持 `urlCheck: true`。不要将 AppSecret、管理员密钥或用户令牌写入小游戏包。
+微信开发者工具选择“小游戏”并导入 `dist/minigame`。工程默认 AppID 为 `wxdb4e422c14adab3f`，需要换号时可用 `WECHAT_MINIGAME_APP_ID` 覆盖。`project.config.json` 保持 `urlCheck: true`。不要将 AppSecret、管理员密钥或用户令牌写入小游戏包。
 
 ## 服务端
 
@@ -49,8 +48,8 @@ npm run build:minigame
 | 网页能力 | 小游戏现状 | 验证缺口 |
 | --- | --- | --- |
 | 微信身份、账户、昵称、徽章、仙友码切换 | 界面/API 已接入 | 生产新接口和真实微信登录 |
-| 建房、房号加入、分享、准备、房主设置与踢人 | 界面/API 已接入 | 双端同房与真机分享 |
-| 5–12 人发牌、组队、投票、任务、宝镜、刺杀、中止、结算 | 共用规则，Canvas 操作、进度、私有线索及结算身份展示已接入 | 各人数及规则组合的双端完整对局 |
+| 建房、房号加入、分享、准备、房主设置与踢人 | 界面/API 已接入，含自动亮身份与 9–12 人法宝开关 | 双端同房与真机分享 |
+| 5–12 人发牌、组队、投票、任务、宝镜、刺杀、中止、结算 | 共用规则，Canvas 操作、发牌倒计时、进度、私有线索及结算身份展示已接入；5 类法宝指令已适配 | 各人数及规则组合的双端完整对局 |
 | 单人练习、五轮场景与角色图鉴文本 | 模拟器可运行；入口使用原项目月夜场景，牌局使用双列席位卡，角色肖像已打包 | 更多机型的移动端观感与真机验收 |
 | 仙友、邀请、房间与私聊、战绩、收藏、复盘、预设 | 界面/API 已接入；邀请可从消息或分享回流进入房间；复盘展示逐轮组队、投票、任务和宝镜记录 | 双端实时通知与端到端验收 |
 | 管理员总览、用户、房间、战绩、兑换码、公告和策略 | 界面/API 已接入；逐轮复盘、兑换码备注及复制、离开后台清理口令与缓存已补齐 | 使用一次性测试数据验证写操作；真机核对剪贴板和后台页面 |

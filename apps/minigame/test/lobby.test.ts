@@ -34,7 +34,7 @@ test('host and member actions create versioned commands', () => {
 });
 
 test('all web room settings are offered and toggleable', () => {
-  const keys = ['playerCount', 'captainMode', 'rejectionScope', 'anonymousTeamVote', 'ladyEnabled', 'earlyAssassinationEnabled', 'guardianPerksEnabled', 'voiceChatEnabled'] as const;
+  const keys = ['playerCount', 'captainMode', 'rejectionScope', 'anonymousTeamVote', 'ladyEnabled', 'earlyAssassinationEnabled', 'guardianPerksEnabled', 'voiceChatEnabled', 'autoRevealRoleEnabled', 'treasuresEnabled'] as const;
   const rows = settingsScreen(defaultSettings).rows;
   for (const key of keys) {
     assert.ok(rows.some(row => row.id === key), key);
