@@ -43,6 +43,12 @@ export async function buildMiniGame({
   project.appid = selectedAppId;
   await writeFile(join(outDir, 'project.config.json'), JSON.stringify(project, null, 2));
   await mkdir(join(outDir, 'art'), { recursive: true });
+  await mkdir(join(outDir, 'art', 'scenes'), { recursive: true });
+  await mkdir(join(outDir, 'art', 'emblems'), { recursive: true });
+  for (const name of await readdir(join(minigameRoot, 'assets/emblems'))) if (name.endsWith('.png'))
+    await copyFile(join(minigameRoot, 'assets/emblems', name), join(outDir, 'art/emblems', name));
+  for (const name of ['gate', 'sword', 'pavilion', 'library', 'mirror', 'dawn'])
+    await copyFile(join(repoRoot, 'apps/web/public/art/scenes', name + '.webp'), join(outDir, 'art/scenes', name + '.webp'));
   await copyFile(join(repoRoot, 'apps', 'web', 'public', 'art', 'scenes', 'gate.webp'), join(outDir, 'art', 'gate.webp'));
   await copyFile(join(repoRoot, 'apps', 'web', 'public', 'art', 'avalon-moonlit.png'), join(outDir, 'art', 'moonlit.png'));
   const rolesRoot = join(repoRoot, 'apps', 'web', 'public', 'art', 'roles');

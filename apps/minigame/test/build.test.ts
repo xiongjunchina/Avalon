@@ -5,6 +5,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { runInNewContext } from 'node:vm';
 import { buildMiniGame } from '../scripts/build.mjs';
+import { layoutWebScreen } from '../src/ui/web-layout.js';
+import { entryScreen } from '../src/screens/entry.js';
 
 test('builds an importable project without server or admin secrets', async t => {
   const outDir = await mkdtemp(join(tmpdir(), 'avalon-minigame-'));
@@ -68,8 +70,9 @@ test('built bundle starts with only WeChat Mini Game APIs available', async t =>
   const bundle = await readFile(join(outDir, 'bundle.js'), 'utf8');
   assert.doesNotThrow(() => runInNewContext(bundle, { wx, console, setTimeout, clearTimeout, crypto: globalThis.crypto }));
   assert.ok(calls.includes('fillText'));
-  assert.ok(labels.some(label => label.includes('单人练习')));
-  touchStart?.({ touches: [{ clientY: 375 }] });
-  touchEnd?.({ changedTouches: [{ clientX: 100, clientY: 375 }] });
-  assert.ok(labels.some(label => label.includes('练习局')));
+  assert.ok(labels.some(label => label.includes('幻境单人试玩')));
+  const button = layoutWebScreen(entryScreen(), { width: 390, height: 844, top: 44, bottom: 34 }).nodes.find(node => node.id === 'practice')!;
+  touchStart?.({ touches: [{ clientX: button.x + 10, clientY: button.y + 15 }] });
+  touchEnd?.({ changedTouches: [{ clientX: button.x + 10, clientY: button.y + 15 }] });
+  assert.ok(labels.some(label => label.includes('幻境演练')));
 });

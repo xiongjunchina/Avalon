@@ -49,7 +49,7 @@ export class LobbyController {
 
 export function lobbyScreen(room: RoomView, user: User, status = ''): ScreenModel {
   const me = room.members.find(member => member.id === user.id);
-  return { title: `房间 ${room.code}`, subtitle: `${room.settings.playerCount}人 · ${status}`, rows: [
+  return { title: `房间 ${room.code}`, web: { page: 'table', room, user }, subtitle: `${room.settings.playerCount}人 · ${status}`, rows: [
     ...room.members.map(member => ({ id: `member:${member.id}`, text: `${member.seat}号 ${member.nickname} · ${member.ready ? '已准备' : '未准备'} · ${member.online ? '在线' : '离线'}` })),
     { id: 'ready', text: me?.ready ? '取消准备' : '准备' },
     ...(room.hostId === user.id ? [
@@ -59,6 +59,13 @@ export function lobbyScreen(room: RoomView, user: User, status = ''): ScreenMode
       { id: 'admission', text: room.acceptingNewMembers ? '关闭新玩家加入' : '允许新玩家加入' },
     ] : []),
     { id: 'share', text: '邀请微信好友' }, { id: 'friends', text: '邀请仙友入房' }, { id: 'chat', text: '房间聊天' },
+    { id: 'practice', text: `幻化分身试玩（${room.settings.playerCount}人局）` },
     { id: 'leave', text: '离开房间' },
   ] };
+}
+
+export function readyReminder(room: RoomView, userId: string): boolean {
+  return room.phase === 'waiting' && room.members.length === room.settings.playerCount
+    && room.members.some(member => member.id === userId && !member.ready)
+    && room.members.every(member => member.id === userId || member.ready);
 }

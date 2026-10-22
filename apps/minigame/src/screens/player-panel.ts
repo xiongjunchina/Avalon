@@ -59,13 +59,28 @@ export class PlayerPanel {
       this.roomSettings = options.settings ?? this.roomSettings;
       this.canApplyPreset = options.canApplyPreset ?? this.canApplyPreset;
     }
-    if (page === 'stats') this.stats = await this.api.statistics();
+    if (page === 'stats' || page === 'account') this.stats = await this.api.statistics();
     if (page === 'history') { const result = await this.api.history(undefined, this.favoritesOnly); this.games = result.games; this.cursor = result.nextCursor; }
     if (page === 'presets') this.presets = (await this.api.presets()).presets;
     if (page === 'friends') this.friends = (await this.api.friends()).friends;
   }
 
   model(): ScreenModel {
+    const result = this.pageModel();
+    result.web ??= { page: 'sheet', background: ['friends', 'direct', 'roomchat'].includes(this.page) ? 'pavilion' : 'dawn', activeTab: 'page:' + (this.page === 'account' ? 'stats' : this.page) };
+    if (!['friends', 'direct', 'roomchat', 'replay', 'guide'].includes(this.page) && !this.pending) {
+      const nav = [{ id: 'page:stats', text: '我的战绩' }, { id: 'page:history', text: '历史对局' }, { id: 'page:favorites', text: '我的收藏' }, { id: 'page:presets', text: '常用设置' }];
+      result.rows = [...nav, ...result.rows.filter(row => !nav.some(item => item.id === row.id))];
+    }
+    if ((this.page === 'stats' || this.page === 'account') && !this.pending) {
+      result.title = '功果簿 · ' + this.user.nickname;
+      const values = [[String(this.stats?.completed ?? 0), '完成对局'], [String(this.stats?.wins ?? 0), '胜利'], [String(this.stats?.losses ?? 0), '失败'], [this.stats?.winRate == null ? '—' : Math.round(this.stats.winRate * 100) + '%', '总胜率']];
+      result.rows.splice(4, 0, ...values.map(([value, label], index) => ({ id: 'metric:' + index, text: value + '|' + label })));
+      result.rows.push({ id: 'copyCode', text: '#' + (this.user.playerCode ?? '') + ' · 复制仙友码' }, { id: 'page:account', text: '仙位资料与兑换' }, { id: 'admin', text: '管理员' });
+    }
+    return result;
+  }
+  private pageModel(): ScreenModel {
     if (this.pending) return { title: '确认操作', rows: [{ id: 'notice', text: this.pending.label }, { id: 'confirm:yes', text: '确认执行' }, { id: 'confirm:no', text: '取消' }] };
     if (this.page === 'guide') return guideScreen();
     if (this.page === 'account') return { title: '我的账户', subtitle: `${this.user.nickname} · ${this.user.playerCode ?? ''}`, rows: [
@@ -121,6 +136,8 @@ export class PlayerPanel {
   }
 
   async handle(id: string, input: Input): Promise<'back' | void> {
+    if (id === 'page:favorites') { this.favoritesOnly = true; await this.open('history'); return; }
+    if (id === 'page:history') this.favoritesOnly = false;
     if (id === 'back') return 'back';
     if (id === 'confirm:no') { this.pending = undefined; return; }
     if (id === 'confirm:yes' && this.pending) { const action = this.pending.action; this.pending = undefined; await action(); await this.open(this.page === 'direct' ? 'friends' : this.page, { roomId: this.roomId }); return; }

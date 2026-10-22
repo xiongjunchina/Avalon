@@ -39,6 +39,11 @@ export class AdminPanel {
   }
 
   model(): ScreenModel {
+    const result = this.pageModel();
+    result.web = { page: 'sheet', background: 'library', activeTab: 'page:' + this.page };
+    return result;
+  }
+  private pageModel(): ScreenModel {
     if (this.pending) return { title: '确认管理操作', rows: [{ id: 'notice', text: this.pending.label }, { id: 'confirm:yes', text: '确认执行' }, { id: 'confirm:no', text: '取消' }] };
     if (this.page === 'user' && this.user) return adminUserScreen(this.user);
     if (this.page === 'replay' && this.replayData) return adminReplayScreen(this.replayData);
@@ -47,7 +52,7 @@ export class AdminPanel {
     if (this.page === 'users') return adminUsersScreen(this.usersData, this.query, this.usersData.length < this.userTotal);
     if (this.page === 'rooms') return adminRoomsScreen(this.roomsData);
     if (this.page === 'games') return adminGamesScreen(this.gamesData, this.moreGames);
-    if (this.page === 'codes') { const result = adminCodesScreen(this.codesData); if (this.feedback) result.subtitle = this.feedback; return result; }
+    if (this.page === 'codes') { const result = adminCodesScreen(this.codesData); if (this.feedback) { result.subtitle = this.feedback; result.rows.unshift({ id: 'guide:feedback', text: this.feedback }); } return result; }
     if (this.page === 'settings' && this.settingsData) return adminSettingsScreen(this.settingsData);
     return { title: '管理员', rows: [{ id: 'page:overview', text: '刷新管理总览' }, { id: 'back', text: '返回游戏' }] };
   }

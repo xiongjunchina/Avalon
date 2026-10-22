@@ -2,6 +2,8 @@ import type { Command, GameView, RoomView, User } from '@avalon/contracts';
 import { commandId } from './lobby.js';
 import { formatRoleName } from '../../../web/src/roles.js';
 import type { ScreenModel } from '../ui/widgets.js';
+import { roleDescriptions } from '../../../web/src/role-descriptions.js';
+import { WUYUE_MISSIONS } from '../../../web/src/roles.js';
 
 export interface GameUiState {
   privateRoleVisible: boolean;
@@ -11,9 +13,15 @@ export interface GameUiState {
   targetId?: string;
   snapshotKey?: string;
   draftKey?: string;
+  overlay?: 'identity' | 'vote' | 'mission' | 'history' | 'report' | 'treasures' | 'result' | 'more';
+  voteChoice?: boolean | 'abstain';
+  missionChoice?: boolean;
+  reportMission?: number;
+  completedCount?: number;
+  warning?: string;
 }
 
-export function syncGameUi(ui: GameUiState, room: RoomView, allowAutoReveal = true): void {
+export function syncGameUi(ui: GameUiState, room: RoomView, allowAutoReveal = true, userId?: string): void {
   const game = room.game;
   if (!game) { ui.snapshotKey = undefined; ui.draftKey = undefined; ui.selectedIds = []; ui.targetId = undefined; return; }
   const key = `${game.id}:${game.mission}:${game.captainId}:${game.phase}`;
@@ -25,7 +33,14 @@ export function syncGameUi(ui: GameUiState, room: RoomView, allowAutoReveal = tr
     ui.selectedIds = [];
     ui.direction = 'clockwise';
     ui.snapshotKey = key;
+    ui.voteChoice = undefined; ui.missionChoice = undefined; ui.warning = undefined;
+    ui.overlay = ui.privateRoleVisible ? 'identity' : game.phase === 'team_vote' ? 'vote'
+      : game.phase === 'mission' && userId && game.rounds.at(-1)?.team.includes(userId) ? 'mission' : undefined;
+    if (game.phase === 'finished' || game.phase === 'aborted') ui.overlay = 'result';
   }
+  const completed = game.rounds.filter(round => round.result).length;
+  if (ui.completedCount !== undefined && completed > ui.completedCount && !game.result) { ui.overlay = 'report'; ui.reportMission = game.rounds.filter(round => round.result).at(-1)?.mission; }
+  ui.completedCount = completed;
   const draftKey = game.draftTeam ? JSON.stringify(game.draftTeam) : '';
   if (changed || ui.draftKey !== draftKey) {
     ui.selectedIds = [...(game.draftTeam?.playerIds ?? [])];
@@ -126,10 +141,93 @@ export function gameScreen(room: RoomView, user: User, ui: GameUiState, now = Da
   // Keep the current decision and private identity above the seat board on small phones.
   const first = new Set(['status', 'dealCountdown', 'progress', 'role', 'confirmRole', 'submitted', 'approve', 'reject', 'abstain', 'missionSuccess', 'missionFail', 'confirmInspection', 'earlyAttempt', 'earlySkip']);
   const ordered = [...rows.filter(row => first.has(row.id)), ...rows.filter(row => !first.has(row.id))];
-  return { title: `房间 ${room.code}`, subtitle: `${game.players.length}人 · ${phaseName[game.phase]}`, rows: ordered };
+  if (game.phase === 'team_vote') ordered.push({ id: 'openVote', text: self?.teamVoted ? '查看表决进度' : '全员落印表决' });
+  if (game.phase === 'mission' && self && round?.team.includes(user.id)) ordered.push({ id: 'openMission', text: self.missionVoted ? '任务牌已提交' : '祭出任务牌' });
+  ordered.push({ id: 'history', text: '取经战况' }, { id: 'guide', text: '识妖谱' });
+  const base: ScreenModel = { title: `房间 ${room.code}`, subtitle: `${game.players.length}人 · ${phaseName[game.phase]}`, rows: ordered,
+    web: { page: 'table', room: { ...room, game: { ...game, self: undefined } }, user, selectedIds: ui.selectedIds, targetId: ui.targetId } };
+  if (game.phase === 'dealing') return { title: '即将发牌', rows: ordered.filter(row => ['dealCountdown', 'status'].includes(row.id)),
+    web: { page: 'sheet', sheet: 'dealing', background: 'sword', backId: 'noop' } };
+  return ui.overlay ? gameOverlayScreen(room, user, ui, base) : base;
+}
+
+export function handleGameOverlay(ui: GameUiState, room: RoomView, id: string): boolean {
+  if (id === 'overlayClose') { ui.overlay = undefined; ui.privateRoleVisible = false; ui.ballotVisible = false; ui.warning = undefined; return true; }
+  if (id === 'role') { ui.overlay = 'identity'; ui.privateRoleVisible = true; return true; }
+  const overlays: Record<string, GameUiState['overlay']> = { openVote: 'vote', openMission: 'mission', history: 'history', treasures: 'treasures', more: 'more' };
+  if (overlays[id]) { ui.overlay = overlays[id]; ui.ballotVisible = id === 'openVote'; if (id !== 'treasures') ui.privateRoleVisible = false; return true; }
+  if (id.startsWith('mission:')) { ui.overlay = 'report'; ui.reportMission = Number(id.slice(8)); return true; }
+  if (id.startsWith('vote-choice:') && room.game?.phase === 'team_vote' && !room.game.self?.teamVoted) {
+    ui.voteChoice = id.endsWith('approve') ? true : id.endsWith('reject') ? false : 'abstain'; return true;
+  }
+  if (id.startsWith('mission-choice:') && room.game?.phase === 'mission' && !room.game.self?.missionVoted) {
+    if (id.endsWith('fail') && room.game.self?.team === 'blue') { ui.warning = '蓝方取经人只能提交任务成功'; return true; }
+    ui.missionChoice = !id.endsWith('fail'); ui.warning = undefined; return true;
+  }
+  return false;
+}
+
+function gameOverlayScreen(room: RoomView, user: User, ui: GameUiState, base: ScreenModel): ScreenModel {
+  const game = room.game!, self = game.self;
+  const name = (id: string) => { const player = game.players.find(item => item.id === id); return player ? `${player.seat}号 ${player.nickname}` : '未知成员'; };
+  const round = game.rounds.at(-1);
+  let title = '', rows: ScreenModel['rows'] = [], portrait: string | undefined;
+  if (ui.overlay === 'identity' && self && ui.privateRoleVisible) {
+    title = '我的身份法相';
+    portrait = (self.loyalGuardian ? self.loyalGuardian + '-loyal' : self.femaleDemon ? 'minion-' + self.femaleDemon : self.role) + '-160.webp';
+    const description = roleDescriptions[self.role];
+    rows = [{ id: 'role-name', text: formatRoleName(self.role, self.loyalGuardian, self.femaleDemon) + ' · ' + (self.team === 'blue' ? '取经正果' : '群妖乱道') },
+      { id: 'role-ability', text: '身份能力：' + description.ability }, { id: 'role-visibility', text: '身份关联：' + description.visibility },
+      ...base.rows.filter(row => row.id === 'clue' || row.id === 'evil' || row.id.endsWith('Candidates') || row.id.startsWith('inspection:')),
+      { id: 'role-tip', text: '取经锦囊：' + description.tip }, { id: 'treasures', text: '专属法宝与神兵' },
+      ...base.rows.filter(row => row.id === 'confirmRole')];
+  } else if (ui.overlay === 'vote') {
+    title = '出征组队表决';
+    rows = [{ id: 'notice', text: `第${game.mission}难 · ${WUYUE_MISSIONS[game.mission - 1]?.subtitle ?? ''}` },
+      { id: 'team', text: '领队：' + name(game.captainId) + '\n出征阵容：' + (round?.team.map(name).join('、') ?? '') },
+      { id: 'guide:vote-rule', text: '准行多于封驳即准予出征；平票或全员旁观记为流局。' },
+      ...(!self?.teamVoted ? [
+        { id: 'vote-choice:approve', text: (ui.voteChoice === true ? '✓ ' : '') + '准行' },
+        { id: 'vote-choice:reject', text: (ui.voteChoice === false ? '✓ ' : '') + '封驳' },
+        { id: 'vote-choice:abstain', text: (ui.voteChoice === 'abstain' ? '✓ ' : '') + '旁观' },
+        { id: 'submitVote', text: ui.voteChoice === undefined ? '请先选择落印' : '确认落印 · 不可更改' },
+      ] : [{ id: 'submitted', text: '你已落印，等待其余仙友' }]),
+      { id: 'progress', text: `已落印 ${game.progress.teamVotes}/${game.players.length}` },
+      ...game.players.map(player => ({ id: 'ballot:' + player.id, text: name(player.id) + ' · ' + (game.teamVote?.votedIds.includes(player.id) ? '已落印' : '待落印') })),
+      { id: 'history', text: '往难前情 · 查看历史' }];
+  } else if (ui.overlay === 'mission') {
+    title = '取经出征 · 任务牌';
+    rows = [{ id: 'team', text: '出征阵容：' + (round?.team.map(name).join('、') ?? '') },
+      { id: 'guide:mission-rule', text: `本轮需${game.failuresRequired}张失败牌才失败；任务牌始终匿名。` },
+      ...(!self?.missionVoted ? [{ id: 'mission-choice:success', text: (ui.missionChoice === true ? '✓ ' : '') + '取经成功' },
+        { id: 'mission-choice:fail', text: (ui.missionChoice === false ? '✓ ' : '') + '阻断取经' },
+        { id: 'submitMission', text: ui.missionChoice === undefined ? '请先选择任务牌' : '确认出牌 · 不可更改' }] : [{ id: 'submitted', text: '任务牌已提交，等待其余队员' }]),
+      ...(ui.warning ? [{ id: 'error', text: ui.warning }] : [])];
+  } else if (ui.overlay === 'treasures') {
+    title = '专属法宝与神兵';
+    rows = [...base.rows.filter(row => row.id.startsWith('treasure:') || ['earlyAttempt', 'earlySkip', 'assassinate'].includes(row.id)),
+      ...game.players.filter(player => player.id !== user.id).map(player => ({ id: 'player:' + player.id, text: name(player.id) + (ui.targetId === player.id ? ' · 已选目标' : '') }))];
+    if (!rows.length) rows.push({ id: 'empty', text: '本局未开启专属法宝或当前尚未解锁。' });
+  } else if (ui.overlay === 'more') {
+    title = '法坛工具';
+    rows = base.rows.filter(row => ['endGame', 'requestAbort', 'approveAbort', 'rejectAbort', 'chat', 'guide', 'rematch'].includes(row.id));
+  } else {
+    title = ui.overlay === 'result' ? '本局功果' : ui.overlay === 'report' ? `第${ui.reportMission}难 · 取经战报` : '取经战况';
+    const rounds = ui.overlay === 'report' ? game.rounds.filter(item => item.mission === ui.reportMission) : game.rounds;
+    rows = rounds.flatMap(item => [
+      { id: 'replay:round:' + item.number, text: `第${item.mission}难 · 第${item.number}次组队\n领队：${name(item.captainId)}\n出征：${item.team.map(name).join('、')}` },
+      ...(item.vote ? [{ id: 'replay:vote:' + item.number, text: `准行${item.vote.approvals} · 封驳${item.vote.rejections} · 旁观${item.vote.abstentions ?? 0} · ${item.vote.passed ? '通过' : '流局'}` }] : []),
+      ...(item.result ? [{ id: 'replay:mission:' + item.number, text: `任务${item.result.passed ? '成功' : '失败'} · 成功牌${item.result.successes} / 失败牌${item.result.failures}` }] : []),
+    ]);
+    if (!rows.length) rows.push({ id: 'empty', text: '这一难尚无组队记录' });
+    if (ui.overlay === 'result') rows.unshift(...base.rows.filter(row => row.id === 'result' || row.id.startsWith('revealed:') || row.id === 'rematch'));
+  }
+  return { title, rows, portrait, web: { page: 'sheet', sheet: ui.overlay, background: ui.overlay === 'result' ? 'dawn' : ui.overlay === 'identity' ? 'mirror' : 'sword', backId: 'overlayClose' } };
 }
 
 export function gameAction(room: RoomView, user: User, action: string, ui: Partial<GameUiState> = {}): Command | undefined {
+  if (action === 'submitVote') return ui.voteChoice === undefined ? undefined : gameAction(room, user, ui.voteChoice === 'abstain' ? 'abstain' : ui.voteChoice ? 'approve' : 'reject', ui);
+  if (action === 'submitMission') return ui.missionChoice === undefined ? undefined : gameAction(room, user, ui.missionChoice ? 'missionSuccess' : 'missionFail', ui);
   const game = room.game;
   if (!game || !game.players.some(player => player.id === user.id)) return undefined;
   const self = game.self;
@@ -141,7 +239,7 @@ export function gameAction(room: RoomView, user: User, action: string, ui: Parti
   if (action === 'startTeamVote' && game.phase === 'discussion' && game.captainId === user.id) command = { type: 'startTeamVote', payload: {} };
   if (game.phase === 'team_vote' && self && !self.teamVoted && ['approve', 'reject', 'abstain'].includes(action)) command = { type: 'teamVote', payload: { approve: action === 'abstain' ? 'abstain' : action === 'approve' } };
   if (game.phase === 'mission' && self && !self.missionVoted && round?.team.includes(user.id) && ['missionSuccess', 'missionFail'].includes(action) && (action !== 'missionFail' || self.team === 'red')) command = { type: 'missionVote', payload: { success: action === 'missionSuccess' } };
-  if (action === 'inspect' && game.phase === 'lady' && self?.canInspect && ui.targetId && ui.targetId !== user.id) command = { type: 'inspectAlignment', payload: { targetId: ui.targetId } };
+  if (action === 'inspect' && game.phase === 'lady' && self?.canInspect && ui.targetId && ui.targetId !== user.id && !game.lady?.holderIds.includes(ui.targetId)) command = { type: 'inspectAlignment', payload: { targetId: ui.targetId } };
   if (action === 'confirmInspection' && game.phase === 'lady_reveal' && self?.canConfirmInspection) command = { type: 'confirmInspection', payload: {} };
   if (ui.privateRoleVisible && self?.canDecideEarly && !['dealing', 'role_reveal', 'assassination', 'finished', 'aborted'].includes(game.phase)
     && (action === 'earlyAttempt' || action === 'earlySkip' && game.phase === 'early_window'))

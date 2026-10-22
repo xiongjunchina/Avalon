@@ -1,8 +1,11 @@
 import { hitTest, layoutRows, contentTop, clampScroll, type HitRegion, type SafeViewport } from './layout.js';
 import type { Artwork } from './assets.js';
 import { theme } from './theme.js';
+import type { WebSurface } from './web-layout.js';
+import { renderWebScreen } from './web-render.js';
 
 export interface ScreenModel {
+  web?: WebSurface;
   title: string;
   subtitle?: string;
   rows: { id: string; text: string }[];
@@ -166,6 +169,7 @@ function card(ctx: CanvasRenderingContext2D, row: HitRegion) {
 }
 
 export function renderScreen(model: ScreenModel, canvas: HTMLCanvasElement, viewport: SafeViewport, artwork?: Artwork): HitRegion[] {
+  if (model.web) return renderWebScreen(model, canvas, viewport, artwork);
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Canvas 2D is unavailable');
   background(ctx, viewport, artwork);

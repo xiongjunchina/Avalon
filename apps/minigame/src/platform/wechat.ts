@@ -54,7 +54,7 @@ export interface WxRuntime {
   offKeyboardComplete?(callback: () => void): void;
   onTouchStart?(callback: (event: { touches: { clientX: number; clientY: number }[] }) => void): void;
   onTouchEnd?(callback: (event: { changedTouches: { clientX: number; clientY: number }[] }) => void): void;
-  createInnerAudioContext?(): { src: string; play(): void; pause(): void; stop(): void; destroy(): void };
+  createInnerAudioContext?(): { src: string; loop?: boolean; volume?: number; play(): void; pause(): void; stop(): void; destroy(): void; onEnded?(callback: () => void): void; onError?(callback: () => void): void };
   onShow(callback: (options?: { query?: { invite?: string } }) => void): void;
   onHide(callback: () => void): void;
   onShareAppMessage?(callback: () => { title: string; query?: string }): void;

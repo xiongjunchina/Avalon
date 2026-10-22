@@ -1,4 +1,4 @@
-import { defaultSettings, type RoomView, type Settings, type User } from '@avalon/contracts';
+import { defaultSettings, defaultAnonymousTeamVote, type RoomView, type Settings, type User } from '@avalon/contracts';
 import { WechatPlatform, type WxRuntime } from './platform/wechat.js';
 import { MiniGameApi } from './net/api.js';
 import { MiniGameRoomConnection } from './net/socket.js';
@@ -7,9 +7,11 @@ import { hideSensitiveView, clampScroll, type HitRegion } from './ui/layout.js';
 import { askText, cancelTextInput } from './ui/input.js';
 import { hitTest, renderScreen, type ScreenModel } from './ui/widgets.js';
 import { entryScreen } from './screens/entry.js';
-import { LobbyController, lobbyScreen } from './screens/lobby.js';
+import { LobbyController, lobbyScreen, readyReminder } from './screens/lobby.js';
 import { settingsScreen, toggleSetting } from './screens/settings.js';
-import { gameAction, gameScreen, syncGameUi, type GameUiState } from './screens/game.js';
+import { gameAction, gameScreen, handleGameOverlay, syncGameUi, type GameUiState } from './screens/game.js';
+import { layoutWebScreen } from './ui/web-layout.js';
+import { formatRoleName } from '../../web/src/roles.js';
 import { AdminApi } from './screens/admin/auth.js';
 import { AdminPanel } from './screens/admin/panel.js';
 import { PlayerExtras } from './screens/player-extras.js';
@@ -20,6 +22,8 @@ import { InviteInbox } from './screens/invites.js';
 import { chooseAvatar } from './platform/avatar.js';
 import { createArtwork } from './ui/assets.js';
 import { describeMiniGameError } from './ui/messages.js';
+import { MiniGameSound } from './platform/sound.js';
+import { KnownAccounts } from './net/known-accounts.js';
 
 declare const wx: WxRuntime;
 declare const __MINIGAME_API_BASE_URL__: string;
@@ -27,8 +31,10 @@ declare const __MINIGAME_API_BASE_URL__: string;
 const baseUrl = __MINIGAME_API_BASE_URL__;
 const platform = new WechatPlatform(wx);
 const canvas = drawShell(platform);
-const artwork = createArtwork(wx, () => render());
+const artwork = createArtwork(wx, () => render(), baseUrl);
 const api = new MiniGameApi(platform, baseUrl);
+const knownAccounts = new KnownAccounts(platform);
+const sound = new MiniGameSound(platform, baseUrl, text => { notice = text; render(); });
 const invites = new InviteInbox();
 invites.receive(wx.getLaunchOptionsSync?.().query?.invite);
 const adminPanel = new AdminPanel(new AdminApi(platform, baseUrl, () => api.session.get()), text => new Promise<void>((resolve, reject) => {
@@ -49,6 +55,7 @@ let connection: MiniGameRoomConnection | undefined;
 let view: 'entry' | 'lobby' | 'game' | 'settings' | 'admin' | 'player' | 'practice' | 'guide' = 'entry';
 let previousView: 'entry' | 'lobby' | 'game' = 'entry';
 let status = '';
+let connectionStatus = '';
 let error = '';
 let notice = '';
 let announcement = '';
@@ -58,13 +65,51 @@ let scroll = 0;
 let countdownTimer: ReturnType<typeof setTimeout> | undefined;
 let suspended = false;
 let busy = false;
-let editableSettings: Settings = { ...defaultSettings };
+let commandBusy = false;
+let roleIndex = 0;
+let nickname = '';
+let switchCode = '';
+let authMode: 'create' | 'switch' = 'create';
+let auxiliary: 'roomTools' | 'practiceSeats' | 'sound' | 'switchAccount' | 'join' | undefined;
+let joinKey = '';
+let reminderDismissed = '';
+let guideReturn: 'entry' | 'lobby' | 'game' | 'practice' = 'entry';
+let freeAccess = true;
+let setupIntent: 'room' | 'practice' = 'room';
+let editableSettings: Settings = { ...defaultSettings, captainMode: 'random_order', anonymousTeamVote: true, earlyAssassinationEnabled: true };
 const gameUi: GameUiState = { privateRoleVisible: false, ballotVisible: false, selectedIds: [], direction: 'clockwise' };
 
+function feedback(result: ScreenModel): ScreenModel {
+  result = { ...result, rows: [...result.rows], scroll };
+  if (error) result.rows.unshift({ id: 'error', text: error });
+  if (busy) result.rows.unshift({ id: 'status', text: status || '正在处理，请稍候…' });
+  if (notice) result.rows.unshift({ id: 'notice', text: notice });
+  if (announcement) result.rows.unshift({ id: 'announcement', text: announcement });
+  if (invites.code) result.rows.unshift({ id: 'invitation', text: invites.label()! });
+  return result;
+}
+
 function model(): ScreenModel {
-  if (pendingConfirm) return { title: '确认操作',
-    rows: [{ id: 'notice', text: pendingConfirm.label }, { id: 'confirm:yes', text: '确认执行' }, { id: 'confirm:no', text: '取消' }] };
+  if (pendingConfirm) return feedback({ title: '确认操作',
+    rows: [{ id: 'notice', text: pendingConfirm.label }, { id: 'confirm:yes', text: '确认执行' }, { id: 'confirm:no', text: '取消' }], web: { page: 'sheet', background: 'sword', backId: 'confirm:no' } });
   let result: ScreenModel;
+  if (view === 'lobby' && room && user && !auxiliary && reminderDismissed !== room.id && readyReminder(room, user.id)) return feedback({
+    title: '大家都在等你', rows: [{ id: 'guide:ready', text: '其他玩家均已准备，只差你一位。' }, { id: 'ready', text: '我已准备' }, { id: 'readyLater', text: '稍后准备' }],
+    web: { page: 'sheet', sheet: 'ready', background: 'pavilion', backId: 'readyLater' },
+  });
+  if (auxiliary === 'join') return feedback({ title: '加入朋友的房间', rows: [
+    { id: 'input:join', text: joinKey || '输入房间号或邀请链接' },
+    { id: 'guide:join', text: '请向朋友索取房间号或邀请链接。每次打开此页均为空，不会填入历史邀请。' },
+    { id: 'joinSubmit', text: '入座取经' },
+  ], web: { page: 'sheet', background: 'gate', backId: 'auxiliaryClose' } });
+  if (auxiliary === 'switchAccount') return feedback({ ...entryScreen(), web: { page: 'home', authMode, nickname, switchCode, knownAccounts: knownAccounts.list(), backId: 'auxiliaryClose' } });
+  if (auxiliary === 'sound') return feedback({ title: '声音设置', rows: [
+    { id: 'sound:music', text: '背景音乐：' + (sound.preferences.music ? '开' : '关') },
+    { id: 'sound:effects', text: '游戏音效：' + (sound.preferences.effects ? '开' : '关') },
+    { id: 'guide:sound', text: '沿用网页端原曲与音效。实时语音本轮不提供。' },
+  ], web: { page: 'sheet', background: 'library', backId: 'auxiliaryClose' } });
+  if (auxiliary === 'practiceSeats' && practice) return feedback({ title: '选择演练视角', rows: practice.perspectives().map(player => ({ id: 'practiceSeat:' + player.id, text: `${player.seat}号 · ${player.nickname} · ${formatRoleName(player.role)}` })), web: { page: 'sheet', background: 'sword', backId: 'auxiliaryClose' } });
+  if (auxiliary === 'roomTools' && room && user) return feedback({ ...lobbyScreen(room, user), title: '房间工具', web: { page: 'sheet', backId: 'auxiliaryClose', background: 'pavilion' } });
   if (view === 'admin') result = adminPanel.model();
   else if (view === 'guide') result = guideScreen(guideRoleId);
   else if (view === 'player' && playerPanel) result = playerPanel.model();
@@ -72,17 +117,20 @@ function model(): ScreenModel {
     const local = practice.view();
     result = gameScreen(local, practice.user, gameUi);
     result.rows = result.rows.filter(row => row.id !== 'chat');
-    result.rows.push({ id: 'bot', text: '让其他仙友继续' }, { id: 'exitPractice', text: '退出练习' });
+    result.rows.push({ id: 'bot', text: '电脑代操下一步' }, { id: 'rematch', text: '重新演练' }, { id: 'exitPractice', text: '退出练习' });
+    if (result.web) result.web.practice = true;
   }
-  else if (view === 'settings') result = settingsScreen(editableSettings);
+  else if (view === 'settings') {
+    result = settingsScreen(editableSettings);
+    result.web = { page: 'setup', settings: editableSettings, background: 'library' };
+    if (!room || setupIntent === 'practice') result.rows = result.rows.filter(row => row.id !== 'apply').concat([...(setupIntent === 'room' ? [{ id: 'createRoom', text: '敕令开坛 · 创建房间' }] : []), { id: 'startPractice', text: '幻化分身试玩此板子' }]);
+  }
   else if (room?.game && view === 'game' && user) result = gameScreen(room, user, gameUi);
-  else if (room && user && view === 'lobby') result = lobbyScreen(room, user, status);
+  else if (room && user && view === 'lobby') result = lobbyScreen(room, user, connectionStatus);
   else result = entryScreen(user, error);
-  if (error) result.rows.unshift({ id: 'error', text: error });
-  if (busy) result.rows.unshift({ id: 'status', text: status || '正在处理，请稍候…' });
-  if (notice) result.rows.unshift({ id: 'notice', text: notice });
-  if (announcement) result.rows.unshift({ id: 'announcement', text: announcement });
-  if (invites.code) result.rows.unshift({ id: 'invitation', text: invites.label()! });
+  if (result.web?.page === 'home') Object.assign(result.web, { roleIndex, nickname, switchCode, authMode, freeAccess, knownAccounts: knownAccounts.list() });
+  result.web ??= { page: 'sheet', background: view === 'player' ? 'dawn' : 'library' };
+  result = feedback(result);
   const privateSelf = gameUi.privateRoleVisible
     ? view === 'game' ? room?.game?.self : view === 'practice' ? practice?.view().game?.self : undefined
     : undefined;
@@ -93,34 +141,38 @@ function model(): ScreenModel {
 }
 function render() {
   clearTimeout(countdownTimer);
+  sound.update(view === 'practice' ? practice?.view().game : view === 'game' ? room?.game : undefined, !suspended && (view === 'practice' || view === 'game' && connectionStatus === '已连接'));
   const current = model();
-  scroll = clampScroll(current.rows, viewport, scroll, current.scene);
+  scroll = current.web ? Math.max(0, Math.min(scroll, layoutWebScreen(current, viewport).maxScroll)) : clampScroll(current.rows, viewport, scroll, current.scene);
   rows = renderScreen({ ...current, scroll }, canvas, viewport, artwork);
-  if (!suspended && view === 'game' && room?.game?.phase === 'dealing') countdownTimer = setTimeout(render, 1_000);
+  if (!suspended && view === 'entry' && user) countdownTimer = setTimeout(() => { roleIndex++; render(); }, 3_800);
+  else if (!suspended && view === 'game' && room?.game?.phase === 'dealing') countdownTimer = setTimeout(render, 1_000);
 }
-function navigate(next: typeof view) { view = next; scroll = 0; error = ''; notice = ''; pendingConfirm = undefined; render(); }
+function navigate(next: typeof view) { view = next; auxiliary = undefined; scroll = 0; error = ''; notice = ''; pendingConfirm = undefined; render(); }
 
 function connect(next: RoomView) {
   connection?.stop();
   room = next;
   playerPanel?.setChatRoom(next.id);
-  syncGameUi(gameUi, next, !suspended);
+  syncGameUi(gameUi, next, !suspended, user?.id);
   lobby?.setRoom(next);
   connection = new MiniGameRoomConnection({ api, platform, roomId: next.id, baseUrl, handlers: {
     snapshot: snapshot => {
       const changedGame = snapshot.game?.id !== room?.game?.id;
       room = snapshot;
+      sound.update(snapshot.game, connectionStatus === '已连接');
       lobby?.setRoom(snapshot);
       if (changedGame) hideSensitiveView(gameUi);
-      syncGameUi(gameUi, snapshot, !suspended);
+      syncGameUi(gameUi, snapshot, !suspended, user?.id);
       if (suspended) hideSensitiveView(gameUi);
-      if (view !== 'player' && view !== 'admin') {
+      if (view === 'entry' || view === 'lobby' || view === 'game') {
         if (snapshot.game && snapshot.phase !== 'waiting') view = 'game';
-        else if (view !== 'settings') view = 'lobby';
+        else view = 'lobby';
       }
       render();
     },
-    status: value => { status = value; render(); },
+    status: value => { connectionStatus = value; if (value !== '已连接') hideSensitiveView(gameUi); render(); },
+    busy: value => { commandBusy = value; render(); },
     error: value => { error = describeMiniGameError(new Error(value)); render(); },
     message: message => {
       if (message.type === 'roomChat') { playerPanel?.onRoomChat(message); if (view === 'player') render(); }
@@ -147,7 +199,27 @@ async function run(action: () => Promise<void>) {
 }
 
 async function select(id: string) {
-  if (busy) return;
+  if (busy || commandBusy) return;
+  if (id === 'readyLater') { reminderDismissed = room?.id ?? ''; render(); return; }
+  if (id === 'leave' && view === 'game' && ['finished', 'aborted'].includes(room?.game?.phase ?? '')) { lobby?.leave(); return; }
+  if (id === 'leave' && view === 'game') id = room?.hostId === user?.id ? 'endGame' : 'requestAbort';
+  if (id === 'admin') return run(async () => { const key = await askText(wx, '', 256); if (!key) return; await adminPanel.open(key); navigate('admin'); });
+  if (id === 'copyCode' && user?.playerCode && wx.setClipboardData) { wx.setClipboardData({ data: user.playerCode, success: () => { notice = '仙友码已复制'; render(); }, fail: () => { error = '复制失败，请重试'; render(); } }); return; }
+  sound.activate(); sound.effect('tap');
+  if (id === 'sound') { auxiliary = 'sound'; scroll = 0; render(); return; }
+  if (id.startsWith('sound:')) { const key = id.slice(6) as 'music' | 'effects'; sound.configure(key, !sound.preferences[key]); render(); return; }
+  if (id.startsWith('known:')) return run(async () => { if (!api.session.get()) await api.login(); user = await api.switchAccount(id.slice(6)); knownAccounts.remember(user); lobby = new LobbyController(api, user); playerPanel = new PlayerPanel(extras, user, () => chooseAvatar(wx)); const existing = await lobby.resume(); if (existing) connect(existing); else navigate('entry'); });
+  if (id === 'notice' || id === 'error') { notice = ''; error = ''; render(); return; }
+  if (id === 'announcement') { announcement = ''; render(); return; }
+  if (id === 'auxiliaryClose') { auxiliary = undefined; scroll = 0; render(); return; }
+  if (id === 'input:join') return run(async () => { const value = await askText(wx, joinKey, 200); if (value !== undefined) joinKey = value; });
+  if (id === 'joinSubmit' && lobby) return run(async () => { const encoded = /(?:\?|&)invite=([^&#]+)/.exec(joinKey)?.[1]; const key = encoded ? decodeURIComponent(encoded) : joinKey.trim(); if (!key) throw new Error('请输入房间号或邀请链接'); connect(await lobby!.join(key)); });
+  if (id === 'practiceSeats' && practice) { auxiliary = 'practiceSeats'; scroll = 0; render(); return; }
+  if (id.startsWith('practiceSeat:') && practice) { practice.switchSeat(id.slice(13)); hideSensitiveView(gameUi); gameUi.snapshotKey = undefined; syncGameUi(gameUi, practice.view(), false, practice.user.id); auxiliary = undefined; scroll = 0; render(); return; }
+  if ((view === 'game' || view === 'practice') && id === 'guide') { guideReturn = view; navigate('guide'); return; }
+  const activeRoom = view === 'practice' ? practice?.view() : view === 'game' ? room : undefined;
+  if (activeRoom && handleGameOverlay(gameUi, activeRoom, id)) { scroll = 0; render(); return; }
+  if (id === 'back' && (view === 'practice' || view === 'game')) { gameUi.overlay = undefined; hideSensitiveView(gameUi); render(); return; }
   if (pendingConfirm) {
     const pending = pendingConfirm;
     pendingConfirm = undefined;
@@ -160,15 +232,19 @@ async function select(id: string) {
     return run(async () => { const code = invites.code; if (code) { connect(await lobby!.join(code)); invites.take(); } });
   }
   if (view === 'practice' && practice) {
-    if (id === 'exitPractice') { practice = undefined; navigate('entry'); return; }
-    if (id === 'bot') { practice.stepBot(); syncGameUi(gameUi, practice.view()); render(); return; }
+    if (id === 'exitPractice') { practice = undefined; navigate(room ? room.game ? 'game' : 'lobby' : 'entry'); return; }
+    if (id === 'practiceSettings') { setupIntent = 'practice'; navigate('settings'); return; }
+    if (id === 'bot') { practice.stepBot(true); syncGameUi(gameUi, practice.view(), true, practice.user.id); render(); return; }
     if (id === 'role') { gameUi.privateRoleVisible = !gameUi.privateRoleVisible; render(); return; }
-    if (id === 'direction') { gameUi.direction = gameUi.direction === 'clockwise' ? 'counterclockwise' : 'clockwise'; render(); return; }
+    if (id === 'direction') { gameUi.direction = gameUi.direction === 'clockwise' ? 'counterclockwise' : 'clockwise'; const draft = gameAction(practice.view(), practice.user, 'draft', gameUi); if (draft) practice.act(draft); render(); return; }
     if (id.startsWith('player:')) {
       const targetId = id.slice(7);
-      if (practice.view().game?.phase === 'proposing') {
+      if (['proposing', 'discussion'].includes(practice.view().game?.phase ?? '') && gameUi.overlay !== 'treasures') {
         const selected = gameUi.selectedIds ?? [];
-        gameUi.selectedIds = selected.includes(targetId) ? selected.filter(value => value !== targetId) : [...selected, targetId];
+        const limit = practice.view().game!.missionSizes[practice.view().game!.mission - 1]!;
+        gameUi.selectedIds = selected.includes(targetId) ? selected.filter(value => value !== targetId) : selected.length < limit ? [...selected, targetId] : selected;
+        const draft = gameAction(practice.view(), practice.user, 'draft', gameUi);
+        if (draft) practice.act(draft);
       } else gameUi.targetId = targetId;
       render(); return;
     }
@@ -199,32 +275,40 @@ async function select(id: string) {
     }
   });
   if (view === 'guide') {
-    if (id === 'back') { guideRoleId = undefined; navigate('entry'); }
+    if (id === 'back') { guideRoleId = undefined; navigate(guideReturn); }
     else if (id === 'guide:roles') { guideRoleId = undefined; scroll = 0; render(); }
     else if (id.startsWith('guide-role:')) { guideRoleId = id.slice('guide-role:'.length); scroll = 0; render(); }
     return;
   }
   if (view === 'entry') {
-    if (id === 'guide') { navigate('guide'); return; }
+    if (id === 'guide') { guideReturn = 'entry'; navigate('guide'); return; }
+    if (id.startsWith('auth:')) { authMode = id === 'auth:switch' ? 'switch' : 'create'; render(); return; }
+    if (id === 'input:nickname' || id === 'input:switch') return run(async () => { const text = await askText(wx, id === 'input:nickname' ? nickname : switchCode, id === 'input:nickname' ? 20 : 6); if (text !== undefined) { if (id === 'input:nickname') nickname = text; else switchCode = text.replace(/\D/g, '').slice(0, 6); } });
     if (id === 'practice') { practice = new PracticeSession(editableSettings, user?.nickname ?? '我'); syncGameUi(gameUi, practice.view()); navigate('practice'); return; }
-    if (id === 'login') return run(async () => { const result = await api.login(); user = result.user; lobby = new LobbyController(api, user); playerPanel = new PlayerPanel(extras, user, () => chooseAvatar(wx)); const existing = await lobby.resume(); if (existing) connect(existing); else if (invites.code) { connect(await lobby.join(invites.code)); invites.take(); } else render(); });
-    if (id === 'create' && lobby) return run(async () => { connect(await lobby!.create(editableSettings)); });
-    if (id === 'join' && lobby) return run(async () => { const key = await askText(wx, '', 200); if (key) connect(await lobby!.join(key)); });
-    if (id === 'switch') return run(async () => { const code = await askText(wx, '', 6); if (!code) return; connection?.stop(); connection = undefined; room = undefined; user = await api.switchAccount(code); lobby = new LobbyController(api, user); playerPanel = new PlayerPanel(extras, user, () => chooseAvatar(wx)); const existing = await lobby.resume(); if (existing) connect(existing); });
+    if (id === 'login') return run(async () => { if (authMode === 'switch' && !/^\d{6}$/.test(switchCode)) throw new Error('INVALID_PLAYER_CODE'); const result = await api.login(nickname || undefined); user = authMode === 'switch' ? await api.switchAccount(switchCode) : result.user; knownAccounts.remember(user); auxiliary = undefined; lobby = new LobbyController(api, user); playerPanel = new PlayerPanel(extras, user, () => chooseAvatar(wx)); const existing = await lobby.resume(); if (existing) connect(existing); else if (invites.code) { connect(await lobby.join(invites.code)); invites.take(); } else render(); });
+    if (id === 'create' && lobby) { setupIntent = 'room'; navigate('settings'); return; }
+    if (id === 'join' && lobby) { joinKey = ''; auxiliary = 'join'; scroll = 0; render(); return; }
+    if (id === 'switch') { authMode = 'switch'; switchCode = ''; auxiliary = 'switchAccount'; scroll = 0; render(); return; }
     if (id === 'logout') return run(async () => { connection?.stop(); connection = undefined; room = undefined; user = undefined; lobby = undefined; playerPanel = undefined; await api.logout(); render(); });
     if (id === 'admin') return run(async () => { const key = await askText(wx, '', 256); if (!key) return; await adminPanel.open(key); navigate('admin'); });
     if ((id === 'account' || id === 'friends') && playerPanel) return run(async () => { previousView = 'entry'; await playerPanel!.open(id); navigate('player'); });
   }
   if (view === 'settings') {
+    if (id === 'cancelSettings') { navigate(setupIntent === 'practice' && practice ? 'practice' : room ? 'lobby' : 'entry'); return; }
+    if (id.startsWith('count:')) { const count = Number(id.slice(6)); if (count >= 5 && count <= 12) editableSettings = { ...editableSettings, playerCount: count, anonymousTeamVote: defaultAnonymousTeamVote(count) }; render(); return; }
+    if (id === 'createRoom' && lobby) return run(async () => { connect(await lobby!.create(editableSettings)); });
+    if (id === 'startPractice') { practice = new PracticeSession(editableSettings, user?.nickname ?? '我'); syncGameUi(gameUi, practice.view(), true, practice.user.id); navigate('practice'); return; }
     if (id === 'apply') { if (room && lobby) lobby.updateSettings(editableSettings); navigate(room?.game ? 'game' : room ? 'lobby' : 'entry'); return; }
     editableSettings = toggleSetting(editableSettings, id as keyof Settings);
     render(); return;
   }
   if (view === 'lobby' && room && lobby) {
+    if (id === 'practice') { practice = new PracticeSession(room.settings, user?.nickname ?? '我'); syncGameUi(gameUi, practice.view(), true, practice.user.id); navigate('practice'); return; }
+    if (id === 'more') { auxiliary = 'roomTools'; scroll = 0; render(); return; }
     if (id === 'ready') lobby.ready(!room.members.find(member => member.id === user?.id)?.ready);
     else if (id === 'start') lobby.start();
     else if (id === 'admission') lobby.admission(!room.acceptingNewMembers);
-    else if (id === 'settings') { editableSettings = { ...room.settings }; navigate('settings'); }
+    else if (id === 'settings') { setupIntent = 'room'; editableSettings = { ...room.settings }; navigate('settings'); }
     else if (id === 'leave') lobby.leave();
     else if (id === 'share') { if (wx.shareAppMessage) wx.shareAppMessage({ title: `来嘻游 · 真假猴王房间 ${room.code} 一起论剑`, query: `invite=${encodeURIComponent(room.code)}` }); else { error = `请告知好友房间号 ${room.code}`; render(); } }
     else if (id === 'friends' && playerPanel) return run(async () => { previousView = 'lobby'; await playerPanel!.open('friends', { roomId: room!.id }); navigate('player'); });
@@ -239,12 +323,15 @@ async function select(id: string) {
   if (view === 'game' && room && user) {
     if (id === 'chat' && playerPanel) return run(async () => { previousView = 'game'; await playerPanel!.open('roomchat', { roomId: room!.id }); navigate('player'); });
     if (id === 'role') { gameUi.privateRoleVisible = !gameUi.privateRoleVisible; render(); return; }
-    if (id === 'direction') { gameUi.direction = gameUi.direction === 'clockwise' ? 'counterclockwise' : 'clockwise'; render(); return; }
+    if (id === 'direction') { gameUi.direction = gameUi.direction === 'clockwise' ? 'counterclockwise' : 'clockwise'; const draft = gameAction(room, user, 'draft', gameUi); if (draft) connection?.send(draft); render(); return; }
     if (id.startsWith('player:')) {
       const targetId = id.slice(7);
-      if (['proposing', 'discussion'].includes(room.game?.phase ?? '') && room.game?.captainId === user.id) {
+      if (['proposing', 'discussion'].includes(room.game?.phase ?? '') && room.game?.captainId === user.id && gameUi.overlay !== 'treasures') {
         const selected = gameUi.selectedIds ?? [];
-        gameUi.selectedIds = selected.includes(targetId) ? selected.filter(value => value !== targetId) : [...selected, targetId];
+        const limit = room.game!.missionSizes[room.game!.mission - 1]!;
+        gameUi.selectedIds = selected.includes(targetId) ? selected.filter(value => value !== targetId) : selected.length < limit ? [...selected, targetId] : selected;
+        const draft = gameAction(room, user, 'draft', gameUi);
+        if (draft) connection?.send(draft);
       } else gameUi.targetId = targetId;
       render(); return;
     }
@@ -271,15 +358,17 @@ wx.onTouchEnd?.(event => {
   if (Math.abs(delta) > 15) { scroll = Math.max(0, scroll - delta); render(); }
   else { const row = hitTest(rows, point.clientX, point.clientY); if (row) void select(row.id); }
 });
-platform.onHide(() => { suspended = true; cancelTextInput(); hideSensitiveView(gameUi); pendingConfirm = undefined; adminPanel.onHide(); if (view === 'admin') view = 'entry'; render(); });
-platform.onShow(options => { suspended = false; hideSensitiveView(gameUi); invites.receive(options?.query?.invite); connection?.resume(); render(); });
+platform.onHide(() => { suspended = true; sound.foreground(false); cancelTextInput(); hideSensitiveView(gameUi); pendingConfirm = undefined; adminPanel.onHide(); if (view === 'admin') view = 'entry'; render(); });
+platform.onShow(options => { suspended = false; sound.foreground(true); hideSensitiveView(gameUi); invites.receive(options?.query?.invite); connection?.resume(); render(); });
 render();
 if (typeof wx.request === 'function') void extras.announcement().then(result => {
   announcement = result.announcement.enabled ? result.announcement.text : '';
+  freeAccess = result.freeAccessMode;
   render();
 }).catch(() => { /* The public notice must not block login or offline practice. */ });
 if (api.session.get()) void run(async () => {
   user = await api.refresh();
+  knownAccounts.remember(user);
   lobby = new LobbyController(api, user);
   playerPanel = new PlayerPanel(extras, user, () => chooseAvatar(wx));
   const existing = await lobby.resume();
