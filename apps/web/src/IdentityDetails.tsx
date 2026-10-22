@@ -43,8 +43,8 @@ export function IdentityDetails({
     : self.evilIds.length ? (ROLE_CONFIG[players.length]?.includes('oberon') ? '本局牛魔王独霸一方不参与相认；同伙仅知阵营，不知角色。' : '以上是与你相认的群妖同伙，仅知阵营，不知具体角色。')
     : '没有其他初始身份线索，请从发言与取经战况中判断。';
 
-  const is9Plus = players.length >= 9;
-  const isTreasureModeActive = Boolean(treasuresEnabled && is9Plus);
+  const is8Plus = players.length >= 8;
+  const isTreasureModeActive = Boolean(treasuresEnabled && is8Plus);
   const canClickTreasure = isTreasureModeActive || self.role === 'assassin';
 
   let treasureSub = '';

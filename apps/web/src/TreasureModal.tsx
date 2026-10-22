@@ -29,8 +29,8 @@ export function TreasureModal({
 
   if (!open) return null;
 
-  const is9Plus = players.length >= 9;
-  const isTreasureModeActive = Boolean(treasuresEnabled && is9Plus);
+  const is8Plus = players.length >= 8;
+  const isTreasureModeActive = Boolean(treasuresEnabled && is8Plus);
   const nameOf = (id: string) => {
     const p = players.find(x => x.id === id);
     return p ? `${String(p.seat).padStart(2, '0')}号 · ${p.nickname}` : '未知仙友';
@@ -70,13 +70,13 @@ export function TreasureModal({
         </div>
 
         <div className="treasure-body">
-          {/* Case 1: Room did NOT enable 9-12 player treasure mode */}
+          {/* Case 1: Room did NOT enable 8-12 player treasure mode */}
           {!isTreasureModeActive && self.role !== 'assassin' && (
             <div className="treasure-empty-card">
               <span className="treasure-icon-large">🏮</span>
               <h4>仙家法宝 · 隐而不出</h4>
               <p className="hint">
-                当前房间未开启【9-12人专属法宝模式】。本局依照经典阿瓦隆规则进行，唯有红孩儿可在终局刺杀阶段祭出火尖枪。
+                当前房间未开启【8-12人专属法宝模式】。本局依照经典阿瓦隆规则进行，唯有红孩儿可在终局刺杀阶段祭出火尖枪。
               </p>
             </div>
           )}
@@ -146,7 +146,7 @@ export function TreasureModal({
             </div>
           )}
 
-          {/* Case 3: Treasures mode is active in 9-12 player game */}
+          {/* Case 3: Treasures mode is active in 8-12 player game */}
           {isTreasureModeActive && (
             <>
               {/* Percival: Tin Staff */}

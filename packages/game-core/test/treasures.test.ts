@@ -30,21 +30,85 @@ function fixedRoles10(roles: string[]): <T>(values: T[]) => T[] {
   };
 }
 
-test('treasures: disabled for playerCount < 9 or when setting is false', () => {
-  const players8 = makePlayers(8);
-  const settings8 = { ...defaultSettings, playerCount: 8, treasuresEnabled: true };
-  const game8 = createGame('g8', players8, settings8, values => values);
-  const projected8 = projectGame(game8, players8[0].id);
-  assert.equal(projected8.self?.treasures?.enabled, false);
+test('treasures: disabled for playerCount < 8 or when setting is false', () => {
+  const players7 = makePlayers(7);
+  const settings7 = { ...defaultSettings, playerCount: 7, treasuresEnabled: true };
+  const game7 = createGame('g7', players7, settings7, values => values);
+  const projected7 = projectGame(game7, players7[0].id);
+  assert.equal(projected7.self?.treasures?.enabled, false);
 
   assert.throws(() => {
     transition(
-      game8,
-      players8[0].id,
+      game7,
+      players7[0].id,
       { type: 'useTreasure', payload: { action: 'jinguSeal' } },
-      players8.map(p => p.id)
+      players7.map(p => p.id)
     );
   }, (err: unknown) => err instanceof RuleError && err.message === 'TREASURES_DISABLED');
+});
+
+test('treasures: enabled and usable for 8-player matches', () => {
+  // 8-player roles: merlin, percival, loyal x3, morgana, assassin, minion
+  // Assign: 0:percival, 1:merlin, 2:morgana, 3:loyal, 4:loyal, 5:loyal, 6:assassin, 7:minion
+  const roles = ['percival', 'merlin', 'morgana', 'loyal', 'loyal', 'loyal', 'assassin', 'minion'];
+  const players = makePlayers(8);
+  const settings8 = { ...defaultSettings, playerCount: 8, treasuresEnabled: true };
+  let g = createGame('g8', players, settings8, values => roles as unknown as typeof values);
+
+  const projectedPercival = projectGame(g, players[0].id);
+  assert.equal(projectedPercival.self?.treasures?.enabled, true);
+
+  // Role reveal
+  for (const p of players) {
+    g = transition(g, p.id, { type: 'confirmRole', payload: {} }, players.map(x => x.id));
+  }
+
+  const percivalId = players[0].id;
+  const merlinId = players[1].id;
+  const morganaId = players[2].id;
+  const loyalId = players[3].id;
+  const minionId = players[7].id;
+
+  // Complete mission 1 (size for 8p: 3)
+  const cap1 = g.captainOrder[g.captainIndex];
+  g = transition(g, cap1, { type: 'proposeTeam', payload: { playerIds: [players[0].id, players[1].id, players[3].id], direction: 'clockwise' } }, players.map(x => x.id));
+  g = transition(g, cap1, { type: 'startTeamVote', payload: {} }, players.map(x => x.id));
+  for (const p of players) {
+    g = transition(g, p.id, { type: 'teamVote', payload: { approve: true } }, players.map(x => x.id));
+  }
+  for (const id of [players[0].id, players[1].id, players[3].id]) {
+    g = transition(g, id, { type: 'missionVote', payload: { success: true } }, players.map(x => x.id));
+  }
+
+  // Complete mission 2 (size for 8p: 4)
+  const cap2 = g.captainOrder[g.captainIndex];
+  g = transition(g, cap2, { type: 'proposeTeam', payload: { playerIds: [players[0].id, players[1].id, players[3].id, players[4].id], direction: 'clockwise' } }, players.map(x => x.id));
+  g = transition(g, cap2, { type: 'startTeamVote', payload: {} }, players.map(x => x.id));
+  for (const p of players) {
+    g = transition(g, p.id, { type: 'teamVote', payload: { approve: true } }, players.map(x => x.id));
+  }
+  for (const id of [players[0].id, players[1].id, players[3].id, players[4].id]) {
+    g = transition(g, id, { type: 'missionVote', payload: { success: true } }, players.map(x => x.id));
+  }
+
+  assert.equal(g.mission, 3);
+
+  // Percival cannot inspect Merlin candidate
+  assert.throws(() => {
+    transition(g, percivalId, { type: 'useTreasure', payload: { action: 'tinStaff', targetId: merlinId } }, players.map(x => x.id));
+  }, (err: unknown) => err instanceof RuleError && err.message === 'CANNOT_INSPECT_CANDIDATE');
+
+  // Percival cannot inspect Morgana candidate
+  assert.throws(() => {
+    transition(g, percivalId, { type: 'useTreasure', payload: { action: 'tinStaff', targetId: morganaId } }, players.map(x => x.id));
+  }, (err: unknown) => err instanceof RuleError && err.message === 'CANNOT_INSPECT_CANDIDATE');
+
+  // Percival inspects minion -> reveals red
+  g = transition(g, percivalId, { type: 'useTreasure', payload: { action: 'tinStaff', targetId: minionId } }, players.map(x => x.id));
+  const percivalView = projectGame(g, percivalId);
+  assert.equal(percivalView.self?.treasures?.tinStaff?.used, true);
+  assert.equal(percivalView.self?.treasures?.tinStaff?.result?.team, 'red');
+  assert.equal(percivalView.self?.treasures?.tinStaff?.result?.targetId, minionId);
 });
 
 test('treasures: Percival tinStaff cannot inspect candidates or before 2 missions, masks Mordred as blue', () => {
