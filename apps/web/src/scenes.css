@@ -4239,10 +4239,10 @@ dialog.table-modal-backdrop::backdrop { background: #081b2d55; }
 .voice-controls-cluster {
   display: inline-flex !important;
   align-items: center !important;
-  gap: 6px !important;
+  gap: 4px !important;
   background: rgba(26, 14, 18, 0.85) !important;
-  padding: 3px 6px !important;
-  border-radius: 20px !important;
+  padding: 2px 4px !important;
+  border-radius: 16px !important;
   border: 1px solid rgba(229, 185, 100, 0.35) !important;
   backdrop-filter: blur(8px) !important;
   flex-shrink: 0 !important;
@@ -4260,7 +4260,7 @@ dialog.table-modal-backdrop::backdrop { background: #081b2d55; }
   border-radius: 50% !important;
   display: inline-block !important;
   flex-shrink: 0 !important;
-  margin: 0 3px !important;
+  margin: 0 2px !important;
   border: none !important;
   box-sizing: border-box !important;
   transition: all 0.3s ease !important;
@@ -4298,12 +4298,12 @@ dialog.table-modal-backdrop::backdrop { background: #081b2d55; }
   align-items: center !important;
   justify-content: center !important;
   position: relative !important;
-  width: 32px !important;
-  min-width: 32px !important;
-  max-width: 32px !important;
-  height: 32px !important;
-  min-height: 32px !important;
-  max-height: 32px !important;
+  width: 26px !important;
+  min-width: 26px !important;
+  max-width: 26px !important;
+  height: 26px !important;
+  min-height: 26px !important;
+  max-height: 26px !important;
   margin: 0 !important;
   margin-top: 0 !important;
   padding: 0 !important;
@@ -4311,7 +4311,7 @@ dialog.table-modal-backdrop::backdrop { background: #081b2d55; }
   background: rgba(45, 22, 28, 0.85) !important;
   border: 1px solid rgba(229, 185, 100, 0.4) !important;
   color: #fff4d6 !important;
-  font-size: 14px !important;
+  font-size: 12px !important;
   line-height: 1 !important;
   cursor: pointer !important;
   flex-shrink: 0 !important;
@@ -4567,11 +4567,11 @@ dialog.table-modal-backdrop::backdrop { background: #081b2d55; }
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
-  gap: 6px !important;
+  gap: 5px !important;
   width: 100% !important;
   max-width: 440px !important;
   margin: 6px auto 10px !important;
-  padding: 4px 8px !important;
+  padding: 4px 6px !important;
   background: linear-gradient(180deg, rgba(32, 14, 18, 0.82), rgba(20, 8, 10, 0.92)) !important;
   border: 1px solid rgba(229, 185, 100, 0.3) !important;
   border-radius: 20px !important;
@@ -4583,16 +4583,16 @@ dialog.table-modal-backdrop::backdrop { background: #081b2d55; }
 .waiting-voice-capsule {
   display: inline-flex !important;
   align-items: center !important;
-  gap: 5px !important;
+  gap: 4px !important;
   flex-shrink: 1 !important;
   min-width: 0 !important;
 }
 
 .waiting-voice-label {
-  font-size: 12px !important;
+  font-size: 11.5px !important;
   font-weight: 700 !important;
   color: #ffd54f !important;
-  letter-spacing: 0.3px !important;
+  letter-spacing: 0.2px !important;
   white-space: nowrap !important;
   flex-shrink: 0 !important;
 }
@@ -4601,22 +4601,28 @@ dialog.table-modal-backdrop::backdrop { background: #081b2d55; }
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  gap: 4px !important;
-  height: 30px !important;
-  min-height: 30px !important;
-  max-height: 30px !important;
+  gap: 3px !important;
+  height: 28px !important;
+  min-height: 28px !important;
+  max-height: 28px !important;
   width: auto !important;
   margin: 0 !important;
   margin-top: 0 !important;
-  padding: 0 8px !important;
-  border-radius: 15px !important;
-  font-size: 12px !important;
+  padding: 0 7px !important;
+  border-radius: 14px !important;
+  font-size: 11.5px !important;
   font-weight: 700 !important;
   color: #ffe57f !important;
   white-space: nowrap !important;
   box-sizing: border-box !important;
   cursor: pointer !important;
   flex-shrink: 0 !important;
+}
+
+@media (max-width: 360px) {
+  .waiting-voice-label {
+    display: none !important;
+  }
 }
 
 /* Active Game Floating Voice HUD */
