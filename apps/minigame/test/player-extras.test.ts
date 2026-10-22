@@ -6,6 +6,7 @@ import { PlayerPanel } from '../src/screens/player-panel.js';
 import { PracticeSession } from '../src/screens/practice.js';
 import { entryScreen } from '../src/screens/entry.js';
 import { defaultSettings } from '@avalon/contracts';
+import { replayScreen } from '../src/screens/replay.js';
 
 test('player extras use the matching current server endpoints', async () => {
   const calls: { path: string; method: string }[] = [];
@@ -33,6 +34,20 @@ test('account panel loads player statistics and history', async () => {
   assert.ok(panel.model().rows.some(row => row.id === 'page:stats'));
   await panel.open('stats');
   assert.ok(panel.model().rows.some(row => row.text.includes('2')));
+});
+
+test('player replay shows full round details and favorite action', () => {
+  const replay = { id: 'g', playerCount: 2, rulesetVersion: 'v1', result: { winner: 'blue', reason: 'merlin_survived' },
+    settings: { anonymousTeamVote: true }, favorite: false,
+    players: [{ id: 'u1', seat: 1, nickname: '甲' }, { id: 'u2', seat: 2, nickname: '乙' }],
+    roles: { u1: 'merlin', u2: 'assassin' }, inspections: [], earlyWindows: [],
+    rounds: [{ number: 1, mission: 1, captainId: 'u1', team: ['u1', 'u2'], direction: 'clockwise',
+      vote: { approvals: 2, rejections: 0, passed: true }, result: { successes: 2, failures: 0, passed: true } }],
+  } as any;
+  const model = replayScreen(replay, 'page:history', true);
+  assert.ok(model.rows.some(row => row.id === 'favorite'));
+  assert.ok(model.rows.some(row => row.text.includes('赞成2')));
+  assert.ok(model.rows.some(row => row.text.includes('任务：成功2')));
 });
 
 test('practice uses the shared local game core and advances bots without API writes', () => {

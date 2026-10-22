@@ -2,6 +2,7 @@ import type { Avatar, DirectMessage, FriendSummary, GameSummary, Replay, RoomCha
 import type { ScreenModel } from '../ui/widgets.js';
 import { guideScreen } from './guide.js';
 import { PlayerExtras } from './player-extras.js';
+import { replayScreen } from './replay.js';
 
 type Page = 'account' | 'stats' | 'history' | 'replay' | 'presets' | 'friends' | 'direct' | 'roomchat' | 'guide';
 type Input = (label: string, maxLength?: number) => Promise<string | undefined>;
@@ -65,12 +66,7 @@ export class PlayerPanel {
       ...this.games.map(game => ({ id: `game:${game.id}`, text: `${game.playerCount}人 · ${game.self.role} · ${game.result.winner === game.self.team ? '获胜' : game.result.winner === null ? '中止' : '失败'} ${game.favorite ? '★' : ''}` })),
       ...(this.cursor ? [{ id: 'more', text: '加载更多' }] : []), { id: 'page:account', text: '返回账户' },
     ] };
-    if (this.page === 'replay' && this.replay) return { title: '对局复盘', rows: [
-      { id: 'result', text: `${this.replay.playerCount}人 · ${this.replay.result.reason}` },
-      ...this.replay.rounds.map(round => ({ id: `round:${round.number}`, text: `第${round.number}轮 · ${round.result?.passed ? '成功' : '失败'}` })),
-      ...this.replay.players.map(player => ({ id: `player:${player.id}`, text: `${player.seat}号 ${player.nickname} · ${this.replay!.roles[player.id] ?? ''}` })),
-      { id: 'favorite', text: this.replay.favorite ? '取消收藏' : '收藏本局' }, { id: 'page:history', text: '返回历史' },
-    ] };
+    if (this.page === 'replay' && this.replay) return replayScreen(this.replay, 'page:history', true);
     if (this.page === 'presets') return { title: '常用玩法预设', rows: [
       ...(this.roomSettings ? [{ id: 'save', text: '保存当前设置为预设' }] : []),
       ...this.presets.flatMap(preset => [
