@@ -19,6 +19,18 @@ export const roleDescriptions:Record<Role,{ability:string;visibility:string;tip:
   minion:{ability:'深山绝色女妖精（每局从「玉兔精 / 白骨精 / 老鼠精 / 蜘蛛精」四位妖仙中随机分配专属法相），暗藏祸心欲阻西行。看见除牛魔王以外的红方队友，不知道他们各自的具体角色。任务可提交成功或失败。',visibility:'孙悟空与除牛魔王以外的红方队友都能看见你属于红方。',tip:'争取进入取经队伍，以倾城伪装迷惑好人，配合群妖制造取经任务失败。'},
 };
 
+export const roleTreasures: Record<Role, string> = {
+  merlin: '【无为潜龙】不持任何法宝。刺客红孩儿时刻在暗中窥伺真大圣踪迹，大圣不持法宝、不露锋芒，深藏功名方为保命取经之道。',
+  percival: '【九环锡杖】第 2 轮任务结算完成后解锁。可在【真身法相】中私密查验 1 位盲区仙友气息（自动排除自己与开局所见的真假美猴王）。若验到黄眉老怪，因其妖气深敛，仍显现为蓝方。整局限用 1 次。',
+  guinevere: '【慈航照妖镜】在某轮组队通过后、执行出牌前使用。私密辨察车上 1 位队员的心性纯浊（纯善/妖邪）。纯属私密心证，绝不改变出牌结果，不公开广播。整局限用 1 次。',
+  loyal: '【紧箍信物】当局势陷入大劣势（好人已输 2 轮任务，比分 0:2 或 1:2）时激活。点击可消耗信物向大唐圣僧暗中明示你的护法座次，三藏将私密获知你的座位为绝对铁好人。整局限用 1 次。',
+  morgana: '【随心机变】不持专属法宝。六耳猕猴已熟知同伙群妖与大圣虚实，无须额外法宝，以假乱真惑乱圣僧即是至强神通。',
+  assassin: '【火尖枪】刺客终局刺杀与提前刺杀的专属神兵。终局或提前刺杀阶段，在【真身法相】或主界面祭起火尖枪选定真大圣发动刺杀。全局通用此入口。',
+  mordred: '【后天人种袋】在第 3 轮或第 4 轮队长开始提名前使用。选定场上 1 位仙友收入袋中，该仙友本轮禁止被选入车队出战（当轮队长不可被禁）。整局限用 1 次，用于打破好人抱团车。',
+  oberon: '【芭蕉神扇】可在组队与投票期间随时预设【平息 / 聚风待发】。若本次组队投票通过，神扇将立刻掀起狂风吹散车队换下任队长重新组队！绝对不计入 5 次流局上限，全场 0 秒等待无缝判定。整局限用 1 次。',
+  minion: '【伺机而动】深山女妖听候大王调遣，本局无专属主动法宝。',
+};
+
 const allRoles=Object.keys(roleNames) as Role[];
 function composition(roles:Role[]) {
   return [...new Set(roles)].map(role=>`${roleNames[role]}${roles.filter(r=>r===role).length>1?` ×${roles.filter(r=>r===role).length}`:''}`).join('、');
@@ -106,6 +118,19 @@ export function GuideRules() {
       </ul>
       <p className="notice">判定顺序：先判断终局；未终局时先完成照妖宝镜查验，再进入提前刺杀窗口。三次任务成功走正常刺杀，三次失败或五次流局直接结束。护法天机线索为私下查验信息，不直接揭示大圣真身，兼顾平衡与乐趣。</p>
     </section>
+    <section className="panel guide-section"><p className="eyebrow">06 / 仙家专属法宝</p><h2>9–12人局专属法宝奇谋</h2>
+      <p>为解决 9–12 人大型局中好人信息极度匮乏、坏人人数占优（如11人局5红6蓝）的痛点，房主开局前可勾选开启【9–12人专属法宝模式】。所有法宝均在手机底牌【查看身份（真身法相）】内操作，全员全公开透明：</p>
+      <ul>
+        <li><strong>大唐圣僧 ·【九环锡杖】</strong>：第 2 轮任务完成后，私密查验 1 位盲区仙友气息（排除自己与真假猴王，查验黄眉老怪仍显蓝方）。整局限用 1 次。</li>
+        <li><strong>南海观音 ·【慈航照妖镜】</strong>：组队通过后出牌前，私密辨察车上 1 位队员的心性纯浊（纯私密心证，绝不改票）。整局限用 1 次。</li>
+        <li><strong>小雷音寺黄眉 ·【后天人种袋】</strong>：第 3/4 轮提名前，禁锢 1 名仙友本轮不可被选入车队（当轮队长不可被禁，打破好人抱团车）。整局限用 1 次。</li>
+        <li><strong>取经护法 ·【紧箍信物】</strong>：当好人阵营连续输掉 2 轮任务（0:2 或 1:2 绝境）时激活，可默念佛印向唐三藏单独亮明护法座次。整局限用 1 次。</li>
+        <li><strong>平天大圣牛魔王 ·【芭蕉神扇】</strong>：采用预设狂风机制，若投票通过立刻吹散换下任队长，绝对不计入 5 次流局上限，全场 0 延迟。整局限用 1 次。</li>
+        <li><strong>圣婴大王红孩儿 ·【火尖枪】</strong>：刺客专属神兵，终局刺杀选定真大圣一击定乾坤。未开启法宝模式时全局亦通用此入口。</li>
+        <li><strong>齐天大圣孙悟空 & 假猴王六耳猕猴</strong>：坚决不持任何法宝，潜龙在渊，深藏功名。</li>
+      </ul>
+      <p className="notice">✦ 战术防坑铁律：所有法宝能力与名称在本规则与仙魔谱中全员公开查阅。公屏背诵法宝规则不能作为自证身份的凭据（坏人亦可假冒法宝发言）；真取经人须凭行事、票型与私密系统显圣综合判断！</p>
+    </section>
   </div>;
 }
 export function GuideRoles() {
@@ -167,6 +192,7 @@ export function GuideRoles() {
                 <dl className="guide-role-dl">
                   <div className="guide-role-detail"><dt>能力与视野</dt><dd>{roleDescriptions[role].ability}</dd></div>
                   <div className="guide-role-detail"><dt>谁能看见你</dt><dd>{roleDescriptions[role].visibility}</dd></div>
+                  <div className="guide-role-detail"><dt>专属法宝（9-12人局）</dt><dd>{roleTreasures[role]}</dd></div>
                   <div className="guide-role-detail"><dt>玩法提示</dt><dd>{roleDescriptions[role].tip}</dd></div>
                 </dl>
 
