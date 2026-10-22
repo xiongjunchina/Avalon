@@ -155,3 +155,45 @@ test('host can kick another member in waiting room, closing their socket and fre
   assert.equal(joined.json().room.members.find((m: { id: string }) => m.id === replacement.user.id).seat, 2);
 });
 
+test('host can directly shrink room player count after member leaves, auto-compacting overflow seats', async t => {
+  const { store, guest, create } = await fixture(t);
+  const host = await guest('房主');
+  const room = await create(host.cookie);
+  const snap0 = (await store.snapshot(room.id))!;
+  await store.execute(host.user.id, room.id, { expectedVersion: snap0.version, type: 'updateSettings', commandId: randomUUID(), payload: { ...snap0.settings, playerCount: 11 } });
+
+  const players = [];
+  for (let i = 2; i <= 11; i++) {
+    const p = await guest(`玩家${i}`);
+    players.push(p);
+    await store.join(p.user, room.code);
+  }
+  let snap = (await store.snapshot(room.id))!;
+  assert.equal(snap.members.length, 11);
+
+  // Trying to shrink to 10 when 11 players are present throws SEATS_OCCUPIED
+  await assert.rejects(
+    store.execute(host.user.id, room.id, { expectedVersion: snap.version, type: 'updateSettings', commandId: randomUUID(), payload: { ...snap.settings, playerCount: 10 } }),
+    { code: 'SEATS_OCCUPIED' }
+  );
+
+  // Player at seat 4 leaves
+  const leaver = players[2];
+  snap = (await store.snapshot(room.id))!;
+  await store.execute(leaver.user.id, room.id, { expectedVersion: snap.version, type: 'leaveRoom', commandId: randomUUID(), payload: {} });
+
+  snap = (await store.snapshot(room.id))!;
+  assert.equal(snap.members.length, 10);
+  const player11 = players[9];
+  assert.equal(snap.members.find(m => m.id === player11.user.id)?.seat, 11);
+
+  // Host shrinks room to 10 players!
+  await store.execute(host.user.id, room.id, { expectedVersion: snap.version, type: 'updateSettings', commandId: randomUUID(), payload: { ...snap.settings, playerCount: 10 } });
+
+  const updatedSnap = (await store.snapshot(room.id))!;
+  assert.equal(updatedSnap.settings.playerCount, 10);
+  assert.equal(updatedSnap.members.length, 10);
+  assert.equal(updatedSnap.members.find(m => m.id === player11.user.id)?.seat, 4);
+  assert.ok(updatedSnap.members.every(m => m.seat >= 1 && m.seat <= 10));
+});
+

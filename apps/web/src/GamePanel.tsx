@@ -1132,10 +1132,10 @@ export function GamePanel({
               onClick={() => setIdentityOpen(v => !v)}
             >
               {identityVisible
-                ? '◇ 收起真身 ◇'
+                ? '收起真身'
                 : self?.canConfirmInspection
-                  ? '◇ 查验结果 ◇'
-                  : '◇ 查验真身 ◇'}
+                  ? '查验结果'
+                  : '查验真身'}
             </button>
           )}
           <button
@@ -1144,7 +1144,7 @@ export function GamePanel({
             data-sound="page"
             onClick={() => setHistoryOpen(v => !v)}
           >
-            ◇ 取经录 ◇
+            取经录
           </button>
           {onOpenChat && (
             <button
@@ -1160,18 +1160,18 @@ export function GamePanel({
           )}
           {onOpenGuide && (
             <button type="button" className="secondary tool-pill dock-utility-btn" onClick={onOpenGuide}>
-              ◇ 识妖谱 ◇
+              识妖谱
             </button>
           )}
           {!ended && (
             <button
               type="button"
-              className="secondary tool-pill dock-utility-btn"
+              className="secondary tool-pill dock-utility-btn abort-trigger-btn"
               disabled={disabled}
               aria-label={room.hostId === userId ? '结束游戏' : '申请中止游戏'}
               onClick={() => setAbortConfirm(true)}
             >
-              ◇ 结束游戏 ◇
+              结束游戏
             </button>
           )}
         </div>

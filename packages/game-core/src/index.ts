@@ -66,31 +66,61 @@ export interface GameState {
   assassinationMode?: 'normal' | 'early';
   result?: GameResult; abortPoll?: { requestedBy: string; electorate: string[]; approvals: string[] };
 }
+export interface RoleProtectionOptions {
+  visionGuaranteedUserIds?: string[];
+  blueGuaranteedUserIds?: string[];
+  bossCooldownUserIds?: string[];
+}
+
 export function createGame(
   id: string,
   players: Player[],
   settings: Settings,
   shuffle: <T>(values: T[]) => T[],
-  protectedUserIds: string[] = []
+  protection: string[] | RoleProtectionOptions = []
 ): GameState {
   requireRule(players.length === settings.playerCount && ROLE_CONFIG[players.length], 'NOT_READY');
   const sorted = [...players].sort((a,b) => a.seat-b.seat);
   const configRoles = [...ROLE_CONFIG[players.length]];
-  const validProtected = sorted.filter(p => protectedUserIds.includes(p.id)).map(p => p.id);
-  let roles: Record<string, Role>;
-  if (validProtected.length > 0) {
-    const visionPool = shuffle(configRoles.filter(r => r !== 'loyal' && r !== 'oberon'));
-    const restPool = configRoles.filter(r => r === 'loyal' || r === 'oberon');
-    const assignedProtected = visionPool.slice(0, validProtected.length);
-    const remainingRoles = shuffle([...visionPool.slice(validProtected.length), ...restPool]);
-    roles = {};
-    let pIdx = 0, rIdx = 0;
-    for (const p of sorted) {
-      roles[p.id] = validProtected.includes(p.id) ? assignedProtected[pIdx++] : remainingRoles[rIdx++];
+  const protectionOpts: RoleProtectionOptions = Array.isArray(protection)
+    ? { visionGuaranteedUserIds: protection }
+    : protection;
+
+  const visionGuaranteed = new Set(protectionOpts.visionGuaranteedUserIds || []);
+  const blueGuaranteed = new Set(protectionOpts.blueGuaranteedUserIds || []);
+  const bossCooldown = new Set(protectionOpts.bossCooldownUserIds || []);
+
+  const shuffledRoles = shuffle([...configRoles]);
+  const isAllowed = (playerId: string, role: Role, level: number): boolean => {
+    if (visionGuaranteed.has(playerId) && (role === 'loyal' || role === 'oberon')) return false;
+    if (level <= 1 && blueGuaranteed.has(playerId) && teamOf(role) === 'red') return false;
+    if (level === 0 && bossCooldown.has(playerId) && (role === 'merlin' || role === 'morgana' || role === 'mordred')) return false;
+    return true;
+  };
+
+  let roles: Record<string, Role> = {};
+  for (let level = 0; level <= 3; level++) {
+    const used = new Array(shuffledRoles.length).fill(false);
+    const candidate: Record<string, Role> = {};
+
+    function solve(pIdx: number): boolean {
+      if (pIdx === sorted.length) return true;
+      const p = sorted[pIdx];
+      for (let rIdx = 0; rIdx < shuffledRoles.length; rIdx++) {
+        if (!used[rIdx] && isAllowed(p.id, shuffledRoles[rIdx], level)) {
+          used[rIdx] = true;
+          candidate[p.id] = shuffledRoles[rIdx];
+          if (solve(pIdx + 1)) return true;
+          used[rIdx] = false;
+        }
+      }
+      return false;
     }
-  } else {
-    const dealt = shuffle(configRoles);
-    roles = Object.fromEntries(sorted.map((p,i) => [p.id, dealt[i]]));
+
+    if (solve(0)) {
+      roles = candidate;
+      break;
+    }
   }
   let guinevereCandidates: string[] | undefined;
   if (Object.values(roles).includes('guinevere')) {

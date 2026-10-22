@@ -55,6 +55,34 @@ test('silent anti-3-streak loyal protection guarantees vision role to protected 
     assert.equal(Object.values(protectedGame.roles).sort().join(','), [...ROLE_CONFIG[n]].sort().join(','));
   }
 });
+
+test('boss cooldown and blue guaranteed anti-streak protections prevent repeated boss and red streaks',()=>{
+  for(let n=5;n<=12;n++){
+    const players=Array.from({length:n},(_,i)=>({id:`u-${i+1}`,nickname:`玩家${i+1}`,seat:i+1}));
+    const baseline=createGame(randomUUID(),players,{...defaultSettings,playerCount:n},values=>values);
+    // Find players who drew boss roles (merlin, morgana)
+    const bossIds=players.filter(p=>['merlin','morgana','mordred'].includes(baseline.roles[p.id])).map(p=>p.id);
+    const redIds=players.filter(p=>teamOf(baseline.roles[p.id])==='red').map(p=>p.id);
+    assert.ok(bossIds.length>=2);
+    assert.ok(redIds.length>=2);
+
+    // Apply boss cooldown to the first boss, and blue guaranteed to the first red player
+    const cooledBossId = bossIds[0];
+    const guaranteedBlueId = redIds[0];
+
+    const protectedGame=createGame(randomUUID(),players,{...defaultSettings,playerCount:n},values=>values,{
+      bossCooldownUserIds: [cooledBossId],
+      blueGuaranteedUserIds: [guaranteedBlueId],
+    });
+
+    // The cooled boss player must not receive merlin, morgana or mordred
+    assert.ok(!['merlin','morgana','mordred'].includes(protectedGame.roles[cooledBossId]));
+    // The guaranteed blue player must receive a blue role
+    assert.equal(teamOf(protectedGame.roles[guaranteedBlueId]),'blue');
+    // Total role configuration must remain intact
+    assert.equal(Object.values(protectedGame.roles).sort().join(','), [...ROLE_CONFIG[n]].sort().join(','));
+  }
+});
 test('confirmation, permission, exact unique team size and fixed shuffled captain cycle',()=>{
   let g=game(5,{captainMode:'random_order'});
   g=createGame(g.id,g.players,g.settings,values=>values.reverse());

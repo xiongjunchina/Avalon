@@ -1758,32 +1758,57 @@ main.app-shell.is-live-table {
   flex: 1 1 0 !important;
   min-width: 0 !important;
   width: 0 !important;
-  min-height: 42px !important;
-  padding: 4px 2px !important;
+  min-height: 44px !important;
+  padding: 5px 2px !important;
   margin: 0 !important;
-  font-family: var(--calligraphy) !important;
-  font-size: clamp(11px, 3.1vw, 13.5px) !important;
-  font-weight: 700 !important;
-  letter-spacing: -0.3px !important;
+  font-family: var(--sans) !important;
+  font-size: clamp(13px, 3.8vw, 15px) !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.3px !important;
   white-space: nowrap !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
   text-align: center !important;
   justify-content: center !important;
-  background: linear-gradient(180deg, #421614 0%, #1e0908 100%) !important;
-  border: 1.5px solid #d4a359 !important;
-  color: #fff2d5 !important;
+  align-items: center !important;
+  display: inline-flex !important;
+  background: linear-gradient(180deg, #441715 0%, #200908 100%) !important;
+  border: 1.5px solid #e5b567 !important;
+  color: #ffffff !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.95) !important;
   border-radius: 6px !important;
-  clip-path: polygon(6px 0%, calc(100% - 6px) 0%, 100% 50%, calc(100% - 6px) 100%, 6px 100%, 0% 50%) !important;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 220, 140, 0.3) !important;
+  clip-path: polygon(4px 0%, calc(100% - 4px) 0%, 100% 50%, calc(100% - 4px) 100%, 4px 100%, 0% 50%) !important;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 230, 150, 0.45) !important;
   cursor: pointer !important;
   position: relative !important;
   z-index: 2 !important;
+  transition: all 0.15s ease !important;
 }
-.is-live-table .dock-utility-btn:hover:not(:disabled) {
-  background: linear-gradient(180deg, #5c1e1c 0%, #2b0d0c 100%) !important;
-  color: #ffffff !important;
+.is-live-table .dock-utility-btn:hover:not(:disabled),
+.is-live-table .dock-utility-btn:active:not(:disabled) {
+  background: linear-gradient(180deg, #5c1f1c 0%, #2e0d0c 100%) !important;
+  color: #fff9e6 !important;
   border-color: #ffd875 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 240, 180, 0.6) !important;
+}
+.is-live-table .dock-utility-btn.identity-trigger-btn {
+  background: linear-gradient(180deg, #4c1d1a 0%, #250d0b 100%) !important;
+  border-color: #f2bf6c !important;
+}
+.is-live-table .dock-utility-btn.identity-trigger-btn.pulse-action {
+  background: linear-gradient(180deg, #66261f 0%, #3a1310 100%) !important;
+  border-color: #ffd875 !important;
+  box-shadow: 0 0 12px rgba(255, 216, 117, 0.6), inset 0 1px 0 rgba(255, 245, 200, 0.7) !important;
+}
+.is-live-table .dock-utility-btn.abort-trigger-btn {
+  background: linear-gradient(180deg, #3d1414 0%, #1d0808 100%) !important;
+  border-color: rgba(215, 135, 120, 0.75) !important;
+  color: #ffe6e2 !important;
+}
+.is-live-table .dock-utility-btn.abort-trigger-btn:hover:not(:disabled) {
+  background: linear-gradient(180deg, #541919 0%, #290b0b 100%) !important;
+  border-color: #f87171 !important;
+  color: #ffffff !important;
 }
 .is-live-table .table-action-dock .dock-panel {
   flex: 1;
