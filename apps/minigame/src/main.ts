@@ -367,8 +367,19 @@ async function select(id: string) {
   }
 }
 
+let renderFrame: any = 0;
+function scheduleRender() {
+  const raf = wx.requestAnimationFrame ?? (typeof requestAnimationFrame === 'function' ? requestAnimationFrame : undefined);
+  if (!raf) { render(); return; }
+  if (renderFrame) return;
+  renderFrame = raf(() => {
+    renderFrame = 0;
+    render();
+  });
+}
+
 attachTouchNavigation(wx, {
-  scrollBy(delta) { scroll = Math.max(0, scroll + delta); render(); },
+  scrollBy(delta) { scroll = Math.max(0, scroll + delta); scheduleRender(); },
   tap(x,y) { const row=hitTest(rows,x,y); if(row) void select(row.id); },
 });
 platform.onHide(() => { suspended = true; sound.foreground(false); cancelTextInput(); hideSensitiveView(gameUi); pendingConfirm = undefined; adminPanel.onHide(); if (view === 'admin') view = 'entry'; render(); });

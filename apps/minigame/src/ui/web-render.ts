@@ -327,30 +327,131 @@ function drawNode(ctx: CanvasRenderingContext2D, n: WebNode, model: ScreenModel,
     text(ctx,n.count+'人',cx,countY+10,30,11.5,webTheme.accent,'center',sans,'700');
     if(n.detail==='需2败')text(ctx,n.detail,cx,n.y+n.height-10,n.width-3,9.5,'#ff9800');
   } else if (n.kind === 'seat') {
-    const diameter=clamp(38,n.height,44),left=n.x<80,avatarX=left?n.x:n.x+n.width-diameter;
-    const avatarY=n.y+(n.height-diameter)/2;
-    const labelX=left?avatarX+diameter+5:n.x,labelW=n.width-diameter-5,labelH=clamp(26,n.height*.76,32);
-    const nameY=n.y+(n.height-labelH)/2;
-    ctx.save();shadow(ctx,n.selected?'#38bdf866':n.badge?'#ffd87566':'rgba(0,0,0,.6)',6,2);
-    fill(ctx,{...n,x:labelX,y:nameY,width:labelW,height:labelH},gradient(ctx,n,n.selected?['#0e2636f5','#081622fa']:['#2e0e0df0','#140606f5']),labelH/2,n.selected?'#38bdf8':n.badge?'#ffd875':'#d4a35999');
-    circle(ctx,avatarX+diameter/2,avatarY+diameter/2,diameter/2,'#36110f');ctx.restore();
-    const img=n.image?artwork?.get(n.image):undefined;
-    if(n.image?.startsWith('emblems/')) {if(img)ctx.drawImage(img as CanvasImageSource,avatarX+8,avatarY+8,diameter-16,diameter-16);}
-    else if(img) portrait(ctx,{...n,x:avatarX+2,y:avatarY+2,width:diameter-4,height:diameter-4},artwork,true);
-    else text(ctx,'◇',avatarX+diameter/2,avatarY+diameter/2,diameter,20,webTheme.accent);
-    if(n.selected||n.badge){ctx.save();shadow(ctx,n.selected?'#38bdf8':'#ffd875',10,0);ctx.beginPath();ctx.arc(avatarX+diameter/2,avatarY+diameter/2,diameter/2+3,0,Math.PI*2);ctx.strokeStyle=n.selected?'#38bdf8':'#ffd875';ctx.lineWidth=2;ctx.stroke();ctx.restore();}
-    if(n.online===false)circle(ctx,avatarX+diameter-3,avatarY+diameter-3,3.5,'#64748b','#1c0808');
-    if(n.micState)drawSeatMicBadge(ctx,avatarX-2,avatarY+diameter-16,n.micState);
-    if(labelW<82){text(ctx,String(n.count)+'号·'+n.text,labelX+labelW/2,nameY+labelH/2,labelW-5,10,'#f5eedf','center',sans,'600');}
-    else {
-    const meW=n.selfPlayer?15:0;
-    text(ctx,String(n.count)+'号',labelX+7,nameY+labelH/2,25,11,webTheme.accent,'left',sans,'700');
-    text(ctx,'·',labelX+30,nameY+labelH/2,7,10,'#d4a359aa');
-    text(ctx,n.text,labelX+36+(labelW-42-meW)/2,nameY+labelH/2,labelW-42-meW,11.5,'#f5eedf','center',sans,'600');
-    if(n.selfPlayer){fill(ctx,{...n,x:labelX+labelW-19,y:nameY+(labelH-13)/2,width:13,height:13},'#38bdf840',3,'#38bdf899');text(ctx,'我',labelX+labelW-12.5,nameY+labelH/2,12,8.5,'#38bdf8');}
+    if (n.skin === 'waiting-seat') {
+      const cardPad = 3, cardX = n.x + cardPad, cardY = n.y + 2, cardW = n.width - cardPad * 2, cardH = n.height - 4, r = 14;
+      const isReady = n.selected;
+      ctx.save();
+      shadow(ctx, isReady ? '#38bdf855' : 'rgba(0,0,0,0.65)', 8, 3);
+      fill(ctx, { ...n, x: cardX, y: cardY, width: cardW, height: cardH },
+        gradient(ctx, n, isReady ? ['rgba(24,48,68,0.92)', 'rgba(12,24,36,0.96)'] : ['rgba(44,14,13,0.88)', 'rgba(18,6,6,0.94)']),
+        r, isReady ? '#38bdf8' : 'rgba(212,163,89,0.45)');
+      edge(ctx, { ...n, x: cardX, y: cardY, width: cardW, height: cardH }, r);
+      ctx.restore();
+
+      text(ctx, String(n.count) + '号', cardX + 16, cardY + 13, 30, 10.5, webTheme.accent, 'left', sans, '700');
+      if (n.badge) {
+        const bw = 38, bh = 15;
+        fill(ctx, { ...n, x: cardX + cardW - bw - 6, y: cardY + 6, width: bw, height: bh },
+          gradient(ctx, n, n.badge === '房主' ? ['#f59e0b', '#d97706'] : ['#ef4444', '#b91c1c']),
+          bh / 2, n.badge === '房主' ? '#fef3c7' : '#fca5a5');
+        text(ctx, n.badge, cardX + cardW - bw / 2 - 6, cardY + 13.5, bw - 4, 9, '#ffffff', 'center', sans, '700');
+      }
+
+      const diameter = clamp(44, cardW * 0.52, 54);
+      const avatarX = cx - diameter / 2, avatarY = cardY + 22;
+      ctx.save();
+      if (isReady) {
+        shadow(ctx, '#38bdf8', 10, 0);
+        circle(ctx, cx, avatarY + diameter / 2, diameter / 2 + 2, 'transparent', '#38bdf8');
+      }
+      circle(ctx, cx, avatarY + diameter / 2, diameter / 2, '#36110f', '#d4a359');
+      ctx.restore();
+
+      const img = n.image ? artwork?.get(n.image) : undefined;
+      if (n.image?.startsWith('emblems/')) {
+        if (img) ctx.drawImage(img as CanvasImageSource, avatarX + 8, avatarY + 8, diameter - 16, diameter - 16);
+      } else if (img) {
+        portrait(ctx, { ...n, x: avatarX + 2, y: avatarY + 2, width: diameter - 4, height: diameter - 4 }, artwork, true);
+      } else {
+        text(ctx, n.disabled ? '◇' : '➕', cx, avatarY + diameter / 2, diameter, 20, webTheme.accent);
+      }
+
+      if (n.online === false) circle(ctx, avatarX + diameter - 3, avatarY + diameter - 3, 3.5, '#64748b', '#1c0808');
+      else if (n.online === true) circle(ctx, avatarX + diameter - 3, avatarY + diameter - 3, 3.5, '#22c55e', '#1c0808');
+
+      const nameY = avatarY + diameter + 6;
+      text(ctx, n.text, cx, nameY + 8, cardW - 10, 11.5, n.selfPlayer ? '#38bdf8' : '#f5eedf', 'center', sans, '600');
+
+      const statusY = cardY + cardH - 22;
+      if (n.detail === '✓ 已准备') {
+        fill(ctx, { ...n, x: cx - 28, y: statusY, width: 56, height: 16 }, 'rgba(16,185,129,0.22)', 8, '#10b981');
+        text(ctx, '✓ 已准备', cx, statusY + 8, 52, 9.5, '#34d399', 'center', sans, '700');
+      } else if (n.detail === '未准备') {
+        fill(ctx, { ...n, x: cx - 24, y: statusY, width: 48, height: 16 }, 'rgba(40,14,14,0.6)', 8, 'rgba(212,163,89,0.3)');
+        text(ctx, '未准备', cx, statusY + 8, 44, 9.5, webTheme.muted, 'center', sans, '500');
+      } else if (n.detail) {
+        text(ctx, n.detail, cx, statusY + 8, cardW - 8, 10, webTheme.accent, 'center', sans, '600');
+      }
+    } else {
+      const diameter = clamp(38, n.height, 44), left = n.x < (ctx.canvas ? ctx.canvas.width / 2 : 150);
+      const avatarX = left ? n.x : n.x + n.width - diameter;
+      const avatarY = n.y + (n.height - diameter) / 2;
+      const labelX = left ? avatarX + diameter + 5 : n.x;
+      const labelW = n.width - diameter - 5;
+      const labelH = clamp(26, n.height * 0.76, 32);
+      const nameY = n.y + (n.height - labelH) / 2;
+
+      ctx.save();
+      shadow(ctx, n.selected ? '#38bdf866' : n.badge ? '#ffd87566' : 'rgba(0,0,0,.6)', 6, 2);
+      fill(ctx, { ...n, x: labelX, y: nameY, width: labelW, height: labelH },
+        gradient(ctx, n, n.selected ? ['#0e2636f5', '#081622fa'] : ['#2e0e0df0', '#140606f5']),
+        labelH / 2, n.selected ? '#38bdf8' : n.badge ? '#ffd875' : '#d4a35999');
+      edge(ctx, { ...n, x: labelX, y: nameY, width: labelW, height: labelH }, labelH / 2);
+      ctx.restore();
+
+      ctx.save();
+      if (n.selected) {
+        shadow(ctx, 'rgba(56,189,248,0.7)', 10, 0);
+        circle(ctx, avatarX + diameter / 2, avatarY + diameter / 2, diameter / 2 + 2, 'transparent', '#38bdf8');
+      } else if (n.badge?.includes('队长')) {
+        shadow(ctx, 'rgba(255,216,117,0.7)', 10, 0);
+        circle(ctx, avatarX + diameter / 2, avatarY + diameter / 2, diameter / 2 + 2, 'transparent', '#ffd875');
+      }
+      circle(ctx, avatarX + diameter / 2, avatarY + diameter / 2, diameter / 2, '#36110f');
+      ctx.restore();
+
+      const img = n.image ? artwork?.get(n.image) : undefined;
+      if (n.image?.startsWith('emblems/')) {
+        if (img) ctx.drawImage(img as CanvasImageSource, avatarX + 8, avatarY + 8, diameter - 16, diameter - 16);
+      } else if (img) {
+        portrait(ctx, { ...n, x: avatarX + 2, y: avatarY + 2, width: diameter - 4, height: diameter - 4 }, artwork, true);
+      } else {
+        text(ctx, '◇', avatarX + diameter / 2, avatarY + diameter / 2, diameter, 20, webTheme.accent);
+      }
+
+      if (n.online === false) circle(ctx, avatarX + diameter - 3, avatarY + diameter - 3, 3.5, '#64748b', '#1c0808');
+      else circle(ctx, avatarX + diameter - 3, avatarY + diameter - 3, 3.5, '#22c55e', '#1c0808');
+
+      if (n.micState) drawSeatMicBadge(ctx, avatarX - 2, avatarY + diameter - 16, n.micState);
+
+      if (labelW < 82) {
+        text(ctx, String(n.count) + '号·' + n.text, labelX + labelW / 2, nameY + labelH / 2, labelW - 5, 10, '#f5eedf', 'center', sans, '600');
+      } else {
+        const meW = n.selfPlayer ? 15 : 0;
+        text(ctx, String(n.count) + '号', labelX + 7, nameY + labelH / 2, 25, 11, webTheme.accent, 'left', sans, '700');
+        text(ctx, '·', labelX + 30, nameY + labelH / 2, 7, 10, '#d4a359aa');
+        text(ctx, n.text, labelX + 36 + (labelW - 42 - meW) / 2, nameY + labelH / 2, labelW - 42 - meW, 11.5, '#f5eedf', 'center', sans, '600');
+        if (n.selfPlayer) {
+          fill(ctx, { ...n, x: labelX + labelW - 19, y: nameY + (labelH - 13) / 2, width: 13, height: 13 }, '#38bdf840', 3, '#38bdf899');
+          text(ctx, '我', labelX + labelW - 12.5, nameY + labelH / 2, 12, 8.5, '#38bdf8');
+        }
+      }
+
+      if (n.badge) {
+        const bw = 46;
+        fill(ctx, { ...n, x: avatarX + diameter / 2 - bw / 2, y: avatarY - 8, width: bw, height: 14 },
+          gradient(ctx, n, ['#f59e0b', '#d97706']), 7, '#fef3c7');
+        text(ctx, n.badge, avatarX + diameter / 2, avatarY - 1, bw - 3, 9.5, '#fffbeb', 'center', sans, '700');
+      }
+
+      if (n.detail) {
+        if (model.web!.room?.game) {
+          text(ctx, n.detail, avatarX + diameter / 2, avatarY + diameter - 5, 30, 12);
+        } else {
+          text(ctx, n.detail, labelX + labelW / 2, nameY + labelH + 10, labelW, 9, webTheme.muted);
+        }
+      }
     }
-    if(n.badge){const bw=46;fill(ctx,{...n,x:avatarX+diameter/2-bw/2,y:avatarY-8,width:bw,height:14},gradient(ctx,n,['#f59e0b','#d97706']),7,'#fef3c7');text(ctx,n.badge,avatarX+diameter/2,avatarY-1,bw-3,9.5,'#fffbeb','center',sans,'700');}
-    if(n.detail){if(model.web!.room?.game)text(ctx,n.detail,avatarX+diameter/2,avatarY+diameter-5,30,12);else text(ctx,n.detail,labelX+labelW/2,nameY+labelH+10,labelW,9,webTheme.muted);}
   } else if (n.kind === 'altar') {
     const r=n.width/2;
     ctx.save();shadow(ctx,'rgba(255,216,117,0.35)',20,0);circle(ctx,cx,cy,r,'#190808','#ffd875');ctx.restore();
@@ -430,19 +531,18 @@ function drawNode(ctx: CanvasRenderingContext2D, n: WebNode, model: ScreenModel,
 
 export function renderWebScreen(model: ScreenModel, canvas: HTMLCanvasElement, v: SafeViewport, artwork?: Artwork, preparedLayout?: WebLayout): HitRegion[] {
   const ctx = canvas.getContext('2d'); if (!ctx) throw new Error('Canvas 2D is unavailable');
-  const modal=model.web!.document?.modal;
-  if(modal){
-    ctx.save();ctx.filter='blur(4px)';
-    renderWebScreen(model.web!.underlay??{title:'',rows:[],web:{page:'home',user:model.web!.document?.user}},canvas,v,artwork);
-    ctx.restore();ctx.fillStyle='rgba(7,26,44,.78)';ctx.fillRect(0,0,v.width,v.height);
+  const modal = model.web!.document?.modal;
+  if (modal) {
+    renderWebScreen(model.web!.underlay ?? { title: '', rows: [], web: { page: 'home', user: model.web!.document?.user } }, canvas, v, artwork);
+    ctx.fillStyle = 'rgba(7, 26, 44, 0.82)';
+    ctx.fillRect(0, 0, v.width, v.height);
   }
   const scene = model.web!.background ?? (model.web!.page === 'home' ? 'gate' : model.web!.page === 'setup' ? 'library' : model.web!.page === 'table' ? model.web!.room?.game ? 'sword' : 'pavilion' : 'library');
-  if(!modal){ctx.fillStyle = '#0c0505'; ctx.fillRect(0, 0, v.width, v.height);}
+  if (!modal) { ctx.fillStyle = '#0c0505'; ctx.fillRect(0, 0, v.width, v.height); }
   const bg = artwork?.get('scenes/' + scene + '.webp');
   if (!modal && bg?.width && bg.height) {
     const scale = Math.max(v.width / bg.width, v.height / bg.height);
-    ctx.save();if(scene!=='sword')ctx.filter='saturate(1.05) brightness(1.02)';
-    ctx.drawImage(bg as CanvasImageSource, (v.width - bg.width * scale) / 2, (v.height - bg.height * scale) * (scene==='gate'?.46:scene==='sword'?.4:scene==='pavilion'?.55:.5), bg.width * scale, bg.height * scale);ctx.restore();
+    ctx.drawImage(bg as CanvasImageSource, (v.width - bg.width * scale) / 2, (v.height - bg.height * scale) * (scene === 'gate' ? 0.46 : scene === 'sword' ? 0.4 : scene === 'pavilion' ? 0.55 : 0.5), bg.width * scale, bg.height * scale);
   }
   // Web scene is shown at full opacity; do not add an extra Mini Game dark veil.
   const layout = preparedLayout ?? layoutWebScreen(model, v);
