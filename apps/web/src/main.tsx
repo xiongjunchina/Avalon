@@ -40,7 +40,9 @@ import { PresetsPanel, SettingsFields, settingsText } from './PresetsPanel';
 import { Emblem, PlayerAvatar, WECHAT_SAMPLE_AVATARS, roleTeam } from './Heraldry';
 import { GuidePanel } from './GuidePanel';
 import { RolePortrait } from './RolePortrait';
-import { FEMALE_DEMONS, WUYUE_MISSIONS, roleMottos, roleNames, roleTitles } from './roles';
+import { WUYUE_MISSIONS, roleNames, roleTitles } from './roles';
+import { LobbyHome } from './LobbyHome';
+import { EntryDialog, type EntryIntent, type KnownAccount } from './EntryDialog';
 import { SoundProvider, SoundButton, useSound, useGameSound, useNavigationSound } from './SoundSettings';
 import { VoiceControls } from './VoiceControls';
 import { SeatMicBadge } from './SeatMicBadge';
@@ -96,11 +98,10 @@ function App() {
   const [roomId, setRoomId] = useState<string | null>(null);
   const [room, setRoom] = useState<RoomView | null>(null);
   const [announcement, setAnnouncement] = useState<{ text: string; enabled: boolean } | null>(null);
-  const [freeAccessMode, setFreeAccessMode] = useState<boolean>(true);
-  const [nickname, setNickname] = useState('');
-  const [authMode, setAuthMode] = useState<'create' | 'switch'>('create');
-  const [switchCode, setSwitchCode] = useState('');
-  const [knownAccounts, setKnownAccounts] = useState<Array<{ id: string; nickname: string; playerCode: string; lastSeen: number }>>(() => {
+  const [freeAccessMode, setFreeAccessMode] = useState<boolean>(false);
+  const [entryIntent, setEntryIntent] = useState<EntryIntent | null>(null);
+  const [inviteKey, setInviteKey] = useState(() => new URLSearchParams(window.location.search).get('invite') ?? '');
+  const [knownAccounts, setKnownAccounts] = useState<KnownAccount[]>(() => {
     try {
       const raw = localStorage.getItem('avalon_known_accounts');
       return raw ? JSON.parse(raw) : [];
@@ -113,7 +114,7 @@ function App() {
     if (!u || !u.playerCode) return;
     try {
       const raw = localStorage.getItem('avalon_known_accounts');
-      const list: Array<{ id: string; nickname: string; playerCode: string; lastSeen: number }> = raw ? JSON.parse(raw) : [];
+      const list: KnownAccount[] = raw ? JSON.parse(raw) : [];
       const filtered = list.filter(item => item.playerCode !== u.playerCode && item.id !== u.id);
       filtered.unshift({
         id: u.id,
@@ -126,7 +127,7 @@ function App() {
       setKnownAccounts(updated);
     } catch {}
   };
-  // Room join key is always strictly empty - never auto prefilled from historical/URL invite string
+  // Manual room-code entry starts empty; an explicit invitation is retained separately until joining.
   const [key, setKey] = useState('');
   const [joinOpen, setJoinOpen] = useState(false);
   const [setupOpen, setSetupOpen] = useState(false);
@@ -218,14 +219,6 @@ function App() {
     if (search.has('admin') || search.get('page') === 'admin' || window.location.hash.includes('admin') || window.location.pathname.startsWith('/admin')) {
       setPage('admin');
     }
-    // Clean up lingering invite query parameter from browser address bar so page refreshes stay clean
-    if (search.has('invite')) {
-      try {
-        const url = new URL(window.location.href);
-        url.searchParams.delete('invite');
-        window.history.replaceState(null, '', url.pathname + (url.search ? url.search : '') + url.hash);
-      } catch {}
-    }
     let active = true;
     void api<{ announcement: { text: string; enabled: boolean }; freeAccessMode: boolean }>('/system/announcement')
       .then(res => {
@@ -303,12 +296,8 @@ function App() {
 
   const handleJoinByCode = async (code: string) => {
     try {
-      const data = await api<{ room: RoomView }>('/rooms/join', { key: code });
-      setRoom(data.room);
-      setRoomId(data.room.id);
-      setJoinOpen(false);
+      await joinRoom(code);
       setPage('table');
-      history.replaceState(null, '', '/');
     } catch (err) {
       setError(describe(err));
     }
@@ -533,23 +522,34 @@ function App() {
     });
   }
 
-  async function handleSwitchAccount(code: string) {
-    const clean = code.trim();
-    if (!/^\d{6}$/.test(clean)) {
-      setError('请输入6位有效数字仙友码');
-      return;
+  function openEntry(intent: EntryIntent) {
+    if (busy) return;
+    if (!user) setEntryIntent(intent);
+    else resumeEntry(intent);
+  }
+
+  function resumeEntry(intent: EntryIntent, authenticatedUser = user) {
+    setPage('table');
+    if (intent.type === 'create') setSetupOpen(true);
+    else if (intent.type === 'account') { setReplayId(null); setPage('account'); }
+    else if (intent.type === 'practice') startPracticeGame(setupSettings, authenticatedUser);
+    else if (intent.type === 'join') {
+      setKey(intent.inviteKey ?? '');
+      setJoinOpen(true);
+      if (intent.inviteKey) void run(() => joinRoom(intent.inviteKey!));
     }
-    await run(async () => {
-      const data = await api<{ user: User }>('/sessions/switch', { playerCode: clean });
-      setUser(data.user);
-      saveKnownAccount(data.user);
-      setSwitchCode('');
-      try {
-        const meData = await api<{ user: User; roomId: string | null }>('/me');
-        setRoomId(meData.roomId);
-      } catch {}
-      setNotice(`仙友 ${data.user.nickname}（#${data.user.playerCode}）已归位！`);
-    });
+  }
+
+  async function joinRoom(value: string) {
+    const data = await api<{ room: RoomView }>('/rooms/join', { key: value });
+    setRoom(data.room);
+    setRoomId(data.room.id);
+    setKey('');
+    setInviteKey('');
+    setJoinOpen(false);
+    const url = new URL(location.href);
+    url.searchParams.delete('invite');
+    history.replaceState(null, '', url.pathname + url.search + url.hash);
   }
 
   function command(action: Pick<Command, 'type' | 'payload'>) {
@@ -562,12 +562,12 @@ function App() {
     } as Command);
   }
 
-  function startPracticeGame(customSettings?: Settings) {
+  function startPracticeGame(customSettings?: Settings, identity = user) {
     const s = customSettings ?? setupSettings;
     const players: Player[] = Array.from({ length: s.playerCount }, (_, i) => ({
       id: `p${i + 1}`,
       seat: i + 1,
-      nickname: i === 0 ? user?.nickname ?? '我' : BOT_NAMES[i - 1],
+      nickname: i === 0 ? identity?.nickname ?? '我' : BOT_NAMES[i - 1],
     }));
     const rolePreferences = s.rolePreferenceEnabled && room?.selfRolePreferences?.length
       ? { p1: room.selfRolePreferences }
@@ -783,9 +783,9 @@ function App() {
 
       {/* Toast Alerts */}
       {room?.phase === 'waiting' && user && <ReadyReminder room={room} userId={user.id} disabled={busy || connection !== '已连接'} onReady={() => command({type:'setReady',payload:{ready:true}})} />}
-      {(error || notice) && (
+      {((error && !joinOpen) || notice) && (
         <div className="toast-stack">
-          {error && (
+          {error && !joinOpen && (
             <p className="error" role="alert" onClick={() => setError('')}>
               {error}
             </p>
@@ -804,151 +804,7 @@ function App() {
         <GuidePanel onBack={() => setPage(user ? guideReturn.current : 'table')} />
       ) : loading ? (
         <div className="skeleton" aria-label="正在恢复访客身份" />
-      ) : !user ? (
-        /* Guest Entry Screen */
-        <div className="mp-home-screen">
-          <div className="mp-logo-block">
-            <h1 className="mp-avalon-logo">
-              <span className="logo-word">嘻游</span>
-              <span className="logo-dot">·</span>
-              <span className="logo-word">真假猴王</span>
-            </h1>
-            <p className="mp-avalon-sub">一念佛魔皆幻相，谁是修道取经人</p>
-          </div>
-          <section className="panel guest-login-card">
-            <h2>{authMode === 'create' ? '请留取经尊号' : '仙友归位'}</h2>
-
-            <div className="guest-tabs-bar" role="tablist" aria-label="登录模式选择">
-              <button
-                type="button"
-                role="tab"
-                aria-selected={authMode === 'create'}
-                className={`guest-tab-btn ${authMode === 'create' ? 'is-active' : ''}`}
-                onClick={() => setAuthMode('create')}
-              >
-                ✨ 新入仙途（取名启程）
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={authMode === 'switch'}
-                className={`guest-tab-btn is-switch ${authMode === 'switch' ? 'is-active is-switch' : ''}`}
-                onClick={() => setAuthMode('switch')}
-              >
-                🔄 仙友归位（切换账号）
-              </button>
-            </div>
-
-            {authMode === 'create' ? (
-              <form
-                onSubmit={e => {
-                  e.preventDefault();
-                  void run(async () => {
-                    const data = await api<{ user: User }>('/sessions/guest', { nickname });
-                    setUser(data.user);
-                    saveKnownAccount(data.user);
-                  });
-                }}
-              >
-                <p className="muted" id="nickname-next-step">
-                  输入尊号昵称即可踏入取经大道，开启或加入真假猴王取经之局。
-                </p>
-                <Label.Root htmlFor="nickname">你的尊号（昵称）</Label.Root>
-                <input
-                  id="nickname"
-                  value={nickname}
-                  maxLength={20}
-                  required
-                  autoComplete="nickname"
-                  aria-describedby="nickname-next-step nickname-identity-hint"
-                  placeholder="例如：仙友xx"
-                  onChange={e => setNickname(e.target.value)}
-                />
-                <p className="hint" id="nickname-identity-hint">
-                  系统会自动为你分派唯一的 6 位专属仙友码，在不同设备或账号间自由切换。
-                </p>
-                <button className="mp-cyan-pill" disabled={busy || !nickname.trim()} type="submit">
-                  {busy ? '正在踏入取经大道…' : '踏入取经大道'}
-                </button>
-              </form>
-            ) : (
-              <form
-                onSubmit={e => {
-                  e.preventDefault();
-                  void handleSwitchAccount(switchCode);
-                }}
-              >
-                <p className="muted" id="switch-next-step">
-                  输入你的 6 位唯一专属仙友码，立即切回历史账号查看功果簿战绩。
-                </p>
-                <Label.Root htmlFor="switchCode">6 位专属仙友码</Label.Root>
-                <input
-                  id="switchCode"
-                  className="guest-switch-input"
-                  value={switchCode}
-                  maxLength={6}
-                  pattern="\d{6}"
-                  required
-                  autoComplete="off"
-                  aria-describedby="switch-next-step"
-                  placeholder="例如：123456"
-                  onChange={e => setSwitchCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                />
-                <p className="hint">
-                  仙友码可在个人中心“功果簿”中查看并复制，永久绑定个人历史胜率与复盘。
-                </p>
-                <button
-                  className="mp-gold-pill"
-                  disabled={busy || switchCode.trim().length !== 6}
-                  type="submit"
-                >
-                  {busy ? '正在寻回仙友仙籍…' : '立即归位切回账号'}
-                </button>
-              </form>
-            )}
-
-            {/* Recently Used Accounts Quick Switcher */}
-            {knownAccounts.length > 0 && (
-              <div style={{ marginTop: '20px', borderTop: '1px dashed rgba(255, 255, 255, 0.15)', paddingTop: '14px' }}>
-                <p style={{ fontSize: '12.5px', color: '#94a3b8', margin: '0 0 6px', fontWeight: 600 }}>
-                  📜 常用仙籍（点击秒切）：
-                </p>
-                <div className="guest-known-list">
-                  {knownAccounts.map(acc => (
-                    <button
-                      key={acc.playerCode}
-                      type="button"
-                      disabled={busy}
-                      className="guest-known-item"
-                      onClick={() => void handleSwitchAccount(acc.playerCode)}
-                      title={`快速切回 ${acc.nickname}（仙友码 #${acc.playerCode}）`}
-                    >
-                      <span style={{ fontWeight: 600, color: '#f1f5f9' }}>{acc.nickname}</span>
-                      <span style={{ color: '#ffd875', fontFamily: 'monospace', fontSize: '12px' }}>
-                        #{acc.playerCode} · 点击切入 ➔
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {error && (
-              <button
-                className="secondary"
-                style={{ marginTop: '14px', width: '100%' }}
-                onClick={() => {
-                  setLoading(true);
-                  setError('');
-                  setBootRetry(n => n + 1);
-                }}
-              >
-                重新检查连接
-              </button>
-            )}
-          </section>
-        </div>
-      ) : page === 'account' ? (
+      ) : page === 'account' && user ? (
         <AccountPanel
           key={user.id}
           user={user}
@@ -957,7 +813,7 @@ function App() {
           onBack={() => setPage('table')}
           onLogout={handleLogout}
         />
-      ) : practiceGame ? (
+      ) : practiceGame && user ? (
         /* Single-Player Interactive Sandbox Game Table */
         <div className="room-table-screen">
           <header className="room-top-bar is-practice-top-bar">
@@ -1035,7 +891,7 @@ function App() {
           />
         </div>
       ) : !roomId ? (
-        setupOpen ? (
+        setupOpen && user ? (
           /* Pre-Room Setup View (Exact Screenshot 4 Layout: Shield Selector + Grouped Blue/Red Portrait Cards) */
           <div className="mp-setup-screen">
             <header className="mp-setup-topbar">
@@ -1176,168 +1032,20 @@ function App() {
             </footer>
           </div>
         ) : (
-          /* Home / Lobby Screen (Exact Screenshot 1 Layout: Red/Blue Split, Top-Left Avatar, Large Center Medallion, Cyan Pill Button) */
-          <div className="mp-home-screen">
-            <header className="mp-home-topbar">
-              <button
-                type="button"
-                className="mp-avatar-btn"
-                aria-label="个人中心"
-                title={`${user.nickname} · 点击进入个人中心`}
-                onClick={() => {
-                  setReplayId(null);
-                  setPage('account');
-                }}
-              >
-                <span className="mp-avatar-ring">
-                  <PlayerAvatar
-                    avatar={user.avatar}
-                    avatarUrl={user.avatarUrl}
-                    wechatAvatarUrl={user.wechatAvatarUrl}
-                    fallbackKind="crown"
-                  />
-                </span>
-                <span className="mp-avatar-name">{user.nickname}</span>
-              </button>
-
-              <div className="home-tools">
-                <button
-                  type="button"
-                  className="secondary tool-pill friends-pill-btn"
-                  onClick={() => setFriendsModalOpen(true)}
-                  title="仙友录 · 召集与好友"
-                >
-                  👥 仙友
-                  {incomingFriendRequestsCount > 0 && (
-                    <span className="friends-badge-dot">{incomingFriendRequestsCount}</span>
-                  )}
-                </button>
-                <SoundButton />
-                <button
-                  type="button"
-                  className="secondary tool-pill home-logout-btn"
-                  onClick={handleLogout}
-                  title="注销当前登录状态，更换新身份"
-                >
-                  🚪 换号
-                </button>
-                <button
-                  type="button"
-                  className="secondary tool-pill home-guide-btn"
-                  onClick={() => {
-                    guideReturn.current = 'table';
-                    setPage('guide');
-                  }}
-                  title="嘻游识妖谱 · 规则说明"
-                >
-                  📖 识妖谱
-                </button>
-              </div>
-            </header>
-
-            <div className="mp-logo-block">
-              <h1 className="mp-avalon-logo">
-                <span className="logo-word">嘻游</span>
-                <span className="logo-dot">·</span>
-                <span className="logo-word">真假猴王</span>
-              </h1>
-              <p className="mp-avalon-sub">一念佛魔皆幻相，谁是修道取经人</p>
-              {freeAccessMode && (
-                <div className="lobby-banner-wrap">
-                  <span className="lobby-free-access-banner">
-                    🎉 公测盛典 · 全特权限时免费畅玩中
-                  </span>
-                </div>
-              )}
-            </div>
-
-            {/* Center Single Role Medallion (Auto-rotates one role at a time, non-clickable) */}
-            <section
-              className="mp-medallion-stage"
-              aria-label="角色展示"
-            >
-              <div className={`mp-medallion-circle allegiance-${roleTeam(showcaseRole)}`}>
-                <RolePortrait
-                  role={showcaseRole}
-                  femaleDemon={showcaseRole === 'minion' ? 'yutu' : undefined}
-                  size="card"
-                />
-              </div>
-              <h2 className="mp-medallion-name">
-                {showcaseRole === 'minion' ? '玉兔精' : roleNames[showcaseRole]}
-              </h2>
-              <p className="mp-medallion-motto">
-                {showcaseRole === 'minion' ? FEMALE_DEMONS.yutu.motto : roleMottos[showcaseRole]}
-              </p>
-            </section>
-
-            <footer className="mp-home-footer">
-              {/* Room Mode Toggle: Offline Regular vs Online Voice */}
-              <div className="lobby-mode-switch" role="radiogroup" aria-label="建房模式">
-                <button
-                  type="button"
-                  role="radio"
-                  aria-checked={!setupSettings.voiceChatEnabled}
-                  className={`lobby-mode-pill ${!setupSettings.voiceChatEnabled ? 'is-active' : ''}`}
-                  onClick={() => setSetupSettings(s => ({ ...s, voiceChatEnabled: false }))}
-                  title="同桌线下聚会，无语音干扰"
-                >
-                  🏛️ 线下常规房
-                </button>
-                <button
-                  type="button"
-                  role="radio"
-                  aria-checked={setupSettings.voiceChatEnabled}
-                  className={`lobby-mode-pill ${setupSettings.voiceChatEnabled ? 'is-active' : ''}`}
-                  onClick={() => setSetupSettings(s => ({ ...s, voiceChatEnabled: true }))}
-                  title="远端线上开黑，支持声网高清实时语音"
-                >
-                  🎙️ 远端语音房
-                </button>
-              </div>
-
-              <div className="lobby-primary-actions">
-                <button
-                  type="button"
-                  className="mp-cyan-pill"
-                  disabled={busy}
-                  onClick={() => setSetupOpen(true)}
-                >
-                  <Emblem kind="mountain" />
-                  {setupSettings.voiceChatEnabled ? '开语音房' : '开常规房'}
-                </button>
-                <button
-                  type="button"
-                  className="secondary lobby-join"
-                  onClick={() => {
-                    setKey('');
-                    setJoinOpen(true);
-                  }}
-                >
-                  <Emblem kind="crown" />加入房间
-                </button>
-              </div>
-              <button type="button" className="secondary practice-entry" onClick={() => startPracticeGame(setupSettings)}>🐒 幻境单人试玩 ›</button>
-              <div className="lobby-compact-links" role="navigation" aria-label="快捷导航">
-                <button
-                  type="button"
-                  className="lobby-link-btn"
-                  onClick={() => { setReplayId(null); setPage('account'); }}
-                  title="功果簿（战绩与个人资料）"
-                >
-                  📜 功果簿
-                </button>
-                <span className="lobby-link-sep" aria-hidden="true">·</span>
-                <button
-                  type="button"
-                  className="lobby-link-btn is-logout"
-                  onClick={handleLogout}
-                  title="退出当前登录并更换新身份"
-                >
-                  🚪 退出登录
-                </button>
-              </div>
-            </footer>
+          <>
+            <LobbyHome user={user} role={showcaseRole} freeAccess={freeAccessMode} busy={busy}
+              voiceEnabled={setupSettings.voiceChatEnabled} hasInvitation={Boolean(inviteKey)}
+              friendRequests={incomingFriendRequestsCount} soundControl={<SoundButton />}
+              onVoiceChange={enabled => setSetupSettings(s => ({ ...s, voiceChatEnabled: enabled }))}
+              onAccount={() => openEntry({ type: 'account' })}
+              onSignIn={() => openEntry({ type: 'home' })}
+              onLogout={() => void handleLogout()}
+              onFriends={() => setFriendsModalOpen(true)}
+              onGuide={() => { guideReturn.current = 'table'; setPage('guide'); }}
+              onCreate={() => openEntry({ type: 'create' })}
+              onJoin={() => openEntry({ type: 'join', inviteKey: inviteKey || undefined })}
+              onPractice={() => openEntry({ type: 'practice' })}
+            />
 
             {/* Join Room Modal */}
             {joinOpen && (
@@ -1373,12 +1081,7 @@ function App() {
                         } catch {
                           /* room code */
                         }
-                        const data = await api<{ room: RoomView }>('/rooms/join', { key: value });
-                        setRoom(data.room);
-                        setRoomId(data.room.id);
-                        setKey('');
-                        setJoinOpen(false);
-                        history.replaceState(null, '', '/');
+                        await joinRoom(value);
                       });
                     }}
                   >
@@ -1405,6 +1108,7 @@ function App() {
                         </button>
                       )}
                     </div>
+                    {error && <p className="error" role="alert">{error}</p>}
                     <button className="mp-cyan-pill" disabled={busy || !key.trim()} type="submit">
                       {busy ? '正在入座…' : '立即入座'}
                     </button>
@@ -1412,9 +1116,9 @@ function App() {
                 </div>
               </Modal>
             )}
-          </div>
+          </>
         )
-      ) : !room ? (
+      ) : !room || !user ? (
         <div className="skeleton" aria-label="正在恢复房间" />
       ) : (
         /* Single-Screen Room & Game Table Viewport */
@@ -2025,6 +1729,20 @@ function App() {
           )}
         </div>
       )}
+      {!user && entryIntent && <EntryDialog intent={entryIntent} knownAccounts={knownAccounts}
+        onClose={() => setEntryIntent(null)}
+        onAuthenticated={(authenticatedUser, existingRoomId) => {
+          setUser(authenticatedUser);
+          saveKnownAccount(authenticatedUser);
+          setEntryIntent(null);
+          setRoomId(existingRoomId);
+          if (existingRoomId) {
+            setPage('table');
+            setNotice('已返回当前账号所在的房间。');
+          } else resumeEntry(entryIntent, authenticatedUser);
+        }}
+      />}
+
     </main>
   );
 }

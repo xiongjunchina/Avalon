@@ -310,7 +310,24 @@ select option { background: #26100e; }
     font-size: 11px !important;
   }
 }
-.guest-login-card { width: 100%; max-width: 480px; margin: auto 0 5dvh; padding: 26px; }
+.guest-login-card { width: 100%; max-width: 480px; margin: auto; padding: 26px; }
+.table-modal-sheet.entry-sheet { background: var(--glass); padding: 20px; }
+.entry-sheet .table-modal-head { align-items: center; margin-bottom: 10px; padding-bottom: 10px; }
+.entry-sheet .table-modal-head > strong { font-size: 22px; }
+.entry-sheet .entry-purpose { margin: 0 0 12px; color: var(--muted); line-height: 1.5; }
+.entry-sheet .guest-tabs-bar { margin-bottom: 12px; }
+.entry-sheet .guest-tab-btn { min-height: 44px; margin: 0; }
+.entry-sheet label { margin-top: 10px; }
+.entry-sheet input { font-size: 16px; }
+.entry-sheet .hint { line-height: 1.5; margin: 10px 0; }
+.entry-sheet .mp-cyan-pill { margin-top: 4px; min-height: 48px; }
+.entry-sheet .entry-error { position: static; margin: 10px 0; font-size: 14px; }
+.entry-known-accounts { margin-top: 16px; border-top: 1px solid var(--border); padding-top: 10px; }
+.entry-known-accounts summary { cursor: pointer; color: var(--muted); padding-block: 8px; }
+.entry-known-accounts .guest-known-item { min-height: 44px; margin: 0; gap: 10px; }
+.entry-known-accounts .guest-known-item > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.entry-known-accounts small { font-size: 12px; white-space: nowrap; color: var(--accent); }
+.lobby-invite-hint { margin: 0; font-size: 13px; line-height: 1.5; color: #fff3d6; background: var(--surface); border-radius: 10px; padding: 6px 10px; text-align: center; }
 .guest-login-card h2 { text-align: center; font-size: 30px; color: var(--accent); margin-bottom: 12px; }
 .guest-login-card form { width: 100%; }
 .guest-login-card p { font-size: 14.5px; }
