@@ -121,6 +121,15 @@ export function GamePanel({
     }
   }, [completedMissions.length, lastCompletedRound]);
 
+  const [discussionCooldown, setDiscussionCooldown] = useState(false);
+  useEffect(() => {
+    if (g.phase === 'discussion') {
+      setDiscussionCooldown(true);
+      const timer = setTimeout(() => setDiscussionCooldown(false), 900);
+      return () => clearTimeout(timer);
+    }
+  }, [g.phase]);
+
 
   useEffect(() => {
     const hide = () => {
@@ -908,7 +917,7 @@ export function GamePanel({
             >
               <fieldset disabled={disabled} className="dock-propose-fieldset">
                 <legend className="dock-rule-hint">
-                  —◇ 可调整同行人，确认后进入讨论 ◇—
+                  —◇ 钦点同行仙友并指定发言方向，完成后开启论道 ◇—
                 </legend>
                 <div className="team-picker sr-only">
                   {g.players.map(p => (
@@ -944,7 +953,9 @@ export function GamePanel({
                     className="btn-primary-cta btn-dragon-cta"
                   >
                     <span className="btn-cloud-flourish left" aria-hidden="true"><CloudFlourish side="left" /></span>
-                    <span className="btn-cta-text">确认阵容 ({selected.length}/{size})</span>
+                    <span className="btn-cta-text">
+                      {selected.length === size ? `完成预选 (${selected.length}/${size})` : `待选满同行人 (${selected.length}/${size})`}
+                    </span>
                     <span className="btn-cloud-flourish right" aria-hidden="true"><CloudFlourish side="right" /></span>
                   </button>
                 </div>
@@ -966,20 +977,22 @@ export function GamePanel({
 
         {g.phase === 'discussion' && (
           <div className="dock-panel">
-            {captain && <p className="dock-rule-hint">—◇ 真假论道 · 点击头像可调整阵容 · 听取陈述后锁定发起表决 ◇—</p>}
+            {captain && <p className="dock-rule-hint">—◇ 众仙论道中 · 领队仍可点击头像微调阵容 · 全员陈述完毕后开启投票 ◇—</p>}
             <p className="dock-compact-text" aria-label={`发言顺序：${names(speakingOrder())}`}>
-              论道：{speakingOrder().map(id => g.players.find(p => p.id === id)?.seat).join('→')}
+              论道发言顺序：{speakingOrder().map(id => g.players.find(p => p.id === id)?.seat).join(' ➔ ')}
             </p>
             {captain ? (
               <button
-                disabled={disabled || selected.length !== size}
+                disabled={disabled || selected.length !== size || discussionCooldown}
                 className="btn-primary-cta btn-dragon-cta"
                 onClick={() => send({ type: 'startTeamVote', payload: {} })}
               >
                 <span className="btn-cloud-flourish left" aria-hidden="true"><CloudFlourish side="left" /></span>
                 <span className="btn-cta-text">
-                  {selected.length === size
-                    ? '锁定阵容 · 发起全员表决'
+                  {discussionCooldown
+                    ? '进入论道发言中…'
+                    : selected.length === size
+                    ? '已确认阵容 · 开启投票'
                     : `待补全人选（${selected.length}/${size}）`}
                 </span>
                 <span className="btn-cloud-flourish right" aria-hidden="true"><CloudFlourish side="right" /></span>
@@ -988,8 +1001,10 @@ export function GamePanel({
               <div className="dock-waiting-hero">
                 <span className="dock-waiting-icon" aria-hidden="true">🗣️</span>
                 <div className="dock-waiting-body">
-                  <strong className="dock-waiting-title">真假论道 · 各抒己见</strong>
-                  <p className="dock-waiting-desc">领队可随时调整阵容并实时同步，论道完毕后锁定表决</p>
+                  <strong className="dock-waiting-title">领队已完成预选 · 请按论道顺序发言</strong>
+                  <p className="dock-waiting-desc">
+                    领队 <strong>{captainPlayer?.nickname}</strong> 已完成本轮阵容预选。请众仙按发言顺序依次陈述，发言完毕后由领队开启投票
+                  </p>
                 </div>
               </div>
             )}
