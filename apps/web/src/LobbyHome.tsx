@@ -58,8 +58,6 @@ export function LobbyHome({
         {soundControl}
         {user && <button type="button" className="secondary tool-pill home-logout-btn"
           onClick={onLogout} title="注销当前登录状态，更换新身份">🚪 换号</button>}
-        <button type="button" className="secondary tool-pill home-guide-btn"
-          onClick={onGuide} title="嘻游识妖谱 · 规则说明">📖 识妖谱</button>
       </div>
     </header>
 
