@@ -1,0 +1,22 @@
+# IP HTTPS override for an explicitly authorized ECS deployment.
+# Requires Caddy 2.10.2+, Compose 2.24.4+, and matching PUBLIC_IP / APP_ORIGIN.
+# Let's Encrypt IP certificates use the shortlived profile (160 hours).
+# Keep the gateway's caddy_data volume for account keys and automatic renewals.
+services:
+  server:
+    environment:
+      COOKIE_SECURE: "true"
+  gateway:
+    ports: !override
+      - "0.0.0.0:80:80"
+      - "0.0.0.0:443:443"
+    environment:
+      SITE_ADDRESS: ${APP_ORIGIN:?Set APP_ORIGIN to https://PUBLIC_IP}
+      LOCAL_SNI: default_sni ${PUBLIC_IP:?Set PUBLIC_IP to your ECS IPv4 address}
+      HTTPS_GLOBAL_OPTIONS: ""
+      TLS_DIRECTIVE: |
+        tls {
+          issuer acme https://acme-v02.api.letsencrypt.org/directory {
+            profile shortlived
+          }
+        }
