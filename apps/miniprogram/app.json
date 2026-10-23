@@ -1,0 +1,13 @@
+{
+  "pages": [
+    "pages/index/index"
+  ],
+  "window": {
+    "navigationBarTitleText": "嘻游 · 真假猴王",
+    "navigationBarBackgroundColor": "#140707",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#0d0505"
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}
