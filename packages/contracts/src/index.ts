@@ -5,7 +5,7 @@ export const settingsSchema = z.object({
   captainMode: z.enum(['seat_order', 'random_order']),
   anonymousTeamVote: z.boolean(),
   rejectionScope: z.enum(['game', 'mission']),
-  ladyEnabled: z.boolean(),
+  ladyEnabled: z.boolean().optional(),
   earlyAssassinationEnabled: z.boolean(),
   guardianPerksEnabled: z.boolean().default(false),
   voiceChatEnabled: z.boolean().default(false),
@@ -16,7 +16,7 @@ export const settingsSchema = z.object({
 export type Settings = z.infer<typeof settingsSchema>;
 export const defaultSettings: Settings = {
   playerCount: 6, captainMode: 'seat_order', anonymousTeamVote: true,
-  rejectionScope: 'game', ladyEnabled: false, earlyAssassinationEnabled: false,
+  rejectionScope: 'game', earlyAssassinationEnabled: false,
   guardianPerksEnabled: false,
   voiceChatEnabled: false,
   autoRevealRoleEnabled: false,
@@ -44,13 +44,12 @@ export const commandSchema = z.discriminatedUnion('type', [
   z.object({ ...base, type: z.literal('setRolePreferences'), payload: z.object({ preferences: z.array(roleSchema).max(3).refine(arr => new Set(arr).size === arr.length, 'DUPLICATE_PREFERENCES') }).strict() }).strict(),
   z.object({ ...base, type: z.literal('updateSettings'), payload: settingsSchema }).strict(),
   z.object({ ...base, type: z.literal('setAdmission'), payload: z.object({ acceptingNewMembers: z.boolean() }).strict() }).strict(),
-  ...(['startGame', 'confirmRole', 'startTeamVote', 'returnToLobby', 'requestAbort', 'endGame', 'confirmInspection'] as const).map(type =>
+  ...(['startGame', 'confirmRole', 'startTeamVote', 'returnToLobby', 'requestAbort', 'endGame'] as const).map(type =>
     z.object({ ...base, type: z.literal(type), payload: z.object({}).strict() }).strict()),
   z.object({ ...base, type: z.literal('proposeTeam'), payload: z.object({ playerIds: z.array(z.string().uuid()).max(6), direction: z.enum(['clockwise', 'counterclockwise']) }).strict() }).strict(),
   z.object({ ...base, type: z.literal('updateTeamDraft'), payload: z.object({ playerIds: z.array(z.string().uuid()).max(6), direction: z.enum(['clockwise', 'counterclockwise']) }).strict() }).strict(),
   z.object({ ...base, type: z.literal('teamVote'), payload: z.object({ approve: z.union([z.boolean(), z.literal('abstain')]) }).strict() }).strict(),
   z.object({ ...base, type: z.literal('missionVote'), payload: z.object({ success: z.boolean() }).strict() }).strict(),
-  z.object({ ...base, type: z.literal('inspectAlignment'), payload: z.object({ targetId: z.string().uuid() }).strict() }).strict(),
   z.object({ ...base, type: z.literal('earlyAssassinationDecision'), payload: z.object({ attempt: z.boolean() }).strict() }).strict(),
   z.object({ ...base, type: z.literal('assassinate'), payload: z.object({ targetId: z.string().uuid() }).strict() }).strict(),
   z.object({
@@ -235,7 +234,7 @@ export type ServerMessage =
 export type LoyalGuardian = 'zhubajie' | 'shawujing' | 'bailong' | 'jingang';
 export type FemaleDemon = 'spider' | 'baigu' | 'yutu' | 'laoshu';
 export type Team = 'blue' | 'red';
-export type GamePhase = 'dealing' | 'role_reveal' | 'proposing' | 'discussion' | 'team_vote' | 'guanyin_window' | 'mission' | 'lady' | 'lady_reveal' | 'early_window' | 'assassination' | 'finished' | 'aborted';
+export type GamePhase = 'dealing' | 'role_reveal' | 'proposing' | 'discussion' | 'team_vote' | 'guanyin_window' | 'mission' | 'early_window' | 'assassination' | 'finished' | 'aborted';
 export type Player = User & { seat: number };
 export interface RoundView {
   number: number; mission: number; captainId: string; team: string[];
@@ -306,7 +305,7 @@ export interface GameView {
   self?: { role: Role; loyalGuardian?: LoyalGuardian; femaleDemon?: FemaleDemon; team: Team; evilIds: string[]; merlinCandidates: string[]; guinevereCandidates?: string[];
     guardianClue?: GuardianClue;
     confirmed: boolean; teamVoted: boolean; missionVoted: boolean;
-    inspections: PrivateInspection[]; canInspect: boolean; canConfirmInspection: boolean; canDecideEarly: boolean;
+    inspections?: PrivateInspection[]; canInspect?: boolean; canConfirmInspection?: boolean; canDecideEarly: boolean;
     treasures?: SelfTreasures };
 }
 

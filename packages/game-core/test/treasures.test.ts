@@ -8,7 +8,6 @@ const defaultSettings: Settings = {
   captainMode: 'seat_order',
   anonymousTeamVote: true,
   rejectionScope: 'game',
-  ladyEnabled: false,
   earlyAssassinationEnabled: false,
   guardianPerksEnabled: false,
   voiceChatEnabled: false,

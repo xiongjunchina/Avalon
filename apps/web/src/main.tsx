@@ -135,7 +135,6 @@ function App() {
     playerCount: 6,
     captainMode: 'random_order',
     anonymousTeamVote: true,
-    ladyEnabled: false,
     earlyAssassinationEnabled: true,
   }));
   const pendingSettingsRef = useRef<Settings | null>(null);
@@ -492,7 +491,6 @@ function App() {
       pendingSettingsRef.current = null;
       const needsSync =
         room.settings.playerCount !== target.playerCount ||
-        room.settings.ladyEnabled !== target.ladyEnabled ||
         room.settings.earlyAssassinationEnabled !== target.earlyAssassinationEnabled ||
         room.settings.guardianPerksEnabled !== target.guardianPerksEnabled ||
         room.settings.autoRevealRoleEnabled !== target.autoRevealRoleEnabled ||
@@ -699,18 +697,6 @@ function App() {
             );
           }
         }
-      } else if (next.phase === 'lady' && next.lady) {
-        const holder = next.lady.holderId;
-        const target = next.players.find(p => !next.lady!.holderIds.includes(p.id))!;
-        next = transition(
-          next,
-          holder,
-          { type: 'inspectAlignment', payload: { targetId: target.id } },
-          onlineIds
-        );
-      } else if (next.phase === 'lady_reveal' && next.lady) {
-        const inspector = next.lady.inspections.at(-1)!.inspectorId;
-        next = transition(next, inspector, { type: 'confirmInspection', payload: {} }, onlineIds);
       } else if (next.phase === 'early_window') {
         const assassin = next.players.find(p => next.roles[p.id] === 'assassin')!.id;
         next = transition(

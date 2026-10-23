@@ -9,7 +9,7 @@ test('room defaults include optional auto reveal role disabled', () => {
   assert.equal(defaultSettings.autoRevealRoleEnabled, false);
   const parsed = settingsSchema.parse({
     playerCount: 6, captainMode: 'seat_order', anonymousTeamVote: true,
-    rejectionScope: 'game', ladyEnabled: false, earlyAssassinationEnabled: false,
+    rejectionScope: 'game', earlyAssassinationEnabled: false,
     guardianPerksEnabled: false, voiceChatEnabled: false,
   });
   assert.equal(parsed.autoRevealRoleEnabled, false);

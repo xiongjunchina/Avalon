@@ -3810,12 +3810,6 @@ dialog.table-modal-backdrop::backdrop { background: #081b2d55; }
   border: 1px solid #bfdbfe !important;
 }
 
-.flank-avatar-wrap .seat-badge.badge-lady {
-  background: linear-gradient(135deg, #10b981 0%, #047857 100%) !important;
-  color: #ecfdf5 !important;
-  border: 1px solid #a7f3d0 !important;
-}
-
 .flank-avatar-wrap .seat-badge.badge-assassinated {
   background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%) !important;
   color: #fff !important;

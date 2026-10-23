@@ -1,4 +1,4 @@
-import { PrivateExtensions, ExtensionStep, ExtensionHistory } from './Extensions';
+import { PrivateExtensions, ExtensionHistory } from './Extensions';
 import { useEffect, useRef, useState } from 'react';
 import type { Command, GameView, Player, RoomView, RoundView } from '@avalon/contracts';
 import { uuidToRtcUid } from '@avalon/contracts';
@@ -28,8 +28,6 @@ const phaseNames: Record<GameView['phase'], string> = {
   team_vote: '组队表决',
   guanyin_window: '宝镜决断',
   mission: '取经出征',
-  lady: '照妖宝镜查验',
-  lady_reveal: '确认查验结果',
   early_window: '轮间确认中',
   assassination: '刺杀孙悟空',
   finished: '本局结束',
@@ -220,8 +218,6 @@ export function GamePanel({
     );
   }
 
-  const needsIdentityAction =
-    !ended && Boolean(self?.canConfirmInspection);
 
   // Only compute and display team vote status during active team voting or immediately upon mission resolution.
   // CRITICAL FIX: During 'proposing' and 'discussion', no vote has taken place on the new proposed team.
@@ -312,10 +308,6 @@ export function GamePanel({
             ? [...ids, playerId]
             : ids
       );
-      return;
-    }
-    if (g.phase === 'lady' && self?.canInspect && !g.lady?.holderIds.includes(playerId)) {
-      setTarget(prev => (prev === playerId ? '' : playerId));
       return;
     }
     if (g.phase === 'assassination' && self?.role === 'assassin' && playerId !== userId) {
@@ -686,19 +678,17 @@ export function GamePanel({
         const renderSeat = (p: Player, flank: 'left' | 'right') => {
           const member = room.members.find(m => m.id === p.id);
           const isCaptain = !ended && g.phase !== 'assassination' && p.id === g.captainId;
-          const isNextCaptain = isCaptain && ['early_window', 'lady', 'lady_reveal'].includes(effectivePhase);
-          const isLadyHolder = !ended && g.phase !== 'assassination' && g.lady?.holderId === p.id;
+          const isNextCaptain = isCaptain && effectivePhase === 'early_window';
           const isProposed =
             !ended &&
             (effectivePhase === 'proposing'
               ? selected.includes(p.id)
               : ['discussion', 'team_vote', 'guanyin_window', 'mission'].includes(effectivePhase) && Boolean(round?.team.includes(p.id)));
           const isTargeted =
-            (g.phase === 'lady' || g.phase === 'assassination') && target === p.id;
+            g.phase === 'assassination' && target === p.id;
           const canTapSeat =
             !disabled &&
             ((['proposing', 'discussion'].includes(effectivePhase) && captain) ||
-              (g.phase === 'lady' && Boolean(self?.canInspect) && !g.lady?.holderIds.includes(p.id)) ||
               (g.phase === 'assassination' && self?.role === 'assassin' && p.id !== userId));
           const seatVoteChip = voteStatusMap[p.id] ?? null;
           const revealedRole = ended && g.revealedRoles ? g.revealedRoles[p.id] : undefined;
@@ -794,11 +784,6 @@ export function GamePanel({
                     {isNextCaptain ? '👑 候任' : '👑 队长'}
                   </span>
                 )}
-                {isLadyHolder && (
-                  <span className="seat-badge badge-lady" title="持有湖中女神（照妖宝镜）">
-                    ☯️ 宝镜
-                  </span>
-                )}
                 {g.humanBagBannedPlayerId === p.id && (
                   <span className="seat-badge badge-banned" title="被收入后天人种袋，本轮禁选上车">
                     🎒 禁选
@@ -840,11 +825,9 @@ export function GamePanel({
                       ? (isProposed ? '移出阵容' : '点击上车')
                       : effectivePhase === 'discussion'
                         ? (isProposed ? '移出阵容' : '点击入阵')
-                        : g.phase === 'lady'
-                          ? '点击查验'
-                          : g.phase === 'assassination'
-                            ? '🎯 刺杀'
-                            : ''}
+                        : g.phase === 'assassination'
+                          ? '🎯 刺杀'
+                          : ''}
                   </span>
                 )}
                 {revealedRole ? (
@@ -854,7 +837,7 @@ export function GamePanel({
                   </span>
                 ) : isTargeted ? (
                   <span className="seat-chip chip-target">
-                    {g.phase === 'lady' ? '☯️ 查验' : '🗡️ 目标'}
+                    🗡️ 目标
                   </span>
                 ) : null}
               </div>
@@ -900,16 +883,6 @@ export function GamePanel({
 
       {/* 4. Bottom Dynamic Action Dock */}
       <div className="table-action-dock">
-        <ExtensionStep
-          key={`${g.id}:${g.phase}:${g.rounds.length}`}
-          game={g}
-          disabled={disabled}
-          name={name}
-          send={send}
-          selectedTarget={target}
-          onSelectTarget={setTarget}
-        />
-
         {effectivePhase === 'proposing' &&
           (captain ? (
             <form
@@ -1234,17 +1207,13 @@ export function GamePanel({
           {!ended && self && (
             <button
               type="button"
-              className={`secondary tool-pill dock-utility-btn identity-trigger-btn ${needsIdentityAction ? 'pulse-action' : ''}`}
+              className="secondary tool-pill dock-utility-btn identity-trigger-btn"
               disabled={!connected}
               aria-expanded={identityVisible}
-              aria-label={self?.canConfirmInspection ? '私下查看我的身份（确认查验结果）' : '私下查看我的身份'}
+              aria-label="私下查看我的身份"
               onClick={() => setIdentityOpen(v => !v)}
             >
-              {identityVisible
-                ? '收起真身'
-                : self?.canConfirmInspection
-                  ? '查验结果'
-                  : '查验真身'}
+              {identityVisible ? '收起真身' : '查验真身'}
             </button>
           )}
           <button
@@ -1349,11 +1318,9 @@ export function GamePanel({
             </div>
             <footer className="identity-footer">
               <p title="身份仅你可见，切换页面或断线时会自动收起">出牌权限：{self.team === 'blue' ? '仅能护经（成功）' : '可护经（成功）/ 作祟（失败）'} · 离页自动收起</p>
-              {!self.canConfirmInspection && (
-                <button type="button" className="return-table-btn" onClick={() => setIdentityOpen(false)}>
-                  返回对局页面
-                </button>
-              )}
+              <button type="button" className="return-table-btn" onClick={() => setIdentityOpen(false)}>
+                返回对局页面
+              </button>
             </footer>
           </div>
         </Modal>

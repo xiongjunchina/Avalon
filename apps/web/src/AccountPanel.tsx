@@ -234,7 +234,7 @@ export function ReplayView({replay:g}:{replay:Replay}) {
     <h3>逐轮记录</h3>{!g.rounds.length&&<p className="muted">本局在第一次组队前结束。</p>}
     <div className="replay-rounds">{g.rounds.map(r=><div key={r.number}>
       <BattleRound round={r} players={g.players} anonymous={g.settings.anonymousTeamVote}/>
-      {g.inspections.filter(i=>i.afterMission===r.mission&&r.result).map(i=><p key={i.afterMission} className="hint">照妖宝镜：{name(i.inspectorId)} 查验 {name(i.targetId)}，随后交接给被查验者。</p>)}
+      {(g.inspections ?? []).filter(i=>i.afterMission===r.mission&&r.result).map(i=><p key={i.afterMission} className="hint">宝镜查验：{name(i.inspectorId)} 查验 {name(i.targetId)}，随后交接给被查验者。</p>)}
       {g.earlyWindows.filter(w=>w.afterProposal===r.number).map((w,i)=><p className="hint" key={i}>轮间窗口：{w.decision==='skip'?'跳过提前刺杀':'发起提前刺杀'}（完成任务 {w.afterMission} 后）。</p>)}
     </div>)}</div>
   </>;

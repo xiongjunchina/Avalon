@@ -62,7 +62,6 @@ export interface GameState {
   teamVoteStartedAt?: string;
   guinevereCandidates?: string[];
   guardianClues?: Record<string, GuardianClue>;
-  lady?: { holderId: string; holderIds: string[]; inspections: PrivateInspection[] };
   earlyAssassination?: { used: boolean; windows: EarlyWindow[] };
   assassinationMode?: 'normal' | 'early';
   treasuresState?: {
@@ -273,13 +272,11 @@ export function createGame(
   }
   const seats = sorted.map(p => p.id);
   const captainOrder = settings.captainMode === 'random_order' ? shuffle(seats) : seats;
-  const initialHolder = seats[(seats.indexOf(captainOrder[0])+seats.length-1)%seats.length];
   return { id, rulesetVersion: RULESET_VERSION, settings: { ...settings }, players: sorted,
     roles, phase: 'role_reveal', mission: 1,
     rejectionCount: 0, captainOrder,
     ...(guinevereCandidates ? { guinevereCandidates } : {}),
     ...(guardianClues ? { guardianClues } : {}),
-    ...(settings.ladyEnabled ? { lady: { holderId: initialHolder, holderIds: [initialHolder], inspections: [] } } : {}),
     ...(settings.earlyAssassinationEnabled ? { earlyAssassination: { used: false, windows: [] } } : {}),
     ...(settings.treasuresEnabled && sorted.length >= 8 ? { treasuresState: {} } : {}),
     captainIndex: 0, confirmed: [], teamVotes: {}, missionVotes: {}, rounds: [] };
@@ -431,29 +428,12 @@ export function transition(state: GameState, userId: string, action: Pick<Comman
         else if (successes >= 3) { g.phase = 'assassination'; g.assassinationMode = 'normal'; }
         else {
           g.mission++; rotate(g);
-          // Terminal results above always take precedence over both extensions.
-          if (g.lady && completed.length >= 2 && completed.length <= 4) g.phase = 'lady';
-          else openEarlyWindowOrPropose(g);
+          openEarlyWindowOrPropose(g);
           if (g.settings.rejectionScope === 'mission') g.rejectionCount = 0;
         }
       }
       break;
     }
-    case 'inspectAlignment': {
-      requireRule(g.phase === 'lady' && g.lady, 'WRONG_PHASE');
-      requireRule(g.lady.holderId === userId, 'NOT_LADY_HOLDER');
-      const { targetId } = action.payload as { targetId: string };
-      requireRule(g.players.some(p => p.id === targetId) && !g.lady.holderIds.includes(targetId), 'INVALID_INSPECTION_TARGET');
-      g.lady.inspections.push({ afterMission: g.rounds.filter(r => r.result).length,
-        inspectorId: userId, targetId, team: teamOf(g.roles[targetId]) });
-      g.lady.holderId = targetId; g.lady.holderIds.push(targetId);
-      // Persist a separate read/ack step: do not advance past the private result on disconnect.
-      g.phase = 'lady_reveal'; break;
-    }
-    case 'confirmInspection':
-      requireRule(g.phase === 'lady_reveal' && g.lady, 'WRONG_PHASE');
-      requireRule(g.lady.inspections.at(-1)?.inspectorId === userId, 'NOT_INSPECTOR');
-      openEarlyWindowOrPropose(g); break;
     case 'earlyAssassinationDecision': {
       requireRule(canUseEarlyAssassination(g) && g.earlyAssassination, 'WRONG_PHASE');
       requireRule(g.roles[userId] === 'assassin', 'NOT_ASSASSIN');
@@ -583,8 +563,6 @@ export function projectGame(g: GameState, userId?: string): GameView {
     ...(['role_reveal','proposing','discussion'].includes(g.phase) && g.draftTeam ? { draftTeam: structuredClone(g.draftTeam) } : {}),
     ...(g.phase === 'team_vote' ? { teamVote: { startedAt: g.teamVoteStartedAt, votedIds: Object.keys(g.teamVotes), ...(!g.settings.anonymousTeamVote ? { ballots: { ...g.teamVotes } } : {}) } } : {}),
     progress: { confirmed: g.confirmed.length, teamVotes: Object.keys(g.teamVotes).length, missionVotes: Object.keys(g.missionVotes).length },
-    ...(g.lady ? { lady: { holderId: g.lady.holderId, holderIds: [...g.lady.holderIds],
-      inspections: g.lady.inspections.map(i => ({ afterMission: i.afterMission, inspectorId: i.inspectorId, targetId: i.targetId })) } } : {}),
     ...(g.earlyAssassination ? { earlyAssassination: structuredClone(g.earlyAssassination) } : {}),
     ...(g.assassinationMode || g.phase === 'assassination' ? { assassinationMode: g.assassinationMode ?? 'normal' } : {}),
     ...(g.phase === 'assassination' ? { assassinId: g.players.find(p => g.roles[p.id] === 'assassin')?.id } : {}),
@@ -599,9 +577,6 @@ export function projectGame(g: GameState, userId?: string): GameView {
       guinevereCandidates: role === 'guinevere' ? [...(g.guinevereCandidates ?? [])] : [],
       guardianClue: role === 'loyal' && g.guardianClues ? g.guardianClues[userId] : undefined,
       confirmed: g.confirmed.includes(userId), teamVoted: userId in g.teamVotes, missionVoted: userId in g.missionVotes,
-      inspections: structuredClone((g.lady?.inspections ?? []).filter(i => i.inspectorId === userId)),
-      canInspect: g.phase === 'lady' && g.lady?.holderId === userId,
-      canConfirmInspection: g.phase === 'lady_reveal' && g.lady?.inspections.at(-1)?.inspectorId === userId,
       canDecideEarly: role === 'assassin' && canUseEarlyAssassination(g),
       treasures: {
         enabled: treasuresEnabled,

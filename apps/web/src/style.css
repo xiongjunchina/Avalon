@@ -1337,12 +1337,6 @@ button.quest-medallion-wrap:hover:not(:disabled) { background: #e5c98b12; filter
   border: 1px dashed #b89b5e;
 }
 
-.badge-lady {
-  background: linear-gradient(180deg, #276885 0%, #143d52 100%);
-  color: #bdf0ff;
-  border: 1px solid #6bd4f5;
-}
-
 .seat-card-avatar-wrap {
   position: relative;
   display: inline-grid;
