@@ -11,6 +11,12 @@ import { QuestMedallion } from './QuestMedallion';
 import { BattleHistory } from './BattleRound';
 import { TeamVoteDialog } from './TeamVoteDialog';
 import { GuanyinWindowDialog } from './GuanyinWindowDialog';
+import { GuanyinResultDialog } from './GuanyinResultDialog';
+import { TreasureModal } from './TreasureModal';
+import { treasureAccess } from './treasure-access';
+import { useGuanyinNotice } from './guanyin-notice';
+import { usePrivateNotice } from './private-notice';
+import { HeartBellDialog, heartBellNoticeKey } from './HeartBell';
 import { MissionReportDialog } from './MissionReportDialog';
 import { PartyBanner } from './PlayerToken';
 import { Modal } from './Modal';
@@ -82,6 +88,28 @@ export function GamePanel({
   const round = g.rounds.at(-1);
   const ended = !!g.result;
   const [identityOpen, setIdentityOpen] = useState(false);
+  const [treasureOpen, setTreasureOpen] = useState(false);
+  const treasureEntry = treasureAccess(g, room.settings.treasuresEnabled);
+  const guanyinNotice = useGuanyinNotice(g, userId, connected);
+  const guanyinResult = self?.role === 'guinevere' ? self.treasures?.guanyinMirror?.result : undefined;
+  const bellNotice = usePrivateNotice(heartBellNoticeKey(g, userId), connected);
+  const bellMessage = self?.treasures?.incomingHeartBell;
+  const privateNoticeVisible = guanyinNotice.visible || bellNotice.visible;
+  const privateUnread = guanyinNotice.unread || bellNotice.unread;
+  const privateResultPending = guanyinNotice.unread || privateNoticeVisible;
+  const sendTreasure = (action: Pick<Command, 'type' | 'payload'>) => {
+    if (action.type === 'useTreasure' && 'action' in action.payload && action.payload.action === 'guanyinMirror') {
+      guanyinNotice.allowAutomatic();
+    }
+    send(action);
+  };
+  const openTreasure = () => {
+    if (!treasureEntry.canOpen || !connected) return;
+    if (bellNotice.unread) { bellNotice.open(); return; }
+    if (guanyinResult) { guanyinNotice.open(); return; }
+    if (self?.role === 'guinevere' && g.phase === 'guanyin_window') { setGuanyinWindowDismissed(false); return; }
+    setTreasureOpen(true);
+  };
   const [historyOpen, setHistoryOpen] = useState(false);
   const [inspectMission, setInspectMission] = useState<number | null>(null);
   const selected = g.phase === 'discussion' ? round?.team ?? [] : g.draftTeam?.playerIds ?? [];
@@ -134,15 +162,26 @@ export function GamePanel({
 
   useEffect(() => {
     const hide = () => {
-      if (document.visibilityState !== 'visible') setIdentityOpen(false);
+      if (document.visibilityState !== 'visible') { setIdentityOpen(false); setTreasureOpen(false); }
     };
     document.addEventListener('visibilitychange', hide);
     return () => document.removeEventListener('visibilitychange', hide);
   }, []);
 
   useEffect(() => {
-    if (!connected) setIdentityOpen(false);
+    if (!connected) { setIdentityOpen(false); setTreasureOpen(false); }
   }, [connected]);
+
+  useEffect(() => {
+    if (privateNoticeVisible) {
+      setIdentityOpen(false);
+      setTreasureOpen(false);
+      setHistoryOpen(false);
+      setInspectMission(null);
+    }
+  }, [privateNoticeVisible]);
+
+  useEffect(() => { setTreasureOpen(false); }, [g.id, userId]);
 
   const prevPhaseRef = useRef(g.phase);
   const autoRevealedGameIdRef = useRef<string | null>(null);
@@ -172,6 +211,7 @@ export function GamePanel({
     setAbortConfirm(Boolean(abortRequester));
     if (abortRequester) {
       setIdentityOpen(false);
+      setTreasureOpen(false);
       setHistoryOpen(false);
       setInspectMission(null);
     }
@@ -1202,8 +1242,10 @@ export function GamePanel({
             </div>
           </section>
         )}
-        {/* Scheme A-2 Bottom 4-Action Utility Dock */}
-        <div className="dock-utility-row">
+        {privateUnread && !privateNoticeVisible && connected && guanyinNotice.pageVisible && (
+          <p className="treasure-unread-notice" role="status">有一条私密消息，点击「法宝」查看。</p>
+        )}
+        <div className="dock-utility-row has-treasure-entry">
           {!ended && self && (
             <button
               type="button"
@@ -1213,7 +1255,19 @@ export function GamePanel({
               aria-label="私下查看我的身份"
               onClick={() => setIdentityOpen(v => !v)}
             >
-              {identityVisible ? '收起真身' : '查验真身'}
+              {identityVisible ? '收起' : '真身'}
+            </button>
+          )}
+          {self && (
+            <button
+              type="button"
+              className="secondary tool-pill dock-utility-btn treasure-trigger-btn"
+              disabled={!connected || !treasureEntry.canOpen}
+              aria-label="法宝"
+              aria-expanded={treasureOpen || privateNoticeVisible}
+              onClick={openTreasure}
+            >
+              法宝
             </button>
           )}
           <button
@@ -1232,7 +1286,7 @@ export function GamePanel({
               aria-label="法坛传音"
               style={{ position: 'relative' }}
             >
-              💬 传音
+              传音
               {hasUnreadChat && <span className="chat-unread-dot" />}
             </button>
           )}
@@ -1249,7 +1303,7 @@ export function GamePanel({
               aria-label={room.hostId === userId ? '结束游戏' : '申请中止游戏'}
               onClick={() => setAbortConfirm(true)}
             >
-              结束游戏
+              {room.hostId === userId ? '结束' : '中止'}
             </button>
           )}
         </div>
@@ -1258,7 +1312,7 @@ export function GamePanel({
         <DragonPlinthDecor side="right" />
       </div>
 
-      {g.phase === 'team_vote' && !voteDismissed && <TeamVoteDialog game={g} players={publicPlayers} anonymous={room.settings.anonymousTeamVote} userId={userId} serverTime={room.serverTime} disabled={disabled} send={send} onClose={() => setVoteDismissed(true)} />}
+      {g.phase === 'team_vote' && !voteDismissed && !privateNoticeVisible && <TeamVoteDialog game={g} players={publicPlayers} anonymous={room.settings.anonymousTeamVote} userId={userId} serverTime={room.serverTime} disabled={disabled} send={send} onClose={() => setVoteDismissed(true)} />}
       {g.phase === 'guanyin_window' && !guanyinWindowDismissed && (
         <GuanyinWindowDialog
           game={g}
@@ -1266,7 +1320,7 @@ export function GamePanel({
           userId={userId}
           serverTime={room.serverTime}
           disabled={disabled}
-          send={send}
+          send={sendTreasure}
           onTick={() => onSound?.('tick')}
           onClose={() => setGuanyinWindowDismissed(true)}
         />
@@ -1288,7 +1342,7 @@ export function GamePanel({
       )}
 
       {/* Private Identity Modal Overlay */}
-      {!ended && self && identityVisible && (
+      {!ended && self && identityVisible && !privateNoticeVisible && (
         <Modal label="我的私密身份详情" scene="mirror" onClose={() => setIdentityOpen(false)}>
           <div className="table-modal-sheet identity-content">
             <div className="table-modal-head">
@@ -1303,7 +1357,8 @@ export function GamePanel({
                 players={publicPlayers}
                 game={g}
                 disabled={disabled}
-                send={send}
+                send={sendTreasure}
+                userId={userId}
                 treasuresEnabled={room.settings.treasuresEnabled}
               />
             <PrivateExtensions
@@ -1327,7 +1382,7 @@ export function GamePanel({
       )}
 
       {/* Settled Mission Report Modal (Auto-pops up upon mission completion or tapping completed mission circle) */}
-      {missionReportRound && missionReportRound.result && (
+      {missionReportRound && missionReportRound.result && !privateResultPending && (
         <MissionReportDialog
           round={missionReportRound}
           players={publicPlayers}
@@ -1335,6 +1390,26 @@ export function GamePanel({
           userId={userId}
           onClose={() => setMissionReportRound(null)}
         />
+      )}
+
+      {self && treasureOpen && treasureEntry.canOpen && connected && guanyinNotice.pageVisible && !privateResultPending && (
+        <TreasureModal
+          open
+          onClose={() => setTreasureOpen(false)}
+          self={self}
+          players={publicPlayers}
+          game={g}
+          userId={userId}
+          disabled={disabled || ended}
+          send={sendTreasure}
+          treasuresEnabled={room.settings.treasuresEnabled}
+        />
+      )}
+      {guanyinNotice.visible && guanyinResult && !abortConfirm && (
+        <GuanyinResultDialog result={guanyinResult} players={publicPlayers} onClose={guanyinNotice.acknowledge} />
+      )}
+      {bellNotice.visible && bellMessage && !abortConfirm && (
+        <HeartBellDialog message={bellMessage} onClose={bellNotice.acknowledge} />
       )}
 
       {/* Percival Jingu Seal Active Notification Modal */}

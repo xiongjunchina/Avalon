@@ -617,7 +617,11 @@ function App() {
           }
         }
       }
-      if (next.phase === 'mission') {
+      // Let the human try the bell before practice bots immediately play their cards.
+      // This is local practice pacing only; multiplayer never waits for a treasure.
+      const tryingHeartBell = projectGame(next, practiceUserId).self?.treasures?.heartBell?.available ||
+        (action.type === 'useTreasure' && 'action' in action.payload && action.payload.action === 'heartBell');
+      if (next.phase === 'mission' && !tryingHeartBell) {
         const round = next.rounds.at(-1)!;
         for (const pid of round.team) {
           if (next.phase !== 'mission') break;

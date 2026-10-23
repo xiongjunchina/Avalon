@@ -61,6 +61,7 @@ export const commandSchema = z.discriminatedUnion('type', [
       z.object({ action: z.literal('humanBag'), targetId: z.string().uuid() }).strict(),
       z.object({ action: z.literal('jinguSeal') }).strict(),
       z.object({ action: z.literal('bananaFan'), armed: z.boolean() }).strict(),
+      z.object({ action: z.literal('heartBell'), targetId: z.string().uuid(), advice: z.enum(['protect', 'sabotage']) }).strict(),
     ]),
   }).strict(),
   z.object({ ...base, type: z.literal('voteAbort'), payload: z.object({ approve: z.boolean() }).strict() }).strict(),
@@ -256,8 +257,23 @@ export interface GuardianClue {
   description: string;
   targetIds: string[];
 }
+export type HeartBellAdvice = 'protect' | 'sabotage';
+export interface HeartBellMessage {
+  mission: number;
+  roundNumber: number;
+  advice: HeartBellAdvice;
+  active: boolean;
+}
 export interface SelfTreasures {
   enabled: boolean;
+  heartBell?: {
+    used: boolean;
+    available: boolean;
+    targetIds: string[];
+    sent?: HeartBellMessage & { targetId: string };
+  };
+  // Only the addressee receives this field; no sender identity or role is disclosed.
+  incomingHeartBell?: HeartBellMessage;
   tinStaff?: {
     used: boolean;
     available: boolean;

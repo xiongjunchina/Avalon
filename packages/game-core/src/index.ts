@@ -1,4 +1,4 @@
-import type { Command, GameResult, GameView, LoyalGuardian, FemaleDemon, Player, Role, RoundView, Settings, Team, PrivateInspection, EarlyWindow, TeamBallot, GuardianClue, SelfTreasures } from '@avalon/contracts';
+import type { Command, GameResult, GameView, LoyalGuardian, FemaleDemon, Player, Role, RoundView, Settings, Team, PrivateInspection, EarlyWindow, TeamBallot, GuardianClue, SelfTreasures, HeartBellAdvice } from '@avalon/contracts';
 export const RULESET_VERSION = 'standard-no-lancelot-v3';
 export const LOYAL_GUARDIAN_POOL: readonly LoyalGuardian[] = ['zhubajie', 'shawujing', 'bailong', 'jingang'];
 export function assignLoyalGuardians(gameId: string, players: Player[], roles: Record<string, Role>): Record<string, LoyalGuardian> {
@@ -70,6 +70,7 @@ export interface GameState {
     humanBag?: { used: boolean; targetId?: string; activeBannedMission?: number };
     jinguSeal?: { used: boolean; activatedBy?: string };
     bananaFan?: { used: boolean; armed: boolean };
+    heartBell?: { used: true; senderId: string; targetId: string; mission: number; roundNumber: number; advice: HeartBellAdvice };
   };
   bananaFanNotice?: string;
   result?: GameResult; abortPoll?: { requestedBy: string; electorate: string[]; approvals: string[] };
@@ -286,6 +287,14 @@ export const captain = (g: GameState) => g.captainOrder[g.captainIndex];
 export const failuresRequiredFor = (playerCount: number, mission: number): number =>
   (playerCount >= 7 && mission === 4) || ((playerCount === 11 || playerCount === 12) && mission === 3) ? 2 : 1;
 export const failuresRequired = (g: GameState) => failuresRequiredFor(g.players.length, g.mission);
+function heartBellTargets(g: GameState, userId: string): string[] {
+  const round = g.rounds.at(-1);
+  if (!g.settings.treasuresEnabled || g.players.length < 8 || g.roles[userId] !== 'minion' ||
+      g.treasuresState?.heartBell?.used || g.phase !== 'mission' || g.result || failuresRequired(g) !== 1 ||
+      !round?.team.includes(userId) || userId in g.missionVotes) return [];
+  return round.team.filter(id => id !== userId && g.roles[id] && teamOf(g.roles[id]) === 'red' &&
+    g.roles[id] !== 'oberon' && !(id in g.missionVotes));
+}
 export function finish(g: GameState, result: GameResult) {
   g.result = result; g.phase = result.winner ? 'finished' : 'aborted';
   // Individual mission cards are ephemeral private state, never part of the replay.
@@ -466,12 +475,19 @@ export function transition(state: GameState, userId: string, action: Pick<Comman
     case 'useTreasure': {
       requireRule(g.settings.treasuresEnabled && g.players.length >= 8, 'TREASURES_DISABLED');
       if (!g.treasuresState) g.treasuresState = {};
-      const payload = action.payload as {
-        action: 'tinStaff' | 'guanyinMirror' | 'humanBag' | 'jinguSeal' | 'bananaFan';
-        targetId?: string;
-        armed?: boolean;
-      };
+      const payload = action.payload as Extract<Command, { type: 'useTreasure' }>['payload'];
       switch (payload.action) {
+        case 'heartBell': {
+          requireRule(g.roles[userId] === 'minion', 'NOT_MINION');
+          requireRule(!g.treasuresState.heartBell?.used, 'ALREADY_USED');
+          requireRule(g.phase === 'mission', 'WRONG_PHASE');
+          requireRule(failuresRequired(g) === 1, 'HEART_BELL_TWO_FAILURES');
+          requireRule(payload.advice === 'protect' || payload.advice === 'sabotage', 'INVALID_INPUT');
+          requireRule(heartBellTargets(g, userId).includes(payload.targetId), 'HEART_BELL_UNAVAILABLE');
+          g.treasuresState.heartBell = { used: true, senderId: userId, targetId: payload.targetId,
+            mission: g.mission, roundNumber: g.rounds.at(-1)!.number, advice: payload.advice };
+          break;
+        }
         case 'tinStaff': {
           requireRule(g.roles[userId] === 'percival', 'NOT_PERCIVAL');
           requireRule(!g.treasuresState.tinStaff?.used, 'ALREADY_USED');
@@ -554,6 +570,11 @@ export function projectGame(g: GameState, userId?: string): GameView {
   const completedMissions = g.rounds.filter(r => r.result).length;
   const failedMissions = g.rounds.filter(r => r.result && !r.result.passed).length;
   const currentRound = g.rounds.at(-1);
+  const bell = g.treasuresState?.heartBell;
+  const bellMessage = bell ? { mission: bell.mission, roundNumber: bell.roundNumber, advice: bell.advice,
+    active: g.phase === 'mission' && !isEnded(g) && currentRound?.number === bell.roundNumber &&
+      g.mission === bell.mission && !(bell.targetId in g.missionVotes) } : undefined;
+  const bellTargets = role === 'minion' && userId ? heartBellTargets(g, userId) : [];
 
   return { id: g.id, rulesetVersion: g.rulesetVersion, phase: g.phase, players: structuredClone(g.players), mission: g.mission,
     ...(g.phase === 'dealing' ? { dealEndsAt: g.dealEndsAt } : {}),
@@ -580,6 +601,11 @@ export function projectGame(g: GameState, userId?: string): GameView {
       canDecideEarly: role === 'assassin' && canUseEarlyAssassination(g),
       treasures: {
         enabled: treasuresEnabled,
+        ...(role === 'minion' && treasuresEnabled ? {
+          heartBell: { used: Boolean(bell?.used), available: bellTargets.length > 0, targetIds: bellTargets,
+            ...(bell && bellMessage && bell.senderId === userId ? { sent: { ...bellMessage, targetId: bell.targetId } } : {}) },
+        } : {}),
+        ...(treasuresEnabled && bell && bellMessage && bell.targetId === userId ? { incomingHeartBell: { ...bellMessage } } : {}),
         ...(role === 'percival' && treasuresEnabled ? {
           tinStaff: {
             used: Boolean(g.treasuresState?.tinStaff?.used),

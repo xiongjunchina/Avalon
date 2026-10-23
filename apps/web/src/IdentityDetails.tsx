@@ -6,6 +6,7 @@ import { PlayerToken } from './PlayerToken';
 import { getRoleGalleryItem } from './roles';
 import { RoleViewerModal } from './RoleViewerModal';
 import { TreasureModal } from './TreasureModal';
+import { treasureAccess } from './treasure-access';
 import { roleDescriptions } from './GuidePanel';
 
 /** Only the server-projected, private self view is accepted. Never infer other roles. */
@@ -16,6 +17,7 @@ export function IdentityDetails({
   disabled = false,
   send,
   treasuresEnabled = false,
+  userId,
 }: {
   self: NonNullable<GameView['self']>;
   players: Player[];
@@ -23,6 +25,7 @@ export function IdentityDetails({
   disabled?: boolean;
   send?: (action: Pick<Command, 'type' | 'payload'>) => void;
   treasuresEnabled?: boolean;
+  userId?: string;
 }) {
   const [viewingArt, setViewingArt] = useState(false);
   const [treasureOpen, setTreasureOpen] = useState(false);
@@ -45,7 +48,8 @@ export function IdentityDetails({
 
   const is8Plus = players.length >= 8;
   const isTreasureModeActive = Boolean(treasuresEnabled && is8Plus);
-  const canClickTreasure = isTreasureModeActive || self.role === 'assassin';
+  const access = treasureAccess({ self, players }, treasuresEnabled);
+  const canClickTreasure = access.canOpen;
 
   let treasureSub = '';
   if (!isTreasureModeActive) {
@@ -100,9 +104,10 @@ export function IdentityDetails({
     } else if (self.role === 'morgana') {
       treasureSub = '假美猴王 · 随心机变';
     } else {
-      treasureSub = '混世妖仙 · 待机而动';
+      treasureSub = self.treasures?.heartBell?.used ? '同心铃（已传音）' : self.treasures?.heartBell?.available ? '同心铃（可向同车同伙传音）' : '同心铃（等待传音时机）';
     }
   }
+  if (self.treasures?.incomingHeartBell) treasureSub = '同心铃私密传音 · 点击回看';
 
   return (
     <>
@@ -136,7 +141,7 @@ export function IdentityDetails({
           className={`identity-treasure-entry-btn ${canClickTreasure ? 'is-enabled' : 'is-locked'}`}
           disabled={!canClickTreasure}
           onClick={() => setTreasureOpen(true)}
-          title={canClickTreasure ? '点击查看本命法宝与神兵绝技' : '房主未启用专属法宝模式，仅刺客可用神兵'}
+          title={access.reason}
         >
           <span className="treasure-entry-icon">📿</span>
           <span className="treasure-entry-info">
@@ -160,6 +165,7 @@ export function IdentityDetails({
         self={self}
         players={players}
         game={game}
+        userId={userId}
         disabled={disabled}
         send={send}
         treasuresEnabled={treasuresEnabled}

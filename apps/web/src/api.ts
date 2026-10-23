@@ -1,4 +1,8 @@
 export const errors: Record<string, string> = {
+  NOT_MINION: '同心铃仅限女妖精使用。',
+  TREASURES_DISABLED: '本局未启用专属法宝。', ALREADY_USED: '此法宝本局已使用。',
+  HEART_BELL_TWO_FAILURES: '本轮需两张失败牌才会失败，不可使用同心铃。',
+  HEART_BELL_UNAVAILABLE: '传音条件已变化：双方须同车、已相认且都未出牌，请重新选择。',
   DEAL_PENDING: '正在发牌倒计时，请稍候，身份尚未开放查看。',
   GAME_NOT_FOUND: '这局尚未结束，或你没有查看权限。只有参与过的对局才会出现在历史中。', PRESET_LIMIT: '最多保存 10 个预设，请先删除不用的预设。',
   NOT_READY: '需要人数到齐且所有人准备后，房主才能开局。',
