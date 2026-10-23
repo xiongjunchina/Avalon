@@ -34,8 +34,8 @@ test('Merlin identity only mentions Mordred when this game configuration include
     const players=Array.from({length:count},(_,i)=>({id:`p${i}`,seat:i+1,nickname:`同伴${i}`}));
     const game=createGame('vision',players,{...defaultSettings,playerCount:count},a=>a);
     const html=renderToStaticMarkup(createElement(IdentityDetails,{self:projectGame(game,'p0').self!,players}));
-    assert.equal(html.includes('本局含黄眉老怪'),count>=9);
-    if(count<9)assert.match(html,/本局全部群妖成员/);
+    assert.equal(html.includes('本局含黄眉老怪'),count>=8);
+    if(count<8)assert.match(html,/本局全部群妖成员/);
   }
 });
 

@@ -6190,6 +6190,132 @@ dialog.table-modal-backdrop::backdrop { background: #081b2d55; }
   color: #ffffff;
 }
 
+/* Real-time Seat Mic Badge (Tencent Meeting style) */
+.seat-mic-badge {
+  position: absolute !important;
+  left: -4px !important;
+  bottom: -2px !important;
+  z-index: 4 !important;
+  width: 18px !important;
+  height: 18px !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  transition: transform 0.15s ease, background 0.2s ease, border-color 0.2s ease !important;
+  pointer-events: auto !important;
+}
+
+/* On GamePanel Flank Avatars */
+.flank-avatar-wrap .seat-mic-badge {
+  left: -3px !important;
+  bottom: -2px !important;
+  width: 18px !important;
+  height: 18px !important;
+}
+
+/* Clickable button variant (self avatar) */
+button.seat-mic-badge {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  outline: none;
+}
+button.seat-mic-badge:focus-visible {
+  outline: 2px solid #38bdf8 !important;
+  outline-offset: 2px !important;
+}
+button.seat-mic-badge:hover {
+  transform: scale(1.18) !important;
+}
+button.seat-mic-badge:active {
+  transform: scale(0.95) !important;
+}
+
+/* Icon container */
+.seat-mic-badge .mic-badge-icon {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  height: 100% !important;
+  position: relative !important;
+  z-index: 2 !important;
+}
+
+/* 1. Live (Mic Open / Unmuted) */
+.seat-mic-badge.is-live {
+  background: radial-gradient(circle at 35% 35%, #153e2e 0%, #071911 100%) !important;
+  border: 1.5px solid #22c55e !important;
+  color: #4ade80 !important;
+  box-shadow: 0 0 6px rgba(34, 197, 94, 0.45), 0 2px 4px rgba(0, 0, 0, 0.8) !important;
+}
+
+/* 2. Speaking (Live + Loud audio input) */
+.seat-mic-badge.is-speaking {
+  background: radial-gradient(circle at 35% 35%, #19523a 0%, #092015 100%) !important;
+  border: 1.5px solid #4ade80 !important;
+  color: #86efac !important;
+  box-shadow: 0 0 10px rgba(74, 222, 128, 0.8), 0 2px 4px rgba(0, 0, 0, 0.8) !important;
+  animation: micBadgeSpeakingPulse 1.2s ease-in-out infinite !important;
+}
+
+.seat-mic-badge .mic-badge-pulse-ring {
+  position: absolute !important;
+  inset: -3px !important;
+  border-radius: 50% !important;
+  border: 1.5px solid #4ade80 !important;
+  opacity: 0.8 !important;
+  animation: micPulseWave 1.4s cubic-bezier(0.2, 0.8, 0.4, 1) infinite !important;
+  pointer-events: none !important;
+}
+
+@keyframes micBadgeSpeakingPulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 6px rgba(74, 222, 128, 0.6), 0 2px 4px rgba(0, 0, 0, 0.8);
+  }
+  50% {
+    transform: scale(1.08);
+    box-shadow: 0 0 12px rgba(74, 222, 128, 0.95), 0 2px 5px rgba(0, 0, 0, 0.9);
+  }
+}
+
+@keyframes micPulseWave {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+
+/* 3. Muted (Mic Closed / Silent) */
+.seat-mic-badge.is-muted {
+  background: radial-gradient(circle at 35% 35%, #3d1417 0%, #170709 100%) !important;
+  border: 1.5px solid #ef4444 !important;
+  color: #f87171 !important;
+  box-shadow: 0 0 5px rgba(239, 68, 68, 0.4), 0 2px 4px rgba(0, 0, 0, 0.8) !important;
+}
+
+/* 4. Unjoined (Voice channel not connected / offline) */
+.seat-mic-badge.is-unjoined {
+  background: rgba(15, 23, 42, 0.85) !important;
+  border: 1px dashed rgba(148, 163, 184, 0.45) !important;
+  color: #64748b !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.6) !important;
+  opacity: 0.75 !important;
+}
+.seat-mic-badge.is-unjoined:hover {
+  opacity: 1 !important;
+}
+
+
 
 
 
