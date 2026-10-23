@@ -33,8 +33,8 @@ export function PresetsPanel({currentSettings,disabled=false,canApply=false,onAp
       </fieldset>
     </form>
     {loading?<p role="status">正在读取预设…</p>:presets.length===0?<p className="muted">还没有常用设置。</p>:<ul className="preset-list">{presets.map(p=><li key={p.id}><h3>{p.name}</h3><p className="hint">{settingsText(p.settings)}</p><div className="action-pair">
-      {currentSettings?<button className="secondary" disabled={locked||!canApply} onClick={()=>onApply?.(p.settings)}>应用 {p.name}</button>:<button className="secondary" disabled={locked} onClick={()=>{setName(p.name);setSettings(p.settings);setNotice(`正在编辑“${p.name}”，保存后生效。`);}}>编辑 {p.name}</button>}
-      <button className="text-button" disabled={locked} onClick={()=>void run(async()=>{await api(`/me/presets/${p.id}`,undefined,'DELETE');setPresets(list=>list.filter(x=>x.id!==p.id));setNotice(`已删除“${p.name}”，房间设置不受影响。`);})}>删除 {p.name}</button>
+      {currentSettings?<button className="secondary" disabled={locked||!canApply} onClick={()=>onApply?.(p.settings)}><span>应用 {p.name}</span></button>:<button className="secondary" disabled={locked} onClick={()=>{setName(p.name);setSettings(p.settings);setNotice(`正在编辑“${p.name}”，保存后生效。`);}}><span>编辑 {p.name}</span></button>}
+      <button className="text-button" disabled={locked} onClick={()=>void run(async()=>{await api(`/me/presets/${p.id}`,undefined,'DELETE');setPresets(list=>list.filter(x=>x.id!==p.id));setNotice(`已删除“${p.name}”，房间设置不受影响。`);})}><span>删除 {p.name}</span></button>
     </div></li>)}</ul>}
     <p className="hint">应用预设需要房主在等待区操作，并会清除全员准备；人数不足以容纳现有座位时不能应用。</p>
   </div>;
