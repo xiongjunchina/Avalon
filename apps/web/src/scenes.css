@@ -4654,7 +4654,7 @@ dialog.table-modal-backdrop::backdrop { background: #081b2d55; }
   flex-shrink: 0 !important;
 }
 
-@media (max-width: 360px) {
+@media (max-width: 480px) {
   .waiting-voice-label {
     display: none !important;
   }
