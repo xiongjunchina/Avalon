@@ -98,6 +98,17 @@ export function GamePanel({
   const [missionReportRound, setMissionReportRound] = useState<RoundView | null>(null);
   const prevCompletedCountRef = useRef<number | null>(null);
 
+  const jinguAllyId = self?.treasures?.jinguAllyId;
+  const [dismissedJinguAllyId, setDismissedJinguAllyId] = useState<string | null>(null);
+  const isJinguAlertOpen = Boolean(self?.role === 'percival' && jinguAllyId && dismissedJinguAllyId !== jinguAllyId);
+  const chimePlayedRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (isJinguAlertOpen && jinguAllyId && chimePlayedRef.current !== jinguAllyId) {
+      chimePlayedRef.current = jinguAllyId;
+      onSound?.('chime');
+    }
+  }, [isJinguAlertOpen, jinguAllyId, onSound]);
 
   useEffect(() => {
     if (prevCompletedCountRef.current === null) {
@@ -730,7 +741,7 @@ export function GamePanel({
                 {isSpeaking && (
                   <span className="seat-speaking-ring" aria-hidden="true" />
                 )}
-                {(isProposed || isCaptain) && (
+                {(isProposed || isCaptain || (self?.role === 'percival' && jinguAllyId === p.id)) && (
                   <span
                     className={`seat-aura-ring ${isProposed ? 'aura-cyan' : 'aura-gold'}`}
                     aria-hidden="true"
@@ -760,6 +771,11 @@ export function GamePanel({
                   onToggleMute={p.id === userId ? onToggleMute : undefined}
                 />
                 {/* Floating role/captain badge over avatar */}
+                {self?.role === 'percival' && jinguAllyId === p.id && (
+                  <span className="seat-badge badge-jingu-ally" title="取经护法同修（紧箍佛印自证，百分百纯正蓝方！）">
+                    📿 护法
+                  </span>
+                )}
                 {isCaptain && (
                   <span className={`seat-badge ${isNextCaptain ? 'badge-next-captain' : 'badge-captain'}`} title={isNextCaptain ? '候任领队' : '当前队长'}>
                     {isNextCaptain ? '👑 候任' : '👑 队长'}
@@ -1293,6 +1309,72 @@ export function GamePanel({
           userId={userId}
           onClose={() => setMissionReportRound(null)}
         />
+      )}
+
+      {/* Percival Jingu Seal Active Notification Modal */}
+      {isJinguAlertOpen && jinguAllyId && (
+        <Modal
+          label="金箍显圣 · 护法归位"
+          scene="dawn"
+          onClose={() => setDismissedJinguAllyId(jinguAllyId)}
+        >
+          <div className="table-modal-sheet jingu-alert-sheet" onClick={e => e.stopPropagation()}>
+            <div className="table-modal-head">
+              <div className="jingu-alert-icon-ring" aria-hidden="true">
+                <span className="jingu-halo-sparkle">✨</span>
+                <span className="jingu-halo-icon">📿</span>
+                <span className="jingu-halo-sparkle">✨</span>
+              </div>
+              <strong className="jingu-alert-title">金箍显圣 · 护法归位</strong>
+              <p className="jingu-alert-subtitle">阿弥陀佛！绝境之中，真同修舍身自证</p>
+            </div>
+            <div className="jingu-alert-body">
+              {(() => {
+                const ally = g.players.find(p => p.id === jinguAllyId);
+                const allyMember = room.members.find(m => m.id === jinguAllyId);
+                return (
+                  <>
+                    <div className="jingu-ally-card">
+                      <div className="jingu-ally-avatar-wrap">
+                        <PlayerAvatar
+                          avatar={allyMember?.avatar}
+                          avatarUrl={allyMember?.avatarUrl}
+                          wechatAvatarUrl={allyMember?.wechatAvatarUrl}
+                          fallbackKind="cards"
+                        />
+                      </div>
+                      <div className="jingu-ally-info">
+                        <span className="jingu-seat-pill">{ally?.seat} 号位</span>
+                        <strong className="jingu-ally-name">{ally?.nickname}</strong>
+                        <span className="jingu-role-tag">🌟 取经护法同修（纯正蓝方）</span>
+                      </div>
+                    </div>
+                    <div className="jingu-alert-text">
+                      <p>
+                        仙友 <strong>{name(jinguAllyId)}</strong> 已在暗中捏动紧箍佛印向你自证！
+                      </p>
+                      <p className="jingu-alert-highlight">
+                        唐三藏圣僧慧眼洞开：此仙友确系<strong>百分之百纯正取经护法同修</strong>，绝非妖魔潜伏！
+                      </p>
+                      <p className="jingu-alert-tip">
+                        💡 提示：该仙友头上已标注【📿 护法】金印，请全力倚重其发言与投票，护送车队通关。
+                      </p>
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+            <footer className="table-modal-foot">
+              <button
+                type="button"
+                className="action-btn is-gold-primary jingu-confirm-btn"
+                onClick={() => setDismissedJinguAllyId(jinguAllyId)}
+              >
+                阿弥陀佛，贫僧知晓了
+              </button>
+            </footer>
+          </div>
+        </Modal>
       )}
 
       {/* Per-Mission Detail Modal (Triggered when tapping any of the 5 Mission Circles) */}

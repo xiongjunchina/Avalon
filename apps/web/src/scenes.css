@@ -6315,6 +6315,126 @@ button.seat-mic-badge:active {
   opacity: 1 !important;
 }
 
+/* Tang Seng Percival Jingu Seal Ally Badge */
+.seat-badge.badge-jingu-ally {
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%) !important;
+  color: #fffbeb !important;
+  border: 1px solid #fef3c7 !important;
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.7) !important;
+}
+
+/* Jingu Active Modal */
+.jingu-alert-sheet {
+  max-width: 380px !important;
+  text-align: center;
+  background: radial-gradient(circle at 50% 0%, #2b1f13 0%, #150f0c 100%) !important;
+  border: 1.5px solid #d97706 !important;
+  box-shadow: 0 0 25px rgba(217, 119, 6, 0.4), 0 10px 30px rgba(0, 0, 0, 0.9) !important;
+}
+.jingu-alert-icon-ring {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 24px;
+  margin-bottom: 4px;
+}
+.jingu-alert-title {
+  display: block;
+  font-size: 18px;
+  font-weight: 700;
+  color: #fde68a;
+  text-shadow: 0 0 10px rgba(245, 158, 11, 0.6);
+  letter-spacing: 1px;
+}
+.jingu-alert-subtitle {
+  font-size: 12px;
+  color: #d1d5db;
+  margin-top: 2px;
+}
+.jingu-ally-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  border-radius: 12px;
+  padding: 10px 14px;
+  margin: 14px 0 12px;
+  text-align: left;
+}
+.jingu-ally-avatar-wrap {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid #f59e0b;
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.5);
+}
+.jingu-ally-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.jingu-seat-pill {
+  font-size: 11px;
+  font-weight: 700;
+  color: #fbbf24;
+}
+.jingu-ally-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: #ffffff;
+}
+.jingu-role-tag {
+  font-size: 11.5px;
+  color: #60a5fa;
+  font-weight: 600;
+}
+.jingu-alert-text {
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: #e5e7eb;
+  text-align: left;
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 10px;
+  padding: 12px;
+}
+.jingu-alert-text p {
+  margin: 0 0 8px;
+}
+.jingu-alert-text p:last-child {
+  margin-bottom: 0;
+}
+.jingu-alert-highlight {
+  color: #93c5fd !important;
+}
+.jingu-alert-tip {
+  font-size: 12px;
+  color: #9ca3af !important;
+  border-top: 1px dashed rgba(255, 255, 255, 0.15);
+  padding-top: 6px;
+  margin-top: 6px !important;
+}
+.jingu-confirm-btn {
+  width: 100%;
+  padding: 10px 16px;
+  font-size: 14.5px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%) !important;
+  color: #fffbeb !important;
+  border: 1px solid #fef3c7 !important;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(217, 119, 6, 0.4);
+  transition: all 0.15s ease;
+}
+.jingu-confirm-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(217, 119, 6, 0.6);
+}
+
 
 
 
