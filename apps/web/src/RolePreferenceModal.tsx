@@ -4,6 +4,7 @@ import type { Role } from '@avalon/contracts';
 import { roleTeam } from './Heraldry';
 import { RolePortrait } from './RolePortrait';
 import { roleMottos, roleNames, roleTitles } from './roles';
+import { Modal } from './Modal';
 
 export function RolePreferenceModal({
   open,
@@ -24,7 +25,6 @@ export function RolePreferenceModal({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Sync current preferences when modal opens
   useEffect(() => {
     if (open) {
       setSelected(currentPreferences.slice(0, 3));
@@ -43,7 +43,6 @@ export function RolePreferenceModal({
     setError(null);
     const existingIndex = selected.indexOf(role);
     if (existingIndex !== -1) {
-      // Remove
       setSelected(selected.filter(r => r !== role));
     } else {
       if (selected.length >= 3) {
@@ -58,17 +57,6 @@ export function RolePreferenceModal({
     if (disabled || saving) return;
     setError(null);
     setSelected(selected.filter((_, i) => i !== index));
-  };
-
-  const handleMove = (index: number, direction: 'up' | 'down') => {
-    if (disabled || saving) return;
-    const targetIndex = direction === 'up' ? index - 1 : index + 1;
-    if (targetIndex < 0 || targetIndex >= selected.length) return;
-    const next = [...selected];
-    const temp = next[index];
-    next[index] = next[targetIndex];
-    next[targetIndex] = temp;
-    setSelected(next);
   };
 
   const handleClear = () => {
@@ -91,133 +79,91 @@ export function RolePreferenceModal({
     }
   };
 
+  const slotLabels = ['第一志愿', '第二志愿', '第三志愿'];
+  const slotTags = ['① 志愿', '② 志愿', '③ 志愿'];
+
   return (
-    <div
-      className="role-pref-overlay"
-      role="dialog"
-      aria-modal="true"
-      aria-label="心仪选角设置"
-      onClick={e => {
-        if (e.target === e.currentTarget && !saving) onClose();
-      }}
-    >
-      <div className="role-pref-dialog">
-        <header className="role-pref-header">
-          <div className="role-pref-title-wrap">
-            <h2 className="role-pref-title">🎭 心仪选角 · 偏好匹配</h2>
-            <span className="role-pref-sub">
-              设置你期望出战的角色（最多 3 个），系统开局将按优先级顺延匹配
-            </span>
+    <Modal label="心仪选角" scene="library" onClose={onClose}>
+      <div className="table-modal-sheet role-pref-sheet">
+        {/* Header */}
+        <div className="table-modal-head role-pref-head">
+          <div className="role-pref-head-left">
+            <strong className="role-pref-title">🎭 心仪选角 · 偏好匹配</strong>
+            <span className="role-pref-sub">排位靠前优先满足 · 意向全员保密</span>
           </div>
           <button
             type="button"
-            className="role-pref-close-btn"
+            className="secondary tool-pill role-pref-close-btn"
             onClick={onClose}
             disabled={saving}
             aria-label="关闭"
           >
-            ✕
+            关闭
           </button>
-        </header>
+        </div>
 
-        {/* Selected Slots Section */}
-        <section className="role-pref-slots-section">
-          <div className="role-pref-slots-head">
-            <span className="slots-label">
-              已选志愿 (<strong>{selected.length}</strong>/3)
-            </span>
-            {selected.length > 0 && (
-              <button
-                type="button"
-                className="role-pref-clear-btn"
-                onClick={handleClear}
-                disabled={saving}
-              >
-                清空重选
-              </button>
-            )}
-          </div>
-
-          <div className="role-pref-slots-grid">
+        {/* 3 Compact Slots Bar (Single Row, only ~36px high!) */}
+        <div className="role-pref-slots-strip">
+          <div className="role-pref-slots-bar" aria-label="已选出战志愿">
             {[0, 1, 2].map(slotIdx => {
               const role = selected[slotIdx];
-              const slotLabels = ['第一志愿', '第二志愿', '第三志愿'];
-              const slotColorClasses = ['slot-p1', 'slot-p2', 'slot-p3'];
-
               return (
                 <div
                   key={slotIdx}
-                  className={`role-pref-slot-card ${role ? 'is-filled' : 'is-empty'} ${
-                    slotColorClasses[slotIdx]
-                  }`}
+                  className={`role-pref-slot-pill ${role ? 'is-filled' : 'is-empty'} slot-p${slotIdx + 1}`}
+                  title={`${slotLabels[slotIdx]}：${role ? roleNames[role] : '待点选'}`}
                 >
-                  <div className="slot-rank-tag">{slotLabels[slotIdx]}</div>
+                  <span className="slot-rank-chip">{slotTags[slotIdx]}</span>
+                  <span className="sr-only">{slotLabels[slotIdx]}</span>
                   {role ? (
-                    <div className="slot-content">
-                      <div className="slot-portrait-mini">
+                    <div className="slot-pill-content">
+                      <span className="slot-avatar-mini">
                         <RolePortrait role={role} size="mini" />
-                      </div>
-                      <div className="slot-info">
-                        <strong className="slot-name">{roleNames[role]}</strong>
-                        <span className={`slot-camp camp-${roleTeam(role)}`}>
-                          {roleTeam(role) === 'blue' ? '正道神佛' : '乱道群妖'}
-                        </span>
-                      </div>
-                      <div className="slot-actions">
-                        {slotIdx > 0 && (
-                          <button
-                            type="button"
-                            className="slot-reorder-btn"
-                            title="提升优先级"
-                            onClick={() => handleMove(slotIdx, 'up')}
-                            disabled={saving}
-                          >
-                            ▲
-                          </button>
-                        )}
-                        {slotIdx < selected.length - 1 && (
-                          <button
-                            type="button"
-                            className="slot-reorder-btn"
-                            title="降低优先级"
-                            onClick={() => handleMove(slotIdx, 'down')}
-                            disabled={saving}
-                          >
-                            ▼
-                          </button>
-                        )}
-                        <button
-                          type="button"
-                          className="slot-remove-btn"
-                          title="移除"
-                          onClick={() => handleRemoveSlot(slotIdx)}
-                          disabled={saving}
-                        >
-                          ✕
-                        </button>
-                      </div>
+                      </span>
+                      <strong className="slot-pill-name">{roleNames[role]}</strong>
+                      <button
+                        type="button"
+                        className="slot-pill-remove"
+                        onClick={e => {
+                          e.stopPropagation();
+                          handleRemoveSlot(slotIdx);
+                        }}
+                        disabled={saving}
+                        title={`移除${slotLabels[slotIdx]}`}
+                        aria-label={`移除${slotLabels[slotIdx]}`}
+                      >
+                        ✕
+                      </button>
                     </div>
                   ) : (
-                    <div className="slot-empty-prompt">
-                      <span>待选择</span>
-                      <small>点击下方角色填入</small>
-                    </div>
+                    <span className="slot-pill-empty">待点选</span>
                   )}
                 </div>
               );
             })}
           </div>
-        </section>
+          {selected.length > 0 && (
+            <button
+              type="button"
+              className="role-pref-clear-link"
+              onClick={handleClear}
+              disabled={saving}
+              title="清空已选志愿"
+            >
+              清空
+            </button>
+          )}
+        </div>
 
         {error && <div className="role-pref-error-banner" role="alert">{error}</div>}
 
-        {/* Available Roles Section */}
-        <section className="role-pref-catalog-section">
+        {/* Scrollable Role Catalog */}
+        <div className="role-pref-catalog-section">
           {/* Blue Camp */}
           <div className="role-camp-group">
-            <h3 className="camp-heading blue-heading">
+            <h4 className="camp-heading blue-heading">
               <span>🔵 护经正道 · 神佛仙圣 ({blueRoles.length})</span>
-            </h3>
+            </h4>
             <div className="role-cards-grid">
               {blueRoles.map(role => {
                 const selIdx = selected.indexOf(role);
@@ -232,15 +178,17 @@ export function RolePreferenceModal({
                   >
                     {isSelected && (
                       <span className="choice-badge">
-                        第 {selIdx + 1} 志愿
+                        {slotTags[selIdx]}
                       </span>
                     )}
                     <div className="choice-portrait-wrap">
                       <RolePortrait role={role} size="mini" />
                     </div>
                     <div className="choice-details">
-                      <strong className="choice-title">{roleNames[role]}</strong>
-                      <span className="choice-subtitle">{roleTitles[role]}</span>
+                      <div className="choice-title-row">
+                        <strong className="choice-title">{roleNames[role]}</strong>
+                        <span className="choice-subtitle">{roleTitles[role]}</span>
+                      </div>
                       <p className="choice-motto">{roleMottos[role]}</p>
                     </div>
                   </button>
@@ -251,9 +199,9 @@ export function RolePreferenceModal({
 
           {/* Red Camp */}
           <div className="role-camp-group">
-            <h3 className="camp-heading red-heading">
+            <h4 className="camp-heading red-heading">
               <span>🔴 乱道妖魔 · 混世群妖 ({redRoles.length})</span>
-            </h3>
+            </h4>
             <div className="role-cards-grid">
               {redRoles.map(role => {
                 const selIdx = selected.indexOf(role);
@@ -268,15 +216,17 @@ export function RolePreferenceModal({
                   >
                     {isSelected && (
                       <span className="choice-badge">
-                        第 {selIdx + 1} 志愿
+                        {slotTags[selIdx]}
                       </span>
                     )}
                     <div className="choice-portrait-wrap">
                       <RolePortrait role={role} size="mini" />
                     </div>
                     <div className="choice-details">
-                      <strong className="choice-title">{roleNames[role]}</strong>
-                      <span className="choice-subtitle">{roleTitles[role]}</span>
+                      <div className="choice-title-row">
+                        <strong className="choice-title">{roleNames[role]}</strong>
+                        <span className="choice-subtitle">{roleTitles[role]}</span>
+                      </div>
                       <p className="choice-motto">{roleMottos[role]}</p>
                     </div>
                   </button>
@@ -284,39 +234,43 @@ export function RolePreferenceModal({
               })}
             </div>
           </div>
-        </section>
 
-        {/* Footer with Rules and Submit */}
-        <footer className="role-pref-footer">
-          <div className="role-pref-rules-hint">
-            <span className="hint-icon">💡</span>
-            <div className="hint-text">
-              <strong>王者荣耀式意向匹配机制：</strong>
+          {/* Helpful matching mechanism note inside scrollable area */}
+          <div className="role-pref-mechanics-note">
+            <span className="note-icon">💡</span>
+            <div className="note-body">
+              <strong>王者荣耀式意向匹配机制说明：</strong>
               <span>
                 系统开局打乱玩家顺位，排位靠前优先满足其第 1、第 2、第 3 志愿；若已被抢占或未设偏好，则从剩余角色中随机发牌。<strong>选角意向全员保密，他人不可见！</strong>
               </span>
             </div>
           </div>
-          <div className="role-pref-actions">
-            <button
-              type="button"
-              className="secondary tool-pill"
-              onClick={onClose}
-              disabled={saving}
-            >
-              取消
-            </button>
-            <button
-              type="button"
-              className="mp-cyan-pill role-pref-submit-btn"
-              onClick={handleConfirm}
-              disabled={saving}
-            >
-              {saving ? '保存中…' : selected.length === 0 ? '保存（不设偏好·盲选）' : `确定保存 (${selected.length}/3)`}
-            </button>
-          </div>
-        </footer>
+        </div>
+
+        {/* Symmetrical, Beautiful Lacquer Footer */}
+        <div className="role-pref-footer">
+          <button
+            type="button"
+            className="secondary tool-pill role-pref-cancel-btn"
+            onClick={onClose}
+            disabled={saving}
+          >
+            取消
+          </button>
+          <button
+            type="button"
+            className="role-pref-submit-btn"
+            onClick={handleConfirm}
+            disabled={saving}
+          >
+            {saving
+              ? '保存中…'
+              : selected.length === 0
+                ? '确认（不设偏好 · 盲选）'
+                : `确认保存 (${selected.length}/3)`}
+          </button>
+        </div>
       </div>
-    </div>
+    </Modal>
   );
 }
