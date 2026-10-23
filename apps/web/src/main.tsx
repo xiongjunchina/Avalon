@@ -1568,10 +1568,28 @@ function App() {
                   })}
                 </div>
 
-                <div className="quest-vote-track-zone">
+                <div
+                  className="quest-vote-track-zone is-clickable"
+                  onClick={() => setSettingsModalOpen(true)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setSettingsModalOpen(true);
+                    }
+                  }}
+                  title={host ? '点击修改房间规则与人数配置' : '点击查看房间详细规则配置'}
+                  aria-label={host ? '点击修改房间规则与人数配置' : '点击查看房间详细规则配置'}
+                >
                   <div className="quest-vote-track-left">
                     <div className="quest-track-head">
-                      <span className="quest-track-sub">{settingsText(room.settings)}</span>
+                      <span className="quest-track-sub">
+                        {settingsText(room.settings)}
+                        <span className="quest-track-edit-cue" aria-hidden="true">
+                          {host ? ' ⚙️修改' : ' ⚙️'}
+                        </span>
+                      </span>
                     </div>
 
                   </div>
@@ -1736,67 +1754,6 @@ function App() {
                 })}
               </div>
 
-              {/* Free Direct Extension Toggles (Lady of the Lake & Early Assassination) */}
-              <div className="waiting-ext-bar">
-                <button
-                  type="button"
-                  disabled={!host || disabled}
-                  className={`waiting-ext-orb ${room.settings.ladyEnabled ? 'is-enabled' : ''}`}
-                  onClick={() => updateSettings({ ladyEnabled: !room.settings.ladyEnabled })}
-                >
-                  <span className="orb-icon">☯️</span>
-                  <span className="orb-text">
-                    <strong>照妖宝镜</strong>
-                    <small>{room.settings.ladyEnabled ? '已开启' : '点击开启'}</small>
-                  </span>
-                </button>
-
-                <button
-                  type="button"
-                  disabled={!host || disabled}
-                  className={`waiting-ext-orb ${room.settings.earlyAssassinationEnabled ? 'is-enabled' : ''}`}
-                  onClick={() =>
-                    updateSettings({
-                      earlyAssassinationEnabled: !room.settings.earlyAssassinationEnabled,
-                    })
-                  }
-                >
-                  <span className="orb-icon">🗡️</span>
-                  <span className="orb-text">
-                    <strong>提前刺杀</strong>
-                    <small>{room.settings.earlyAssassinationEnabled ? '已开启' : '点击开启'}</small>
-                  </span>
-                </button>
-
-                <button
-                  type="button"
-                  disabled={!host || disabled}
-                  className={`waiting-ext-orb ${room.settings.rolePreferenceEnabled ? 'is-enabled' : ''}`}
-                  onClick={() =>
-                    updateSettings({
-                      rolePreferenceEnabled: !room.settings.rolePreferenceEnabled,
-                    })
-                  }
-                >
-                  <span className="orb-icon">🎭</span>
-                  <span className="orb-text">
-                    <strong>心仪选角</strong>
-                    <small>{room.settings.rolePreferenceEnabled ? '已开启' : '点击开启'}</small>
-                  </span>
-                </button>
-
-                <button
-                  type="button"
-                  className="waiting-ext-orb"
-                  onClick={() => setSettingsModalOpen(true)}
-                >
-                  <span className="orb-icon">⚙️</span>
-                  <span className="orb-text">
-                    <strong>{room.settings.playerCount} 人局配置</strong>
-                    <small>{host ? '切换人数/规则' : '查看房间规则'}</small>
-                  </span>
-                </button>
-              </div>
 
               {/* Bottom Waiting Voice & Social Action Bar */}
               <div className="waiting-voice-social-row">

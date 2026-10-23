@@ -1007,6 +1007,40 @@ main.app-shell.is-live-table {
   border-top: 1px solid rgba(229, 185, 100, 0.4) !important;
   border-bottom: 1px solid rgba(229, 185, 100, 0.4) !important;
 }
+
+.is-live-table .quest-vote-track-zone.is-clickable {
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  user-select: none !important;
+}
+
+.is-live-table .quest-vote-track-zone.is-clickable:hover {
+  background: linear-gradient(90deg, transparent 0%, rgba(75, 24, 22, 0.95) 20%, rgba(95, 30, 26, 0.98) 50%, rgba(75, 24, 22, 0.95) 80%, transparent 100%) !important;
+  border-top-color: rgba(255, 216, 117, 0.6) !important;
+  border-bottom-color: rgba(255, 216, 117, 0.6) !important;
+  box-shadow: 0 0 12px rgba(255, 216, 117, 0.15) !important;
+}
+
+.is-live-table .quest-vote-track-zone.is-clickable:active {
+  transform: scale(0.99) !important;
+}
+
+.quest-track-edit-cue {
+  display: inline-flex !important;
+  align-items: center !important;
+  margin-left: 6px !important;
+  font-size: 11px !important;
+  color: #ffd875 !important;
+  opacity: 0.85 !important;
+  font-weight: 700 !important;
+  transition: transform 0.2s ease, opacity 0.2s ease !important;
+}
+
+.is-live-table .quest-vote-track-zone.is-clickable:hover .quest-track-edit-cue {
+  opacity: 1 !important;
+  transform: scale(1.08) !important;
+}
+
 .is-live-table .quest-summary-item {
   font: 600 13px/1 var(--display) !important;
   color: #eeddc4 !important;
