@@ -1,4 +1,4 @@
-import type { Command, GameResult, GameView, LoyalGuardian, FemaleDemon, Player, Role, RoundView, Settings, Team, PrivateInspection, EarlyWindow, TeamBallot, GuardianClue, SelfTreasures } from '@avalon/contracts';
+import type { Command, GameResult, GameView, LoyalGuardian, FemaleDemon, Player, Role, RoundView, Settings, Team, PrivateInspection, EarlyWindow, TeamBallot, GuardianClue, SelfTreasures, HeartBellAdvice } from '@avalon/contracts';
 export const RULESET_VERSION = 'standard-no-lancelot-v3';
 export const LOYAL_GUARDIAN_POOL: readonly LoyalGuardian[] = ['zhubajie', 'shawujing', 'bailong', 'jingang'];
 export function assignLoyalGuardians(gameId: string, players: Player[], roles: Record<string, Role>): Record<string, LoyalGuardian> {
@@ -36,7 +36,7 @@ export function assignFemaleDemons(gameId: string, players: Player[], roles: Rec
 }
 export const MISSION_SIZES: Record<number, number[]> = {
   5: [2,3,2,3,3], 6: [2,3,4,3,4], 7: [2,3,3,4,4],
-  8: [3,4,4,5,5], 9: [3,4,4,5,4], 10: [3,4,4,5,5],
+  8: [3,4,4,5,5], 9: [3,4,4,5,5], 10: [3,4,4,5,5],
   11: [3,4,5,5,5], 12: [3,4,5,6,6],
 };
 export const ROLE_CONFIG: Record<number, Role[]> = {
@@ -44,7 +44,7 @@ export const ROLE_CONFIG: Record<number, Role[]> = {
   6: ['merlin','percival','loyal','loyal','morgana','assassin'],
   7: ['merlin','percival','loyal','loyal','morgana','assassin','oberon'],
   8: ['merlin','percival','loyal','loyal','loyal','morgana','assassin','mordred'],
-  9: ['merlin','percival','guinevere','loyal','loyal','morgana','assassin','mordred','oberon'],
+  9: ['merlin','percival','guinevere','loyal','loyal','loyal','morgana','assassin','mordred'],
   10: ['merlin','percival','guinevere','loyal','loyal','loyal','morgana','assassin','mordred','oberon'],
   11: ['merlin','percival','guinevere','loyal','loyal','loyal','morgana','assassin','mordred','minion','oberon'],
   12: ['merlin','percival','guinevere','loyal','loyal','loyal','loyal','morgana','assassin','mordred','minion','oberon'],
@@ -55,13 +55,13 @@ function requireRule(condition: unknown, code: string): asserts condition { if (
 export interface GameState {
   id: string; rulesetVersion: string; settings: Settings; players: Player[]; roles: Record<string, Role>;
   dealEndsAt?: string;
+  guanyinEndsAt?: string;
   phase: GameView['phase']; mission: number; rejectionCount: number; captainOrder: string[]; captainIndex: number;
   confirmed: string[]; teamVotes: Record<string, TeamBallot>; missionVotes: Record<string, boolean>; rounds: RoundView[];
   draftTeam?: { playerIds: string[]; direction: RoundView['direction'] };
   teamVoteStartedAt?: string;
   guinevereCandidates?: string[];
   guardianClues?: Record<string, GuardianClue>;
-  lady?: { holderId: string; holderIds: string[]; inspections: PrivateInspection[] };
   earlyAssassination?: { used: boolean; windows: EarlyWindow[] };
   assassinationMode?: 'normal' | 'early';
   treasuresState?: {
@@ -70,6 +70,7 @@ export interface GameState {
     humanBag?: { used: boolean; targetId?: string; activeBannedMission?: number };
     jinguSeal?: { used: boolean; activatedBy?: string };
     bananaFan?: { used: boolean; armed: boolean };
+    heartBell?: { used: true; senderId: string; targetId: string; mission: number; roundNumber: number; advice: HeartBellAdvice };
   };
   bananaFanNotice?: string;
   result?: GameResult; abortPoll?: { requestedBy: string; electorate: string[]; approvals: string[] };
@@ -78,6 +79,7 @@ export interface RoleProtectionOptions {
   visionGuaranteedUserIds?: string[];
   blueGuaranteedUserIds?: string[];
   bossCooldownUserIds?: string[];
+  rolePreferences?: Record<string, Role[]>;
 }
 
 export function createGame(
@@ -97,8 +99,8 @@ export function createGame(
   const visionGuaranteed = new Set(protectionOpts.visionGuaranteedUserIds || []);
   const blueGuaranteed = new Set(protectionOpts.blueGuaranteedUserIds || []);
   const bossCooldown = new Set(protectionOpts.bossCooldownUserIds || []);
+  const rolePreferences = protectionOpts.rolePreferences || {};
 
-  const shuffledRoles = shuffle([...configRoles]);
   const isAllowed = (playerId: string, role: Role, level: number): boolean => {
     if (visionGuaranteed.has(playerId) && (role === 'loyal' || role === 'oberon')) return false;
     if (level <= 1 && blueGuaranteed.has(playerId) && teamOf(role) === 'red') return false;
@@ -106,28 +108,103 @@ export function createGame(
     return true;
   };
 
-  let roles: Record<string, Role> = {};
-  for (let level = 0; level <= 3; level++) {
-    const used = new Array(shuffledRoles.length).fill(false);
-    const candidate: Record<string, Role> = {};
+  const hasPreferences = Object.values(rolePreferences).some(prefs => Array.isArray(prefs) && prefs.length > 0);
 
-    function solve(pIdx: number): boolean {
-      if (pIdx === sorted.length) return true;
-      const p = sorted[pIdx];
-      for (let rIdx = 0; rIdx < shuffledRoles.length; rIdx++) {
-        if (!used[rIdx] && isAllowed(p.id, shuffledRoles[rIdx], level)) {
-          used[rIdx] = true;
-          candidate[p.id] = shuffledRoles[rIdx];
-          if (solve(pIdx + 1)) return true;
-          used[rIdx] = false;
+  let roles: Record<string, Role> = {};
+
+  if (hasPreferences) {
+    const priorityPlayers = shuffle([...sorted]);
+    const assigned: Record<string, Role> = {};
+    const availableRoles = [...configRoles];
+    const unassignedPlayers: Player[] = [];
+
+    const canSolve = (unassigned: Player[], remaining: Role[], level = 0): boolean => {
+      const used = new Array(remaining.length).fill(false);
+      function dfs(pIdx: number): boolean {
+        if (pIdx === unassigned.length) return true;
+        const p = unassigned[pIdx];
+        for (let rIdx = 0; rIdx < remaining.length; rIdx++) {
+          if (!used[rIdx] && isAllowed(p.id, remaining[rIdx], level)) {
+            used[rIdx] = true;
+            if (dfs(pIdx + 1)) return true;
+            used[rIdx] = false;
+          }
+        }
+        return false;
+      }
+      return dfs(0);
+    };
+
+    for (const p of priorityPlayers) {
+      const prefs = rolePreferences[p.id] || [];
+      let satisfied = false;
+      for (const desiredRole of prefs) {
+        const rIdx = availableRoles.indexOf(desiredRole);
+        if (rIdx !== -1 && isAllowed(p.id, desiredRole, 0)) {
+          const testRemaining = [...availableRoles];
+          testRemaining.splice(rIdx, 1);
+          const remainingPlayers = priorityPlayers.filter(other => other.id !== p.id && !assigned[other.id]);
+          if (canSolve(remainingPlayers, testRemaining, 0)) {
+            assigned[p.id] = desiredRole;
+            availableRoles.splice(rIdx, 1);
+            satisfied = true;
+            break;
+          }
         }
       }
-      return false;
+      if (!satisfied) {
+        unassignedPlayers.push(p);
+      }
     }
 
-    if (solve(0)) {
-      roles = candidate;
-      break;
+    const shuffledRemaining = shuffle(availableRoles);
+    for (let level = 0; level <= 3; level++) {
+      const used = new Array(shuffledRemaining.length).fill(false);
+      const candidate: Record<string, Role> = {};
+
+      function solveRemaining(pIdx: number): boolean {
+        if (pIdx === unassignedPlayers.length) return true;
+        const p = unassignedPlayers[pIdx];
+        for (let rIdx = 0; rIdx < shuffledRemaining.length; rIdx++) {
+          if (!used[rIdx] && isAllowed(p.id, shuffledRemaining[rIdx], level)) {
+            used[rIdx] = true;
+            candidate[p.id] = shuffledRemaining[rIdx];
+            if (solveRemaining(pIdx + 1)) return true;
+            used[rIdx] = false;
+          }
+        }
+        return false;
+      }
+
+      if (solveRemaining(0)) {
+        roles = { ...assigned, ...candidate };
+        break;
+      }
+    }
+  } else {
+    const shuffledRoles = shuffle([...configRoles]);
+    for (let level = 0; level <= 3; level++) {
+      const used = new Array(shuffledRoles.length).fill(false);
+      const candidate: Record<string, Role> = {};
+
+      function solve(pIdx: number): boolean {
+        if (pIdx === sorted.length) return true;
+        const p = sorted[pIdx];
+        for (let rIdx = 0; rIdx < shuffledRoles.length; rIdx++) {
+          if (!used[rIdx] && isAllowed(p.id, shuffledRoles[rIdx], level)) {
+            used[rIdx] = true;
+            candidate[p.id] = shuffledRoles[rIdx];
+            if (solve(pIdx + 1)) return true;
+            used[rIdx] = false;
+          }
+        }
+        return false;
+      }
+
+      if (solve(0)) {
+        roles = candidate;
+        break;
+      }
     }
   }
   let guinevereCandidates: string[] | undefined;
@@ -196,13 +273,11 @@ export function createGame(
   }
   const seats = sorted.map(p => p.id);
   const captainOrder = settings.captainMode === 'random_order' ? shuffle(seats) : seats;
-  const initialHolder = seats[(seats.indexOf(captainOrder[0])+seats.length-1)%seats.length];
   return { id, rulesetVersion: RULESET_VERSION, settings: { ...settings }, players: sorted,
     roles, phase: 'role_reveal', mission: 1,
     rejectionCount: 0, captainOrder,
     ...(guinevereCandidates ? { guinevereCandidates } : {}),
     ...(guardianClues ? { guardianClues } : {}),
-    ...(settings.ladyEnabled ? { lady: { holderId: initialHolder, holderIds: [initialHolder], inspections: [] } } : {}),
     ...(settings.earlyAssassinationEnabled ? { earlyAssassination: { used: false, windows: [] } } : {}),
     ...(settings.treasuresEnabled && sorted.length >= 8 ? { treasuresState: {} } : {}),
     captainIndex: 0, confirmed: [], teamVotes: {}, missionVotes: {}, rounds: [] };
@@ -210,8 +285,16 @@ export function createGame(
 export const isEnded = (g: GameState) => g.phase === 'finished' || g.phase === 'aborted';
 export const captain = (g: GameState) => g.captainOrder[g.captainIndex];
 export const failuresRequiredFor = (playerCount: number, mission: number): number =>
-  (playerCount >= 7 && mission === 4) || ((playerCount === 9 || playerCount === 11 || playerCount === 12) && mission === 3) ? 2 : 1;
+  (playerCount >= 7 && mission === 4) || ((playerCount === 11 || playerCount === 12) && mission === 3) ? 2 : 1;
 export const failuresRequired = (g: GameState) => failuresRequiredFor(g.players.length, g.mission);
+function heartBellTargets(g: GameState, userId: string): string[] {
+  const round = g.rounds.at(-1);
+  if (!g.settings.treasuresEnabled || g.players.length < 8 || g.roles[userId] !== 'minion' ||
+      g.treasuresState?.heartBell?.used || g.phase !== 'mission' || g.result || failuresRequired(g) !== 1 ||
+      !round?.team.includes(userId) || userId in g.missionVotes) return [];
+  return round.team.filter(id => id !== userId && g.roles[id] && teamOf(g.roles[id]) === 'red' &&
+    g.roles[id] !== 'oberon' && !(id in g.missionVotes));
+}
 export function finish(g: GameState, result: GameResult) {
   g.result = result; g.phase = result.winner ? 'finished' : 'aborted';
   // Individual mission cards are ephemeral private state, never part of the replay.
@@ -315,7 +398,18 @@ export function transition(state: GameState, userId: string, action: Pick<Comman
             openEarlyWindowOrPropose(g);
           } else {
             delete g.bananaFanNotice;
-            g.phase = 'mission';
+            const hasUnusedGuanyin = Boolean(
+              g.settings.treasuresEnabled &&
+              g.players.length >= 9 &&
+              g.players.some(p => g.roles[p.id] === 'guinevere') &&
+              !g.treasuresState?.guanyinMirror?.used
+            );
+            if (hasUnusedGuanyin) {
+              g.phase = 'guanyin_window';
+              g.guanyinEndsAt = new Date(context.now + 4000).toISOString();
+            } else {
+              g.phase = 'mission';
+            }
           }
         } else {
           delete g.bananaFanNotice;
@@ -343,29 +437,12 @@ export function transition(state: GameState, userId: string, action: Pick<Comman
         else if (successes >= 3) { g.phase = 'assassination'; g.assassinationMode = 'normal'; }
         else {
           g.mission++; rotate(g);
-          // Terminal results above always take precedence over both extensions.
-          if (g.lady && completed.length >= 2 && completed.length <= 4) g.phase = 'lady';
-          else openEarlyWindowOrPropose(g);
+          openEarlyWindowOrPropose(g);
           if (g.settings.rejectionScope === 'mission') g.rejectionCount = 0;
         }
       }
       break;
     }
-    case 'inspectAlignment': {
-      requireRule(g.phase === 'lady' && g.lady, 'WRONG_PHASE');
-      requireRule(g.lady.holderId === userId, 'NOT_LADY_HOLDER');
-      const { targetId } = action.payload as { targetId: string };
-      requireRule(g.players.some(p => p.id === targetId) && !g.lady.holderIds.includes(targetId), 'INVALID_INSPECTION_TARGET');
-      g.lady.inspections.push({ afterMission: g.rounds.filter(r => r.result).length,
-        inspectorId: userId, targetId, team: teamOf(g.roles[targetId]) });
-      g.lady.holderId = targetId; g.lady.holderIds.push(targetId);
-      // Persist a separate read/ack step: do not advance past the private result on disconnect.
-      g.phase = 'lady_reveal'; break;
-    }
-    case 'confirmInspection':
-      requireRule(g.phase === 'lady_reveal' && g.lady, 'WRONG_PHASE');
-      requireRule(g.lady.inspections.at(-1)?.inspectorId === userId, 'NOT_INSPECTOR');
-      openEarlyWindowOrPropose(g); break;
     case 'earlyAssassinationDecision': {
       requireRule(canUseEarlyAssassination(g) && g.earlyAssassination, 'WRONG_PHASE');
       requireRule(g.roles[userId] === 'assassin', 'NOT_ASSASSIN');
@@ -398,12 +475,19 @@ export function transition(state: GameState, userId: string, action: Pick<Comman
     case 'useTreasure': {
       requireRule(g.settings.treasuresEnabled && g.players.length >= 8, 'TREASURES_DISABLED');
       if (!g.treasuresState) g.treasuresState = {};
-      const payload = action.payload as {
-        action: 'tinStaff' | 'guanyinMirror' | 'humanBag' | 'jinguSeal' | 'bananaFan';
-        targetId?: string;
-        armed?: boolean;
-      };
+      const payload = action.payload as Extract<Command, { type: 'useTreasure' }>['payload'];
       switch (payload.action) {
+        case 'heartBell': {
+          requireRule(g.roles[userId] === 'minion', 'NOT_MINION');
+          requireRule(!g.treasuresState.heartBell?.used, 'ALREADY_USED');
+          requireRule(g.phase === 'mission', 'WRONG_PHASE');
+          requireRule(failuresRequired(g) === 1, 'HEART_BELL_TWO_FAILURES');
+          requireRule(payload.advice === 'protect' || payload.advice === 'sabotage', 'INVALID_INPUT');
+          requireRule(heartBellTargets(g, userId).includes(payload.targetId), 'HEART_BELL_UNAVAILABLE');
+          g.treasuresState.heartBell = { used: true, senderId: userId, targetId: payload.targetId,
+            mission: g.mission, roundNumber: g.rounds.at(-1)!.number, advice: payload.advice };
+          break;
+        }
         case 'tinStaff': {
           requireRule(g.roles[userId] === 'percival', 'NOT_PERCIVAL');
           requireRule(!g.treasuresState.tinStaff?.used, 'ALREADY_USED');
@@ -422,14 +506,23 @@ export function transition(state: GameState, userId: string, action: Pick<Comman
         case 'guanyinMirror': {
           requireRule(g.roles[userId] === 'guinevere', 'NOT_GUINEVERE');
           requireRule(!g.treasuresState.guanyinMirror?.used, 'ALREADY_USED');
+          requireRule(g.phase === 'guanyin_window', 'WRONG_PHASE');
           const round = g.rounds.at(-1);
-          requireRule(round && ['discussion', 'team_vote', 'mission'].includes(g.phase), 'WRONG_PHASE');
-          const { targetId } = payload;
+          requireRule(round, 'WRONG_PHASE');
+          const guanyinPayload = payload as { action: 'guanyinMirror'; targetId?: string; skip?: boolean };
+          if (guanyinPayload.skip) {
+            g.phase = 'mission';
+            delete g.guanyinEndsAt;
+            break;
+          }
+          const { targetId } = guanyinPayload;
           requireRule(targetId && round.team.includes(targetId), 'TARGET_NOT_ON_TEAM');
           requireRule(targetId !== userId, 'CANNOT_INSPECT_SELF');
           const targetRole = g.roles[targetId];
           const alignment = teamOf(targetRole) === 'red' ? 'evil' : 'pure';
           g.treasuresState.guanyinMirror = { used: true, result: { targetId, alignment } };
+          g.phase = 'mission';
+          delete g.guanyinEndsAt;
           break;
         }
         case 'humanBag': {
@@ -477,16 +570,20 @@ export function projectGame(g: GameState, userId?: string): GameView {
   const completedMissions = g.rounds.filter(r => r.result).length;
   const failedMissions = g.rounds.filter(r => r.result && !r.result.passed).length;
   const currentRound = g.rounds.at(-1);
+  const bell = g.treasuresState?.heartBell;
+  const bellMessage = bell ? { mission: bell.mission, roundNumber: bell.roundNumber, advice: bell.advice,
+    active: g.phase === 'mission' && !isEnded(g) && currentRound?.number === bell.roundNumber &&
+      g.mission === bell.mission && !(bell.targetId in g.missionVotes) } : undefined;
+  const bellTargets = role === 'minion' && userId ? heartBellTargets(g, userId) : [];
 
   return { id: g.id, rulesetVersion: g.rulesetVersion, phase: g.phase, players: structuredClone(g.players), mission: g.mission,
     ...(g.phase === 'dealing' ? { dealEndsAt: g.dealEndsAt } : {}),
+    ...(g.phase === 'guanyin_window' ? { guanyinEndsAt: g.guanyinEndsAt } : {}),
     missionSizes: [...MISSION_SIZES[g.players.length]], failuresRequired: failuresRequired(g), rejectionCount: g.rejectionCount,
     captainId: captain(g), captainOrder: [...g.captainOrder], rounds: structuredClone(g.rounds),
     ...(['role_reveal','proposing','discussion'].includes(g.phase) && g.draftTeam ? { draftTeam: structuredClone(g.draftTeam) } : {}),
     ...(g.phase === 'team_vote' ? { teamVote: { startedAt: g.teamVoteStartedAt, votedIds: Object.keys(g.teamVotes), ...(!g.settings.anonymousTeamVote ? { ballots: { ...g.teamVotes } } : {}) } } : {}),
     progress: { confirmed: g.confirmed.length, teamVotes: Object.keys(g.teamVotes).length, missionVotes: Object.keys(g.missionVotes).length },
-    ...(g.lady ? { lady: { holderId: g.lady.holderId, holderIds: [...g.lady.holderIds],
-      inspections: g.lady.inspections.map(i => ({ afterMission: i.afterMission, inspectorId: i.inspectorId, targetId: i.targetId })) } } : {}),
     ...(g.earlyAssassination ? { earlyAssassination: structuredClone(g.earlyAssassination) } : {}),
     ...(g.assassinationMode || g.phase === 'assassination' ? { assassinationMode: g.assassinationMode ?? 'normal' } : {}),
     ...(g.phase === 'assassination' ? { assassinId: g.players.find(p => g.roles[p.id] === 'assassin')?.id } : {}),
@@ -501,12 +598,14 @@ export function projectGame(g: GameState, userId?: string): GameView {
       guinevereCandidates: role === 'guinevere' ? [...(g.guinevereCandidates ?? [])] : [],
       guardianClue: role === 'loyal' && g.guardianClues ? g.guardianClues[userId] : undefined,
       confirmed: g.confirmed.includes(userId), teamVoted: userId in g.teamVotes, missionVoted: userId in g.missionVotes,
-      inspections: structuredClone((g.lady?.inspections ?? []).filter(i => i.inspectorId === userId)),
-      canInspect: g.phase === 'lady' && g.lady?.holderId === userId,
-      canConfirmInspection: g.phase === 'lady_reveal' && g.lady?.inspections.at(-1)?.inspectorId === userId,
       canDecideEarly: role === 'assassin' && canUseEarlyAssassination(g),
       treasures: {
         enabled: treasuresEnabled,
+        ...(role === 'minion' && treasuresEnabled ? {
+          heartBell: { used: Boolean(bell?.used), available: bellTargets.length > 0, targetIds: bellTargets,
+            ...(bell && bellMessage && bell.senderId === userId ? { sent: { ...bellMessage, targetId: bell.targetId } } : {}) },
+        } : {}),
+        ...(treasuresEnabled && bell && bellMessage && bell.targetId === userId ? { incomingHeartBell: { ...bellMessage } } : {}),
         ...(role === 'percival' && treasuresEnabled ? {
           tinStaff: {
             used: Boolean(g.treasuresState?.tinStaff?.used),
@@ -518,7 +617,7 @@ export function projectGame(g: GameState, userId?: string): GameView {
         ...(role === 'guinevere' && treasuresEnabled ? {
           guanyinMirror: {
             used: Boolean(g.treasuresState?.guanyinMirror?.used),
-            available: !g.treasuresState?.guanyinMirror?.used && Boolean(currentRound && ['discussion', 'team_vote', 'mission'].includes(g.phase) && !isEnded(g)),
+            available: !g.treasuresState?.guanyinMirror?.used && Boolean(currentRound && g.phase === 'guanyin_window' && !isEnded(g)),
             result: g.treasuresState?.guanyinMirror?.result,
           },
         } : {}),

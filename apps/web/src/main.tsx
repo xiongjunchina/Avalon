@@ -49,6 +49,7 @@ import { voiceManager, type VoiceState } from './agora-voice';
 import { uuidToRtcUid, type VoiceTokenResponse, type FriendSummary, type RoomChatMessage } from '@avalon/contracts';
 import { AdminDashboard } from './AdminDashboard';
 import { ChatDrawer } from './ChatDrawer';
+import { RolePreferenceModal } from './RolePreferenceModal';
 
 const SHOWCASE_ROLES: Role[] = [
   'merlin',
@@ -134,11 +135,11 @@ function App() {
     playerCount: 6,
     captainMode: 'random_order',
     anonymousTeamVote: true,
-    ladyEnabled: false,
     earlyAssassinationEnabled: true,
   }));
   const pendingSettingsRef = useRef<Settings | null>(null);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
+  const [rolePrefModalOpen, setRolePrefModalOpen] = useState(false);
   const [kickTarget, setKickTarget] = useState<Member | null>(null);
   const [showcaseIndex, setShowcaseIndex] = useState(0);
   const [invite, setInvite] = useState('');
@@ -490,7 +491,6 @@ function App() {
       pendingSettingsRef.current = null;
       const needsSync =
         room.settings.playerCount !== target.playerCount ||
-        room.settings.ladyEnabled !== target.ladyEnabled ||
         room.settings.earlyAssassinationEnabled !== target.earlyAssassinationEnabled ||
         room.settings.guardianPerksEnabled !== target.guardianPerksEnabled ||
         room.settings.autoRevealRoleEnabled !== target.autoRevealRoleEnabled ||
@@ -569,7 +569,10 @@ function App() {
       seat: i + 1,
       nickname: i === 0 ? user?.nickname ?? '我' : BOT_NAMES[i - 1],
     }));
-    const g = createGame(`practice-game-${Date.now()}`, players, s, shuffleArray);
+    const rolePreferences = s.rolePreferenceEnabled && room?.selfRolePreferences?.length
+      ? { p1: room.selfRolePreferences }
+      : undefined;
+    const g = createGame(`practice-game-${Date.now()}`, players, s, shuffleArray, { rolePreferences });
     setPracticeUserId('p1');
     practiceGameRef.current = g;
     setPracticeGame(g);
@@ -602,7 +605,23 @@ function App() {
           }
         }
       }
-      if (next.phase === 'mission') {
+      if (next.phase === 'guanyin_window') {
+        const guanyin = next.players.find(p => next.roles[p.id] === 'guinevere');
+        if (guanyin && guanyin.id !== practiceUserId) {
+          const round = next.rounds.at(-1);
+          const target = round?.team.find(id => id !== guanyin.id);
+          if (target) {
+            next = transition(next, guanyin.id, { type: 'useTreasure', payload: { action: 'guanyinMirror', targetId: target } }, onlineIds);
+          } else {
+            next = transition(next, guanyin.id, { type: 'useTreasure', payload: { action: 'guanyinMirror', skip: true } }, onlineIds);
+          }
+        }
+      }
+      // Let the human try the bell before practice bots immediately play their cards.
+      // This is local practice pacing only; multiplayer never waits for a treasure.
+      const tryingHeartBell = projectGame(next, practiceUserId).self?.treasures?.heartBell?.available ||
+        (action.type === 'useTreasure' && 'action' in action.payload && action.payload.action === 'heartBell');
+      if (next.phase === 'mission' && !tryingHeartBell) {
         const round = next.rounds.at(-1)!;
         for (const pid of round.team) {
           if (next.phase !== 'mission') break;
@@ -657,6 +676,17 @@ function App() {
             next = transition(next, p.id, { type: 'teamVote', payload: { approve: true } }, onlineIds);
           }
         }
+      } else if (next.phase === 'guanyin_window') {
+        const guanyin = next.players.find(p => next.roles[p.id] === 'guinevere');
+        if (guanyin) {
+          const round = next.rounds.at(-1);
+          const target = round?.team.find(id => id !== guanyin.id);
+          if (target) {
+            next = transition(next, guanyin.id, { type: 'useTreasure', payload: { action: 'guanyinMirror', targetId: target } }, onlineIds);
+          } else {
+            next = transition(next, guanyin.id, { type: 'useTreasure', payload: { action: 'guanyinMirror', skip: true } }, onlineIds);
+          }
+        }
       } else if (next.phase === 'mission') {
         const round = next.rounds.at(-1)!;
         for (const pid of round.team) {
@@ -671,18 +701,6 @@ function App() {
             );
           }
         }
-      } else if (next.phase === 'lady' && next.lady) {
-        const holder = next.lady.holderId;
-        const target = next.players.find(p => !next.lady!.holderIds.includes(p.id))!;
-        next = transition(
-          next,
-          holder,
-          { type: 'inspectAlignment', payload: { targetId: target.id } },
-          onlineIds
-        );
-      } else if (next.phase === 'lady_reveal' && next.lady) {
-        const inspector = next.lady.inspections.at(-1)!.inspectorId;
-        next = transition(next, inspector, { type: 'confirmInspection', payload: {} }, onlineIds);
       } else if (next.phase === 'early_window') {
         const assassin = next.players.find(p => next.roles[p.id] === 'assassin')!.id;
         next = transition(
@@ -1540,10 +1558,28 @@ function App() {
                   })}
                 </div>
 
-                <div className="quest-vote-track-zone">
+                <div
+                  className="quest-vote-track-zone is-clickable"
+                  onClick={() => setSettingsModalOpen(true)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setSettingsModalOpen(true);
+                    }
+                  }}
+                  title={host ? '点击修改房间规则与人数配置' : '点击查看房间详细规则配置'}
+                  aria-label={host ? '点击修改房间规则与人数配置' : '点击查看房间详细规则配置'}
+                >
                   <div className="quest-vote-track-left">
                     <div className="quest-track-head">
-                      <span className="quest-track-sub">{settingsText(room.settings)}</span>
+                      <span className="quest-track-sub">
+                        {settingsText(room.settings)}
+                        <span className="quest-track-edit-cue" aria-hidden="true">
+                          {host ? ' ⚙️修改' : ' ⚙️'}
+                        </span>
+                      </span>
                     </div>
 
                   </div>
@@ -1674,9 +1710,31 @@ function App() {
                       </strong>
                       <div className="seat-card-bottom">
                         {m ? (
-                          <span className={`seat-chip ${m.ready ? 'chip-approve' : 'chip-status'}`}>
-                            {m.online ? (m.ready ? '✓ 已准备' : '未准备') : '暂时离线'}
-                          </span>
+                          <>
+                            <span className={`seat-chip ${m.ready ? 'chip-approve' : 'chip-status'}`}>
+                              {m.online ? (m.ready ? '✓ 已准备' : '未准备') : '暂时离线'}
+                            </span>
+                            {room.settings.rolePreferenceEnabled && (
+                              m.id === user.id ? (
+                                <span
+                                  className="badge-role-pref is-mine"
+                                  role="button"
+                                  tabIndex={0}
+                                  onClick={e => {
+                                    e.stopPropagation();
+                                    setRolePrefModalOpen(true);
+                                  }}
+                                  title="点击修改心仪角色"
+                                >
+                                  🎭 意向 {room.selfRolePreferences?.length ?? 0}/3
+                                </span>
+                              ) : m.hasRolePreference ? (
+                                <span className="badge-role-pref" title="该仙友已选定心仪出战角色">
+                                  ✨ 已选意向
+                                </span>
+                              ) : null
+                            )}
+                          </>
                         ) : (
                           <span className="seat-chip chip-hint">点击复制链接</span>
                         )}
@@ -1686,56 +1744,11 @@ function App() {
                 })}
               </div>
 
-              {/* Free Direct Extension Toggles (Lady of the Lake & Early Assassination) */}
-              <div className="waiting-ext-bar">
-                <button
-                  type="button"
-                  disabled={!host || disabled}
-                  className={`waiting-ext-orb ${room.settings.ladyEnabled ? 'is-enabled' : ''}`}
-                  onClick={() => updateSettings({ ladyEnabled: !room.settings.ladyEnabled })}
-                >
-                  <span className="orb-icon">☯️</span>
-                  <span className="orb-text">
-                    <strong>照妖宝镜</strong>
-                    <small>{room.settings.ladyEnabled ? '已开启' : '点击开启'}</small>
-                  </span>
-                </button>
-
-                <button
-                  type="button"
-                  disabled={!host || disabled}
-                  className={`waiting-ext-orb ${room.settings.earlyAssassinationEnabled ? 'is-enabled' : ''}`}
-                  onClick={() =>
-                    updateSettings({
-                      earlyAssassinationEnabled: !room.settings.earlyAssassinationEnabled,
-                    })
-                  }
-                >
-                  <span className="orb-icon">🗡️</span>
-                  <span className="orb-text">
-                    <strong>提前刺杀</strong>
-                    <small>{room.settings.earlyAssassinationEnabled ? '已开启' : '点击开启'}</small>
-                  </span>
-                </button>
-
-                <button
-                  type="button"
-                  className="waiting-ext-orb"
-                  onClick={() => setSettingsModalOpen(true)}
-                >
-                  <span className="orb-icon">⚙️</span>
-                  <span className="orb-text">
-                    <strong>{room.settings.playerCount} 人局配置</strong>
-                    <small>{host ? '切换人数/规则' : '查看房间规则'}</small>
-                  </span>
-                </button>
-              </div>
 
               {/* Bottom Waiting Voice & Social Action Bar */}
               <div className="waiting-voice-social-row">
                 {room.settings.voiceChatEnabled ? (
                   <div className="waiting-voice-capsule">
-                    <span className="waiting-voice-label">🎙️ 语音</span>
                     <VoiceControls
                       voiceState={voiceState}
                       onJoin={handleJoinVoice}
@@ -1747,7 +1760,7 @@ function App() {
                   </div>
                 ) : (
                   <div className="waiting-offline-badge" title="本房间为线下常规聚会房，无语音干扰">
-                    <span>🏛️ 线下常规房 · 无语音</span>
+                    <span>🏛️ 线下房</span>
                   </div>
                 )}
                 <button
@@ -1786,6 +1799,18 @@ function App() {
                   >
                     <span className="waiting-btn-text">{me?.ready ? '取消取经' : '✋ 出发取经'}</span>
                   </button>
+                  {room.settings.rolePreferenceEnabled && (
+                    <button
+                      type="button"
+                      className="secondary tool-pill waiting-role-pref-btn"
+                      onClick={() => setRolePrefModalOpen(true)}
+                      title="设置心仪出战角色（第1/2/3志愿）"
+                    >
+                      <span className="waiting-btn-text">
+                        🎭 心仪角色 {room.selfRolePreferences && room.selfRolePreferences.length > 0 ? `(${room.selfRolePreferences.length}/3)` : '(未设)'}
+                      </span>
+                    </button>
+                  )}
                   {host &&
                   room.members.length === room.settings.playerCount &&
                   room.members.every(m => m.ready) ? (
@@ -1954,6 +1979,23 @@ function App() {
             incomingDirectChat={pendingDirectChat}
             initialChatFriend={chatFriendToOpen}
           />
+
+          {/* Role Preference Matching Modal */}
+          {room && (
+            <RolePreferenceModal
+              open={rolePrefModalOpen}
+              onClose={() => setRolePrefModalOpen(false)}
+              currentPreferences={room.selfRolePreferences ?? []}
+              playerCount={room.settings.playerCount}
+              disabled={disabled || room.phase !== 'waiting'}
+              onSave={async prefs => {
+                await command({
+                  type: 'setRolePreferences',
+                  payload: { preferences: prefs },
+                });
+              }}
+            />
+          )}
 
           {/* Floating Room Invitation Toast */}
           <RoomInvitationToast

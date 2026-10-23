@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { Command, GameView, Player, Team } from '@avalon/contracts';
 import { Modal } from './Modal';
 import { PlayerToken } from './PlayerToken';
+import { HeartBellControls, HeartBellMessageCard } from './HeartBell';
 
 interface TreasureModalProps {
   open: boolean;
@@ -12,6 +13,7 @@ interface TreasureModalProps {
   disabled?: boolean;
   send?: (action: Pick<Command, 'type' | 'payload'>) => void;
   treasuresEnabled?: boolean;
+  userId?: string;
 }
 
 export function TreasureModal({
@@ -23,6 +25,7 @@ export function TreasureModal({
   disabled = false,
   send,
   treasuresEnabled = false,
+  userId,
 }: TreasureModalProps) {
   const [selectedTarget, setSelectedTarget] = useState('');
   const [assassinTarget, setAssassinTarget] = useState('');
@@ -48,17 +51,6 @@ export function TreasureModal({
   const bananaFan = self.treasures?.bananaFan;
   const jinguAllyId = self.treasures?.jinguAllyId;
 
-  // Candidates for Percival tinStaff: players excluding Percival, and excluding candidates he sees (Merlin + Morgana)
-  const percivalExcluded = new Set([
-    ...self.merlinCandidates,
-    players.find(p => p.id === game?.players.find(x => x.id === self.role)?.id)?.id || '',
-  ]);
-  // Specifically: cannot inspect self
-  const currentUserId = game?.players.find(p => {
-    // If self view has matching role, or we find from player list
-    return players.some(x => x.id === p.id);
-  });
-
   return (
     <Modal label="本命法宝" scene="mirror" onClose={onClose}>
       <div className="table-modal-sheet treasure-sheet">
@@ -70,6 +62,10 @@ export function TreasureModal({
         </div>
 
         <div className="treasure-body">
+          {isTreasureModeActive && self.treasures?.incomingHeartBell && <div className="treasure-card">
+            <h3>同心铃 · 私密传音回看</h3>
+            <HeartBellMessageCard message={self.treasures.incomingHeartBell} />
+          </div>}
           {/* Case 1: Room did NOT enable 8-12 player treasure mode */}
           {!isTreasureModeActive && self.role !== 'assassin' && (
             <div className="treasure-empty-card">
@@ -186,7 +182,7 @@ export function TreasureModal({
                       >
                         <option value="">点击选择待查验仙友</option>
                         {players
-                          .filter(p => !self.merlinCandidates.includes(p.id))
+                          .filter(p => p.id !== userId && !self.merlinCandidates.includes(p.id))
                           .map(p => (
                             <option key={p.id} value={p.id}>
                               {String(p.seat).padStart(2, '0')}号 · {p.nickname}
@@ -241,7 +237,7 @@ export function TreasureModal({
                     <h3>救苦救难 · 慈航照妖镜</h3>
                   </div>
                   <p className="treasure-desc">
-                    观世音菩萨灵觉神镜。发车后可私密照耀车队中 1 位队员的心性纯浊。
+                    观世音菩萨灵觉神镜。发车表决通过后开启 4 秒专属决断期，可私密照耀车队中 1 位队员的心性纯浊。
                     <br />
                     <small className="hint">
                       ※ 纯属观音私密心证，绝不公开，不干涉或改动出牌结果。
@@ -271,7 +267,7 @@ export function TreasureModal({
                         <option value="">点击选择车队队员</option>
                         {game?.rounds.at(-1)?.team.map(id => {
                           const p = players.find(x => x.id === id);
-                          if (!p) return null;
+                          if (!p || p.id === userId) return null;
                           return (
                             <option key={id} value={id}>
                               {String(p.seat).padStart(2, '0')}号 · {p.nickname}
@@ -300,7 +296,7 @@ export function TreasureModal({
                       <p>
                         {guanyinMirror?.used
                           ? '✅ 慈航照妖镜本局已照耀完毕。'
-                          : '⏳ 宝镜待机中：需在某一轮车队提名或表决通过后、执行出牌前使用。'}
+                          : '⏳ 宝镜待机中：在任意一轮发车表决通过后，系统将自动开启 4 秒专属照耀窗口。'}
                       </p>
                     </div>
                   )}
@@ -497,15 +493,7 @@ export function TreasureModal({
 
               {/* Female Demon: Minion */}
               {self.role === 'minion' && (
-                <div className="treasure-card minion-card">
-                  <div className="treasure-card-header">
-                    <span className="treasure-badge">🪞 混世妖仙</span>
-                    <h3>妖仙同盟 · 伺机而动</h3>
-                  </div>
-                  <p className="treasure-desc">
-                    听候群妖首领调遣，协助大王混入车队破坏取经任务，本局无专属主动法宝。
-                  </p>
-                </div>
+                <HeartBellControls bell={self.treasures?.heartBell} players={players} disabled={disabled || !send} send={handleSend} />
               )}
             </>
           )}

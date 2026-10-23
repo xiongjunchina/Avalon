@@ -8,12 +8,12 @@ const defaultSettings: Settings = {
   captainMode: 'seat_order',
   anonymousTeamVote: true,
   rejectionScope: 'game',
-  ladyEnabled: false,
   earlyAssassinationEnabled: false,
   guardianPerksEnabled: false,
   voiceChatEnabled: false,
   autoRevealRoleEnabled: false,
   treasuresEnabled: true,
+  rolePreferenceEnabled: false,
 };
 
 function makePlayers(count: number): Player[] {
@@ -151,6 +151,9 @@ test('treasures: Percival tinStaff cannot inspect candidates or before 2 mission
   for (const p of players) {
     g = transition(g, p.id, { type: 'teamVote', payload: { approve: true } }, players.map(x => x.id));
   }
+  if (g.phase === 'guanyin_window') {
+    g = transition(g, players[4].id, { type: 'useTreasure', payload: { action: 'guanyinMirror', skip: true } }, players.map(x => x.id));
+  }
   for (const id of [players[0].id, players[1].id, players[4].id]) {
     g = transition(g, id, { type: 'missionVote', payload: { success: true } }, players.map(x => x.id));
   }
@@ -161,6 +164,9 @@ test('treasures: Percival tinStaff cannot inspect candidates or before 2 mission
   g = transition(g, cap2, { type: 'startTeamVote', payload: {} }, players.map(x => x.id));
   for (const p of players) {
     g = transition(g, p.id, { type: 'teamVote', payload: { approve: true } }, players.map(x => x.id));
+  }
+  if (g.phase === 'guanyin_window') {
+    g = transition(g, players[4].id, { type: 'useTreasure', payload: { action: 'guanyinMirror', skip: true } }, players.map(x => x.id));
   }
   for (const id of [players[0].id, players[1].id, players[4].id, players[5].id]) {
     g = transition(g, id, { type: 'missionVote', payload: { success: true } }, players.map(x => x.id));
@@ -241,6 +247,9 @@ test('treasures: Mordred humanBag bans a player from being nominated in mission 
     g = transition(g, cap, { type: 'proposeTeam', payload: { playerIds: team, direction: 'clockwise' } }, players.map(x => x.id));
     g = transition(g, cap, { type: 'startTeamVote', payload: {} }, players.map(x => x.id));
     for (const p of players) g = transition(g, p.id, { type: 'teamVote', payload: { approve: true } }, players.map(x => x.id));
+    if (g.phase === 'guanyin_window') {
+      g = transition(g, players[4].id, { type: 'useTreasure', payload: { action: 'guanyinMirror', skip: true } }, players.map(x => x.id));
+    }
     for (const id of team) g = transition(g, id, { type: 'missionVote', payload: { success: true } }, players.map(x => x.id));
   }
 
@@ -321,6 +330,9 @@ test('treasures: Loyal Guardian jinguSeal requires 2 failures and reveals ally t
     g = transition(g, cap, { type: 'proposeTeam', payload: { playerIds: team, direction: 'clockwise' } }, players.map(x => x.id));
     g = transition(g, cap, { type: 'startTeamVote', payload: {} }, players.map(x => x.id));
     for (const p of players) g = transition(g, p.id, { type: 'teamVote', payload: { approve: true } }, players.map(x => x.id));
+    if (g.phase === 'guanyin_window') {
+      g = transition(g, players[4].id, { type: 'useTreasure', payload: { action: 'guanyinMirror', skip: true } }, players.map(x => x.id));
+    }
     for (const id of team) {
       const isRed = ['morgana', 'mordred'].includes(roles[players.findIndex(p => p.id === id)]);
       g = transition(g, id, { type: 'missionVote', payload: { success: !isRed } }, players.map(x => x.id));
@@ -398,3 +410,139 @@ test('treasures: Oberon bananaFan arms and blows away passed proposal without in
   // 5. Public notice is displayed
   assert.ok(g.bananaFanNotice && g.bananaFanNotice.includes('芭蕉神扇'));
 });
+
+test('treasures: Guanyin 4-second decision window - skip retains treasure, pick inspects alignment, used mirror bypasses window', () => {
+  // 9-player roles: merlin, percival, guinevere, loyal x3, morgana, assassin, mordred
+  const roles = ['merlin', 'percival', 'guinevere', 'loyal', 'loyal', 'loyal', 'morgana', 'assassin', 'mordred'];
+  const players = makePlayers(9);
+  const settings9 = { ...defaultSettings, playerCount: 9, treasuresEnabled: true };
+  let g = createGame('g9-guanyin', players, settings9, fixedRoles10(roles));
+
+  for (const p of players) {
+    g = transition(g, p.id, { type: 'confirmRole', payload: {} }, players.map(x => x.id));
+  }
+
+  const guanyinId = players[2].id;
+  const mordredId = players[8].id;
+  const loyalId = players[3].id;
+  const percivalId = players[1].id;
+
+  // Round 1 team proposal (size 3)
+  const cap1 = g.captainOrder[g.captainIndex];
+  const team1 = [players[0].id, players[3].id, players[8].id];
+  g = transition(g, cap1, { type: 'proposeTeam', payload: { playerIds: team1, direction: 'clockwise' } }, players.map(x => x.id));
+  g = transition(g, cap1, { type: 'startTeamVote', payload: {} }, players.map(x => x.id));
+  for (const p of players) {
+    g = transition(g, p.id, { type: 'teamVote', payload: { approve: true } }, players.map(x => x.id));
+  }
+
+  // Vote passed! Because treasures are enabled and Guanyin exists and mirror is unused:
+  // Phase MUST be guanyin_window, not mission!
+  assert.equal(g.phase, 'guanyin_window');
+  assert.ok(g.guanyinEndsAt);
+
+  // Guanyin view: available is true
+  const guanyinView1 = projectGame(g, guanyinId);
+  assert.equal(guanyinView1.self?.treasures?.guanyinMirror?.available, true);
+  assert.equal(guanyinView1.guanyinEndsAt, g.guanyinEndsAt);
+
+  // Non-guanyin view: sees guanyinEndsAt but no available mirror
+  const otherView1 = projectGame(g, percivalId);
+  assert.equal(otherView1.guanyinEndsAt, g.guanyinEndsAt);
+  assert.equal(otherView1.self?.treasures?.guanyinMirror, undefined);
+
+  // Non-Guanyin cannot use mirror
+  assert.throws(() => {
+    transition(g, percivalId, { type: 'useTreasure', payload: { action: 'guanyinMirror', targetId: mordredId } }, players.map(x => x.id));
+  }, (err: unknown) => err instanceof RuleError && err.message === 'NOT_GUINEVERE');
+
+  // Guanyin cannot inspect someone NOT on the team
+  assert.throws(() => {
+    transition(g, guanyinId, { type: 'useTreasure', payload: { action: 'guanyinMirror', targetId: players[1].id } }, players.map(x => x.id));
+  }, (err: unknown) => err instanceof RuleError && err.message === 'TARGET_NOT_ON_TEAM');
+
+  // Guanyin chooses to SKIP in round 1
+  g = transition(g, guanyinId, { type: 'useTreasure', payload: { action: 'guanyinMirror', skip: true } }, players.map(x => x.id));
+
+  // Advances to mission, guanyinEndsAt cleared, treasure NOT consumed
+  assert.equal(g.phase, 'mission');
+  assert.equal(g.guanyinEndsAt, undefined);
+  assert.equal(g.treasuresState?.guanyinMirror?.used, undefined);
+
+  // Complete mission 1
+  for (const id of team1) {
+    g = transition(g, id, { type: 'missionVote', payload: { success: true } }, players.map(x => x.id));
+  }
+  assert.equal(g.mission, 2);
+
+  // Round 2 team proposal (size 4)
+  const cap2 = g.captainOrder[g.captainIndex];
+  const team2 = [players[0].id, players[3].id, players[4].id, players[8].id];
+  g = transition(g, cap2, { type: 'proposeTeam', payload: { playerIds: team2, direction: 'clockwise' } }, players.map(x => x.id));
+  g = transition(g, cap2, { type: 'startTeamVote', payload: {} }, players.map(x => x.id));
+  for (const p of players) {
+    g = transition(g, p.id, { type: 'teamVote', payload: { approve: true } }, players.map(x => x.id));
+  }
+
+  // Because mirror was skipped (retained) in round 1, guanyin_window triggers again!
+  assert.equal(g.phase, 'guanyin_window');
+  assert.ok(g.guanyinEndsAt);
+
+  // Now Guanyin inspects Mordred (Yellow Eyebrow demon) on team
+  g = transition(g, guanyinId, { type: 'useTreasure', payload: { action: 'guanyinMirror', targetId: mordredId } }, players.map(x => x.id));
+
+  // Mirror reveals true evil alignment to Guanyin, advances to mission!
+  assert.equal(g.phase, 'mission');
+  assert.equal(g.guanyinEndsAt, undefined);
+  assert.equal(g.treasuresState?.guanyinMirror?.used, true);
+  assert.equal(g.treasuresState?.guanyinMirror?.result?.targetId, mordredId);
+  assert.equal(g.treasuresState?.guanyinMirror?.result?.alignment, 'evil');
+
+  const guanyinView2 = projectGame(g, guanyinId);
+  assert.equal(guanyinView2.self?.treasures?.guanyinMirror?.result?.alignment, 'evil');
+  assert.equal(guanyinView2.self?.treasures?.guanyinMirror?.used, true);
+  assert.equal(guanyinView2.self?.treasures?.guanyinMirror?.available, false);
+
+  // Complete mission 2
+  for (const id of team2) {
+    g = transition(g, id, { type: 'missionVote', payload: { success: true } }, players.map(x => x.id));
+  }
+  assert.equal(g.mission, 3);
+
+  // Round 3 team proposal (size 4)
+  const cap3 = g.captainOrder[g.captainIndex];
+  const team3 = [players[0].id, players[1].id, players[2].id, players[3].id];
+  g = transition(g, cap3, { type: 'proposeTeam', payload: { playerIds: team3, direction: 'clockwise' } }, players.map(x => x.id));
+  g = transition(g, cap3, { type: 'startTeamVote', payload: {} }, players.map(x => x.id));
+  for (const p of players) {
+    g = transition(g, p.id, { type: 'teamVote', payload: { approve: true } }, players.map(x => x.id));
+  }
+
+  // Because mirror was already used, NO guanyin_window! Transitions directly to mission with 0ms wait!
+  assert.equal(g.phase, 'mission');
+  assert.equal(g.guanyinEndsAt, undefined);
+});
+
+test('treasures: non-treasure game transitions directly to mission without guanyin_window', () => {
+  const roles = ['merlin', 'percival', 'guinevere', 'loyal', 'loyal', 'loyal', 'morgana', 'assassin', 'mordred'];
+  const players = makePlayers(9);
+  const settingsNoTreasures = { ...defaultSettings, playerCount: 9, treasuresEnabled: false };
+  let g = createGame('g9-notreasures', players, settingsNoTreasures, fixedRoles10(roles));
+
+  for (const p of players) {
+    g = transition(g, p.id, { type: 'confirmRole', payload: {} }, players.map(x => x.id));
+  }
+
+  const cap1 = g.captainOrder[g.captainIndex];
+  const team1 = [players[0].id, players[3].id, players[8].id];
+  g = transition(g, cap1, { type: 'proposeTeam', payload: { playerIds: team1, direction: 'clockwise' } }, players.map(x => x.id));
+  g = transition(g, cap1, { type: 'startTeamVote', payload: {} }, players.map(x => x.id));
+  for (const p of players) {
+    g = transition(g, p.id, { type: 'teamVote', payload: { approve: true } }, players.map(x => x.id));
+  }
+
+  // Must transition directly to mission without any delay or guanyin_window
+  assert.equal(g.phase, 'mission');
+  assert.equal(g.guanyinEndsAt, undefined);
+});
+

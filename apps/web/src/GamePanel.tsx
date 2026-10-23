@@ -1,4 +1,4 @@
-import { PrivateExtensions, ExtensionStep, ExtensionHistory } from './Extensions';
+import { PrivateExtensions, ExtensionHistory } from './Extensions';
 import { useEffect, useRef, useState } from 'react';
 import type { Command, GameView, Player, RoomView, RoundView } from '@avalon/contracts';
 import { uuidToRtcUid } from '@avalon/contracts';
@@ -10,6 +10,13 @@ import { DealCountdown } from './DealCountdown';
 import { QuestMedallion } from './QuestMedallion';
 import { BattleHistory } from './BattleRound';
 import { TeamVoteDialog } from './TeamVoteDialog';
+import { GuanyinWindowDialog } from './GuanyinWindowDialog';
+import { GuanyinResultDialog } from './GuanyinResultDialog';
+import { TreasureModal } from './TreasureModal';
+import { treasureAccess } from './treasure-access';
+import { useGuanyinNotice } from './guanyin-notice';
+import { usePrivateNotice } from './private-notice';
+import { HeartBellDialog, heartBellNoticeKey } from './HeartBell';
 import { MissionReportDialog } from './MissionReportDialog';
 import { PartyBanner } from './PlayerToken';
 import { Modal } from './Modal';
@@ -25,9 +32,8 @@ const phaseNames: Record<GameView['phase'], string> = {
   proposing: '队长组队',
   discussion: '真假论道',
   team_vote: '组队表决',
+  guanyin_window: '宝镜决断',
   mission: '取经出征',
-  lady: '照妖宝镜查验',
-  lady_reveal: '确认查验结果',
   early_window: '轮间确认中',
   assassination: '刺杀孙悟空',
   finished: '本局结束',
@@ -72,6 +78,28 @@ export function GamePanel({
   const round = g.rounds.at(-1);
   const ended = !!g.result;
   const [identityOpen, setIdentityOpen] = useState(false);
+  const [treasureOpen, setTreasureOpen] = useState(false);
+  const treasureEntry = treasureAccess(g, room.settings.treasuresEnabled);
+  const guanyinNotice = useGuanyinNotice(g, userId, connected);
+  const guanyinResult = self?.role === 'guinevere' ? self.treasures?.guanyinMirror?.result : undefined;
+  const bellNotice = usePrivateNotice(heartBellNoticeKey(g, userId), connected);
+  const bellMessage = self?.treasures?.incomingHeartBell;
+  const privateNoticeVisible = guanyinNotice.visible || bellNotice.visible;
+  const privateUnread = guanyinNotice.unread || bellNotice.unread;
+  const privateResultPending = guanyinNotice.unread || privateNoticeVisible;
+  const sendTreasure = (action: Pick<Command, 'type' | 'payload'>) => {
+    if (action.type === 'useTreasure' && 'action' in action.payload && action.payload.action === 'guanyinMirror') {
+      guanyinNotice.allowAutomatic();
+    }
+    send(action);
+  };
+  const openTreasure = () => {
+    if (!treasureEntry.canOpen || !connected) return;
+    if (bellNotice.unread) { bellNotice.open(); return; }
+    if (guanyinResult) { guanyinNotice.open(); return; }
+    if (self?.role === 'guinevere' && g.phase === 'guanyin_window') { setGuanyinWindowDismissed(false); return; }
+    setTreasureOpen(true);
+  };
   const [historyOpen, setHistoryOpen] = useState(false);
   const [inspectMission, setInspectMission] = useState<number | null>(null);
   const selected = g.phase === 'discussion' ? round?.team ?? [] : g.draftTeam?.playerIds ?? [];
@@ -79,6 +107,7 @@ export function GamePanel({
   const setSelected = (update: (ids: string[]) => string[]) => send({ type: 'updateTeamDraft', payload: { playerIds: update(selected), direction } });
   const setDirection = (value: 'clockwise' | 'counterclockwise') => send({ type: 'updateTeamDraft', payload: { playerIds: selected, direction: value } });
   const [voteDismissed, setVoteDismissed] = useState(false);
+  const [guanyinWindowDismissed, setGuanyinWindowDismissed] = useState(false);
   const [choice, setChoice] = useState<boolean | null>(null);
   const [blueFailWarning, setBlueFailWarning] = useState(false);
   const [target, setTarget] = useState('');
@@ -88,6 +117,17 @@ export function GamePanel({
   const [missionReportRound, setMissionReportRound] = useState<RoundView | null>(null);
   const prevCompletedCountRef = useRef<number | null>(null);
 
+  const jinguAllyId = self?.treasures?.jinguAllyId;
+  const [dismissedJinguAllyId, setDismissedJinguAllyId] = useState<string | null>(null);
+  const isJinguAlertOpen = Boolean(self?.role === 'percival' && jinguAllyId && dismissedJinguAllyId !== jinguAllyId);
+  const chimePlayedRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (isJinguAlertOpen && jinguAllyId && chimePlayedRef.current !== jinguAllyId) {
+      chimePlayedRef.current = jinguAllyId;
+      onSound?.('chime');
+    }
+  }, [isJinguAlertOpen, jinguAllyId, onSound]);
 
   useEffect(() => {
     if (prevCompletedCountRef.current === null) {
@@ -100,24 +140,45 @@ export function GamePanel({
     }
   }, [completedMissions.length, lastCompletedRound]);
 
+  const [discussionCooldown, setDiscussionCooldown] = useState(false);
+  useEffect(() => {
+    if (g.phase === 'discussion') {
+      setDiscussionCooldown(true);
+      const timer = setTimeout(() => setDiscussionCooldown(false), 900);
+      return () => clearTimeout(timer);
+    }
+  }, [g.phase]);
+
 
   useEffect(() => {
     const hide = () => {
-      if (document.visibilityState !== 'visible') setIdentityOpen(false);
+      if (document.visibilityState !== 'visible') { setIdentityOpen(false); setTreasureOpen(false); }
     };
     document.addEventListener('visibilitychange', hide);
     return () => document.removeEventListener('visibilitychange', hide);
   }, []);
 
   useEffect(() => {
-    if (!connected) setIdentityOpen(false);
+    if (!connected) { setIdentityOpen(false); setTreasureOpen(false); }
   }, [connected]);
+
+  useEffect(() => {
+    if (privateNoticeVisible) {
+      setIdentityOpen(false);
+      setTreasureOpen(false);
+      setHistoryOpen(false);
+      setInspectMission(null);
+    }
+  }, [privateNoticeVisible]);
+
+  useEffect(() => { setTreasureOpen(false); }, [g.id, userId]);
 
   const prevPhaseRef = useRef(g.phase);
   const autoRevealedGameIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     setVoteDismissed(false);
+    setGuanyinWindowDismissed(false);
     setChoice(null);
     setBlueFailWarning(false);
     setTarget('');
@@ -140,6 +201,7 @@ export function GamePanel({
     setAbortConfirm(Boolean(abortRequester));
     if (abortRequester) {
       setIdentityOpen(false);
+      setTreasureOpen(false);
       setHistoryOpen(false);
       setInspectMission(null);
     }
@@ -186,8 +248,6 @@ export function GamePanel({
     );
   }
 
-  const needsIdentityAction =
-    !ended && Boolean(self?.canConfirmInspection);
 
   // Only compute and display team vote status during active team voting or immediately upon mission resolution.
   // CRITICAL FIX: During 'proposing' and 'discussion', no vote has taken place on the new proposed team.
@@ -278,10 +338,6 @@ export function GamePanel({
             ? [...ids, playerId]
             : ids
       );
-      return;
-    }
-    if (g.phase === 'lady' && self?.canInspect && !g.lady?.holderIds.includes(playerId)) {
-      setTarget(prev => (prev === playerId ? '' : playerId));
       return;
     }
     if (g.phase === 'assassination' && self?.role === 'assassin' && playerId !== userId) {
@@ -652,19 +708,17 @@ export function GamePanel({
         const renderSeat = (p: Player, flank: 'left' | 'right') => {
           const member = room.members.find(m => m.id === p.id);
           const isCaptain = !ended && g.phase !== 'assassination' && p.id === g.captainId;
-          const isNextCaptain = isCaptain && ['early_window', 'lady', 'lady_reveal'].includes(effectivePhase);
-          const isLadyHolder = !ended && g.phase !== 'assassination' && g.lady?.holderId === p.id;
+          const isNextCaptain = isCaptain && effectivePhase === 'early_window';
           const isProposed =
             !ended &&
             (effectivePhase === 'proposing'
               ? selected.includes(p.id)
-              : ['discussion', 'team_vote', 'mission'].includes(effectivePhase) && Boolean(round?.team.includes(p.id)));
+              : ['discussion', 'team_vote', 'guanyin_window', 'mission'].includes(effectivePhase) && Boolean(round?.team.includes(p.id)));
           const isTargeted =
-            (g.phase === 'lady' || g.phase === 'assassination') && target === p.id;
+            g.phase === 'assassination' && target === p.id;
           const canTapSeat =
             !disabled &&
             ((['proposing', 'discussion'].includes(effectivePhase) && captain) ||
-              (g.phase === 'lady' && Boolean(self?.canInspect) && !g.lady?.holderIds.includes(p.id)) ||
               (g.phase === 'assassination' && self?.role === 'assassin' && p.id !== userId));
           const seatVoteChip = voteStatusMap[p.id] ?? null;
           const revealedRole = ended && g.revealedRoles ? g.revealedRoles[p.id] : undefined;
@@ -720,7 +774,7 @@ export function GamePanel({
                 {isSpeaking && (
                   <span className="seat-speaking-ring" aria-hidden="true" />
                 )}
-                {(isProposed || isCaptain) && (
+                {(isProposed || isCaptain || (self?.role === 'percival' && jinguAllyId === p.id)) && (
                   <span
                     className={`seat-aura-ring ${isProposed ? 'aura-cyan' : 'aura-gold'}`}
                     aria-hidden="true"
@@ -750,14 +804,14 @@ export function GamePanel({
                   onToggleMute={p.id === userId ? onToggleMute : undefined}
                 />
                 {/* Floating role/captain badge over avatar */}
+                {self?.role === 'percival' && jinguAllyId === p.id && (
+                  <span className="seat-badge badge-jingu-ally" title="取经护法同修（紧箍佛印自证，百分百纯正蓝方！）">
+                    📿 护法
+                  </span>
+                )}
                 {isCaptain && (
                   <span className={`seat-badge ${isNextCaptain ? 'badge-next-captain' : 'badge-captain'}`} title={isNextCaptain ? '候任领队' : '当前队长'}>
                     {isNextCaptain ? '👑 候任' : '👑 队长'}
-                  </span>
-                )}
-                {isLadyHolder && (
-                  <span className="seat-badge badge-lady" title="持有湖中女神（照妖宝镜）">
-                    ☯️ 宝镜
                   </span>
                 )}
                 {g.humanBagBannedPlayerId === p.id && (
@@ -801,11 +855,9 @@ export function GamePanel({
                       ? (isProposed ? '移出阵容' : '点击上车')
                       : effectivePhase === 'discussion'
                         ? (isProposed ? '移出阵容' : '点击入阵')
-                        : g.phase === 'lady'
-                          ? '点击查验'
-                          : g.phase === 'assassination'
-                            ? '🎯 刺杀'
-                            : ''}
+                        : g.phase === 'assassination'
+                          ? '🎯 刺杀'
+                          : ''}
                   </span>
                 )}
                 {revealedRole ? (
@@ -815,7 +867,7 @@ export function GamePanel({
                   </span>
                 ) : isTargeted ? (
                   <span className="seat-chip chip-target">
-                    {g.phase === 'lady' ? '☯️ 查验' : '🗡️ 目标'}
+                    🗡️ 目标
                   </span>
                 ) : null}
               </div>
@@ -861,16 +913,6 @@ export function GamePanel({
 
       {/* 4. Bottom Dynamic Action Dock */}
       <div className="table-action-dock">
-        <ExtensionStep
-          key={`${g.id}:${g.phase}:${g.rounds.length}`}
-          game={g}
-          disabled={disabled}
-          name={name}
-          send={send}
-          selectedTarget={target}
-          onSelectTarget={setTarget}
-        />
-
         {effectivePhase === 'proposing' &&
           (captain ? (
             <form
@@ -882,7 +924,7 @@ export function GamePanel({
             >
               <fieldset disabled={disabled} className="dock-propose-fieldset">
                 <legend className="dock-rule-hint">
-                  —◇ 可调整同行人，确认后进入讨论 ◇—
+                  —◇ 钦点同行仙友并指定发言方向，完成后开启论道 ◇—
                 </legend>
                 <div className="team-picker sr-only">
                   {g.players.map(p => (
@@ -918,7 +960,9 @@ export function GamePanel({
                     className="btn-primary-cta btn-dragon-cta"
                   >
                     <span className="btn-cloud-flourish left" aria-hidden="true"><CloudFlourish side="left" /></span>
-                    <span className="btn-cta-text">确认阵容 ({selected.length}/{size})</span>
+                    <span className="btn-cta-text">
+                      {selected.length === size ? `完成预选 (${selected.length}/${size})` : `待选满同行人 (${selected.length}/${size})`}
+                    </span>
                     <span className="btn-cloud-flourish right" aria-hidden="true"><CloudFlourish side="right" /></span>
                   </button>
                 </div>
@@ -940,20 +984,22 @@ export function GamePanel({
 
         {g.phase === 'discussion' && (
           <div className="dock-panel">
-            {captain && <p className="dock-rule-hint">—◇ 真假论道 · 点击头像可调整阵容 · 听取陈述后锁定发起表决 ◇—</p>}
+            {captain && <p className="dock-rule-hint">—◇ 众仙论道中 · 领队仍可点击头像微调阵容 · 全员陈述完毕后开启投票 ◇—</p>}
             <p className="dock-compact-text" aria-label={`发言顺序：${names(speakingOrder())}`}>
-              论道：{speakingOrder().map(id => g.players.find(p => p.id === id)?.seat).join('→')}
+              论道发言顺序：{speakingOrder().map(id => g.players.find(p => p.id === id)?.seat).join(' ➔ ')}
             </p>
             {captain ? (
               <button
-                disabled={disabled || selected.length !== size}
+                disabled={disabled || selected.length !== size || discussionCooldown}
                 className="btn-primary-cta btn-dragon-cta"
                 onClick={() => send({ type: 'startTeamVote', payload: {} })}
               >
                 <span className="btn-cloud-flourish left" aria-hidden="true"><CloudFlourish side="left" /></span>
                 <span className="btn-cta-text">
-                  {selected.length === size
-                    ? '锁定阵容 · 发起全员表决'
+                  {discussionCooldown
+                    ? '进入论道发言中…'
+                    : selected.length === size
+                    ? '已确认阵容 · 开启投票'
                     : `待补全人选（${selected.length}/${size}）`}
                 </span>
                 <span className="btn-cloud-flourish right" aria-hidden="true"><CloudFlourish side="right" /></span>
@@ -962,8 +1008,10 @@ export function GamePanel({
               <div className="dock-waiting-hero">
                 <span className="dock-waiting-icon" aria-hidden="true">🗣️</span>
                 <div className="dock-waiting-body">
-                  <strong className="dock-waiting-title">真假论道 · 各抒己见</strong>
-                  <p className="dock-waiting-desc">领队可随时调整阵容并实时同步，论道完毕后锁定表决</p>
+                  <strong className="dock-waiting-title">领队已完成预选 · 请按论道顺序发言</strong>
+                  <p className="dock-waiting-desc">
+                    领队 <strong>{captainPlayer?.nickname}</strong> 已完成本轮阵容预选。请众仙按发言顺序依次陈述，发言完毕后由领队开启投票
+                  </p>
                 </div>
               </div>
             )}
@@ -977,6 +1025,34 @@ export function GamePanel({
               <span className="btn-cta-text">🗳️ 打开组队表决 · {g.progress.teamVotes}/{g.players.length} 已投</span>
               <span className="btn-cloud-flourish right" aria-hidden="true"><CloudFlourish side="right" /></span>
             </button>
+          </div>
+        )}
+
+        {g.phase === 'guanyin_window' && (
+          <div className="dock-panel guanyin-dock-panel">
+            {self?.role === 'guinevere' ? (
+              <div className="dock-guanyin-active">
+                <button
+                  type="button"
+                  className="btn-primary-cta btn-dragon-cta"
+                  onClick={() => setGuanyinWindowDismissed(false)}
+                >
+                  <span className="btn-cloud-flourish left" aria-hidden="true"><CloudFlourish side="left" /></span>
+                  <span className="btn-cta-text">🪞 打开照妖镜决断面板</span>
+                  <span className="btn-cloud-flourish right" aria-hidden="true"><CloudFlourish side="right" /></span>
+                </button>
+              </div>
+            ) : (
+              <div className="dock-waiting-hero">
+                <span className="dock-waiting-icon" aria-hidden="true">🪞</span>
+                <div className="dock-waiting-body">
+                  <strong className="dock-waiting-title">【佛光宝镜】观音菩萨正在审视出征车队…</strong>
+                  <p className="dock-waiting-desc">
+                    车队表决已通过，观音正在做出决断，即将开启本难出征试炼
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -1156,22 +1232,32 @@ export function GamePanel({
             </div>
           </section>
         )}
-        {/* Scheme A-2 Bottom 4-Action Utility Dock */}
-        <div className="dock-utility-row">
+        {privateUnread && !privateNoticeVisible && connected && guanyinNotice.pageVisible && (
+          <p className="treasure-unread-notice" role="status">有一条私密消息，点击「法宝」查看。</p>
+        )}
+        <div className="dock-utility-row has-treasure-entry">
           {!ended && self && (
             <button
               type="button"
-              className={`secondary tool-pill dock-utility-btn identity-trigger-btn ${needsIdentityAction ? 'pulse-action' : ''}`}
+              className="secondary tool-pill dock-utility-btn identity-trigger-btn"
               disabled={!connected}
               aria-expanded={identityVisible}
-              aria-label={self?.canConfirmInspection ? '私下查看我的身份（确认查验结果）' : '私下查看我的身份'}
+              aria-label="私下查看我的身份"
               onClick={() => setIdentityOpen(v => !v)}
             >
-              {identityVisible
-                ? '收起真身'
-                : self?.canConfirmInspection
-                  ? '查验结果'
-                  : '查验真身'}
+              {identityVisible ? '收起' : '真身'}
+            </button>
+          )}
+          {self && (
+            <button
+              type="button"
+              className="secondary tool-pill dock-utility-btn treasure-trigger-btn"
+              disabled={!connected || !treasureEntry.canOpen}
+              aria-label="法宝"
+              aria-expanded={treasureOpen || privateNoticeVisible}
+              onClick={openTreasure}
+            >
+              法宝
             </button>
           )}
           <button
@@ -1190,7 +1276,7 @@ export function GamePanel({
               aria-label="法坛传音"
               style={{ position: 'relative' }}
             >
-              💬 传音
+              传音
               {hasUnreadChat && <span className="chat-unread-dot" />}
             </button>
           )}
@@ -1207,7 +1293,7 @@ export function GamePanel({
               aria-label={room.hostId === userId ? '结束游戏' : '申请中止游戏'}
               onClick={() => setAbortConfirm(true)}
             >
-              结束游戏
+              {room.hostId === userId ? '结束' : '中止'}
             </button>
           )}
         </div>
@@ -1216,7 +1302,19 @@ export function GamePanel({
         <DragonPlinthDecor side="right" />
       </div>
 
-      {g.phase === 'team_vote' && !voteDismissed && <TeamVoteDialog game={g} players={publicPlayers} anonymous={room.settings.anonymousTeamVote} userId={userId} serverTime={room.serverTime} disabled={disabled} send={send} onClose={() => setVoteDismissed(true)} />}
+      {g.phase === 'team_vote' && !voteDismissed && !privateNoticeVisible && <TeamVoteDialog game={g} players={publicPlayers} anonymous={room.settings.anonymousTeamVote} userId={userId} serverTime={room.serverTime} disabled={disabled} send={send} onClose={() => setVoteDismissed(true)} />}
+      {g.phase === 'guanyin_window' && !guanyinWindowDismissed && (
+        <GuanyinWindowDialog
+          game={g}
+          players={publicPlayers}
+          userId={userId}
+          serverTime={room.serverTime}
+          disabled={disabled}
+          send={sendTreasure}
+          onTick={() => onSound?.('tick')}
+          onClose={() => setGuanyinWindowDismissed(true)}
+        />
+      )}
       {!ended && abortConfirm && (
         <Modal label={room.hostId === userId ? '结束游戏' : '申请中止游戏'} scene="sword" onClose={() => setAbortConfirm(false)}>
           <div className="table-modal-sheet">
@@ -1234,7 +1332,7 @@ export function GamePanel({
       )}
 
       {/* Private Identity Modal Overlay */}
-      {!ended && self && identityVisible && (
+      {!ended && self && identityVisible && !privateNoticeVisible && (
         <Modal label="我的私密身份详情" scene="mirror" onClose={() => setIdentityOpen(false)}>
           <div className="table-modal-sheet identity-content">
             <div className="table-modal-head">
@@ -1249,7 +1347,8 @@ export function GamePanel({
                 players={publicPlayers}
                 game={g}
                 disabled={disabled}
-                send={send}
+                send={sendTreasure}
+                userId={userId}
                 treasuresEnabled={room.settings.treasuresEnabled}
               />
             <PrivateExtensions
@@ -1264,18 +1363,16 @@ export function GamePanel({
             </div>
             <footer className="identity-footer">
               <p title="身份仅你可见，切换页面或断线时会自动收起">出牌权限：{self.team === 'blue' ? '仅能护经（成功）' : '可护经（成功）/ 作祟（失败）'} · 离页自动收起</p>
-              {!self.canConfirmInspection && (
-                <button type="button" className="return-table-btn" onClick={() => setIdentityOpen(false)}>
-                  返回对局页面
-                </button>
-              )}
+              <button type="button" className="return-table-btn" onClick={() => setIdentityOpen(false)}>
+                返回对局页面
+              </button>
             </footer>
           </div>
         </Modal>
       )}
 
       {/* Settled Mission Report Modal (Auto-pops up upon mission completion or tapping completed mission circle) */}
-      {missionReportRound && missionReportRound.result && (
+      {missionReportRound && missionReportRound.result && !privateResultPending && (
         <MissionReportDialog
           round={missionReportRound}
           players={publicPlayers}
@@ -1283,6 +1380,92 @@ export function GamePanel({
           userId={userId}
           onClose={() => setMissionReportRound(null)}
         />
+      )}
+
+      {self && treasureOpen && treasureEntry.canOpen && connected && guanyinNotice.pageVisible && !privateResultPending && (
+        <TreasureModal
+          open
+          onClose={() => setTreasureOpen(false)}
+          self={self}
+          players={publicPlayers}
+          game={g}
+          userId={userId}
+          disabled={disabled || ended}
+          send={sendTreasure}
+          treasuresEnabled={room.settings.treasuresEnabled}
+        />
+      )}
+      {guanyinNotice.visible && guanyinResult && !abortConfirm && (
+        <GuanyinResultDialog result={guanyinResult} players={publicPlayers} onClose={guanyinNotice.acknowledge} />
+      )}
+      {bellNotice.visible && bellMessage && !abortConfirm && (
+        <HeartBellDialog message={bellMessage} onClose={bellNotice.acknowledge} />
+      )}
+
+      {/* Percival Jingu Seal Active Notification Modal */}
+      {isJinguAlertOpen && jinguAllyId && (
+        <Modal
+          label="金箍显圣 · 护法归位"
+          scene="dawn"
+          onClose={() => setDismissedJinguAllyId(jinguAllyId)}
+        >
+          <div className="table-modal-sheet jingu-alert-sheet" onClick={e => e.stopPropagation()}>
+            <div className="table-modal-head">
+              <div className="jingu-alert-icon-ring" aria-hidden="true">
+                <span className="jingu-halo-sparkle">✨</span>
+                <span className="jingu-halo-icon">📿</span>
+                <span className="jingu-halo-sparkle">✨</span>
+              </div>
+              <strong className="jingu-alert-title">金箍显圣 · 护法归位</strong>
+              <p className="jingu-alert-subtitle">阿弥陀佛！绝境之中，真同修舍身自证</p>
+            </div>
+            <div className="jingu-alert-body">
+              {(() => {
+                const ally = g.players.find(p => p.id === jinguAllyId);
+                const allyMember = room.members.find(m => m.id === jinguAllyId);
+                return (
+                  <>
+                    <div className="jingu-ally-card">
+                      <div className="jingu-ally-avatar-wrap">
+                        <PlayerAvatar
+                          avatar={allyMember?.avatar}
+                          avatarUrl={allyMember?.avatarUrl}
+                          wechatAvatarUrl={allyMember?.wechatAvatarUrl}
+                          fallbackKind="cards"
+                        />
+                      </div>
+                      <div className="jingu-ally-info">
+                        <span className="jingu-seat-pill">{ally?.seat} 号位</span>
+                        <strong className="jingu-ally-name">{ally?.nickname}</strong>
+                        <span className="jingu-role-tag">🌟 取经护法同修（纯正蓝方）</span>
+                      </div>
+                    </div>
+                    <div className="jingu-alert-text">
+                      <p>
+                        仙友 <strong>{name(jinguAllyId)}</strong> 已在暗中捏动紧箍佛印向你自证！
+                      </p>
+                      <p className="jingu-alert-highlight">
+                        唐三藏圣僧慧眼洞开：此仙友确系<strong>百分之百纯正取经护法同修</strong>，绝非妖魔潜伏！
+                      </p>
+                      <p className="jingu-alert-tip">
+                        💡 提示：该仙友头上已标注【📿 护法】金印，请全力倚重其发言与投票，护送车队通关。
+                      </p>
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+            <footer className="table-modal-foot">
+              <button
+                type="button"
+                className="action-btn is-gold-primary jingu-confirm-btn"
+                onClick={() => setDismissedJinguAllyId(jinguAllyId)}
+              >
+                阿弥陀佛，贫僧知晓了
+              </button>
+            </footer>
+          </div>
+        </Modal>
       )}
 
       {/* Per-Mission Detail Modal (Triggered when tapping any of the 5 Mission Circles) */}

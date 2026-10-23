@@ -43,3 +43,37 @@ test('end-game controls follow room ownership, independently of captain or viewi
     assert.equal(html.includes('aria-label="申请中止游戏"'), userId !== hostId);
   }
 });
+
+test('GamePanel renders active Jingu Seal notification and ally seat badge for Percival', () => {
+  const p8 = Array.from({ length: 8 }, (_, i) => ({ id: `p${i + 1}`, seat: i + 1, nickname: `仙友${i + 1}` }));
+  const roles = ['percival', 'merlin', 'morgana', 'loyal', 'loyal', 'loyal', 'assassin', 'mordred'];
+  const game = createGame('jingu-test', p8, { ...defaultSettings, playerCount: 8, treasuresEnabled: true }, values => roles as unknown as typeof values);
+  // Trigger jinguSeal by loyal player p4
+  game.treasuresState = { jinguSeal: { used: true, activatedBy: 'p4' } };
+
+  const percivalView = projectGame(game, 'p1');
+  assert.equal(percivalView.self?.treasures?.jinguAllyId, 'p4');
+
+  const room: RoomView = {
+    id: 'room-jingu', code: 'JINGU', hostId: 'p1', version: 1, phase: 'playing',
+    settings: { ...defaultSettings, playerCount: 8, treasuresEnabled: true },
+    acceptingNewMembers: false,
+    members: p8.map(p => ({ ...p, online: true, ready: true })),
+    game: percivalView,
+  };
+
+  const html = renderToStaticMarkup(createElement(GamePanel, {
+    room,
+    userId: 'p1',
+    disabled: false,
+    connected: true,
+    send: () => {},
+  }));
+
+  // Percival sees the active notification modal
+  assert.match(html, /金箍显圣 · 护法归位/);
+  assert.match(html, /阿弥陀佛，贫僧知晓了/);
+  // Percival sees the badge on ally's seat
+  assert.match(html, /badge-jingu-ally/);
+  assert.match(html, /📿 护法/);
+});

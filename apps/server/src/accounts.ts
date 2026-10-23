@@ -66,7 +66,7 @@ export class Accounts {
           ...(r.vote?{vote:{approvals:r.vote.approvals,rejections:r.vote.rejections,abstentions:r.vote.abstentions??0,passed:r.vote.passed,
             ...(!g.settings.anonymousTeamVote&&r.vote.ballots?{ballots:Object.fromEntries(g.players.filter(p=>(typeof r.vote!.ballots![p.id]==='boolean'||r.vote!.ballots![p.id]==='abstain')).map(p=>[p.id,r.vote!.ballots![p.id]]))}:{})}}:{}),
           ...(r.result?{result:{successes:r.result.successes,failures:r.result.failures,passed:r.result.passed}}:{})})),
-        inspections:(g.lady?.inspections??[]).map(i=>({afterMission:i.afterMission,inspectorId:i.inspectorId,targetId:i.targetId})),
+        inspections:((g as any).lady?.inspections??[]).map((i:any)=>({afterMission:i.afterMission,inspectorId:i.inspectorId,targetId:i.targetId})),
         earlyWindows:(g.earlyAssassination?.windows??[]).map(w=>({afterMission:w.afterMission,afterProposal:w.afterProposal,decision:w.decision}))};
     });
   }
