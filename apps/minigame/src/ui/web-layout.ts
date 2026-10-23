@@ -28,6 +28,7 @@ export interface WebNode extends HitRegion {
   fixed?: boolean; primary?: boolean; selected?: boolean; disabled?: boolean; muted?: boolean;
   skin?: string; fontSize?: number; lineHeight?: number; fontFace?: 'sans'|'display'|'calligraphy'; weight?: string; align?: 'left'|'center'|'right'; tone?: 'blue'|'red'|'gold'|'muted'|'green';
   image?: string; detail?: string; badge?: string; selfPlayer?: boolean; online?: boolean; team?: 'blue' | 'red'; passed?: boolean; count?: number;
+  micState?: 'live' | 'speaking' | 'muted' | 'unjoined';
 }
 export interface WebLayout { nodes: WebNode[]; maxScroll: number; contentTop: number; contentBottom: number }
 const cssClamp = (min: number, value: number, max: number) => Math.max(min, Math.min(value, max));
@@ -195,14 +196,17 @@ export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout 
       const memberView = room.members.find(item => item.id === member?.id);
       const revealed = game?.revealedRoles?.[member?.id ?? ''];
       const ballot = game?.phase === 'team_vote' && !room.settings.anonymousTeamVote ? game.teamVote?.ballots?.[member?.id ?? ''] : undefined;
-      add('seat', member ? (game ? 'player:' : 'member:') + member.id : 'share', member?.nickname ?? '虚位以待', px, py, seatW, cellH,
-        { count: index + 1, selected: Boolean(member && (selected.includes(member.id) || web.targetId === member.id)), selfPlayer: member?.id === web.user?.id, online: memberView?.online,
-          badge: member?.id === game?.captainId ? '👑 队长' : !game && member?.id === room.hostId ? '房主' : undefined,
-          detail: !game ? memberView?.ready ? '已就位' : '待出发' : ballot === true ? '✓' : ballot === false ? '×' : ballot === 'abstain' ? '−' : undefined,
-          image: revealed ? 'roles/' + getRoleGalleryItem(revealed,assignLoyalGuardians(game!.id,game!.players,game!.revealedRoles!)[member!.id],assignFemaleDemons(game!.id,game!.players,game!.revealedRoles!)[member!.id]).artPrefix + '-160.webp' : memberView?.avatarUrl ?? memberView?.wechatAvatarUrl ?? (member ? 'emblems/' + (memberView?.avatar ?? 'cards') + '.png' : undefined) });
-    }
-    const altarW = cssClamp(74,w * .19,92);
-    add('altar','altar','☯',(10+arenaInset+rightEnd-altarW)/2,arenaTop + (arenaH - altarW)/2,altarW,altarW,{ detail: (game?.draftTeam?.direction === 'counterclockwise' ? '⟲ 逆时针' : '⟳ 顺时针'), count: game?.mission ?? 1 });
+          const isWinnerSeat = ended && Boolean(game?.result?.winner && revealed && teamOf(revealed) === game.result.winner);
+          const micState = room.settings.voiceChatEnabled && member ? 'unjoined' : undefined;
+          add('seat', member ? (game ? 'player:' : 'member:') + member.id : 'share', member?.nickname ?? '虚位以待', px, py, seatW, cellH,
+            { count: index + 1, selected: Boolean(member && (selected.includes(member.id) || web.targetId === member.id)), selfPlayer: member?.id === web.user?.id, online: memberView?.online,
+              micState,
+              badge: isWinnerSeat ? '🏆 胜' : (!ended && member?.id === game?.captainId ? '👑 队长' : (!game && member?.id === room.hostId ? '房主' : undefined)),
+              detail: !game ? memberView?.ready ? '已就位' : '待出发' : ballot === true ? '✓' : ballot === false ? '×' : ballot === 'abstain' ? '−' : undefined,
+              image: revealed ? 'roles/' + getRoleGalleryItem(revealed,assignLoyalGuardians(game!.id,game!.players,game!.revealedRoles!)[member!.id],assignFemaleDemons(game!.id,game!.players,game!.revealedRoles!)[member!.id]).artPrefix + '-160.webp' : memberView?.avatarUrl ?? memberView?.wechatAvatarUrl ?? (member ? 'emblems/' + (memberView?.avatar ?? 'cards') + '.png' : undefined) });
+        }
+        const altarW = cssClamp(74,w * .19,92);
+        add('altar','altar','☯',(10+arenaInset+rightEnd-altarW)/2,arenaTop + (arenaH - altarW)/2,altarW,altarW,{ detail: ended ? '胜负已分' : (game?.draftTeam?.direction === 'counterclockwise' ? '⟲ 逆时针' : '⟳ 顺时针'), count: ended ? undefined : (game?.mission ?? 1) });
     const missionEligible=game?.phase==='mission'&&model.rows.some(row=>row.id==='mission-choice:success');
     const dockY = arenaTop + arenaH + 18, dockH = ended?215:missionEligible?307.4+(web.warning?44:0):w < 360 ? 196 : 181;
     add('panel','action-dock','',10,dockY,w-20,dockH);
@@ -316,7 +320,7 @@ export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout 
 
   function appendAlerts() {
     if (web.page === 'sheet' || web.page === 'setup') return;
-    const alerts = model.rows.filter(row => ['status', 'notice', 'error', 'announcement', 'invitation'].includes(row.id));
-    alerts.slice(0, 2).forEach((row, index) => add('button', row.id, row.text, pad, v.top + 48 + index * 52, full, 48, { fixed: true, disabled:row.id==='status', lines: wrapText(row.text, full - 24).slice(0, 2) }));
+    const alerts = model.rows.filter(row => ['notice', 'error', 'announcement', 'invitation'].includes(row.id));
+    alerts.slice(0, 2).forEach((row, index) => add('button', row.id, row.text, pad, v.top + 48 + index * 52, full, 48, { fixed: true, lines: wrapText(row.text, full - 24).slice(0, 2) }));
   }
 }

@@ -201,10 +201,15 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
         panel('setup-count-frame',y,120,'profile',53,v.width-106);
         for(let count=5;count<=12;count++)button('count:'+count,String(count),y+10+Math.floor((count-5)/4)*56,{skin:'count',selected:doc.settings.playerCount===count,fontSize:18},70+(count-5)%4*(v.width-140)/4,(v.width-160)/4,48);y+=135;
         for(const team of ['blue','red'] as const){
-          const roles=ROLE_CONFIG[doc.settings.playerCount].filter(role=>teamOf(role)===team),unique=[...new Set(roles)],rows=Math.ceil(unique.length/3),cardH=team==='blue'?152:132,gh=58+rows*cardH+8;
+          const roles=ROLE_CONFIG[doc.settings.playerCount].filter(role=>teamOf(role)===team),unique=[...new Set(roles)],rows=Math.ceil(unique.length/3);
+          const cw=Math.min(84,(v.width-90)/3), cardH=cw+44, gh=46+rows*cardH+(rows-1)*8+14;
           panel('setup-faction:'+team,y,gh,team==='blue'?'faction-blue':'faction-red',16,v.width-32);
           add('label','faction-heading:'+team,(team==='blue'?'蓝方 · 取经正果':'红方 · 群妖乱道')+'（'+roles.length+'人）',28,y+12,v.width-56,28,{skin:'text',fontSize:17,fontFace:'display',tone:'gold',align:'center'});
-          const cw=Math.min(84,(v.width-90)/3);unique.forEach((role,i)=>{const cols=Math.min(3,unique.length),px=v.width/2-(cols*cw+(cols-1)*10)/2+i%3*(cw+10);add('button','setupRole:'+role,roleNames[role],px,y+48+Math.floor(i/3)*cardH,cw,cardH-2,{skin:'setup-role',image:'roles/'+role+'-160.webp',team,detail:roleTitles[role],badge:roles.filter(r=>r===role).length>1?'x'+roles.filter(r=>r===role).length:undefined});});y+=gh+14;
+          unique.forEach((role,i)=>{
+            const cols=Math.min(3,unique.length),px=v.width/2-(cols*cw+(cols-1)*10)/2+i%3*(cw+10);
+            add('button','setupRole:'+role,roleNames[role],px,y+44+Math.floor(i/3)*(cardH+8),cw,cardH,{skin:'setup-role',image:'roles/'+role+'-160.webp',team,detail:roleTitles[role],badge:roles.filter(r=>r===role).length>1?'x'+roles.filter(r=>r===role).length:undefined});
+          });
+          y+=gh+14;
         }
         for(const r of model.rows.filter(r=>['createRoom','startPractice'].includes(r.id))){button(r.id,r.id==='createRoom'?'开启线下常规房':'幻境单人演练 '+doc.settings.playerCount+' 人取经牌局 ›',y,{primary:r.id==='createRoom',skin:r.id==='createRoom'?'cyan-button':'pill',fontSize:r.id==='createRoom'?21:12},r.id==='createRoom'?65:80,v.width-(r.id==='createRoom'?130:160),r.id==='createRoom'?52:28);y+=r.id==='createRoom'?64:40;}
         heading('setup-advanced','进阶玩法设置');settingsForm(doc.settings);
@@ -262,7 +267,7 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
     add('hitbox','noop','',ox,fy,width,h,{skin:'hitbox',fixed:true});add('hitbox',model.web!.backId??'back','',0,top,v.width,available,{skin:'hitbox',fixed:true});
     return {nodes,maxScroll,contentTop:clipTop,contentBottom:clipBottom};
   }
-  const maxScroll=Math.max(0,y+20-available),scroll=Math.min(model.scroll??0,maxScroll);
+  const maxScroll=Math.max(0,y+40-available),scroll=Math.min(model.scroll??0,maxScroll);
   for(const node of nodes){node.y+=top-(node.fixed?0:scroll);node.clipTop=top;node.clipBottom=bottom;}
   feedback.slice(0,1).forEach(r=>add('button',r.id==='error'?'error':'dismissFeedback',r.text,18,top+58,v.width-36,56,{skin:'toast',tone:r.id==='error'?'red':'gold',fixed:true,fontSize:12}));
   return {nodes,maxScroll,contentTop:top,contentBottom:bottom};
@@ -275,6 +280,7 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
     const fields=[['captainMode','队长分配',settings.captainMode==='seat_order'?'按座位循环':'开局打乱一次，整局循环'],['rejectionScope','流局计数',settings.rejectionScope==='game'?'全局累计，5 次判负':'单次任务累计，5 次判负']];
     for(const [id,label,value] of fields){txt('field:'+id,label!,y,13);y+=25;button(prefix+id,value!,y,{skin:'input'});y+=52;}
     for(const [id,label] of [['anonymousTeamVote','匿名组队投票'],['ladyEnabled','照妖宝镜'],['earlyAssassinationEnabled','提前刺杀'],['guardianPerksEnabled','护法天机（建议7-12人）'],['autoRevealRoleEnabled','倒计时后亮明真身'],['treasuresEnabled','专属法宝（8-12人专属）']] as const){button(prefix+id,label,y,{skin:'setting',selected:settings[id]});y+=50;}
+    y+=36;
   }
   function scoreCard(id:string,name:string,score:Score|undefined,px:number,py:number,pw:number,image:string,team:'blue'|'red') {
     add('label',id,name,px,py,pw,id.startsWith('role:')?186:204,{skin:'score-card',image,team,detail:(score?.winRate==null?'—':Math.round(score.winRate*100)+'%')+'|'+(score?.wins??0)+' 胜 · '+(score?.losses??0)+' 负|'+(score?.completed??0)+' 局完成 · '+(score?.aborted??0)+' 局中断'});
