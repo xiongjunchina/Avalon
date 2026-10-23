@@ -200,3 +200,12 @@ test('dealing screen shows server deadline countdown and public treasure effects
   assert.match(activeText, /本轮人种袋禁选.*2号/);
   assert.match(activeText, /芭蕉扇已生效/);
 });
+test('discussion restores submitted team after phase change and reconnect',()=>{
+ const r=room('discussion');r.game!.rounds[0].direction='counterclockwise';
+ const ui:import('../src/screens/game.js').GameUiState={privateRoleVisible:false,ballotVisible:false};
+ syncGameUi(ui,room('proposing'));syncGameUi(ui,r);
+ assert.deepEqual(ui.selectedIds,[self.id,other.id]);assert.equal(ui.direction,'counterclockwise');
+ const fresh:import('../src/screens/game.js').GameUiState={privateRoleVisible:false,ballotVisible:false};syncGameUi(fresh,r);
+ assert.deepEqual(fresh.selectedIds,[self.id,other.id]);
+ r.game!.draftTeam={playerIds:[other.id],direction:'clockwise'};syncGameUi(fresh,r);assert.deepEqual(fresh.selectedIds,[other.id]);
+});

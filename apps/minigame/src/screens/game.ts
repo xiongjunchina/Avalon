@@ -41,10 +41,12 @@ export function syncGameUi(ui: GameUiState, room: RoomView, allowAutoReveal = tr
   const completed = game.rounds.filter(round => round.result).length;
   if (ui.completedCount !== undefined && completed > ui.completedCount && !game.result) { ui.overlay = 'report'; ui.reportMission = game.rounds.filter(round => round.result).at(-1)?.mission; }
   ui.completedCount = completed;
-  const draftKey = game.draftTeam ? JSON.stringify(game.draftTeam) : '';
+  const submitted = game.phase === 'discussion' ? game.rounds.at(-1) : undefined;
+  const draft = game.draftTeam ?? (submitted ? { playerIds: submitted.team, direction: submitted.direction } : undefined);
+  const draftKey = draft ? JSON.stringify(draft) : '';
   if (changed || ui.draftKey !== draftKey) {
-    ui.selectedIds = [...(game.draftTeam?.playerIds ?? [])];
-    ui.direction = game.draftTeam?.direction ?? 'clockwise';
+    ui.selectedIds = [...(draft?.playerIds ?? [])];
+    ui.direction = draft?.direction ?? 'clockwise';
     ui.draftKey = draftKey;
   }
 }

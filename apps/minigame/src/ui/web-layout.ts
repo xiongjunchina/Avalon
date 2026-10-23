@@ -145,14 +145,15 @@ export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout 
       add('panel','waiting-tools','',10,y,w-20,34,{skin:'tabs'});
       add('label','waiting-mode','🏛 线下常规房 · 无语音',18,y,w*.47,34,{skin:'text',fontSize:11,lineHeight:34});
       add('button','chat','💬 传音',w*.52,y+3,64,28,{skin:'pill',fontSize:11});
-      add('button','friends','👥 仙友',w-90,y+3,72,28,{skin:'pill',fontSize:11});y+=90;
+      add('button','friends','👥 仙友',w-90,y+3,72,28,{skin:'pill',fontSize:11});y+=44;
       const canStart=host&&room.members.length===count&&room.members.every(m=>m.ready);
-      add('panel','action-dock','',10,y,w-20,76);
-      add('button','ready',me?.ready?'取消取经':'✋ 出发取经',26,y+14,(w-60)*.42,48,{skin:'waiting-primary',selected:!!me?.ready});
-      add('button',canStart?'start':'practice',canStart?'📜 仙友齐聚 · 敕令发牌':'幻境单人演练',34+(w-60)*.42,y+14,(w-60)*.58,48,{skin:'waiting-primary'});y+=90;
-      const maxScroll=Math.max(0,y-bottom), offset=Math.min(model.scroll??0,maxScroll);
-      for(const n of nodes)if(!n.fixed){n.y-=offset;n.clipTop=top+38;n.clipBottom=bottom;}
-      appendAlerts();return {nodes,maxScroll,contentTop:top+38,contentBottom:bottom};
+      const dockY=bottom-76, listBottom=dockY-8;
+      add('panel','action-dock','',10,dockY,w-20,76,{fixed:true});
+      add('button','ready',me?.ready?'取消取经':'✋ 出发取经',26,dockY+14,(w-60)*.42,48,{skin:'waiting-primary',selected:!!me?.ready,fixed:true});
+      add('button',canStart?'start':'practice',canStart?'📜 仙友齐聚 · 敕令发牌':'幻境单人演练',34+(w-60)*.42,dockY+14,(w-60)*.58,48,{skin:'waiting-primary',fixed:true});
+      const maxScroll=Math.max(0,y-listBottom), offset=Math.min(model.scroll??0,maxScroll);
+      for(const n of nodes)if(!n.fixed){n.y-=offset;n.clipTop=top+38;n.clipBottom=listBottom;}
+      appendAlerts();return {nodes,maxScroll,contentTop:top+38,contentBottom:listBottom};
     }
     const wins = game?.rounds.filter(round => round.result?.passed).length ?? 0;
     const losses = game?.rounds.filter(round => round.result && !round.result.passed).length ?? 0;
