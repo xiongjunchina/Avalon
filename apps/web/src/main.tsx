@@ -1802,7 +1802,6 @@ function App() {
               <div className="waiting-voice-social-row">
                 {room.settings.voiceChatEnabled ? (
                   <div className="waiting-voice-capsule">
-                    <span className="waiting-voice-label">🎙️ 语音</span>
                     <VoiceControls
                       voiceState={voiceState}
                       onJoin={handleJoinVoice}
@@ -1814,7 +1813,7 @@ function App() {
                   </div>
                 ) : (
                   <div className="waiting-offline-badge" title="本房间为线下常规聚会房，无语音干扰">
-                    <span>🏛️ 线下常规房 · 无语音</span>
+                    <span>🏛️ 线下房</span>
                   </div>
                 )}
                 <button

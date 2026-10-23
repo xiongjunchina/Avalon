@@ -4388,16 +4388,22 @@ dialog.table-modal-backdrop::backdrop { background: #081b2d55; }
 .voice-join-btn {
   display: inline-flex !important;
   align-items: center !important;
+  justify-content: center !important;
   gap: 5px !important;
   height: 32px !important;
   min-height: 32px !important;
   max-height: 32px !important;
-  padding: 0 11px !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  margin-top: 0 !important;
+  padding: 0 8px !important;
   border-radius: 16px !important;
   border: 1.5px solid #58c7d9 !important;
   background: linear-gradient(180deg, #1d4e5f 0%, #10303b 100%) !important;
   color: #e0f2fe !important;
-  font-size: 12.5px !important;
+  font-size: 12px !important;
   font-weight: 700 !important;
   white-space: nowrap !important;
   cursor: pointer !important;
@@ -4599,65 +4605,87 @@ dialog.table-modal-backdrop::backdrop { background: #081b2d55; }
 
 /* Waiting Room Bottom Voice & Social Row */
 .waiting-voice-social-row {
-  display: flex !important;
+  display: grid !important;
+  grid-template-columns: 1.25fr 1fr 1fr !important;
   align-items: center !important;
-  justify-content: space-between !important;
-  gap: 5px !important;
+  gap: 8px !important;
   width: 100% !important;
   max-width: 440px !important;
   margin: 6px auto 10px !important;
-  padding: 4px 6px !important;
-  background: linear-gradient(180deg, rgba(32, 14, 18, 0.82), rgba(20, 8, 10, 0.92)) !important;
-  border: 1px solid rgba(229, 185, 100, 0.3) !important;
+  padding: 5px 8px !important;
+  background: linear-gradient(180deg, rgba(32, 14, 18, 0.85), rgba(20, 8, 10, 0.95)) !important;
+  border: 1px solid rgba(229, 185, 100, 0.32) !important;
   border-radius: 20px !important;
   box-sizing: border-box !important;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4) !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45) !important;
   overflow: hidden !important;
 }
 
 .waiting-voice-capsule {
-  display: inline-flex !important;
+  display: flex !important;
   align-items: center !important;
-  gap: 4px !important;
-  flex-shrink: 1 !important;
+  justify-content: center !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  max-height: 32px !important;
+  width: 100% !important;
   min-width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
 }
 
-.waiting-voice-label {
-  font-size: 11.5px !important;
-  font-weight: 700 !important;
-  color: #ffd54f !important;
-  letter-spacing: 0.2px !important;
+.waiting-offline-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  max-height: 32px !important;
+  width: 100% !important;
+  padding: 0 4px !important;
+  border-radius: 16px !important;
+  background: rgba(45, 20, 24, 0.6) !important;
+  border: 1px solid rgba(220, 190, 120, 0.25) !important;
+  color: #a8947e !important;
+  font-size: 11px !important;
   white-space: nowrap !important;
-  flex-shrink: 0 !important;
+  box-sizing: border-box !important;
 }
 
 .waiting-friends-pill-btn {
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  gap: 3px !important;
-  height: 28px !important;
-  min-height: 28px !important;
-  max-height: 28px !important;
-  width: auto !important;
+  gap: 4px !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  max-height: 32px !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
   margin: 0 !important;
   margin-top: 0 !important;
-  padding: 0 7px !important;
-  border-radius: 14px !important;
-  font-size: 11.5px !important;
+  padding: 0 8px !important;
+  border-radius: 16px !important;
+  font-size: 12px !important;
   font-weight: 700 !important;
   color: #ffe57f !important;
+  background: linear-gradient(150deg, rgba(62, 22, 20, 0.92), rgba(28, 9, 8, 0.96)) !important;
+  border: 1px solid rgba(220, 190, 120, 0.4) !important;
   white-space: nowrap !important;
   box-sizing: border-box !important;
   cursor: pointer !important;
-  flex-shrink: 0 !important;
+  transition: all 0.2s ease !important;
+  position: relative !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4) !important;
 }
 
-@media (max-width: 480px) {
-  .waiting-voice-label {
-    display: none !important;
-  }
+.waiting-friends-pill-btn:hover {
+  background: linear-gradient(150deg, rgba(82, 30, 26, 0.95), rgba(42, 14, 12, 0.98)) !important;
+  border-color: #ffd875 !important;
+  color: #ffffff !important;
+  transform: translateY(-1px) !important;
 }
 
 /* Active Game Floating Voice HUD */
@@ -6226,30 +6254,39 @@ dialog.table-modal-backdrop::backdrop { background: #081b2d55; }
 }
 
 /* Real-time Seat Mic Badge (Tencent Meeting style) */
-.seat-mic-badge {
+.seat-mic-badge,
+button.seat-mic-badge,
+span.seat-mic-badge {
   position: absolute !important;
-  left: -4px !important;
+  left: -2px !important;
   bottom: -2px !important;
-  z-index: 4 !important;
-  width: 18px !important;
-  height: 18px !important;
+  top: auto !important;
+  right: auto !important;
+  z-index: 5 !important;
+  width: 22px !important;
+  min-width: 22px !important;
+  max-width: 22px !important;
+  height: 22px !important;
+  min-height: 22px !important;
+  max-height: 22px !important;
+  aspect-ratio: 1 / 1 !important;
   border-radius: 50% !important;
-  display: flex !important;
+  display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
   box-sizing: border-box !important;
   padding: 0 !important;
   margin: 0 !important;
+  margin-top: 0 !important;
+  flex: 0 0 22px !important;
   transition: transform 0.15s ease, background 0.2s ease, border-color 0.2s ease !important;
   pointer-events: auto !important;
 }
 
 /* On GamePanel Flank Avatars */
 .flank-avatar-wrap .seat-mic-badge {
-  left: -3px !important;
+  left: -2px !important;
   bottom: -2px !important;
-  width: 18px !important;
-  height: 18px !important;
 }
 
 /* Clickable button variant (self avatar) */
@@ -6258,6 +6295,8 @@ button.seat-mic-badge {
   border: none;
   cursor: pointer;
   outline: none;
+  box-shadow: none;
+  line-height: 1 !important;
 }
 button.seat-mic-badge:focus-visible {
   outline: 2px solid #38bdf8 !important;
@@ -6475,14 +6514,16 @@ button.seat-mic-badge:active {
    ========================================================================== */
 
 .role-pref-sheet {
-  width: min(100%, 560px) !important;
-  max-height: min(88dvh, 660px) !important;
-  height: 88dvh !important;
+  width: min(100%, 580px) !important;
+  max-width: 580px !important;
+  height: min(84dvh, 660px) !important;
+  max-height: min(84dvh, 660px) !important;
+  margin: auto !important;
   display: flex !important;
   flex-direction: column !important;
   padding: 0 !important;
   overflow: hidden !important;
-  background: linear-gradient(175deg, rgba(22, 14, 18, 0.98), rgba(12, 6, 8, 0.99)) !important;
+  background: linear-gradient(175deg, rgba(22, 12, 16, 0.98), rgba(12, 6, 8, 0.99)) !important;
   border: 1.5px solid #d4a359 !important;
   border-radius: 20px !important;
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.85), 0 0 24px rgba(212, 163, 89, 0.25) !important;
@@ -6497,8 +6538,9 @@ button.seat-mic-badge:active {
   padding: 12px 16px !important;
   margin: 0 !important;
   border-bottom: 1px solid rgba(220, 190, 120, 0.25) !important;
-  background: rgba(30, 16, 20, 0.7) !important;
+  background: rgba(30, 14, 18, 0.75) !important;
   flex-shrink: 0 !important;
+  box-sizing: border-box !important;
 }
 
 .role-pref-head-left {
@@ -6529,76 +6571,150 @@ button.seat-mic-badge:active {
 }
 
 .role-pref-close-btn {
-  height: 30px !important;
-  min-height: 30px !important;
-  max-height: 30px !important;
-  padding: 0 12px !important;
-  font-size: 12.5px !important;
-  flex-shrink: 0 !important;
-  width: auto !important;
+  width: 32px !important;
+  min-width: 32px !important;
+  max-width: 32px !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  max-height: 32px !important;
+  border-radius: 50% !important;
+  padding: 0 !important;
   margin: 0 !important;
+  margin-top: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: rgba(45, 18, 22, 0.8) !important;
+  border: 1px solid rgba(220, 190, 120, 0.4) !important;
+  color: #e2d2b8 !important;
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  flex-shrink: 0 !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5) !important;
+  transition: all 0.2s ease !important;
 }
 
-/* Compact 3-Slot Status Strip (Single Row, ~40px high) */
-.role-pref-slots-strip {
+.role-pref-close-btn:hover {
+  background: rgba(75, 26, 32, 0.95) !important;
+  border-color: #ffd875 !important;
+  color: #ffffff !important;
+  transform: scale(1.08) !important;
+}
+
+/* 3-Slot Status Section (Clean Grid, can NEVER squish) */
+.role-pref-slots-section {
+  padding: 8px 14px 10px !important;
+  background: rgba(14, 8, 10, 0.65) !important;
+  border-bottom: 1px solid rgba(220, 190, 120, 0.18) !important;
   display: flex !important;
-  align-items: center !important;
-  justify-content: space-between !important;
+  flex-direction: column !important;
   gap: 6px !important;
-  padding: 8px 12px !important;
-  background: rgba(14, 8, 10, 0.6) !important;
-  border-bottom: 1px solid rgba(220, 190, 120, 0.15) !important;
   flex-shrink: 0 !important;
   box-sizing: border-box !important;
 }
 
-.role-pref-slots-bar {
+.role-pref-slots-top-row {
   display: flex !important;
   align-items: center !important;
-  gap: 6px !important;
-  flex: 1 1 auto !important;
-  min-width: 0 !important;
+  justify-content: space-between !important;
+  width: 100% !important;
 }
 
-.role-pref-slot-pill {
-  flex: 1 1 calc(33.333% - 4px) !important;
-  min-width: 0 !important;
-  height: 34px !important;
-  min-height: 34px !important;
-  max-height: 34px !important;
-  border-radius: 17px !important;
-  padding: 2px 4px 2px 6px !important;
+.role-pref-slots-legend {
   display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  font-size: 12px !important;
+  color: #f5e6c8 !important;
+  font-weight: 600 !important;
+}
+
+.role-pref-slots-legend .legend-star {
+  font-size: 12px !important;
+  color: #ffd875 !important;
+}
+
+.role-pref-slots-legend .legend-count {
+  color: #ffd875 !important;
+  font-size: 11.5px !important;
+}
+
+.role-pref-clear-btn {
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  margin: 0 !important;
+  margin-top: 0 !important;
+  padding: 2px 8px !important;
+  border-radius: 10px !important;
+  border: 1px solid rgba(239, 68, 68, 0.45) !important;
+  background: rgba(239, 68, 68, 0.15) !important;
+  color: #fca5a5 !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  flex-shrink: 0 !important;
+  box-shadow: none !important;
+  transition: all 0.15s ease !important;
+}
+
+.role-pref-clear-btn:hover {
+  background: rgba(239, 68, 68, 0.3) !important;
+  color: #ffffff !important;
+  border-color: #ef4444 !important;
+}
+
+.role-pref-slots-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.role-pref-slot-card {
+  height: 38px !important;
+  min-height: 38px !important;
+  max-height: 38px !important;
+  border-radius: 10px !important;
+  padding: 2px 6px !important;
+  display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
   gap: 4px !important;
   box-sizing: border-box !important;
   border: 1px dashed rgba(220, 190, 120, 0.3) !important;
-  background: rgba(26, 12, 16, 0.5) !important;
+  background: rgba(26, 12, 16, 0.55) !important;
   transition: all 0.2s ease !important;
+  min-width: 0 !important;
 }
 
-.role-pref-slot-pill.is-filled {
+.role-pref-slot-card.is-filled {
   border-style: solid !important;
-  background: rgba(38, 18, 22, 0.85) !important;
+  background: rgba(38, 16, 22, 0.9) !important;
+  cursor: pointer !important;
 }
 
-.role-pref-slot-pill.slot-p1.is-filled {
+.role-pref-slot-card.slot-rank-1.is-filled {
   border-color: #f59e0b !important;
   box-shadow: 0 0 10px rgba(245, 158, 11, 0.25) !important;
 }
 
-.role-pref-slot-pill.slot-p2.is-filled {
+.role-pref-slot-card.slot-rank-2.is-filled {
   border-color: #38bdf8 !important;
   box-shadow: 0 0 10px rgba(56, 189, 248, 0.25) !important;
 }
 
-.role-pref-slot-pill.slot-p3.is-filled {
+.role-pref-slot-card.slot-rank-3.is-filled {
   border-color: #c084fc !important;
   box-shadow: 0 0 10px rgba(192, 132, 252, 0.25) !important;
 }
 
-.slot-rank-chip {
+.slot-rank-tag {
   font-size: 10.5px !important;
   font-weight: 700 !important;
   color: #d1b88e !important;
@@ -6606,19 +6722,20 @@ button.seat-mic-badge:active {
   flex-shrink: 0 !important;
 }
 
-.slot-p1 .slot-rank-chip { color: #ffd875 !important; }
-.slot-p2 .slot-rank-chip { color: #7dd3fc !important; }
-.slot-p3 .slot-rank-chip { color: #e9d5ff !important; }
+.slot-rank-1 .slot-rank-tag { color: #ffd875 !important; }
+.slot-rank-2 .slot-rank-tag { color: #7dd3fc !important; }
+.slot-rank-3 .slot-rank-tag { color: #e9d5ff !important; }
 
-.slot-pill-content {
+.slot-card-body {
   display: flex !important;
   align-items: center !important;
   gap: 4px !important;
   flex: 1 1 auto !important;
   min-width: 0 !important;
+  overflow: hidden !important;
 }
 
-.slot-avatar-mini {
+.slot-card-avatar {
   width: 22px !important;
   height: 22px !important;
   min-width: 22px !important;
@@ -6629,12 +6746,12 @@ button.seat-mic-badge:active {
   border: 1px solid rgba(220, 190, 120, 0.5) !important;
 }
 
-.slot-avatar-mini .role-portrait {
+.slot-card-avatar .role-portrait {
   width: 100% !important;
   height: 100% !important;
 }
 
-.slot-pill-name {
+.slot-card-name {
   font-size: 11.5px !important;
   font-weight: 700 !important;
   color: #ffffff !important;
@@ -6645,52 +6762,29 @@ button.seat-mic-badge:active {
   min-width: 0 !important;
 }
 
-.slot-pill-remove {
-  width: 18px !important;
-  height: 18px !important;
-  min-width: 18px !important;
-  max-width: 18px !important;
-  border-radius: 50% !important;
-  background: rgba(239, 68, 68, 0.25) !important;
-  border: 1px solid rgba(239, 68, 68, 0.5) !important;
-  color: #fca5a5 !important;
-  font-size: 9.5px !important;
+.slot-card-remove-icon {
+  font-size: 11px !important;
   font-weight: 800 !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  cursor: pointer !important;
+  color: #fca5a5 !important;
   flex-shrink: 0 !important;
+  padding: 0 2px !important;
   line-height: 1 !important;
+  opacity: 0.8 !important;
+  transition: transform 0.15s ease, opacity 0.15s ease !important;
 }
 
-.slot-pill-remove:hover {
-  background: rgba(239, 68, 68, 0.6) !important;
-  color: #ffffff !important;
+.role-pref-slot-card:hover .slot-card-remove-icon {
+  transform: scale(1.2) !important;
+  opacity: 1 !important;
+  color: #ef4444 !important;
 }
 
-.slot-pill-empty {
-  font-size: 10.5px !important;
+.slot-card-placeholder {
+  font-size: 11px !important;
   color: #8c7a6b !important;
   white-space: nowrap !important;
   flex: 1 1 auto !important;
   text-align: center !important;
-}
-
-.role-pref-clear-link {
-  background: none !important;
-  border: none !important;
-  color: #f87171 !important;
-  font-size: 11px !important;
-  font-weight: 600 !important;
-  cursor: pointer !important;
-  padding: 0 4px !important;
-  margin: 0 !important;
-  white-space: nowrap !important;
-  flex-shrink: 0 !important;
-  text-decoration: underline !important;
 }
 
 .role-pref-error-banner {
@@ -6735,71 +6829,86 @@ button.seat-mic-badge:active {
 
 .role-cards-grid {
   display: grid !important;
-  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)) !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   gap: 8px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
 }
 
 .role-choice-card {
   position: relative !important;
-  background: rgba(22, 12, 14, 0.75) !important;
-  border: 1.5px solid rgba(220, 190, 120, 0.25) !important;
-  border-radius: 12px !important;
-  padding: 8px 10px !important;
   display: flex !important;
+  flex-direction: row !important;
   align-items: center !important;
-  gap: 9px !important;
-  text-align: left !important;
+  gap: 8px !important;
+  padding: 8px 10px !important;
+  border-radius: 12px !important;
+  background: rgba(26, 12, 16, 0.7) !important;
+  border: 1.5px solid rgba(220, 190, 120, 0.25) !important;
   cursor: pointer !important;
-  transition: all 0.18s ease !important;
+  text-align: left !important;
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
+  box-sizing: border-box !important;
   width: 100% !important;
   margin: 0 !important;
-  box-sizing: border-box !important;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35) !important;
+  margin-top: 0 !important;
+  min-height: 52px !important;
 }
 
 .role-choice-card:hover {
-  background: rgba(36, 18, 22, 0.9) !important;
-  border-color: #ffd875 !important;
+  background: rgba(45, 20, 26, 0.85) !important;
+  border-color: rgba(255, 216, 117, 0.6) !important;
   transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
 }
 
 .role-choice-card.team-blue.is-selected {
-  background: linear-gradient(135deg, rgba(20, 40, 65, 0.95), rgba(15, 26, 45, 0.95)) !important;
+  background: linear-gradient(135deg, rgba(16, 38, 70, 0.9) 0%, rgba(10, 24, 45, 0.95) 100%) !important;
   border-color: #38bdf8 !important;
   box-shadow: 0 0 14px rgba(56, 189, 248, 0.35) !important;
 }
 
 .role-choice-card.team-red.is-selected {
-  background: linear-gradient(135deg, rgba(55, 18, 22, 0.95), rgba(35, 10, 12, 0.95)) !important;
+  background: linear-gradient(135deg, rgba(65, 18, 22, 0.9) 0%, rgba(38, 10, 14, 0.95) 100%) !important;
   border-color: #f87171 !important;
   box-shadow: 0 0 14px rgba(248, 113, 113, 0.35) !important;
 }
 
 .choice-badge {
   position: absolute !important;
-  top: -5px !important;
+  top: -6px !important;
   right: 6px !important;
-  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
-  color: #ffffff !important;
-  font-size: 10px !important;
+  padding: 2px 7px !important;
+  border-radius: 10px !important;
+  font-size: 11px !important;
   font-weight: 800 !important;
-  padding: 1px 7px !important;
-  border-radius: 9px !important;
-  border: 1px solid #fef3c7 !important;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5) !important;
-  letter-spacing: 0.3px !important;
+  white-space: nowrap !important;
+  z-index: 2 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6) !important;
+  background: #f59e0b !important;
+  color: #1a0805 !important;
+}
+
+.role-choice-card.team-blue .choice-badge {
+  background: #38bdf8 !important;
+  color: #0c2035 !important;
+}
+
+.role-choice-card.team-red .choice-badge {
+  background: #f87171 !important;
+  color: #2b0b0e !important;
 }
 
 .choice-portrait-wrap {
-  width: 38px !important;
-  height: 38px !important;
-  min-width: 38px !important;
-  max-width: 38px !important;
+  width: 42px !important;
+  height: 42px !important;
+  min-width: 42px !important;
+  max-width: 42px !important;
   border-radius: 50% !important;
   overflow: hidden !important;
-  border: 1.5px solid rgba(220, 190, 120, 0.5) !important;
   flex-shrink: 0 !important;
-  background: #090608 !important;
+  border: 1.5px solid rgba(220, 190, 120, 0.4) !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5) !important;
 }
 
 .choice-portrait-wrap .role-portrait {
@@ -6810,25 +6919,34 @@ button.seat-mic-badge:active {
 .choice-details {
   display: flex !important;
   flex-direction: column !important;
-  flex: 1 1 auto !important;
+  gap: 2px !important;
   min-width: 0 !important;
+  flex: 1 1 auto !important;
 }
 
 .choice-title-row {
   display: flex !important;
   align-items: baseline !important;
   gap: 6px !important;
+  min-width: 0 !important;
+  flex-wrap: nowrap !important;
 }
 
 .choice-title {
-  font-size: 13.5px !important;
-  color: #fff4d6 !important;
+  font-size: 14px !important;
   font-weight: 700 !important;
+  color: #f5e6c8 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
 }
 
 .choice-subtitle {
   font-size: 11px !important;
   color: #d1b88e !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
 }
 
 .choice-motto {
@@ -6876,88 +6994,125 @@ button.seat-mic-badge:active {
 
 /* Footer & Buttons */
 .role-pref-footer {
-  padding: 10px 14px !important;
-  background: rgba(22, 12, 16, 0.95) !important;
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px)) !important;
+  background: rgba(20, 10, 14, 0.96) !important;
   border-top: 1px solid rgba(220, 190, 120, 0.25) !important;
-  display: flex !important;
+  display: grid !important;
+  grid-template-columns: 1fr 1.6fr !important;
+  gap: 12px !important;
   align-items: center !important;
-  justify-content: flex-end !important;
-  gap: 10px !important;
   flex-shrink: 0 !important;
   box-sizing: border-box !important;
 }
 
 .role-pref-cancel-btn {
-  height: 38px !important;
-  min-height: 38px !important;
-  max-height: 38px !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  max-height: 40px !important;
   padding: 0 16px !important;
-  font-size: 13px !important;
-  font-weight: 700 !important;
-  border-radius: 19px !important;
-  width: auto !important;
-  min-width: 72px !important;
-  margin: 0 !important;
-  flex: 0 0 auto !important;
-}
-
-.role-pref-submit-btn {
-  height: 38px !important;
-  min-height: 38px !important;
-  max-height: 38px !important;
-  padding: 0 18px !important;
   font-size: 13.5px !important;
-  font-weight: 700 !important;
-  background: linear-gradient(135deg, #ffd875 0%, #f5a623 50%, #d97706 100%) !important;
-  color: #3b1402 !important;
-  border: 1.5px solid #fff2b2 !important;
-  border-radius: 19px !important;
-  box-shadow: 0 4px 14px rgba(245, 166, 35, 0.35) !important;
+  font-weight: 600 !important;
+  border-radius: 20px !important;
+  background: rgba(45, 20, 24, 0.85) !important;
+  border: 1px solid rgba(220, 190, 120, 0.4) !important;
+  color: #f5e6c8 !important;
   cursor: pointer !important;
-  white-space: nowrap !important;
-  width: auto !important;
-  min-width: 140px !important;
+  width: 100% !important;
   margin: 0 !important;
-  flex: 0 0 auto !important;
+  margin-top: 0 !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
   box-sizing: border-box !important;
   transition: all 0.2s ease !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4) !important;
+}
+
+.role-pref-cancel-btn:hover:not(:disabled) {
+  background: rgba(70, 30, 36, 0.95) !important;
+  border-color: #ffd875 !important;
+  color: #ffffff !important;
+}
+
+.role-pref-submit-btn {
+  height: 40px !important;
+  min-height: 40px !important;
+  max-height: 40px !important;
+  padding: 0 18px !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  border-radius: 20px !important;
+  background: linear-gradient(135deg, #d4a359 0%, #b8863b 50%, #946522 100%) !important;
+  color: #1a0805 !important;
+  border: 1px solid #ffe5a3 !important;
+  cursor: pointer !important;
+  box-shadow: 0 4px 14px rgba(184, 134, 59, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.35) !important;
+  width: 100% !important;
+  margin: 0 !important;
+  margin-top: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+  transition: all 0.2s ease !important;
+  letter-spacing: 0.3px !important;
+  white-space: nowrap !important;
 }
 
 .role-pref-submit-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #ffe08a 0%, #fab73d 50%, #e88510 100%) !important;
+  background: linear-gradient(135deg, #e5b46a 0%, #c9974c 50%, #a57633 100%) !important;
+  box-shadow: 0 6px 18px rgba(184, 134, 59, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.45) !important;
   transform: translateY(-1px) !important;
-  box-shadow: 0 6px 18px rgba(245, 166, 35, 0.5) !important;
 }
 
 .role-pref-submit-btn:disabled {
-  opacity: 0.55 !important;
+  opacity: 0.5 !important;
   cursor: not-allowed !important;
 }
 
 @media (max-width: 480px) {
   .role-pref-sheet {
     width: 100% !important;
-    height: calc(100dvh - 16px) !important;
-    max-height: calc(100dvh - 16px) !important;
+    max-width: 100% !important;
+    height: min(88dvh, 620px) !important;
+    max-height: min(88dvh, 620px) !important;
     border-radius: 16px !important;
   }
   .role-cards-grid {
-    grid-template-columns: 1fr !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     gap: 6px !important;
   }
+  .role-choice-card {
+    padding: 6px 8px !important;
+    min-height: 48px !important;
+    gap: 6px !important;
+  }
+  .choice-portrait-wrap {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    max-width: 36px !important;
+  }
+  .choice-title {
+    font-size: 13px !important;
+  }
+  .choice-subtitle {
+    font-size: 10px !important;
+  }
+  .choice-motto {
+    display: none !important;
+  }
   .role-pref-footer {
-    display: grid !important;
-    grid-template-columns: 1fr 2fr !important;
+    grid-template-columns: 1fr 1.6fr !important;
     gap: 8px !important;
-    padding: 8px 12px calc(8px + env(safe-area-inset-bottom)) !important;
+    padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px)) !important;
   }
   .role-pref-cancel-btn,
   .role-pref-submit-btn {
-    width: 100% !important;
-    min-width: 0 !important;
+    height: 38px !important;
+    min-height: 38px !important;
+    max-height: 38px !important;
+    font-size: 13px !important;
   }
 }
 

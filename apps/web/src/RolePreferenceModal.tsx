@@ -93,66 +93,66 @@ export function RolePreferenceModal({
           </div>
           <button
             type="button"
-            className="secondary tool-pill role-pref-close-btn"
+            className="role-pref-close-btn"
             onClick={onClose}
             disabled={saving}
             aria-label="关闭"
+            title="关闭"
           >
-            关闭
+            ✕
           </button>
         </div>
 
-        {/* 3 Compact Slots Bar (Single Row, only ~36px high!) */}
-        <div className="role-pref-slots-strip">
-          <div className="role-pref-slots-bar" aria-label="已选出战志愿">
+        {/* 3 Slots Status Section */}
+        <div className="role-pref-slots-section">
+          <div className="role-pref-slots-top-row">
+            <div className="role-pref-slots-legend">
+              <span className="legend-star">⭐</span>
+              <span className="legend-title">出战意向志愿</span>
+              <span className="legend-count">({selected.length}/3)</span>
+            </div>
+            {selected.length > 0 && (
+              <button
+                type="button"
+                className="role-pref-clear-btn"
+                onClick={handleClear}
+                disabled={saving}
+                title="清空已选志愿"
+              >
+                清空重选
+              </button>
+            )}
+          </div>
+
+          <div className="role-pref-slots-grid" aria-label="已选出战志愿">
             {[0, 1, 2].map(slotIdx => {
               const role = selected[slotIdx];
               return (
                 <div
                   key={slotIdx}
-                  className={`role-pref-slot-pill ${role ? 'is-filled' : 'is-empty'} slot-p${slotIdx + 1}`}
-                  title={`${slotLabels[slotIdx]}：${role ? roleNames[role] : '待点选'}`}
+                  className={`role-pref-slot-card ${role ? 'is-filled' : 'is-empty'} slot-rank-${slotIdx + 1}`}
+                  onClick={() => role && handleRemoveSlot(slotIdx)}
+                  title={role ? `第${slotIdx + 1}志愿：${roleNames[role]}（点击移除）` : `第${slotIdx + 1}志愿：待点选下方角色`}
+                  role={role ? 'button' : undefined}
+                  tabIndex={role ? 0 : undefined}
                 >
-                  <span className="slot-rank-chip">{slotTags[slotIdx]}</span>
+                  <span className="slot-rank-tag">{slotTags[slotIdx]}</span>
                   <span className="sr-only">{slotLabels[slotIdx]}</span>
                   {role ? (
-                    <div className="slot-pill-content">
-                      <span className="slot-avatar-mini">
+                    <div className="slot-card-body">
+                      <span className="slot-card-avatar">
                         <RolePortrait role={role} size="mini" />
                       </span>
-                      <strong className="slot-pill-name">{roleNames[role]}</strong>
-                      <button
-                        type="button"
-                        className="slot-pill-remove"
-                        onClick={e => {
-                          e.stopPropagation();
-                          handleRemoveSlot(slotIdx);
-                        }}
-                        disabled={saving}
-                        title={`移除${slotLabels[slotIdx]}`}
-                        aria-label={`移除${slotLabels[slotIdx]}`}
-                      >
-                        ✕
-                      </button>
+                      <strong className="slot-card-name">{roleNames[role]}</strong>
+                      <span className="slot-card-remove-icon" aria-hidden="true" title="移除">✕</span>
                     </div>
                   ) : (
-                    <span className="slot-pill-empty">待点选</span>
+                    <span className="slot-card-placeholder">待选择</span>
                   )}
                 </div>
               );
             })}
           </div>
-          {selected.length > 0 && (
-            <button
-              type="button"
-              className="role-pref-clear-link"
-              onClick={handleClear}
-              disabled={saving}
-              title="清空已选志愿"
-            >
-              清空
-            </button>
-          )}
         </div>
 
         {error && <div className="role-pref-error-banner" role="alert">{error}</div>}
@@ -251,7 +251,7 @@ export function RolePreferenceModal({
         <div className="role-pref-footer">
           <button
             type="button"
-            className="secondary tool-pill role-pref-cancel-btn"
+            className="role-pref-cancel-btn"
             onClick={onClose}
             disabled={saving}
           >
@@ -266,8 +266,8 @@ export function RolePreferenceModal({
             {saving
               ? '保存中…'
               : selected.length === 0
-                ? '确认（不设偏好 · 盲选）'
-                : `确认保存 (${selected.length}/3)`}
+                ? '盲选出战 (不设偏好)'
+                : `确认出战偏好 (${selected.length}/3)`}
           </button>
         </div>
       </div>

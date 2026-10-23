@@ -184,6 +184,20 @@ export function SeatMicBadge({
     </>
   );
 
+  const badgeStyle: React.CSSProperties = {
+    width: 22,
+    minWidth: 22,
+    maxWidth: 22,
+    height: 22,
+    minHeight: 22,
+    maxHeight: 22,
+    padding: 0,
+    margin: 0,
+    borderRadius: '50%',
+    aspectRatio: '1 / 1',
+    boxSizing: 'border-box',
+  };
+
   if (isInteractive && onToggleMute) {
     return (
       <button
@@ -195,6 +209,7 @@ export function SeatMicBadge({
         }}
         title={label}
         aria-label={label}
+        style={badgeStyle}
       >
         {innerContent}
       </button>
@@ -206,6 +221,7 @@ export function SeatMicBadge({
       className={`seat-mic-badge is-${state} ${className}`}
       title={label}
       aria-label={label}
+      style={badgeStyle}
     >
       {innerContent}
     </span>
