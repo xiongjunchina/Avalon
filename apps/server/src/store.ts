@@ -1,8 +1,8 @@
 import { createHash, randomBytes, randomUUID, randomInt } from 'node:crypto';
-import { createGame, transition, projectGame, isEnded, finish, RuleError, type GameState } from '@avalon/game-core';
+import { createGame, transition, projectGame, isEnded, finish, RuleError, ROLE_CONFIG, type GameState } from '@avalon/game-core';
 import { isDeepStrictEqual } from 'node:util';
 import type { Pool, PoolClient } from 'pg';
-import { defaultSettings, type Command, type RoomView, type Settings, type User, type ServerMessage } from '@avalon/contracts';
+import { defaultSettings, type Command, type RoomView, type Settings, type User, type ServerMessage, type Role } from '@avalon/contracts';
 
 export class DomainError extends Error {
   constructor(public code: string, public status = 400) { super(code); }
@@ -16,7 +16,7 @@ export const digest = (token: string) => createHash('sha256').update(token).dige
 type RoomRow = { id: string; code: string; invite: string; host_id: string; settings: RoomView['settings'];
   version: number; accepting_new_members: boolean; phase: RoomView['phase'] | 'closed'; offline_since: Date | null; current_game_id: string | null };
 type MemberRow = { user_id: string; nickname: string; avatar: User['avatar']; avatar_url?: string | null; wechat_avatar_url?: string | null; player_code?: string | null; seat: number; ready: boolean;
-  connection_id: string | null; last_seen_at: Date; disconnected_at: Date | null; joined_at: Date; join_order: string };
+  connection_id: string | null; last_seen_at: Date; disconnected_at: Date | null; joined_at: Date; join_order: string; role_preferences?: Role[] };
 export class PostgresStore {
   private restartGraceUntil = 0;
   constructor(public pool: Pool, public now: () => number = Date.now) {}
@@ -44,9 +44,13 @@ export class PostgresStore {
   }
   private async view(c: PoolClient, r: RoomRow, members: MemberRow[], userId?: string): Promise<RoomView> {
     const game = await this.game(c,r);
+    const selfMember = userId ? members.find(m => m.user_id === userId) : undefined;
     return { id: r.id, code: r.code, hostId: r.host_id, version: r.version, settings: r.settings,
       serverTime: this.date().toISOString(),
       phase: r.phase === 'closed' ? 'waiting' : r.phase, acceptingNewMembers: r.accepting_new_members,
+      ...(r.settings.rolePreferenceEnabled && selfMember?.role_preferences ? {
+        selfRolePreferences: (selfMember.role_preferences as Role[]) || [],
+      } : {}),
       ...(game ? { game: projectGame(game,userId) } : {}),
       members: members.map(m => ({
         id: m.user_id,
@@ -58,6 +62,9 @@ export class PostgresStore {
         seat: m.seat,
         ready: m.ready,
         online: m.connection_id !== null,
+        ...(r.settings.rolePreferenceEnabled && m.role_preferences && (m.role_preferences as Role[]).length > 0 ? {
+          hasRolePreference: true,
+        } : {}),
       })).sort((a,b) => a.seat-b.seat) };
   }
   private open(r: RoomRow) { if (r.phase === 'closed') throw new DomainError('ROOM_CLOSED', 410); }
@@ -342,6 +349,11 @@ export class PostgresStore {
       } else if (command.type==='setAdmission') {
         if (r.host_id!==userId) throw new DomainError('FORBIDDEN',403);
         await c.query('UPDATE rooms SET accepting_new_members=$2 WHERE id=$1',[roomId,command.payload.acceptingNewMembers]);
+      } else if (command.type==='setRolePreferences') {
+        if (r.phase!=='waiting') throw new DomainError('WRONG_PHASE',409);
+        const validRoles = new Set(ROLE_CONFIG[r.settings.playerCount] || []);
+        const sanitized = command.payload.preferences.filter(role => validRoles.has(role));
+        await c.query('UPDATE room_members SET role_preferences=$3 WHERE room_id=$1 AND user_id=$2',[roomId,userId,JSON.stringify(sanitized)]);
       } else if (command.type==='leaveRoom') {
         if(r.phase==='playing') throw new DomainError('GAME_IN_PROGRESS',409);
         await c.query('DELETE FROM room_members WHERE room_id=$1 AND user_id=$2',[roomId,userId]);
@@ -390,9 +402,22 @@ export class PostgresStore {
             bossCooldownUserIds.push(m.user_id);
           }
         }
+        const rolePreferences: Record<string, Role[]> = {};
+        if (r.settings.rolePreferenceEnabled) {
+          const validRoles = new Set(ROLE_CONFIG[r.settings.playerCount] || []);
+          for (const m of members) {
+            if (m.role_preferences && Array.isArray(m.role_preferences) && m.role_preferences.length > 0) {
+              const sanitized = (m.role_preferences as Role[]).filter(role => validRoles.has(role));
+              if (sanitized.length > 0) {
+                rolePreferences[m.user_id] = sanitized;
+              }
+            }
+          }
+        }
         const game=createGame(randomUUID(),members.map(m=>({id:m.user_id,nickname:m.nickname,seat:m.seat})),r.settings,secureShuffle,{
           visionGuaranteedUserIds,
           bossCooldownUserIds,
+          rolePreferences: r.settings.rolePreferenceEnabled ? rolePreferences : undefined,
         });
         dealEndsAt=new Date(this.now()+DEAL_MS).toISOString();
         game.phase='dealing';game.dealEndsAt=dealEndsAt;
@@ -404,7 +429,7 @@ export class PostgresStore {
         if(r.phase!=='finished') throw new DomainError('WRONG_PHASE',409);
         await c.query("UPDATE rooms SET phase='waiting',current_game_id=NULL WHERE id=$1",[roomId]);
         await c.query('UPDATE room_members SET ready=false WHERE room_id=$1',[roomId]);
-      } else if(!['setReady','updateSettings','setAdmission','leaveRoom','kickMember'].includes(command.type)) {
+      } else if(!['setReady','updateSettings','setAdmission','leaveRoom','kickMember','setRolePreferences'].includes(command.type)) {
         const game=await this.game(c,r);
         if(!game) throw new DomainError('WRONG_PHASE',409);
         const next = transition(game,userId,command,members.filter(m=>m.connection_id).map(m=>m.user_id), { hostId: r.host_id, now: this.now() });

@@ -11,6 +11,7 @@ export const settingsSchema = z.object({
   voiceChatEnabled: z.boolean().default(false),
   autoRevealRoleEnabled: z.boolean().default(false),
   treasuresEnabled: z.boolean().default(false),
+  rolePreferenceEnabled: z.boolean().default(false),
 }).strict();
 export type Settings = z.infer<typeof settingsSchema>;
 export const defaultSettings: Settings = {
@@ -20,13 +21,27 @@ export const defaultSettings: Settings = {
   voiceChatEnabled: false,
   autoRevealRoleEnabled: false,
   treasuresEnabled: false,
+  rolePreferenceEnabled: false,
 };
 export const defaultAnonymousTeamVote = (playerCount: number) => playerCount < 8;
 export type TeamBallot = boolean | 'abstain';
 export const nicknameSchema = z.string().trim().min(1).max(20);
+export const roleSchema = z.enum([
+  'merlin',
+  'percival',
+  'guinevere',
+  'loyal',
+  'morgana',
+  'assassin',
+  'mordred',
+  'oberon',
+  'minion',
+]);
+export type Role = z.infer<typeof roleSchema>;
 const base = { commandId: z.string().uuid(), expectedVersion: z.number().int().min(1) };
 export const commandSchema = z.discriminatedUnion('type', [
   z.object({ ...base, type: z.literal('setReady'), payload: z.object({ ready: z.boolean() }).strict() }).strict(),
+  z.object({ ...base, type: z.literal('setRolePreferences'), payload: z.object({ preferences: z.array(roleSchema).max(3).refine(arr => new Set(arr).size === arr.length, 'DUPLICATE_PREFERENCES') }).strict() }).strict(),
   z.object({ ...base, type: z.literal('updateSettings'), payload: settingsSchema }).strict(),
   z.object({ ...base, type: z.literal('setAdmission'), payload: z.object({ acceptingNewMembers: z.boolean() }).strict() }).strict(),
   ...(['startGame', 'confirmRole', 'startTeamVote', 'returnToLobby', 'requestAbort', 'endGame', 'confirmInspection'] as const).map(type =>
@@ -78,11 +93,24 @@ export interface User {
   isVip?: boolean;
   vipUntil?: string | null;
 }
-export interface Member extends User { seat: number; ready: boolean; online: boolean }
+export interface Member extends User {
+  seat: number;
+  ready: boolean;
+  online: boolean;
+  hasRolePreference?: boolean;
+}
 export interface RoomView {
-  id: string; code: string; hostId: string; version: number;
+  id: string;
+  code: string;
+  hostId: string;
+  version: number;
   serverTime?: string;
-  settings: Settings; members: Member[]; phase: 'waiting' | 'playing' | 'finished'; acceptingNewMembers: boolean; game?: GameView;
+  settings: Settings;
+  members: Member[];
+  phase: 'waiting' | 'playing' | 'finished';
+  acceptingNewMembers: boolean;
+  game?: GameView;
+  selfRolePreferences?: Role[];
 }
 export interface VoiceTokenResponse {
   appId: string;
@@ -204,7 +232,6 @@ export type ServerMessage =
   | { type: 'roomChat'; messageId: string; fromUserId: string; seat: number; nickname: string; text: string; timestamp: string }
   | { type: 'directChat'; messageId: string; fromUser: User; text: string; timestamp: string };
 
-export type Role = 'merlin' | 'percival' | 'guinevere' | 'loyal' | 'morgana' | 'assassin' | 'mordred' | 'oberon' | 'minion';
 export type LoyalGuardian = 'zhubajie' | 'shawujing' | 'bailong' | 'jingang';
 export type FemaleDemon = 'spider' | 'baigu' | 'yutu' | 'laoshu';
 export type Team = 'blue' | 'red';

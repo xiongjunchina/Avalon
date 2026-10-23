@@ -49,6 +49,7 @@ import { voiceManager, type VoiceState } from './agora-voice';
 import { uuidToRtcUid, type VoiceTokenResponse, type FriendSummary, type RoomChatMessage } from '@avalon/contracts';
 import { AdminDashboard } from './AdminDashboard';
 import { ChatDrawer } from './ChatDrawer';
+import { RolePreferenceModal } from './RolePreferenceModal';
 
 const SHOWCASE_ROLES: Role[] = [
   'merlin',
@@ -139,6 +140,7 @@ function App() {
   }));
   const pendingSettingsRef = useRef<Settings | null>(null);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
+  const [rolePrefModalOpen, setRolePrefModalOpen] = useState(false);
   const [kickTarget, setKickTarget] = useState<Member | null>(null);
   const [showcaseIndex, setShowcaseIndex] = useState(0);
   const [invite, setInvite] = useState('');
@@ -569,7 +571,10 @@ function App() {
       seat: i + 1,
       nickname: i === 0 ? user?.nickname ?? '我' : BOT_NAMES[i - 1],
     }));
-    const g = createGame(`practice-game-${Date.now()}`, players, s, shuffleArray);
+    const rolePreferences = s.rolePreferenceEnabled && room?.selfRolePreferences?.length
+      ? { p1: room.selfRolePreferences }
+      : undefined;
+    const g = createGame(`practice-game-${Date.now()}`, players, s, shuffleArray, { rolePreferences });
     setPracticeUserId('p1');
     practiceGameRef.current = g;
     setPracticeGame(g);
@@ -1674,9 +1679,31 @@ function App() {
                       </strong>
                       <div className="seat-card-bottom">
                         {m ? (
-                          <span className={`seat-chip ${m.ready ? 'chip-approve' : 'chip-status'}`}>
-                            {m.online ? (m.ready ? '✓ 已准备' : '未准备') : '暂时离线'}
-                          </span>
+                          <>
+                            <span className={`seat-chip ${m.ready ? 'chip-approve' : 'chip-status'}`}>
+                              {m.online ? (m.ready ? '✓ 已准备' : '未准备') : '暂时离线'}
+                            </span>
+                            {room.settings.rolePreferenceEnabled && (
+                              m.id === user.id ? (
+                                <span
+                                  className="badge-role-pref is-mine"
+                                  role="button"
+                                  tabIndex={0}
+                                  onClick={e => {
+                                    e.stopPropagation();
+                                    setRolePrefModalOpen(true);
+                                  }}
+                                  title="点击修改心仪角色"
+                                >
+                                  🎭 意向 {room.selfRolePreferences?.length ?? 0}/3
+                                </span>
+                              ) : m.hasRolePreference ? (
+                                <span className="badge-role-pref" title="该仙友已选定心仪出战角色">
+                                  ✨ 已选意向
+                                </span>
+                              ) : null
+                            )}
+                          </>
                         ) : (
                           <span className="seat-chip chip-hint">点击复制链接</span>
                         )}
@@ -1715,6 +1742,23 @@ function App() {
                   <span className="orb-text">
                     <strong>提前刺杀</strong>
                     <small>{room.settings.earlyAssassinationEnabled ? '已开启' : '点击开启'}</small>
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  disabled={!host || disabled}
+                  className={`waiting-ext-orb ${room.settings.rolePreferenceEnabled ? 'is-enabled' : ''}`}
+                  onClick={() =>
+                    updateSettings({
+                      rolePreferenceEnabled: !room.settings.rolePreferenceEnabled,
+                    })
+                  }
+                >
+                  <span className="orb-icon">🎭</span>
+                  <span className="orb-text">
+                    <strong>心仪选角</strong>
+                    <small>{room.settings.rolePreferenceEnabled ? '已开启' : '点击开启'}</small>
                   </span>
                 </button>
 
@@ -1786,6 +1830,18 @@ function App() {
                   >
                     <span className="waiting-btn-text">{me?.ready ? '取消取经' : '✋ 出发取经'}</span>
                   </button>
+                  {room.settings.rolePreferenceEnabled && (
+                    <button
+                      type="button"
+                      className="secondary tool-pill waiting-role-pref-btn"
+                      onClick={() => setRolePrefModalOpen(true)}
+                      title="设置心仪出战角色（第1/2/3志愿）"
+                    >
+                      <span className="waiting-btn-text">
+                        🎭 心仪角色 {room.selfRolePreferences && room.selfRolePreferences.length > 0 ? `(${room.selfRolePreferences.length}/3)` : '(未设)'}
+                      </span>
+                    </button>
+                  )}
                   {host &&
                   room.members.length === room.settings.playerCount &&
                   room.members.every(m => m.ready) ? (
@@ -1954,6 +2010,23 @@ function App() {
             incomingDirectChat={pendingDirectChat}
             initialChatFriend={chatFriendToOpen}
           />
+
+          {/* Role Preference Matching Modal */}
+          {room && (
+            <RolePreferenceModal
+              open={rolePrefModalOpen}
+              onClose={() => setRolePrefModalOpen(false)}
+              currentPreferences={room.selfRolePreferences ?? []}
+              playerCount={room.settings.playerCount}
+              disabled={disabled || room.phase !== 'waiting'}
+              onSave={async prefs => {
+                await command({
+                  type: 'setRolePreferences',
+                  payload: { preferences: prefs },
+                });
+              }}
+            />
+          )}
 
           {/* Floating Room Invitation Toast */}
           <RoomInvitationToast

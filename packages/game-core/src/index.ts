@@ -78,6 +78,7 @@ export interface RoleProtectionOptions {
   visionGuaranteedUserIds?: string[];
   blueGuaranteedUserIds?: string[];
   bossCooldownUserIds?: string[];
+  rolePreferences?: Record<string, Role[]>;
 }
 
 export function createGame(
@@ -97,8 +98,8 @@ export function createGame(
   const visionGuaranteed = new Set(protectionOpts.visionGuaranteedUserIds || []);
   const blueGuaranteed = new Set(protectionOpts.blueGuaranteedUserIds || []);
   const bossCooldown = new Set(protectionOpts.bossCooldownUserIds || []);
+  const rolePreferences = protectionOpts.rolePreferences || {};
 
-  const shuffledRoles = shuffle([...configRoles]);
   const isAllowed = (playerId: string, role: Role, level: number): boolean => {
     if (visionGuaranteed.has(playerId) && (role === 'loyal' || role === 'oberon')) return false;
     if (level <= 1 && blueGuaranteed.has(playerId) && teamOf(role) === 'red') return false;
@@ -106,28 +107,103 @@ export function createGame(
     return true;
   };
 
-  let roles: Record<string, Role> = {};
-  for (let level = 0; level <= 3; level++) {
-    const used = new Array(shuffledRoles.length).fill(false);
-    const candidate: Record<string, Role> = {};
+  const hasPreferences = Object.values(rolePreferences).some(prefs => Array.isArray(prefs) && prefs.length > 0);
 
-    function solve(pIdx: number): boolean {
-      if (pIdx === sorted.length) return true;
-      const p = sorted[pIdx];
-      for (let rIdx = 0; rIdx < shuffledRoles.length; rIdx++) {
-        if (!used[rIdx] && isAllowed(p.id, shuffledRoles[rIdx], level)) {
-          used[rIdx] = true;
-          candidate[p.id] = shuffledRoles[rIdx];
-          if (solve(pIdx + 1)) return true;
-          used[rIdx] = false;
+  let roles: Record<string, Role> = {};
+
+  if (hasPreferences) {
+    const priorityPlayers = shuffle([...sorted]);
+    const assigned: Record<string, Role> = {};
+    const availableRoles = [...configRoles];
+    const unassignedPlayers: Player[] = [];
+
+    const canSolve = (unassigned: Player[], remaining: Role[], level = 0): boolean => {
+      const used = new Array(remaining.length).fill(false);
+      function dfs(pIdx: number): boolean {
+        if (pIdx === unassigned.length) return true;
+        const p = unassigned[pIdx];
+        for (let rIdx = 0; rIdx < remaining.length; rIdx++) {
+          if (!used[rIdx] && isAllowed(p.id, remaining[rIdx], level)) {
+            used[rIdx] = true;
+            if (dfs(pIdx + 1)) return true;
+            used[rIdx] = false;
+          }
+        }
+        return false;
+      }
+      return dfs(0);
+    };
+
+    for (const p of priorityPlayers) {
+      const prefs = rolePreferences[p.id] || [];
+      let satisfied = false;
+      for (const desiredRole of prefs) {
+        const rIdx = availableRoles.indexOf(desiredRole);
+        if (rIdx !== -1 && isAllowed(p.id, desiredRole, 0)) {
+          const testRemaining = [...availableRoles];
+          testRemaining.splice(rIdx, 1);
+          const remainingPlayers = priorityPlayers.filter(other => other.id !== p.id && !assigned[other.id]);
+          if (canSolve(remainingPlayers, testRemaining, 0)) {
+            assigned[p.id] = desiredRole;
+            availableRoles.splice(rIdx, 1);
+            satisfied = true;
+            break;
+          }
         }
       }
-      return false;
+      if (!satisfied) {
+        unassignedPlayers.push(p);
+      }
     }
 
-    if (solve(0)) {
-      roles = candidate;
-      break;
+    const shuffledRemaining = shuffle(availableRoles);
+    for (let level = 0; level <= 3; level++) {
+      const used = new Array(shuffledRemaining.length).fill(false);
+      const candidate: Record<string, Role> = {};
+
+      function solveRemaining(pIdx: number): boolean {
+        if (pIdx === unassignedPlayers.length) return true;
+        const p = unassignedPlayers[pIdx];
+        for (let rIdx = 0; rIdx < shuffledRemaining.length; rIdx++) {
+          if (!used[rIdx] && isAllowed(p.id, shuffledRemaining[rIdx], level)) {
+            used[rIdx] = true;
+            candidate[p.id] = shuffledRemaining[rIdx];
+            if (solveRemaining(pIdx + 1)) return true;
+            used[rIdx] = false;
+          }
+        }
+        return false;
+      }
+
+      if (solveRemaining(0)) {
+        roles = { ...assigned, ...candidate };
+        break;
+      }
+    }
+  } else {
+    const shuffledRoles = shuffle([...configRoles]);
+    for (let level = 0; level <= 3; level++) {
+      const used = new Array(shuffledRoles.length).fill(false);
+      const candidate: Record<string, Role> = {};
+
+      function solve(pIdx: number): boolean {
+        if (pIdx === sorted.length) return true;
+        const p = sorted[pIdx];
+        for (let rIdx = 0; rIdx < shuffledRoles.length; rIdx++) {
+          if (!used[rIdx] && isAllowed(p.id, shuffledRoles[rIdx], level)) {
+            used[rIdx] = true;
+            candidate[p.id] = shuffledRoles[rIdx];
+            if (solve(pIdx + 1)) return true;
+            used[rIdx] = false;
+          }
+        }
+        return false;
+      }
+
+      if (solve(0)) {
+        roles = candidate;
+        break;
+      }
     }
   }
   let guinevereCandidates: string[] | undefined;

@@ -14,6 +14,7 @@ const defaultSettings: Settings = {
   voiceChatEnabled: false,
   autoRevealRoleEnabled: false,
   treasuresEnabled: true,
+  rolePreferenceEnabled: false,
 };
 
 function makePlayers(count: number): Player[] {

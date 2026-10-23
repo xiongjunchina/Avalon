@@ -1,0 +1,58 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { defaultSettings } from '@avalon/contracts';
+import { RolePreferenceModal } from '../src/RolePreferenceModal';
+import { settingsText } from '../src/PresetsPanel';
+
+test('RolePreferenceModal: renders available roles according to player count and shows existing preferences', () => {
+  // Test 6-player mode: contains Merlin, Percival, Loyal, Morgana, Assassin; excludes Mordred & Oberon
+  const html6 = renderToStaticMarkup(
+    createElement(RolePreferenceModal, {
+      open: true,
+      onClose: () => {},
+      currentPreferences: ['merlin', 'percival'],
+      playerCount: 6,
+      onSave: async () => {},
+    })
+  );
+
+  assert.match(html6, /心仪选角 · 偏好匹配/);
+  assert.match(html6, /第一志愿/);
+  assert.match(html6, /第二志愿/);
+  assert.match(html6, /第三志愿/);
+
+  // Selected roles appear in slot section
+  assert.match(html6, /孙悟空/);
+  assert.match(html6, /唐三藏/);
+
+  // 6-player pool has Morgana (六耳猕猴) and Assassin (红孩儿)
+  assert.match(html6, /六耳猕猴/);
+  assert.match(html6, /红孩儿/);
+
+  // But NOT 8-player Mordred (黄眉老怪) or 7-player Oberon (牛魔王)
+  assert.ok(!html6.includes('黄眉老怪'));
+  assert.ok(!html6.includes('牛魔王'));
+
+  // Test 8-player mode: contains Mordred (黄眉老怪)
+  const html8 = renderToStaticMarkup(
+    createElement(RolePreferenceModal, {
+      open: true,
+      onClose: () => {},
+      currentPreferences: [],
+      playerCount: 8,
+      onSave: async () => {},
+    })
+  );
+  assert.match(html8, /黄眉老怪/);
+  assert.ok(!html8.includes('牛魔王')); // Oberon is in 7 or 10, not 8
+});
+
+test('settingsText: displays 心仪选角 when rolePreferenceEnabled is true', () => {
+  const textOff = settingsText({ ...defaultSettings, rolePreferenceEnabled: false });
+  assert.ok(!textOff.includes('心仪选角'));
+
+  const textOn = settingsText({ ...defaultSettings, rolePreferenceEnabled: true });
+  assert.match(textOn, /心仪选角/);
+});
