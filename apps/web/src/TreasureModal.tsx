@@ -241,7 +241,7 @@ export function TreasureModal({
                     <h3>救苦救难 · 慈航照妖镜</h3>
                   </div>
                   <p className="treasure-desc">
-                    观世音菩萨灵觉神镜。发车后可私密照耀车队中 1 位队员的心性纯浊。
+                    观世音菩萨灵觉神镜。发车表决通过后开启 4 秒专属决断期，可私密照耀车队中 1 位队员的心性纯浊。
                     <br />
                     <small className="hint">
                       ※ 纯属观音私密心证，绝不公开，不干涉或改动出牌结果。
@@ -300,7 +300,7 @@ export function TreasureModal({
                       <p>
                         {guanyinMirror?.used
                           ? '✅ 慈航照妖镜本局已照耀完毕。'
-                          : '⏳ 宝镜待机中：需在某一轮车队提名或表决通过后、执行出牌前使用。'}
+                          : '⏳ 宝镜待机中：在任意一轮发车表决通过后，系统将自动开启 4 秒专属照耀窗口。'}
                       </p>
                     </div>
                   )}

@@ -58,7 +58,7 @@ export const commandSchema = z.discriminatedUnion('type', [
     type: z.literal('useTreasure'),
     payload: z.discriminatedUnion('action', [
       z.object({ action: z.literal('tinStaff'), targetId: z.string().uuid() }).strict(),
-      z.object({ action: z.literal('guanyinMirror'), targetId: z.string().uuid() }).strict(),
+      z.object({ action: z.literal('guanyinMirror'), targetId: z.string().uuid().optional(), skip: z.boolean().optional() }).strict(),
       z.object({ action: z.literal('humanBag'), targetId: z.string().uuid() }).strict(),
       z.object({ action: z.literal('jinguSeal') }).strict(),
       z.object({ action: z.literal('bananaFan'), armed: z.boolean() }).strict(),
@@ -235,7 +235,7 @@ export type ServerMessage =
 export type LoyalGuardian = 'zhubajie' | 'shawujing' | 'bailong' | 'jingang';
 export type FemaleDemon = 'spider' | 'baigu' | 'yutu' | 'laoshu';
 export type Team = 'blue' | 'red';
-export type GamePhase = 'dealing' | 'role_reveal' | 'proposing' | 'discussion' | 'team_vote' | 'mission' | 'lady' | 'lady_reveal' | 'early_window' | 'assassination' | 'finished' | 'aborted';
+export type GamePhase = 'dealing' | 'role_reveal' | 'proposing' | 'discussion' | 'team_vote' | 'guanyin_window' | 'mission' | 'lady' | 'lady_reveal' | 'early_window' | 'assassination' | 'finished' | 'aborted';
 export type Player = User & { seat: number };
 export interface RoundView {
   number: number; mission: number; captainId: string; team: string[];
@@ -289,6 +289,7 @@ export interface SelfTreasures {
 export interface GameView {
   id: string; rulesetVersion: string; phase: GamePhase; players: Player[];
   dealEndsAt?: string;
+  guanyinEndsAt?: string;
   mission: number; missionSizes: number[]; failuresRequired: number; rejectionCount: number;
   captainId: string; captainOrder: string[]; rounds: RoundView[];
   draftTeam?: { playerIds: string[]; direction: RoundView['direction'] };

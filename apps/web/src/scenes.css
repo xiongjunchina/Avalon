@@ -6913,3 +6913,280 @@ button.seat-mic-badge:active {
 
 
 
+
+/* =====================================================================
+   Guanyin Window Modal & Dedicated 4-Second Decision UI
+   ===================================================================== */
+.guanyin-window-sheet {
+  background: linear-gradient(165deg, rgba(48, 22, 14, 0.98), rgba(24, 10, 8, 0.99)) !important;
+  border: 1.5px solid #e0aa3e !important;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.9), 0 0 24px rgba(224, 170, 62, 0.25) !important;
+  border-radius: 20px !important;
+  padding: 18px 16px !important;
+  width: min(100%, 450px) !important;
+}
+
+.guanyin-window-head {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  padding-bottom: 12px !important;
+  border-bottom: 1px solid rgba(224, 170, 62, 0.25) !important;
+  margin-bottom: 14px !important;
+}
+
+.guanyin-head-title-block {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+  min-width: 0 !important;
+}
+
+.guanyin-head-kicker {
+  font-size: 11.5px !important;
+  font-weight: 700 !important;
+  color: #ffd875 !important;
+  letter-spacing: 0.5px !important;
+}
+
+.guanyin-head-main-title {
+  font-family: var(--calligraphy) !important;
+  font-size: clamp(16px, 4.2vw, 20px) !important;
+  color: #fff4d0 !important;
+  letter-spacing: 0.5px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.guanyin-timer-pill {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  background: rgba(224, 170, 62, 0.15) !important;
+  border: 1px solid #ffd875 !important;
+  border-radius: 999px !important;
+  padding: 4px 10px !important;
+  color: #ffd875 !important;
+  font-weight: 700 !important;
+  font-size: 13px !important;
+  box-shadow: 0 0 12px rgba(255, 216, 117, 0.3) !important;
+  animation: pulse-aura 1.2s infinite ease-in-out !important;
+}
+
+.guanyin-prompt-desc {
+  font-size: 13px !important;
+  line-height: 1.55 !important;
+  color: #faebd7 !important;
+  margin-bottom: 14px !important;
+  text-align: center !important;
+}
+
+.guanyin-prompt-desc strong {
+  color: #ffd875 !important;
+}
+
+.guanyin-candidates-title {
+  font-size: 12px !important;
+  color: #d4a359 !important;
+  text-align: center !important;
+  letter-spacing: 0.5px !important;
+  margin-bottom: 12px !important;
+}
+
+.guanyin-candidates-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)) !important;
+  gap: 10px !important;
+  margin-bottom: 16px !important;
+}
+
+.guanyin-candidate-card {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 8px !important;
+  background: linear-gradient(145deg, rgba(45, 18, 16, 0.85), rgba(28, 9, 8, 0.95)) !important;
+  border: 1.5px solid rgba(224, 170, 62, 0.5) !important;
+  border-radius: 14px !important;
+  padding: 12px 8px !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  text-align: center !important;
+}
+
+.guanyin-candidate-card:hover:not(:disabled) {
+  border-color: #ffd875 !important;
+  background: linear-gradient(145deg, rgba(65, 26, 22, 0.95), rgba(38, 12, 10, 0.98)) !important;
+  box-shadow: 0 4px 16px rgba(255, 216, 117, 0.35) !important;
+  transform: translateY(-2px) !important;
+}
+
+.guanyin-candidate-card:active:not(:disabled) {
+  transform: scale(0.97) !important;
+}
+
+.guanyin-candidate-avatar {
+  position: relative !important;
+  display: inline-block !important;
+}
+
+.guanyin-seat-badge {
+  position: absolute !important;
+  bottom: -4px !important;
+  right: -6px !important;
+  background: #ffd875 !important;
+  color: #2b0e0a !important;
+  font-size: 10.5px !important;
+  font-weight: 800 !important;
+  border-radius: 6px !important;
+  padding: 1px 4px !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.6) !important;
+}
+
+.guanyin-candidate-info {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+}
+
+.guanyin-candidate-name {
+  font-size: 13px !important;
+  color: #fff2d5 !important;
+  max-width: 100px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.guanyin-candidate-action {
+  font-size: 11px !important;
+  color: #ffd875 !important;
+  font-weight: 600 !important;
+}
+
+.guanyin-actions-bar {
+  display: flex !important;
+  justify-content: center !important;
+  margin-bottom: 12px !important;
+}
+
+.btn-guanyin-skip {
+  background: rgba(30, 12, 10, 0.8) !important;
+  border: 1px solid rgba(224, 170, 62, 0.4) !important;
+  color: #e2cfa2 !important;
+  font-size: 13px !important;
+  padding: 8px 24px !important;
+  border-radius: 999px !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+
+.btn-guanyin-skip:hover:not(:disabled) {
+  border-color: #ffd875 !important;
+  color: #fff2d5 !important;
+  background: rgba(50, 18, 14, 0.9) !important;
+}
+
+.guanyin-rule-footnote {
+  font-size: 11px !important;
+  line-height: 1.5 !important;
+  color: #bfa882 !important;
+  text-align: center !important;
+  margin: 0 !important;
+}
+
+/* Neutral Non-Guanyin Waiting View */
+.guanyin-waiting-view {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  text-align: center !important;
+  padding: 10px 8px 6px !important;
+}
+
+.guanyin-waiting-aura {
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 64px !important;
+  height: 64px !important;
+  margin-bottom: 14px !important;
+  border-radius: 50% !important;
+  background: radial-gradient(circle, rgba(255, 216, 117, 0.25) 0%, rgba(224, 170, 62, 0.05) 60%, transparent 80%) !important;
+}
+
+.aura-mirror-icon {
+  font-size: 32px !important;
+  animation: pulse-mirror 2s infinite ease-in-out !important;
+}
+
+.aura-halo {
+  position: absolute !important;
+  font-size: 16px !important;
+  top: 0 !important;
+  right: 0 !important;
+  animation: rotate-sparkle 3s infinite linear !important;
+}
+
+.guanyin-waiting-headline {
+  font-size: 14.5px !important;
+  font-weight: 700 !important;
+  color: #fff4d0 !important;
+  margin-bottom: 6px !important;
+}
+
+.guanyin-waiting-detail {
+  font-size: 13px !important;
+  color: #faebd7 !important;
+  margin-bottom: 14px !important;
+}
+
+.guanyin-lineup-preview {
+  background: rgba(20, 8, 7, 0.6) !important;
+  border: 1px solid rgba(224, 170, 62, 0.3) !important;
+  border-radius: 10px !important;
+  padding: 8px 12px !important;
+  font-size: 12px !important;
+  color: #faebd7 !important;
+  margin-bottom: 14px !important;
+  width: 100% !important;
+}
+
+.guanyin-lineup-preview .lineup-label {
+  color: #ffd875 !important;
+  font-weight: 700 !important;
+}
+
+.guanyin-progress-track {
+  width: 100% !important;
+  height: 4px !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-radius: 999px !important;
+  overflow: hidden !important;
+  margin-bottom: 14px !important;
+}
+
+.guanyin-progress-bar {
+  height: 100% !important;
+  background: linear-gradient(90deg, #d4a359, #ffd875) !important;
+  border-radius: 999px !important;
+  transition: width 0.1s linear !important;
+}
+
+@keyframes pulse-aura {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 10px rgba(255, 216, 117, 0.2); }
+  50% { transform: scale(1.04); box-shadow: 0 0 16px rgba(255, 216, 117, 0.45); }
+}
+
+@keyframes pulse-mirror {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+@keyframes rotate-sparkle {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}

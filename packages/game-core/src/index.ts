@@ -55,6 +55,7 @@ function requireRule(condition: unknown, code: string): asserts condition { if (
 export interface GameState {
   id: string; rulesetVersion: string; settings: Settings; players: Player[]; roles: Record<string, Role>;
   dealEndsAt?: string;
+  guanyinEndsAt?: string;
   phase: GameView['phase']; mission: number; rejectionCount: number; captainOrder: string[]; captainIndex: number;
   confirmed: string[]; teamVotes: Record<string, TeamBallot>; missionVotes: Record<string, boolean>; rounds: RoundView[];
   draftTeam?: { playerIds: string[]; direction: RoundView['direction'] };
@@ -391,7 +392,18 @@ export function transition(state: GameState, userId: string, action: Pick<Comman
             openEarlyWindowOrPropose(g);
           } else {
             delete g.bananaFanNotice;
-            g.phase = 'mission';
+            const hasUnusedGuanyin = Boolean(
+              g.settings.treasuresEnabled &&
+              g.players.length >= 9 &&
+              g.players.some(p => g.roles[p.id] === 'guinevere') &&
+              !g.treasuresState?.guanyinMirror?.used
+            );
+            if (hasUnusedGuanyin) {
+              g.phase = 'guanyin_window';
+              g.guanyinEndsAt = new Date(context.now + 4000).toISOString();
+            } else {
+              g.phase = 'mission';
+            }
           }
         } else {
           delete g.bananaFanNotice;
@@ -498,14 +510,23 @@ export function transition(state: GameState, userId: string, action: Pick<Comman
         case 'guanyinMirror': {
           requireRule(g.roles[userId] === 'guinevere', 'NOT_GUINEVERE');
           requireRule(!g.treasuresState.guanyinMirror?.used, 'ALREADY_USED');
+          requireRule(g.phase === 'guanyin_window', 'WRONG_PHASE');
           const round = g.rounds.at(-1);
-          requireRule(round && ['discussion', 'team_vote', 'mission'].includes(g.phase), 'WRONG_PHASE');
-          const { targetId } = payload;
+          requireRule(round, 'WRONG_PHASE');
+          const guanyinPayload = payload as { action: 'guanyinMirror'; targetId?: string; skip?: boolean };
+          if (guanyinPayload.skip) {
+            g.phase = 'mission';
+            delete g.guanyinEndsAt;
+            break;
+          }
+          const { targetId } = guanyinPayload;
           requireRule(targetId && round.team.includes(targetId), 'TARGET_NOT_ON_TEAM');
           requireRule(targetId !== userId, 'CANNOT_INSPECT_SELF');
           const targetRole = g.roles[targetId];
           const alignment = teamOf(targetRole) === 'red' ? 'evil' : 'pure';
           g.treasuresState.guanyinMirror = { used: true, result: { targetId, alignment } };
+          g.phase = 'mission';
+          delete g.guanyinEndsAt;
           break;
         }
         case 'humanBag': {
@@ -556,6 +577,7 @@ export function projectGame(g: GameState, userId?: string): GameView {
 
   return { id: g.id, rulesetVersion: g.rulesetVersion, phase: g.phase, players: structuredClone(g.players), mission: g.mission,
     ...(g.phase === 'dealing' ? { dealEndsAt: g.dealEndsAt } : {}),
+    ...(g.phase === 'guanyin_window' ? { guanyinEndsAt: g.guanyinEndsAt } : {}),
     missionSizes: [...MISSION_SIZES[g.players.length]], failuresRequired: failuresRequired(g), rejectionCount: g.rejectionCount,
     captainId: captain(g), captainOrder: [...g.captainOrder], rounds: structuredClone(g.rounds),
     ...(['role_reveal','proposing','discussion'].includes(g.phase) && g.draftTeam ? { draftTeam: structuredClone(g.draftTeam) } : {}),
@@ -594,7 +616,7 @@ export function projectGame(g: GameState, userId?: string): GameView {
         ...(role === 'guinevere' && treasuresEnabled ? {
           guanyinMirror: {
             used: Boolean(g.treasuresState?.guanyinMirror?.used),
-            available: !g.treasuresState?.guanyinMirror?.used && Boolean(currentRound && ['discussion', 'team_vote', 'mission'].includes(g.phase) && !isEnded(g)),
+            available: !g.treasuresState?.guanyinMirror?.used && Boolean(currentRound && g.phase === 'guanyin_window' && !isEnded(g)),
             result: g.treasuresState?.guanyinMirror?.result,
           },
         } : {}),

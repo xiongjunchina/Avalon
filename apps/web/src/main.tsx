@@ -607,6 +607,18 @@ function App() {
           }
         }
       }
+      if (next.phase === 'guanyin_window') {
+        const guanyin = next.players.find(p => next.roles[p.id] === 'guinevere');
+        if (guanyin && guanyin.id !== practiceUserId) {
+          const round = next.rounds.at(-1);
+          const target = round?.team.find(id => id !== guanyin.id);
+          if (target) {
+            next = transition(next, guanyin.id, { type: 'useTreasure', payload: { action: 'guanyinMirror', targetId: target } }, onlineIds);
+          } else {
+            next = transition(next, guanyin.id, { type: 'useTreasure', payload: { action: 'guanyinMirror', skip: true } }, onlineIds);
+          }
+        }
+      }
       if (next.phase === 'mission') {
         const round = next.rounds.at(-1)!;
         for (const pid of round.team) {
@@ -660,6 +672,17 @@ function App() {
           if (next.phase !== 'team_vote') break;
           if (!(p.id in next.teamVotes)) {
             next = transition(next, p.id, { type: 'teamVote', payload: { approve: true } }, onlineIds);
+          }
+        }
+      } else if (next.phase === 'guanyin_window') {
+        const guanyin = next.players.find(p => next.roles[p.id] === 'guinevere');
+        if (guanyin) {
+          const round = next.rounds.at(-1);
+          const target = round?.team.find(id => id !== guanyin.id);
+          if (target) {
+            next = transition(next, guanyin.id, { type: 'useTreasure', payload: { action: 'guanyinMirror', targetId: target } }, onlineIds);
+          } else {
+            next = transition(next, guanyin.id, { type: 'useTreasure', payload: { action: 'guanyinMirror', skip: true } }, onlineIds);
           }
         }
       } else if (next.phase === 'mission') {

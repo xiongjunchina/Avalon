@@ -10,6 +10,7 @@ import { DealCountdown } from './DealCountdown';
 import { QuestMedallion } from './QuestMedallion';
 import { BattleHistory } from './BattleRound';
 import { TeamVoteDialog } from './TeamVoteDialog';
+import { GuanyinWindowDialog } from './GuanyinWindowDialog';
 import { MissionReportDialog } from './MissionReportDialog';
 import { PartyBanner } from './PlayerToken';
 import { Modal } from './Modal';
@@ -25,6 +26,7 @@ const phaseNames: Record<GameView['phase'], string> = {
   proposing: '队长组队',
   discussion: '真假论道',
   team_vote: '组队表决',
+  guanyin_window: '宝镜决断',
   mission: '取经出征',
   lady: '照妖宝镜查验',
   lady_reveal: '确认查验结果',
@@ -89,6 +91,7 @@ export function GamePanel({
   const setSelected = (update: (ids: string[]) => string[]) => send({ type: 'updateTeamDraft', payload: { playerIds: update(selected), direction } });
   const setDirection = (value: 'clockwise' | 'counterclockwise') => send({ type: 'updateTeamDraft', payload: { playerIds: selected, direction: value } });
   const [voteDismissed, setVoteDismissed] = useState(false);
+  const [guanyinWindowDismissed, setGuanyinWindowDismissed] = useState(false);
   const [choice, setChoice] = useState<boolean | null>(null);
   const [blueFailWarning, setBlueFailWarning] = useState(false);
   const [target, setTarget] = useState('');
@@ -148,6 +151,7 @@ export function GamePanel({
 
   useEffect(() => {
     setVoteDismissed(false);
+    setGuanyinWindowDismissed(false);
     setChoice(null);
     setBlueFailWarning(false);
     setTarget('');
@@ -688,7 +692,7 @@ export function GamePanel({
             !ended &&
             (effectivePhase === 'proposing'
               ? selected.includes(p.id)
-              : ['discussion', 'team_vote', 'mission'].includes(effectivePhase) && Boolean(round?.team.includes(p.id)));
+              : ['discussion', 'team_vote', 'guanyin_window', 'mission'].includes(effectivePhase) && Boolean(round?.team.includes(p.id)));
           const isTargeted =
             (g.phase === 'lady' || g.phase === 'assassination') && target === p.id;
           const canTapSeat =
@@ -1021,6 +1025,34 @@ export function GamePanel({
           </div>
         )}
 
+        {g.phase === 'guanyin_window' && (
+          <div className="dock-panel guanyin-dock-panel">
+            {self?.role === 'guinevere' ? (
+              <div className="dock-guanyin-active">
+                <button
+                  type="button"
+                  className="btn-primary-cta btn-dragon-cta"
+                  onClick={() => setGuanyinWindowDismissed(false)}
+                >
+                  <span className="btn-cloud-flourish left" aria-hidden="true"><CloudFlourish side="left" /></span>
+                  <span className="btn-cta-text">🪞 打开照妖镜决断面板</span>
+                  <span className="btn-cloud-flourish right" aria-hidden="true"><CloudFlourish side="right" /></span>
+                </button>
+              </div>
+            ) : (
+              <div className="dock-waiting-hero">
+                <span className="dock-waiting-icon" aria-hidden="true">🪞</span>
+                <div className="dock-waiting-body">
+                  <strong className="dock-waiting-title">【佛光宝镜】观音菩萨正在审视出征车队…</strong>
+                  <p className="dock-waiting-desc">
+                    车队表决已通过，观音正在做出决断，即将开启本难出征试炼
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {g.phase === 'mission' && (
           <div className="dock-panel mission-vote-dock">
             <p className="dock-rule-hint" role="status">
@@ -1258,6 +1290,18 @@ export function GamePanel({
       </div>
 
       {g.phase === 'team_vote' && !voteDismissed && <TeamVoteDialog game={g} players={publicPlayers} anonymous={room.settings.anonymousTeamVote} userId={userId} serverTime={room.serverTime} disabled={disabled} send={send} onClose={() => setVoteDismissed(true)} />}
+      {g.phase === 'guanyin_window' && !guanyinWindowDismissed && (
+        <GuanyinWindowDialog
+          game={g}
+          players={publicPlayers}
+          userId={userId}
+          serverTime={room.serverTime}
+          disabled={disabled}
+          send={send}
+          onTick={() => onSound?.('tick')}
+          onClose={() => setGuanyinWindowDismissed(true)}
+        />
+      )}
       {!ended && abortConfirm && (
         <Modal label={room.hostId === userId ? '结束游戏' : '申请中止游戏'} scene="sword" onClose={() => setAbortConfirm(false)}>
           <div className="table-modal-sheet">

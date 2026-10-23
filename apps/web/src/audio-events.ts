@@ -32,7 +32,7 @@ export function gameAudioCues(previous: PublicAudioGame | null, next: PublicAudi
     switch (phase(next)) {
       case 'proposing': case 'discussion': return ['page'];
       case 'team_vote': return ['notice'];
-      case 'lady': return ['chime'];
+      case 'lady': case 'guanyin_window': return ['chime'];
     }
   }
   return [];

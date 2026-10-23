@@ -71,8 +71,8 @@ export function IdentityDetails({
       treasureSub = self.treasures?.guanyinMirror?.used
         ? '慈航照妖镜（已照耀）'
         : self.treasures?.guanyinMirror?.available
-          ? '✨ 可照耀车队队员！'
-          : '慈航照妖镜（发车后可用）';
+          ? '✨ 正在审视车队（4秒专属期）！'
+          : '慈航照妖镜（发车表决后开启）';
     } else if (self.role === 'mordred') {
       treasureSub = self.treasures?.humanBag?.used
         ? '后天人种袋（已收人）'
