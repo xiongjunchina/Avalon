@@ -64,10 +64,14 @@ export interface WxRuntime {
   onShareAppMessage?(callback: () => { title: string; query?: string }): void;
   shareAppMessage?(options: { title: string; query: string }): void;
   getLaunchOptionsSync?(): { query?: { invite?: string } };
+  vibrateShort?(options?: { type?: 'light' | 'medium' | 'heavy'; success?(): void; fail?(): void }): void;
 }
 
 export class WechatPlatform {
   constructor(readonly runtime: WxRuntime) {}
+  vibrate(type: 'light' | 'medium' | 'heavy' = 'light') {
+    try { this.runtime.vibrateShort?.({ type }); } catch { /* ignore on unsupported devices */ }
+  }
   canvas() { return this.runtime.createCanvas(); }
   screen() { return this.runtime.getSystemInfoSync(); }
   viewport() {

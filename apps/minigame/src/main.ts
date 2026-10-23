@@ -214,7 +214,7 @@ async function select(id: string) {
   if(id==='openReplay'&&room?.game&&playerPanel)return run(async()=>{previousView='game';await playerPanel!.openReplay(room!.game!.id,'back');navigate('player');});
   if(id==='switch'&&view==='player'){authMode='switch';switchCode='';navigate('entry');auxiliary='switchAccount';render();return;}
   if (id === 'copyCode' && user?.playerCode && wx.setClipboardData) { wx.setClipboardData({ data: user.playerCode, success: () => { notice = '仙友码已复制'; render(); }, fail: () => { error = '复制失败，请重试'; render(); } }); return; }
-  sound.activate(); sound.effect('tap');
+  sound.activate(); sound.effect('tap'); platform.vibrate('light');
   if(id==='share'&&room){if(wx.shareAppMessage)wx.shareAppMessage({title:`来嘻游 · 真假猴王房间 ${room.code} 一起论剑`,query:`invite=${encodeURIComponent(room.code)}`});else{notice=`请告知好友房间号 ${room.code}`;render();}return;}
   if (id === 'copyRoom' && room && wx.setClipboardData) { wx.setClipboardData({ data: baseUrl + '/?invite=' + encodeURIComponent(room.code), success: () => { notice = '房间邀请链接已复制'; render(); }, fail: () => { error = '复制失败，请重试'; render(); } }); return; }
   if (id === 'sound') { auxiliary = 'sound'; scroll = 0; render(); return; }
@@ -363,7 +363,7 @@ async function select(id: string) {
       render(); return;
     }
     if (command && !connection?.send(command)) { error = '正在等待上一操作确认'; render(); }
-    else if (command?.type === 'useTreasure') { gameUi.targetId = undefined; render(); }
+    else if (command) { platform.vibrate('medium'); if (command.type === 'useTreasure') { gameUi.targetId = undefined; render(); } }
   }
 }
 
