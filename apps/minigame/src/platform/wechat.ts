@@ -65,6 +65,7 @@ export interface WxRuntime {
   shareAppMessage?(options: { title: string; query: string }): void;
   getLaunchOptionsSync?(): { query?: { invite?: string } };
   vibrateShort?(options?: { type?: 'light' | 'medium' | 'heavy'; success?(): void; fail?(): void }): void;
+  requestAnimationFrame?(callback: () => void): number;
 }
 
 export class WechatPlatform {

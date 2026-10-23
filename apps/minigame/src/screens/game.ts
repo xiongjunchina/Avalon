@@ -51,7 +51,7 @@ export function syncGameUi(ui: GameUiState, room: RoomView, allowAutoReveal = tr
 
 const phaseName: Record<GameView['phase'], string> = {
   dealing: '正在发牌', role_reveal: '查看身份', proposing: '队长提名', discussion: '商议队伍',
-  team_vote: '表决队伍', mission: '执行任务', lady: '照妖宝镜', lady_reveal: '查验结果',
+  team_vote: '表决队伍', mission: '执行任务', guanyin_window: '慈航照妖镜',
   early_window: '提前刺杀', assassination: '终局刺杀', finished: '对局结束', aborted: '对局中止',
 };
 
@@ -78,7 +78,6 @@ export function gameScreen(room: RoomView, user: User, ui: GameUiState, now = Da
   if (ui.privateRoleVisible && self?.evilIds.length) rows.push({ id: 'evil', text: `已知妖魔：${self.evilIds.map(playerLabel).join('、')}` });
   if (ui.privateRoleVisible && self?.merlinCandidates.length) rows.push({ id: 'merlinCandidates', text: `真假悟空候选：${self.merlinCandidates.map(playerLabel).join('、')}` });
   if (ui.privateRoleVisible && self?.guinevereCandidates?.length) rows.push({ id: 'guinevereCandidates', text: `线索候选：${self.guinevereCandidates.map(playerLabel).join('、')}` });
-  if (ui.privateRoleVisible && self?.inspections.length) rows.push(...self.inspections.map(value => ({ id: `inspection:${value.afterMission}`, text: `查验结果：${playerLabel(value.targetId)}属${value.team === 'red' ? '妖魔' : '取经'}阵营` })));
   if (ui.privateRoleVisible && room.settings.treasuresEnabled && game.players.length >= 8 && self?.treasures?.enabled) {
     const treasure = self.treasures;
     if (treasure.tinStaff) rows.push({ id: 'treasure:tinStaff', text: treasure.tinStaff.result
@@ -125,8 +124,6 @@ export function gameScreen(room: RoomView, user: User, ui: GameUiState, now = Da
   if (game.phase === 'mission' && self && !self.missionVoted && round?.team.includes(user.id)) rows.push(
     { id: 'missionSuccess', text: '任务成功' }, ...(self.team === 'red' ? [{ id: 'missionFail', text: '任务失败' }] : []),
   );
-  if (game.phase === 'lady' && self?.canInspect) rows.push({ id: 'inspect', text: `查验所选玩家${ui.targetId ? ' ✓' : ''}` });
-  if (game.phase === 'lady_reveal' && self?.canConfirmInspection) rows.push({ id: 'confirmInspection', text: '确认查验结果' });
   if (ui.privateRoleVisible && self?.canDecideEarly) {
     rows.push({ id: 'earlyAttempt', text: '启用提前刺杀（刺错立即失败）' });
     if (game.phase === 'early_window') rows.push({ id: 'earlySkip', text: '继续对局' });
@@ -255,8 +252,6 @@ export function gameAction(room: RoomView, user: User, action: string, ui: Parti
   if (action === 'startTeamVote' && game.phase === 'discussion' && game.captainId === user.id) command = { type: 'startTeamVote', payload: {} };
   if (game.phase === 'team_vote' && self && !self.teamVoted && ['approve', 'reject', 'abstain'].includes(action)) command = { type: 'teamVote', payload: { approve: action === 'abstain' ? 'abstain' : action === 'approve' } };
   if (game.phase === 'mission' && self && !self.missionVoted && round?.team.includes(user.id) && ['missionSuccess', 'missionFail'].includes(action) && (action !== 'missionFail' || self.team === 'red')) command = { type: 'missionVote', payload: { success: action === 'missionSuccess' } };
-  if (action === 'inspect' && game.phase === 'lady' && self?.canInspect && ui.targetId && ui.targetId !== user.id && !game.lady?.holderIds.includes(ui.targetId)) command = { type: 'inspectAlignment', payload: { targetId: ui.targetId } };
-  if (action === 'confirmInspection' && game.phase === 'lady_reveal' && self?.canConfirmInspection) command = { type: 'confirmInspection', payload: {} };
   if (ui.privateRoleVisible && self?.canDecideEarly && !['dealing', 'role_reveal', 'assassination', 'finished', 'aborted'].includes(game.phase)
     && (action === 'earlyAttempt' || action === 'earlySkip' && game.phase === 'early_window'))
     command = { type: 'earlyAssassinationDecision', payload: { attempt: action === 'earlyAttempt' } };

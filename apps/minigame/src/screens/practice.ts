@@ -68,15 +68,10 @@ export class PracticeSession {
         if (this.game.phase !== 'mission') break;
         if ((id !== this.user.id || autoSelf) && !(id in this.game.missionVotes)) apply(id, { type: 'missionVote', payload: { success: teamOf(this.game.roles[id]!) !== 'red' || this.game.mission === 1 } });
       }
-    } else if (game.phase === 'lady' && game.lady) {
-      const id = game.lady.holderId;
-      if ((id === this.user.id && !autoSelf)) return false;
-      const target = game.players.find(player => !game.lady!.holderIds.includes(player.id));
-      if (target) apply(id, { type: 'inspectAlignment', payload: { targetId: target.id } });
-    } else if (game.phase === 'lady_reveal' && game.lady) {
-      const id = game.lady.inspections.at(-1)?.inspectorId;
+    } else if (game.phase === 'guanyin_window') {
+      const id = game.players.find(player => game.roles[player.id] === 'guinevere')?.id;
       if (!id || (id === this.user.id && !autoSelf)) return false;
-      apply(id, { type: 'confirmInspection', payload: {} });
+      apply(id, { type: 'useTreasure', payload: { action: 'guanyinMirror', skip: true } });
     } else if (game.phase === 'early_window') {
       const id = game.players.find(player => game.roles[player.id] === 'assassin')?.id;
       if (!id || (id === this.user.id && !autoSelf)) return false;

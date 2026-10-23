@@ -5,10 +5,10 @@ import { gameScreen, gameAction, syncGameUi } from '../src/screens/game.js';
 
 const self = { id: '11111111-1111-4111-8111-111111111111', nickname: '我', seat: 1 };
 const other = { id: '22222222-2222-4222-8222-222222222222', nickname: '他', seat: 2 };
-const phases: GamePhase[] = ['dealing','role_reveal','proposing','discussion','team_vote','mission','lady','lady_reveal','early_window','assassination','finished','aborted'];
+const phases: GamePhase[] = ['dealing','role_reveal','proposing','discussion','team_vote','mission','guanyin_window','early_window','assassination','finished','aborted'];
 const room = (phase: GamePhase) => ({ id: '33333333-3333-4333-8333-333333333333', version: 4, hostId: self.id, code: '123456', phase: 'playing', settings: { ...defaultSettings, playerCount: 5 }, members: [], acceptingNewMembers: true,
   game: { id: '44444444-4444-4444-8444-444444444444', rulesetVersion: 'test', phase, players: [self, other], captainId: self.id, captainOrder: [self.id, other.id], mission: 1, missionSizes: [2,3,2,3,3], failuresRequired: 1, rejectionCount: 0, rounds: [{ number: 1, mission: 1, captainId: self.id, team: [self.id, other.id], direction: 'clockwise' }], progress: { confirmed: 0, teamVotes: 0, missionVotes: 0 },
-    self: { role: 'merlin', team: 'blue', evilIds: [other.id], merlinCandidates: [], confirmed: false, teamVoted: false, missionVoted: false, inspections: [], canInspect: false, canConfirmInspection: false, canDecideEarly: false } } }) as RoomView;
+    self: { role: 'merlin', team: 'blue', evilIds: [other.id], merlinCandidates: [], confirmed: false, teamVoted: false, missionVoted: false, canDecideEarly: false } } }) as RoomView;
 
 test('every server game phase renders without exposing private role by default', () => {
   for (const phase of phases) {
@@ -69,17 +69,14 @@ test('captain can update a partial draft and host can resolve an abort request',
 });
 
 test('game screen shows public progress and private clues only after reveal', () => {
-  const current = room('lady_reveal');
+  const current = room('mission');
   current.game!.rejectionCount = 2;
   current.game!.rounds[0]!.result = { successes: 1, failures: 1, passed: false };
-  current.game!.self!.inspections = [{ afterMission: 1, inspectorId: self.id, targetId: other.id, team: 'red' }];
   const hidden = JSON.stringify(gameScreen(current, self as User, { privateRoleVisible: false, ballotVisible: false }));
   assert.match(hidden, /流局 2\/5/);
   assert.match(hidden, /第1轮任务失败/);
-  assert.doesNotMatch(hidden, /inspection:1|属妖魔阵营/);
   const revealed = JSON.stringify(gameScreen(current, self as User, { privateRoleVisible: true, ballotVisible: false }));
-  assert.match(revealed, /查验结果.*妖魔/);
-  assert.match(revealed, /2号/);
+  assert.match(revealed, /已知妖魔.*2号/);
 });
 
 test('game UI adopts server draft and clears selections when round or game changes', () => {

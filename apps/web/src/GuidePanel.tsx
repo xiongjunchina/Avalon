@@ -7,7 +7,8 @@ import { RolePortrait } from './RolePortrait';
 import { ALL_GALLERY_ROLES, FEMALE_DEMONS, LOYAL_GUARDIANS, WUYUE_MISSIONS, roleNames, roleMottos, roleTitles } from './roles';
 import { RoleViewerModal } from './RoleViewerModal';
 
-export { roleDescriptions, roleTreasures } from './role-descriptions';
+import { roleDescriptions, roleTreasures } from './role-descriptions';
+export { roleDescriptions, roleTreasures };
 
 const allRoles=Object.keys(roleNames) as Role[];
 function composition(roles:Role[]) {

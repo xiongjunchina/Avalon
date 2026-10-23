@@ -13,9 +13,8 @@ test('5–12 player practice games complete through the real Mini Game actions a
       syncGameUi(ui, room);
       ui.selectedIds = game.players.filter(player => player.id !== game.humanBagBannedPlayerId)
         .slice(0, game.missionSizes[game.mission - 1]).map(player => player.id);
-      ui.targetId = game.players.find(player => player.id !== session.user.id &&
-        (game.phase !== 'lady' || !game.lady?.holderIds.includes(player.id)))?.id;
-      const action = ['confirmRole', 'propose', 'startTeamVote', 'approve', 'missionSuccess', 'inspect', 'confirmInspection', 'earlySkip', 'assassinate']
+      ui.targetId = game.players.find(player => player.id !== session.user.id)?.id;
+      const action = ['confirmRole', 'propose', 'startTeamVote', 'approve', 'missionSuccess', 'earlySkip', 'assassinate']
         .map(id => gameAction(room, session.user, id, ui)).find(Boolean);
       if (action) session.act(action);
       else assert.equal(session.stepBot(), true, count + '人练习未能推进：' + game.phase);
