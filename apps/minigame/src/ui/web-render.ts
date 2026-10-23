@@ -3,14 +3,16 @@ import { hitTest, wrapText, type HitRegion, type SafeViewport } from './layout.j
 import { layoutWebScreen, type WebNode, type WebLayout } from './web-layout.js';
 import type { ScreenModel } from './widgets.js';
 
-// Matches apps/web/src/scenes.css (Scheme A-2). No alternate Mini Game visual theme.
-let sans = '"Noto Sans SC","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif';
-let display = '"ZCOOL XiaoWei","Ma Shan Zheng",STKaiti,"Kaiti SC",sans-serif';
-let calligraphy = '"Ma Shan Zheng","ZCOOL XiaoWei",STKaiti,"Kaiti SC",cursive,sans-serif';
+// Matches apps/web/src/scenes.css (Scheme A-2).
+const cnSans = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC",system-ui,-apple-system,sans-serif';
+const cnKaiti = '"STKaiti","Kaiti SC","Ma Shan Zheng",' + cnSans;
+let sans = cnSans;
+let display = '"ZCOOL XiaoWei",' + cnSans;
+let calligraphy = '"Ma Shan Zheng",' + cnKaiti;
 export function setWebFonts(fonts: { sans?: string; display?: string; calligraphy?: string }) {
-  if(fonts.sans) sans=JSON.stringify(fonts.sans)+',sans-serif';
-  if(fonts.display) display=JSON.stringify(fonts.display)+',serif';
-  if(fonts.calligraphy) calligraphy=JSON.stringify(fonts.calligraphy)+',serif';
+  if (fonts.sans) sans = JSON.stringify(fonts.sans) + ',' + cnSans;
+  if (fonts.display) display = JSON.stringify(fonts.display) + ',' + cnSans;
+  if (fonts.calligraphy) calligraphy = JSON.stringify(fonts.calligraphy) + ',' + cnKaiti;
 }
 const clamp = (a: number, value: number, b: number) => Math.max(a, Math.min(value,b));
 export const webTheme = {
@@ -524,7 +526,9 @@ function drawNode(ctx: CanvasRenderingContext2D, n: WebNode, model: ScreenModel,
       ctx.restore(); return;
     }
     const lines = n.height <= 38 || n.badge==='utility' ? [table && n.fixed && n.width<45 ? n.text.replace(' ', '') : n.text] : n.lines ?? wrapText(n.text, n.width - 20);
-    lines.forEach((line, index) => text(ctx, line, cx, n.y + (n.height - lines.length * 21) / 2 + 10 + index * 21, table ? n.width-4 : n.width - 14, home ? n.height<=36?12.5:clamp(15,(n.width*2+40)*.041,17.5) : n.badge==='utility'?14.5:table&&n.fixed?n.width<45?10:11:isDirection?14.5:14, n.kind === 'input' ? webTheme.muted : n.id==='logout'?'#fca5a5':isDirection||isCTA?webTheme.accent:'#fff3d6', 'center', isDirection||isCTA?calligraphy:home&&n.height>38?display:sans, home&&n.height<=36?'500':'700'));
+    const fontFace = n.kind === 'input' || n.kind === 'tab' ? sans : isDirection || isCTA ? calligraphy : home && n.height > 38 && n.kind !== 'button' ? display : sans;
+    const fontWt = n.kind === 'input' ? '400' : home && n.height <= 36 ? '500' : '700';
+    lines.forEach((line, index) => text(ctx, line, cx, n.y + (n.height - lines.length * 21) / 2 + 10 + index * 21, table ? n.width-4 : n.width - 14, home ? n.height<=36?12.5:clamp(15,(n.width*2+40)*.041,17.5) : n.badge==='utility'?14.5:table&&n.fixed?n.width<45?10:11:isDirection?14.5:14, n.kind === 'input' ? webTheme.muted : n.id==='logout'?'#fca5a5':isDirection||isCTA?webTheme.accent:'#fff3d6', 'center', fontFace, fontWt));
     ctx.restore();
   }
 }
