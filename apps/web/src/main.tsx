@@ -41,6 +41,8 @@ import { Emblem, PlayerAvatar, WECHAT_SAMPLE_AVATARS, roleTeam } from './Heraldr
 import { GuidePanel } from './GuidePanel';
 import { RolePortrait } from './RolePortrait';
 import { WUYUE_MISSIONS, roleNames, roleTitles } from './roles';
+import { knownAccountsList, rememberAccount } from './known-accounts';
+import { RoomCreationAccess, RoomPasswordSettings, type CreationAccess } from './RoomAccess';
 import { LobbyHome } from './LobbyHome';
 import { EntryDialog, type EntryIntent, type KnownAccount } from './EntryDialog';
 import { SoundProvider, SoundButton, useSound, useGameSound, useNavigationSound } from './SoundSettings';
@@ -101,32 +103,12 @@ function App() {
   const [freeAccessMode, setFreeAccessMode] = useState<boolean>(false);
   const [entryIntent, setEntryIntent] = useState<EntryIntent | null>(null);
   const [inviteKey, setInviteKey] = useState(() => new URLSearchParams(window.location.search).get('invite') ?? '');
-  const [knownAccounts, setKnownAccounts] = useState<KnownAccount[]>(() => {
-    try {
-      const raw = localStorage.getItem('avalon_known_accounts');
-      return raw ? JSON.parse(raw) : [];
-    } catch {
-      return [];
-    }
-  });
-
-  const saveKnownAccount = (u: User) => {
-    if (!u || !u.playerCode) return;
-    try {
-      const raw = localStorage.getItem('avalon_known_accounts');
-      const list: KnownAccount[] = raw ? JSON.parse(raw) : [];
-      const filtered = list.filter(item => item.playerCode !== u.playerCode && item.id !== u.id);
-      filtered.unshift({
-        id: u.id,
-        nickname: u.nickname,
-        playerCode: u.playerCode,
-        lastSeen: Date.now(),
-      });
-      const updated = filtered.slice(0, 5);
-      localStorage.setItem('avalon_known_accounts', JSON.stringify(updated));
-      setKnownAccounts(updated);
-    } catch {}
-  };
+  const [knownAccounts, setKnownAccounts] = useState<KnownAccount[]>(knownAccountsList);
+  const saveKnownAccount = (u: User, recoveryCode?: string) => setKnownAccounts(rememberAccount(u,recoveryCode));
+  useEffect(()=>{if(user)setKnownAccounts(rememberAccount(user));},[user?.id,user?.playerCode]);
+  const [creationAccess,setCreationAccess]=useState<CreationAccess>({});
+  const [joinPassword,setJoinPassword]=useState('');
+  const [joinNeedsPassword,setJoinNeedsPassword]=useState(false);
   // Manual room-code entry starts empty; an explicit invitation is retained separately until joining.
   const [key, setKey] = useState('');
   const [joinOpen, setJoinOpen] = useState(false);
@@ -364,7 +346,8 @@ function App() {
       if (document.visibilityState !== 'visible' || refreshing) return;
       refreshing = true;
       try {
-        await api('/sessions/refresh', {});
+        const data=await api<{user:User}>('/sessions/refresh', {});
+        if(active){setUser(data.user);saveKnownAccount(data.user);}
       } catch (err) {
         if (active) {
           setError(describe(err));
@@ -401,8 +384,10 @@ function App() {
       handlers: {
         snapshot: snap => {
           setRoom(snap);
+          if(snap.inviteKey)setInvite(snap.inviteKey);
         },
         invite: setInvite,
+        playerCode: code => {setUser(current=>current?{...current,playerCode:code}:current);setNotice('管理员已更新你的仙友码，可在功果簿查看。');},
         status: setConnection,
         busy: setBusy,
         error: code => setError(errors[code] ?? '连接发生问题，请稍后重试。'),
@@ -515,6 +500,7 @@ function App() {
     await run(async () => {
       await api('/sessions', {}, 'DELETE');
       setUser(null);
+      setKnownAccounts(knownAccountsList());
       setRoomId(null);
       setRoom(null);
       setPage('table');
@@ -524,27 +510,32 @@ function App() {
 
   function openEntry(intent: EntryIntent) {
     if (busy) return;
+    setKnownAccounts(knownAccountsList());
     if (!user) setEntryIntent(intent);
     else resumeEntry(intent);
   }
 
   function resumeEntry(intent: EntryIntent, authenticatedUser = user) {
     setPage('table');
-    if (intent.type === 'create') setSetupOpen(true);
+    if (intent.type === 'create') {setCreationAccess({});setSetupOpen(true);}
     else if (intent.type === 'account') { setReplayId(null); setPage('account'); }
     else if (intent.type === 'practice') startPracticeGame(setupSettings, authenticatedUser);
     else if (intent.type === 'join') {
+      setJoinNeedsPassword(false);setJoinPassword('');
       setKey(intent.inviteKey ?? '');
       setJoinOpen(true);
       if (intent.inviteKey) void run(() => joinRoom(intent.inviteKey!));
     }
   }
 
-  async function joinRoom(value: string) {
-    const data = await api<{ room: RoomView }>('/rooms/join', { key: value });
+  async function joinRoom(value: string, password?: string) {
+    let data:{room:RoomView};
+    try { data=await api<{room:RoomView}>('/rooms/join',{key:value,...(password?{password}:{})}); }
+    catch(err){if(err instanceof Error && ['ROOM_PASSWORD_REQUIRED','ROOM_PASSWORD_INVALID'].includes(err.message)){setKey(value);setJoinNeedsPassword(true);setJoinOpen(true);setError(err.message==='ROOM_PASSWORD_INVALID'?'房间密码不正确，请重新输入。':'请输入房间密码。');return;}throw err;}
     setRoom(data.room);
     setRoomId(data.room.id);
     setKey('');
+    setJoinPassword('');setJoinNeedsPassword(false);
     setInviteKey('');
     setJoinOpen(false);
     const url = new URL(location.href);
@@ -918,6 +909,8 @@ function App() {
               </button></div>
             </header>
 
+            <RoomCreationAccess onChange={setCreationAccess} onSettings={setSetupSettings}/>
+
             {/* Room Type Selector in Setup Screen */}
             <div className="mp-setup-mode-row" role="radiogroup" aria-label="房间类型选择">
               <button
@@ -1009,11 +1002,11 @@ function App() {
               <button
                 type="button"
                 className="mp-cyan-pill"
-                disabled={busy}
+                disabled={busy || (typeof creationAccess.password==='string' && creationAccess.password.length<4)}
                 onClick={() =>
                   void run(async () => {
                     pendingSettingsRef.current = setupSettings;
-                    const data = await api<{ room: RoomView }>('/rooms', { settings: setupSettings });
+                    const data = await api<{ room: RoomView }>('/rooms', { settings: setupSettings,...creationAccess });
                     setRoom(data.room);
                     setRoomId(data.room.id);
                     setSetupOpen(false);
@@ -1081,7 +1074,7 @@ function App() {
                         } catch {
                           /* room code */
                         }
-                        await joinRoom(value);
+                        await joinRoom(value,joinPassword);
                       });
                     }}
                   >
@@ -1092,7 +1085,7 @@ function App() {
                         value={key}
                         required
                         placeholder="例如：6位数字房号（如 382910）或完整邀请链接"
-                        onChange={e => setKey(e.target.value)}
+                        onChange={e => {setKey(e.target.value);setJoinNeedsPassword(false);setJoinPassword('');}}
                         autoComplete="off"
                         autoFocus
                       />
@@ -1108,6 +1101,7 @@ function App() {
                         </button>
                       )}
                     </div>
+                    {joinNeedsPassword && <><Label.Root htmlFor="room-password">房间密码</Label.Root><input id="room-password" type="password" autoComplete="current-password" required value={joinPassword} maxLength={64} onChange={e=>setJoinPassword(e.target.value)}/></>}
                     {error && <p className="error" role="alert">{error}</p>}
                     <button className="mp-cyan-pill" disabled={busy || !key.trim()} type="submit">
                       {busy ? '正在入座…' : '立即入座'}
@@ -1598,6 +1592,7 @@ function App() {
                   </button>
                 </div>
                 <div className="settings-body">
+                  {host&&<RoomPasswordSettings room={room} onSaved={next=>{setRoom(next);if(next.inviteKey)setInvite(next.inviteKey);}}/>}
                   <p className="hint settings-hint">
                     {room.phase !== 'waiting'
                       ? '对局进行中设置已锁定，结束后返回等待区可调整。'
@@ -1731,9 +1726,9 @@ function App() {
       )}
       {!user && entryIntent && <EntryDialog intent={entryIntent} knownAccounts={knownAccounts}
         onClose={() => setEntryIntent(null)}
-        onAuthenticated={(authenticatedUser, existingRoomId) => {
+        onAuthenticated={(authenticatedUser, existingRoomId, recoveryCode) => {
           setUser(authenticatedUser);
-          saveKnownAccount(authenticatedUser);
+          saveKnownAccount(authenticatedUser,recoveryCode);
           setEntryIntent(null);
           setRoomId(existingRoomId);
           if (existingRoomId) {

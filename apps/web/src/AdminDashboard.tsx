@@ -10,6 +10,7 @@ import type {
 } from '@avalon/contracts';
 import { ReplayView } from './AccountPanel';
 import './admin.css';
+import { SpecialAdmin, PlayerCodeEditor } from './SpecialAdmin';
 
 interface AdminDashboardProps {
   onBackToGame: () => void;
@@ -23,7 +24,7 @@ export function AdminDashboard({ onBackToGame }: AdminDashboardProps) {
   const [busy, setBusy] = useState(false);
 
   // Tabs: 'overview' | 'strategy' | 'users' | 'rooms' | 'codes'
-  const [activeTab, setActiveTab] = useState<'overview' | 'strategy' | 'users' | 'rooms' | 'codes'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'strategy' | 'users' | 'rooms' | 'codes' | 'special'>('overview');
 
   // Overview Data
   const [overview, setOverview] = useState<AdminOverview | null>(null);
@@ -36,6 +37,8 @@ export function AdminDashboard({ onBackToGame }: AdminDashboardProps) {
   } | null>(null);
   const [announcementInput, setAnnouncementInput] = useState('');
   const [announcementEnabled, setAnnouncementEnabled] = useState(false);
+
+  const [codeUser,setCodeUser]=useState<AdminUserSummary|null>(null);
 
   // Users Data
   const [users, setUsers] = useState<AdminUserSummary[]>([]);
@@ -485,10 +488,13 @@ export function AdminDashboard({ onBackToGame }: AdminDashboardProps) {
         >
           🎟️ 兑换码 ({codes.length})
         </button>
+        <button type="button" className={`admin-nav-item ${activeTab==='special'?'is-active':''}`} onClick={()=>setActiveTab('special')}>专属房与靓号</button>
       </nav>
 
       {/* Main Container */}
       <main className="admin-main-container">
+        {activeTab==='special'&&<SpecialAdmin request={adminApi}/>}
+        {codeUser&&<PlayerCodeEditor user={codeUser} request={adminApi} onClose={()=>setCodeUser(null)} onSaved={()=>void loadUsers(userSearchQuery)}/>}
         {/* ================= Tab 1: Overview ================= */}
         {activeTab === 'overview' && (
           <div>
@@ -757,6 +763,7 @@ export function AdminDashboard({ onBackToGame }: AdminDashboardProps) {
                           {new Date(u.createdAt).toLocaleDateString()}
                         </td>
                         <td>
+                          <button type="button" className="admin-action-btn" onClick={()=>setCodeUser(u)}>改仙友码</button>
                           <button type="button" className="admin-action-btn" onClick={() => handleGrantVip(u)} title="赠送VIP">
                             🎁 赠会员
                           </button>
@@ -833,7 +840,8 @@ export function AdminDashboard({ onBackToGame }: AdminDashboardProps) {
                     </div>
 
                     <div className="admin-user-card-actions">
-                      <button type="button" className="admin-action-btn" onClick={() => handleGrantVip(u)} title="赠送VIP">
+                      <button type="button" className="admin-action-btn" onClick={()=>setCodeUser(u)}>改仙友码</button>
+                          <button type="button" className="admin-action-btn" onClick={() => handleGrantVip(u)} title="赠送VIP">
                         🎁 赠VIP
                       </button>
                       <button

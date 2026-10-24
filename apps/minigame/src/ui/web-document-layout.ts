@@ -122,6 +122,7 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
         const avatars=['leaf','moon','sun','mountain','wave','star'];avatars.forEach((a,i)=>add('button','profile:avatar:'+a,a,x+i*(w+6)/6,y,(w-30)/6,44,{skin:'avatar-choice',image:'emblems/'+a+'.png',selected:a===(draft?.avatar??user.avatar??'leaf')}));y+=54;
         button('profile:save','保存资料',y,{primary:true,skin:'gold-button'});y+=52;
       }
+      button('accountRecovery','账号恢复码 · 复制或生成',y,{skin:'pill',fontSize:13});y+=48;
       button('sound','▶ 声音设置',y,{skin:'profile-toggle',fontSize:15},x,w,67);y+=85;
       const tabs=[['stats','我的战绩'],['history','历史对局'],['favorites','我的收藏'],['presets','常用设置']];
       panel('account-tab-frame',y,56,'tabs');tabs.forEach(([id,text],i)=>button('page:'+id,text!,y+4,{skin:'account-tab',selected:id===doc.activeTab,fontSize:13},x+4+i*(w-8)/4,(w-8)/4,48));y+=64;
@@ -211,6 +212,7 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
           });
           y+=gh+14;
         }
+        for(const r of model.rows.filter(r=>['chooseDedicated','creationPassword'].includes(r.id))){button(r.id,r.text,y,{skin:'pill',fontSize:13});y+=48;}
         for(const r of model.rows.filter(r=>['createRoom','startPractice'].includes(r.id))){button(r.id,r.id==='createRoom'?'开启线下常规房':'幻境单人演练 '+doc.settings.playerCount+' 人取经牌局 ›',y,{primary:r.id==='createRoom',skin:r.id==='createRoom'?'cyan-button':'pill',fontSize:r.id==='createRoom'?21:12},r.id==='createRoom'?65:80,v.width-(r.id==='createRoom'?130:160),r.id==='createRoom'?52:28);y+=r.id==='createRoom'?64:40;}
         heading('setup-advanced','进阶玩法设置');settingsForm(doc.settings);
       } else {if(modal)modalHeader('房间设置');settingsForm(doc.settings);for(const r of model.rows.filter(r=>['apply','createRoom','startPractice'].includes(r.id))){button(r.id,r.text,y,{primary:true,skin:'gold-button'});y+=52;}}

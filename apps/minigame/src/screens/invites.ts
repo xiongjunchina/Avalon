@@ -8,7 +8,7 @@ export class InviteInbox {
   }
   label(): string | undefined {
     if (!this.pending) return undefined;
-    return `${this.pending.sender ?? '好友'} 邀请你加入房间 ${this.pending.code}`;
+    return `${this.pending.sender ?? '好友'} 邀请你加入房间${/^\d{6}$/.test(this.pending.code)?' '+this.pending.code:''}`;
   }
   take(): string | undefined { const code = this.pending?.code; this.pending = undefined; return code; }
 }

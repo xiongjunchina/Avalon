@@ -1,4 +1,4 @@
-import { randomBytes } from 'node:crypto';
+import { createHash, timingSafeEqual, randomBytes } from 'node:crypto';
 import type { Pool, PoolClient } from 'pg';
 import type {
   AdminGameSummary,
@@ -21,13 +21,8 @@ export class AdminService {
 
   verifyKey(key?: string): boolean {
     const configuredKey = (process.env.ADMIN_KEY || '').trim();
-    const trimmed = (key ?? '').trim();
-    if (!trimmed) return false;
-    if (configuredKey && (trimmed === configuredKey || trimmed.toLowerCase() === configuredKey.toLowerCase())) {
-      return true;
-    }
-    const validKeys = ['Admin#2026', 'admin#2026', 'avalon-admin-888888'];
-    return validKeys.some(vk => trimmed === vk || trimmed.toLowerCase() === vk.toLowerCase());
+    if (!configuredKey || typeof key!=='string' || !key) return false;
+    return timingSafeEqual(createHash('sha256').update(key).digest(),createHash('sha256').update(configuredKey).digest());
   }
 
   async getOverview(onlineConnections: number): Promise<AdminOverview> {
@@ -235,6 +230,7 @@ export class AdminService {
         throw new DomainError('USER_NOT_FOUND');
       }
 
+      if ((await client.query('SELECT 1 FROM dedicated_rooms WHERE manager_id=$1',[userId])).rowCount) throw new DomainError('MANAGES_DEDICATED_ROOMS',409);
       const gRes = await client.query<{ count: string }>('SELECT count(*) FROM game_participants WHERE user_id = $1', [userId]);
       if (Number(gRes.rows[0]?.count || 0) > 0) {
         throw new DomainError('HAS_GAME_RECORDS');
@@ -298,6 +294,7 @@ export class AdminService {
       const candidateSql = `
         SELECT u.id FROM users u
         WHERE u.id NOT IN (SELECT user_id FROM game_participants)
+          AND u.id NOT IN (SELECT manager_id FROM dedicated_rooms)
           AND u.id NOT IN (
             SELECT rm.user_id FROM room_members rm
             JOIN rooms r ON r.id = rm.room_id

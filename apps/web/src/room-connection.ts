@@ -3,6 +3,7 @@ import type { Command, RoomView, ServerMessage } from '@avalon/contracts';
 export interface ConnectionHandlers {
   snapshot(room:RoomView):void;
   invite(value:string):void;
+  playerCode?(value:string):void;
   status(value:string):void;
   error(code:string):void;
   busy(value:boolean):void;
@@ -74,6 +75,8 @@ export class RoomConnection {
           clearTimeout(this.ackTimer);this.ackTimer=undefined;this.pending=null;this.options.handlers.busy(false);
           if(!data.ok)this.options.handlers.error(data.error??'NETWORK');
           if(data.ok&&leaving)this.terminal('left');
+        }else if(data.type==='playerCodeChanged'){
+          this.options.handlers.playerCode?.(data.playerCode);
         }else if(data.type==='roomInvitation'){
           this.options.handlers.invitation?.(data);
         }else if(data.type==='systemAnnouncement'){

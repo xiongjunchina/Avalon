@@ -67,9 +67,9 @@ export class MiniGameApi {
     return result.user;
   }
 
-  async switchAccount(playerCode: string): Promise<User> {
+  async switchAccount(playerCode: string, recoveryCode?: string, expectedUserId?: string): Promise<User> {
     if (!this.session.get()) throw new Error('UNAUTHENTICATED');
-    const result = await this.request<{ user: User; token: string }>('/sessions/switch', { playerCode });
+    const result = await this.request<{ user: User; token: string }>('/sessions/switch', { playerCode, ...(recoveryCode?{recoveryCode}:{}), ...(expectedUserId?{expectedUserId}:{}) });
     if (!result.token) throw new Error('SESSION_TOKEN_MISSING');
     this.session.set(result.token);
     return result.user;

@@ -5,8 +5,9 @@ import rateLimit from '@fastify/rate-limit';
 import { randomUUID } from 'node:crypto';
 import type { WebSocket } from 'ws';
 import { z } from 'zod';
-import { commandSchema, nicknameSchema, profileSchema, presetSchema, settingsSchema, type ServerMessage, type User } from '@avalon/contracts';
+import { commandSchema, dedicatedRoomSchema, specialCodeSchema, roomPasswordSchema, nicknameSchema, profileSchema, presetSchema, settingsSchema, type ServerMessage, type User } from '@avalon/contracts';
 import { DomainError, PostgresStore } from './store.js';
+import { SpecialManagement } from './special-management.js';
 import { Accounts, historyQuery } from './accounts.js';
 import { generateVoiceToken, uuidToRtcUid } from './agora.js';
 import { FriendsService } from './friends.js';
@@ -17,6 +18,7 @@ import { MiniGameTickets, bearerToken, requestOriginAllowed } from './minigame-s
 export async function buildApp(options: { store: PostgresStore; origin?: string; secure?: boolean; trustProxy?: boolean; heartbeatMs?: number; maintenanceMs?: number }) {
   const { store }=options;
   const accounts=new Accounts(store);
+  const special=new SpecialManagement(store);
   const friendsService=new FriendsService(store);
   const adminService=new AdminService(store);
   const origin=options.origin??'http://localhost:5173';
@@ -117,16 +119,18 @@ export async function buildApp(options: { store: PostgresStore; origin?: string;
     if (!forceNew) {
       try{return {user:await authenticate(req,reply)};}catch(err){if(!(err instanceof DomainError)||err.code!=='UNAUTHENTICATED')throw err;}
     }
-    const {user,token}=await store.createGuest(nickname); setSession(reply,token);return {user};
+    const {user,token,recoveryCode}=await store.createGuest(nickname); setSession(reply,token);return {user,recoveryCode};
   });
   app.post('/api/sessions/refresh',async(req,reply)=>({user:await authenticate(req,reply)}));
   app.post('/api/sessions/switch', { config: { rateLimit: { max: 30, timeWindow: '1 minute' } } }, async (req, reply) => {
     const miniGameToken = bearerToken(req.headers.authorization);
-    if (miniGameToken) await authenticate(req, reply);
-    const { playerCode } = z.object({
-      playerCode: z.string().trim().regex(/^\d{6}$/, '请输入6位有效仙友码'),
+    let currentUserId: string | undefined;
+    try { currentUserId = (await authenticate(req)).id; }
+    catch (err) { if (miniGameToken || !(err instanceof DomainError) || err.code !== 'UNAUTHENTICATED') throw err; }
+    const { playerCode, recoveryCode, expectedUserId } = z.object({
+      playerCode: specialCodeSchema, recoveryCode: z.string().min(1).max(128).optional(), expectedUserId: z.string().uuid().optional(),
     }).strict().parse(req.body);
-    const { user, token } = await store.switchAccount(playerCode);
+    const { user, token } = await store.switchAccount(playerCode, recoveryCode, expectedUserId, currentUserId);
     setSession(reply, token);
     return miniGameToken ? { user, token } : { user };
   });
@@ -163,17 +167,25 @@ export async function buildApp(options: { store: PostgresStore; origin?: string;
   app.get('/api/me/presets',async(req,reply)=>({presets:await accounts.presets((await authenticate(req,reply)).id)}));
   app.post('/api/me/presets',async(req,reply)=>({preset:await accounts.savePreset((await authenticate(req,reply)).id,presetSchema.parse(req.body))}));
   app.delete<{Params:{id:string}}>('/api/me/presets/:id',async(req,reply)=>accounts.deletePreset((await authenticate(req,reply)).id,z.string().uuid().parse(req.params.id)));
-  const createRoomBody = z.union([settingsSchema, z.object({ settings: settingsSchema.optional() }).strict()]).optional();
+  app.get('/api/me/dedicated-rooms',async(req,reply)=>({rooms:await special.rooms((await authenticate(req,reply)).id)}));
+  app.post('/api/me/recovery-code',{config:{rateLimit:{max:5,timeWindow:'1 minute'}}},async(req,reply)=>store.resetRecoveryCode((await authenticate(req,reply)).id));
+  const roomAccess = z.object({settings:settingsSchema.optional(),dedicatedRoomId:z.string().uuid().optional(),password:roomPasswordSchema.optional()}).strict();
+  const createRoomBody = z.union([settingsSchema,roomAccess]).optional();
   app.post('/api/rooms',async(req,reply)=>{
-    const user=await authenticate(req,reply);
-    const parsed=createRoomBody.parse(req.body);
-    const initialSettings=parsed && 'playerCount' in parsed ? parsed : parsed?.settings;
-    return {room:await store.createRoom(user,initialSettings)};
+    const user=await authenticate(req,reply),parsed=createRoomBody.parse(req.body);
+    const access=parsed && !('playerCount' in parsed)?parsed:{};
+    const initialSettings=parsed && 'playerCount' in parsed?parsed:access.settings;
+    return {room:await store.createRoom(user,initialSettings,access)};
   });
   app.post('/api/rooms/join',{config:{rateLimit:{max:20,timeWindow:'1 minute'}}},async(req,reply)=>{
     const user=await authenticate(req,reply);
-    const {key}=z.object({key:z.string().trim().min(1).max(200)}).strict().parse(req.body);
-    const room=await store.join(user,key);publish(room.id);return {room};
+    const {key,password}=z.object({key:z.string().trim().min(1).max(200),password:z.string().max(64).optional()}).strict().parse(req.body);
+    const room=await store.join(user,key,password);publish(room.id);return {room};
+  });
+  app.post<{Params:{id:string}}>('/api/rooms/:id/password',{config:{rateLimit:{max:10,timeWindow:'1 minute'}}},async(req,reply)=>{
+    const user=await authenticate(req,reply),id=z.string().uuid().parse(req.params.id);
+    const {password,expectedVersion}=z.object({password:roomPasswordSchema,expectedVersion:z.number().int().positive()}).strict().parse(req.body);
+    const room=await store.updateRoomPassword(user.id,id,password,expectedVersion);publish(id);return {room};
   });
   app.get<{Params:{id:string}}>('/api/rooms/:id',async(req,reply)=>store.roomFor((await authenticate(req,reply)).id,z.string().uuid().parse(req.params.id)));
 
@@ -348,6 +360,26 @@ export async function buildApp(options: { store: PostgresStore; origin?: string;
     return { ok: true };
   });
 
+  app.get('/api/admin/dedicated-rooms',async(req,reply)=>{requireAdmin(req,reply);return {rooms:await special.rooms()};});
+  app.post('/api/admin/dedicated-rooms',async(req,reply)=>{requireAdmin(req,reply);await special.saveRoom(dedicatedRoomSchema.parse(req.body));return {ok:true};});
+  app.put<{Params:{id:string}}>('/api/admin/dedicated-rooms/:id',async(req,reply)=>{requireAdmin(req,reply);await special.saveRoom(dedicatedRoomSchema.parse(req.body),z.string().uuid().parse(req.params.id));return {ok:true};});
+  app.get('/api/admin/player-codes',async(req,reply)=>{requireAdmin(req,reply);return {codes:await special.reservations()};});
+  app.get('/api/admin/player-codes/check',async(req,reply)=>{
+    requireAdmin(req,reply);const {code,userId}=z.object({code:specialCodeSchema,userId:z.string().uuid().optional()}).parse(req.query);
+    return special.availability(code,userId);
+  });
+  app.post('/api/admin/player-codes',async(req,reply)=>{requireAdmin(req,reply);const {code,note}=z.object({code:specialCodeSchema,note:z.string().trim().max(80).default('')}).strict().parse(req.body);await special.reserveCode(code,note);return {ok:true};});
+  app.delete<{Params:{code:string}}>('/api/admin/player-codes/:code',async(req,reply)=>{requireAdmin(req,reply);await special.releaseReservation(specialCodeSchema.parse(req.params.code));return {ok:true};});
+  app.post<{Params:{id:string}}>('/api/admin/users/:id/player-code',async(req,reply)=>{
+    requireAdmin(req,reply);const id=z.string().uuid().parse(req.params.id);
+    const {playerCode,expectedCode}=z.object({playerCode:specialCodeSchema,expectedCode:specialCodeSchema}).strict().parse(req.body);
+    const result=await special.assignCode(id,playerCode,expectedCode);
+    const conn=connections.get(id);if(conn)send(conn.socket,{type:'playerCodeChanged',playerCode});
+    const roomId=await store.currentRoom(id);if(roomId)publish(roomId);
+    return result;
+  });
+  app.get<{Params:{id:string}}>('/api/admin/users/:id/player-code-history',async(req,reply)=>{requireAdmin(req,reply);return {history:await special.audit(z.string().uuid().parse(req.params.id))};});
+  app.post<{Params:{id:string}}>('/api/admin/users/:id/recovery-code',async(req,reply)=>{requireAdmin(req,reply);return store.resetRecoveryCode(z.string().uuid().parse(req.params.id));});
   app.get('/api/admin/users', async (req, reply) => {
     requireAdmin(req, reply);
     const { query, limit, offset } = req.query as any;

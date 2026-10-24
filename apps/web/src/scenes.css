@@ -7540,3 +7540,25 @@ button.seat-mic-badge:active {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+
+/* Room admission and account recovery use the existing panel and dialog primitives. */
+.room-access-card { width:100%; padding:14px; margin-block:10px; }
+.room-access-card > label { margin-top:0; }
+.room-access-field { margin:12px 0; padding:10px 12px; border:1px solid var(--border); border-radius:12px; min-width:0; }
+.room-access-field legend { color:var(--accent); padding-inline:5px; }
+.access-options { display:flex; gap:8px 16px; flex-wrap:wrap; }
+.access-options label { display:inline-flex; align-items:center; gap:5px; margin:2px 0; font-size:14px; }
+.access-options input { min-height:0; margin:0; }
+.recovery-access { padding:16px; margin-block:14px; }
+.recovery-access summary { cursor:pointer; color:var(--accent); }
+.special-admin .admin-panel { margin-block:14px; }
+.special-form { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); align-items:end; gap:12px; }
+.special-list { display:grid; gap:12px; margin-top:14px; }
+.special-card { border:1px solid var(--border); padding:14px; border-radius:14px; min-width:0; }
+.special-card p { margin:6px 0; font-size:14px; }
+.special-card small { display:block; margin-top:8px; }
+.special-editor { background:var(--glass); }
+.special-editor .table-modal-head { align-items:center; }
+.special-editor .table-modal-head > strong { font-size:20px; }
+.special-editor details { margin-top:16px; padding-top:10px; border-top:1px solid var(--border); }
+.special-editor summary { cursor:pointer; color:var(--accent); }

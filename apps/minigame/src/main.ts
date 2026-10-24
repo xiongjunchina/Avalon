@@ -1,5 +1,5 @@
 import { attachTouchNavigation } from './ui/touch.js';
-import { defaultSettings, defaultAnonymousTeamVote, type RoomView, type Settings, type User } from '@avalon/contracts';
+import { defaultSettings, defaultAnonymousTeamVote, type RoomView, type Settings, type User, type DedicatedRoom } from '@avalon/contracts';
 import { WechatPlatform, type WxRuntime } from './platform/wechat.js';
 import { MiniGameApi } from './net/api.js';
 import { MiniGameRoomConnection } from './net/socket.js';
@@ -75,8 +75,11 @@ let roleIndex = 0;
 let nickname = '';
 let switchCode = '';
 let authMode: 'create' | 'switch' = 'create';
-let auxiliary: 'roomTools' | 'practiceSeats' | 'sound' | 'switchAccount' | 'join' | undefined;
+let auxiliary: 'dedicated' | 'roomTools' | 'practiceSeats' | 'sound' | 'switchAccount' | 'join' | undefined;
 let joinKey = '';
+let dedicatedRooms: DedicatedRoom[] = [];
+let creationAccess: {dedicatedRoomId?:string;password?:string|null} = {};
+let selectedDedicated: DedicatedRoom | undefined;
 let reminderDismissed = '';
 let guideReturn: 'entry' | 'lobby' | 'game' | 'practice' | 'settings' = 'entry';
 let freeAccess = true;
@@ -107,6 +110,7 @@ function model(): ScreenModel {
     { id: 'guide:join', text: '请向朋友索取房间号或邀请链接。每次打开此页均为空，不会填入历史邀请。' },
     { id: 'joinSubmit', text: '入座取经' },
   ], web: { page: 'sheet', background: 'gate', backId: 'auxiliaryClose',document:{kind:'tools',modal:true},underlay:entryScreen(user) } });
+  if(auxiliary==='dedicated')return feedback({title:'选择开桌方式',rows:[{id:'dedicated:normal',text:'普通房 · 随机房号'},...dedicatedRooms.map(r=>({id:'dedicated:'+r.id,text:r.code+' · '+r.name+(r.activeRoomId?'（已开桌）':''),disabled:!!r.activeRoomId}))],web:{page:'sheet',background:'library',backId:'auxiliaryClose',document:{kind:'tools',modal:true}}});
   if (auxiliary === 'switchAccount') return feedback({ ...entryScreen(), web: { page: 'home', authMode, nickname, switchCode, knownAccounts: knownAccounts.list(), backId: 'auxiliaryClose' } });
   if (auxiliary === 'sound') return feedback({ title: '声音设置', rows: [
     { id: 'sound:music', text: '背景音乐：' + (sound.preferences.music ? '开' : '关') },
@@ -128,6 +132,7 @@ function model(): ScreenModel {
   else if (view === 'settings') {
     result = settingsScreen(editableSettings);
     result.web = {page:'setup',settings:editableSettings,background:'library',backId:'cancelSettings',document:{kind:'settings',settings:editableSettings,activeTab:!room||setupIntent==='practice'?'setup':'room',modal:!!room&&setupIntent==='room'},underlay:room&&user?lobbyScreen(room,user):undefined};
+    if (!room && setupIntent==='room')result.rows.unshift({id:'chooseDedicated',text:selectedDedicated?selectedDedicated.code+' · '+selectedDedicated.name:'普通房 · 选择专属房'},{id:'creationPassword',text:creationAccess.password===null?'入房密码：不设置':typeof creationAccess.password==='string'?'入房密码：已设置':selectedDedicated?'入房密码：沿用已保存设置':'入房密码：不设置'});
     if (!room || setupIntent === 'practice') result.rows = result.rows.filter(row => row.id !== 'apply').concat([...(setupIntent === 'room' ? [{ id: 'createRoom', text: '敕令开坛 · 创建房间' }] : []), { id: 'startPractice', text: '幻化分身试玩此板子' }]);
   }
   else if (room?.game && view === 'game' && user) result = gameScreen(room, user, gameUi);
@@ -181,6 +186,7 @@ function connect(next: RoomView) {
     busy: value => { commandBusy = value; render(); },
     error: value => { error = describeMiniGameError(new Error(value)); render(); },
     message: message => {
+      if(message.type==='playerCodeChanged'&&user){user={...user,playerCode:message.playerCode};knownAccounts.remember(user);if(playerPanel)playerPanel.user=user;notice='管理员已更新你的仙友码';render();}
       if (message.type === 'roomChat') { playerPanel?.onRoomChat(message); if (view === 'player') render(); }
       if (message.type === 'directChat') { playerPanel?.onDirectChat(message); notice = `${message.fromUser.nickname}：${message.text}`; render(); }
       if (message.type === 'roomInvitation') { invites.receive(message.roomCode, message.fromUser.nickname); render(); }
@@ -191,6 +197,10 @@ function connect(next: RoomView) {
   lobby?.setConnection(connection);
   navigate(next.game ? 'game' : 'lobby');
   connection.start();
+}
+
+async function joinWithPassword(key:string):Promise<RoomView>{
+  try{return await lobby!.join(key);}catch(cause){if(!(cause instanceof Error)||!['ROOM_PASSWORD_REQUIRED','ROOM_PASSWORD_INVALID'].includes(cause.message))throw cause;status='请输入房间密码';render();const password=await askText(wx,'',64);if(password===undefined)throw Error('已取消入房');return lobby!.join(key,password);}
 }
 
 async function run(action: () => Promise<void>) {
@@ -213,18 +223,23 @@ async function select(id: string) {
   if (id === 'admin') return run(async () => { const key = await askText(wx, '', 256); if (!key) return; await adminPanel.open(key); navigate('admin'); });
   if(id==='openReplay'&&room?.game&&playerPanel)return run(async()=>{previousView='game';await playerPanel!.openReplay(room!.game!.id,'back');navigate('player');});
   if(id==='switch'&&view==='player'){authMode='switch';switchCode='';navigate('entry');auxiliary='switchAccount';render();return;}
+  if(id==='accountRecovery'&&user)return run(async()=>{let proof=knownAccounts.list().find(a=>a.id===user!.id)?.recoveryCode;if(!proof){proof=(await api.request<{recoveryCode:string}>('/me/recovery-code',{})).recoveryCode;knownAccounts.remember(user!,proof);}if(!wx.setClipboardData)throw Error('当前设备不支持复制，请在网页个人中心查看恢复码');wx.setClipboardData({data:proof,success:()=>{notice='恢复码已复制，请私下保存，勿分享给他人';render();},fail:()=>{error='复制失败，请重试';render();}});});
+  if(id==='roomPassword'&&room&&room.hostId===user?.id&&room.phase==='waiting')return run(async()=>{status='输入新密码（4–64位），留空则关闭密码';render();const password=await askText(wx,'',64);if(password===undefined)return;if(password&&password.length<4)throw Error('密码至少4位');const r=await api.request<{room:RoomView}>(`/rooms/${room!.id}/password`,{password:password||null,expectedVersion:room!.version});room=r.room;lobby?.setRoom(room);notice='密码已更新，旧邀请链接已失效，请重新分享';});
+  if(id==='chooseDedicated')return run(async()=>{dedicatedRooms=(await api.request<{rooms:DedicatedRoom[]}>('/me/dedicated-rooms')).rooms;auxiliary='dedicated';scroll=0;});
+  if(id.startsWith('dedicated:')){const selected=dedicatedRooms.find(r=>r.id===id.slice(10));if(selected?.activeRoomId)return;selectedDedicated=selected;creationAccess=selected?{dedicatedRoomId:selected.id}:{};if(selected)editableSettings={...selected.settings};auxiliary=undefined;render();return;}
+  if(id==='creationPassword')return run(async()=>{status='输入入房密码（4–64位），留空则不设置';render();const password=await askText(wx,'',64);if(password===undefined)return;if(password&&password.length<4)throw Error('密码至少4位');creationAccess={...creationAccess,password:password||null};});
   if (id === 'copyCode' && user?.playerCode && wx.setClipboardData) { wx.setClipboardData({ data: user.playerCode, success: () => { notice = '仙友码已复制'; render(); }, fail: () => { error = '复制失败，请重试'; render(); } }); return; }
   sound.activate(); sound.effect('tap'); platform.vibrate('light');
-  if(id==='share'&&room){if(wx.shareAppMessage)wx.shareAppMessage({title:`来嘻游 · 真假猴王房间 ${room.code} 一起论剑`,query:`invite=${encodeURIComponent(room.code)}`});else{notice=`请告知好友房间号 ${room.code}`;render();}return;}
-  if (id === 'copyRoom' && room && wx.setClipboardData) { wx.setClipboardData({ data: baseUrl + '/?invite=' + encodeURIComponent(room.code), success: () => { notice = '房间邀请链接已复制'; render(); }, fail: () => { error = '复制失败，请重试'; render(); } }); return; }
+  if(id==='share'&&room){if(wx.shareAppMessage)wx.shareAppMessage({title:`来嘻游 · 真假猴王房间 ${room.code} 一起论剑`,query:`invite=${encodeURIComponent(room.inviteKey??room.code)}`});else{notice=`请告知好友房间号 ${room.code}`;render();}return;}
+  if (id === 'copyRoom' && room && wx.setClipboardData) { wx.setClipboardData({ data: baseUrl + '/?invite=' + encodeURIComponent(room.inviteKey??room.code), success: () => { notice = '房间邀请链接已复制'; render(); }, fail: () => { error = '复制失败，请重试'; render(); } }); return; }
   if (id === 'sound') { auxiliary = 'sound'; scroll = 0; render(); return; }
   if (id.startsWith('sound:')) { const key = id.slice(6) as 'music' | 'effects'; sound.configure(key, !sound.preferences[key]); render(); return; }
-  if (id.startsWith('known:')) return run(async () => { if (!api.session.get()) await api.login(); user = await api.switchAccount(id.slice(6)); knownAccounts.remember(user); lobby = new LobbyController(api, user); playerPanel = new PlayerPanel(extras, user, () => chooseAvatar(wx)); const existing = await lobby.resume(); if (existing) connect(existing); else navigate('entry'); });
+  if (id.startsWith('known:')) return run(async () => { const account=knownAccounts.list().find(a=>a.playerCode===id.slice(6));const proof=account?.recoveryCode??await askText(wx,'',128);if(!proof)return;if (!api.session.get()) await api.login(); user = await api.switchAccount(id.slice(6),proof,account?.id); knownAccounts.remember(user,proof); lobby = new LobbyController(api, user); playerPanel = new PlayerPanel(extras, user, () => chooseAvatar(wx)); const existing = await lobby.resume(); if (existing) connect(existing); else navigate('entry'); });
   if (id === 'notice' || id === 'error') { notice = ''; error = ''; render(); return; }
   if (id === 'announcement') { announcement = ''; render(); return; }
   if (id === 'auxiliaryClose') { auxiliary = undefined; scroll = 0; render(); return; }
   if (id === 'input:join') return run(async () => { const value = await askText(wx, joinKey, 200); if (value !== undefined) joinKey = value; });
-  if (id === 'joinSubmit' && lobby) return run(async () => { const encoded = /(?:\?|&)invite=([^&#]+)/.exec(joinKey)?.[1]; const key = encoded ? decodeURIComponent(encoded) : joinKey.trim(); if (!key) throw new Error('请输入房间号或邀请链接'); connect(await lobby!.join(key)); });
+  if (id === 'joinSubmit' && lobby) return run(async () => { const encoded = /(?:\?|&)invite=([^&#]+)/.exec(joinKey)?.[1]; const key = encoded ? decodeURIComponent(encoded) : joinKey.trim(); if (!key) throw new Error('请输入房间号或邀请链接'); connect(await joinWithPassword(key)); });
   if (id === 'practiceSeats' && practice) { auxiliary = 'practiceSeats'; scroll = 0; render(); return; }
   if (id.startsWith('practiceSeat:') && practice) { practice.switchSeat(id.slice(13)); hideSensitiveView(gameUi); gameUi.snapshotKey = undefined; syncGameUi(gameUi, practice.view(), false, practice.user.id); auxiliary = undefined; scroll = 0; render(); return; }
   if ((view === 'game' || view === 'practice' || view === 'lobby' || view === 'settings') && id === 'guide') { guideReturn = view; navigate('guide'); return; }
@@ -241,7 +256,7 @@ async function select(id: string) {
   if (id === 'invitation') {
     if (room) { error = room.game && !['finished', 'aborted'].includes(room.game.phase) ? '当前牌局结束后再加入邀请' : '请先离开当前房间'; render(); return; }
     if (!lobby) { error = '请先微信登录，再点击邀请'; render(); return; }
-    return run(async () => { const code = invites.code; if (code) { connect(await lobby!.join(code)); invites.take(); } });
+    return run(async () => { const code = invites.code; if (code) { connect(await joinWithPassword(code)); invites.take(); } });
   }
   if (view === 'practice' && practice) {
     if (id === 'exitPractice') { practice = undefined; navigate(room ? room.game ? 'game' : 'lobby' : 'entry'); return; }
@@ -301,8 +316,8 @@ async function select(id: string) {
     if (id.startsWith('auth:')) { authMode = id === 'auth:switch' ? 'switch' : 'create'; render(); return; }
     if (id === 'input:nickname' || id === 'input:switch') return run(async () => { const text = await askText(wx, id === 'input:nickname' ? nickname : switchCode, id === 'input:nickname' ? 20 : 6); if (text !== undefined) { if (id === 'input:nickname') nickname = text; else switchCode = text.replace(/\D/g, '').slice(0, 6); } });
     if (id === 'practice') { practice = new PracticeSession(editableSettings, user?.nickname ?? '我'); syncGameUi(gameUi, practice.view()); navigate('practice'); return; }
-    if (id === 'login') return run(async () => { if (authMode === 'switch' && !/^\d{6}$/.test(switchCode)) throw new Error('INVALID_PLAYER_CODE'); const result = await api.login(nickname || undefined); user = authMode === 'switch' ? await api.switchAccount(switchCode) : result.user; knownAccounts.remember(user); auxiliary = undefined; lobby = new LobbyController(api, user); playerPanel = new PlayerPanel(extras, user, () => chooseAvatar(wx)); const existing = await lobby.resume(); if (existing) connect(existing); else if (invites.code) { connect(await lobby.join(invites.code)); invites.take(); } else render(); });
-    if (id === 'create' && lobby) { setupIntent = 'room'; navigate('settings'); return; }
+    if (id === 'login') return run(async () => { if (authMode === 'switch' && !/^\d{6}$/.test(switchCode)) throw new Error('INVALID_PLAYER_CODE'); const result = await api.login(nickname || undefined); const proof=authMode==='switch'?await askText(wx,'',128):undefined;if(authMode==='switch'&&!proof)return;user = authMode === 'switch' ? await api.switchAccount(switchCode,proof) : result.user; knownAccounts.remember(user,proof); auxiliary = undefined; lobby = new LobbyController(api, user); playerPanel = new PlayerPanel(extras, user, () => chooseAvatar(wx)); const existing = await lobby.resume(); if (existing) connect(existing); else if (invites.code) { connect(await joinWithPassword(invites.code)); invites.take(); } else render(); });
+    if (id === 'create' && lobby) { creationAccess={};selectedDedicated=undefined;setupIntent = 'room'; navigate('settings'); return; }
     if (id === 'join' && lobby) { joinKey = ''; auxiliary = 'join'; scroll = 0; render(); return; }
     if (id === 'switch') { authMode = 'switch'; switchCode = ''; auxiliary = 'switchAccount'; scroll = 0; render(); return; }
     if (id === 'logout') return run(async () => { connection?.stop(); connection = undefined; room = undefined; user = undefined; lobby = undefined; playerPanel = undefined; await api.logout(); render(); });
@@ -313,7 +328,7 @@ async function select(id: string) {
     if (id.startsWith('setupRole:')) { guideReturn='settings'; guideRoleId=id.slice(10); guideSection='roles'; guideArt=false; navigate('guide'); return; }
     if (id === 'cancelSettings') { navigate(setupIntent === 'practice' && practice ? 'practice' : room ? 'lobby' : 'entry'); return; }
     if (id.startsWith('count:')) { const count = Number(id.slice(6)); if (count >= 5 && count <= 12) editableSettings = { ...editableSettings, playerCount: count, anonymousTeamVote: defaultAnonymousTeamVote(count) }; render(); return; }
-    if (id === 'createRoom' && lobby) return run(async () => { connect(await lobby!.create(editableSettings)); });
+    if (id === 'createRoom' && lobby) return run(async () => { connect(await lobby!.create(editableSettings,creationAccess)); });
     if (id === 'startPractice') { practice = new PracticeSession(editableSettings, user?.nickname ?? '我'); syncGameUi(gameUi, practice.view(), true, practice.user.id); navigate('practice'); return; }
     if (id === 'apply') { if (room && lobby) lobby.updateSettings(editableSettings); navigate(room?.game ? 'game' : room ? 'lobby' : 'entry'); return; }
     editableSettings = toggleSetting(editableSettings, id as keyof Settings);
@@ -328,7 +343,7 @@ async function select(id: string) {
     else if (id === 'admission') lobby.admission(!room.acceptingNewMembers);
     else if (id === 'settings') { setupIntent = 'room'; editableSettings = { ...room.settings }; navigate('settings'); }
     else if (id === 'leave') lobby.leave();
-    else if (id === 'share') { if (wx.shareAppMessage) wx.shareAppMessage({ title: `来嘻游 · 真假猴王房间 ${room.code} 一起论剑`, query: `invite=${encodeURIComponent(room.code)}` }); else { error = `请告知好友房间号 ${room.code}`; render(); } }
+    else if (id === 'share') { if (wx.shareAppMessage) wx.shareAppMessage({ title: `来嘻游 · 真假猴王房间 ${room.code} 一起论剑`, query: `invite=${encodeURIComponent(room.inviteKey??room.code)}` }); else { error = `请告知好友房间号 ${room.code}`; render(); } }
     else if (id === 'friends' && playerPanel) return run(async () => { previousView = 'lobby'; await playerPanel!.open('friends', { roomId: room!.id }); navigate('player'); });
     else if (id === 'presets' && playerPanel && room.hostId === user?.id) return run(async () => { previousView = 'lobby'; await playerPanel!.open('presets', { roomId: room!.id, settings: room!.settings, canApplyPreset: true }); navigate('player'); });
     else if (id.startsWith('member:') && room.hostId === user?.id && id.slice(7) !== user.id) {
@@ -397,6 +412,6 @@ if (api.session.get()) void run(async () => {
   playerPanel = new PlayerPanel(extras, user, () => chooseAvatar(wx));
   const existing = await lobby.resume();
   if (existing) connect(existing);
-  else if (invites.code) { connect(await lobby.join(invites.code)); invites.take(); }
+  else if (invites.code) { connect(await joinWithPassword(invites.code)); invites.take(); }
 });
-wx.onShareAppMessage?.(() => ({ title: room ? `来嘻游 · 真假猴王房间 ${room.code} 一起论剑` : '嘻游 · 真假猴王', ...(room ? { query: `invite=${encodeURIComponent(room.code)}` } : {}) }));
+wx.onShareAppMessage?.(() => ({ title: room ? `来嘻游 · 真假猴王房间 ${room.code} 一起论剑` : '嘻游 · 真假猴王', ...(room ? { query: `invite=${encodeURIComponent(room.inviteKey??room.code)}` } : {}) }));

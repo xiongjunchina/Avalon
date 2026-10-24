@@ -14,6 +14,25 @@ export const settingsSchema = z.object({
   rolePreferenceEnabled: z.boolean().default(false),
 }).strict();
 export type Settings = z.infer<typeof settingsSchema>;
+export const specialCodeSchema = z.string().regex(/^[1-9]\d{5}$/);
+export const roomPasswordSchema = z.string().min(4).max(64).nullable();
+export const dedicatedRoomSchema = z.object({
+  code: specialCodeSchema, name: z.string().trim().min(1).max(30),
+  managerId: z.string().uuid(), settings: settingsSchema,
+  password: roomPasswordSchema.optional(),
+}).strict();
+export interface DedicatedRoom {
+  id: string; code: string; name: string; managerId: string; managerName: string;
+  managerCode?: string; settings: Settings; hasPassword: boolean;
+  activeRoomId?: string; activePhase?: 'waiting' | 'playing' | 'finished';
+}
+export interface PlayerCodeReservation {
+  code: string; state: 'reserved' | 'retired'; userId?: string; nickname?: string; note: string;
+}
+export interface PlayerCodeAvailability {
+  code: string; status: 'available' | 'reserved' | 'occupied' | 'retired' | 'current';
+  nickname?: string;
+}
 export const defaultSettings: Settings = {
   playerCount: 6, captainMode: 'seat_order', anonymousTeamVote: true,
   rejectionScope: 'game', earlyAssassinationEnabled: false,
@@ -111,6 +130,11 @@ export interface RoomView {
   acceptingNewMembers: boolean;
   game?: GameView;
   selfRolePreferences?: Role[];
+  hasPassword?: boolean;
+  dedicatedRoomId?: string;
+  dedicatedRoomName?: string;
+  /** Private room members only; admission still requires server validation. */
+  inviteKey?: string;
 }
 export interface VoiceTokenResponse {
   appId: string;
@@ -220,7 +244,7 @@ export interface DirectMessage {
   isSelf?: boolean;
 }
 
-export type ServerMessage =
+export type ServerMessage = { type: 'playerCodeChanged'; playerCode: string }
   | { type: 'snapshot'; room: RoomView }
   | { type: 'commandResult'; commandId: string; ok: boolean; error?: string }
   | { type: 'roomClosed' }

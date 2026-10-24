@@ -17,13 +17,13 @@ export class LobbyController {
   setRoom(room: RoomView) { this.room = room; }
   setConnection(connection: Pick<MiniGameRoomConnection, 'send'>) { this.connection = connection; }
 
-  async create(settings: Settings = defaultSettings): Promise<RoomView> {
-    const { room } = await this.api.request<{ room: RoomView }>('/rooms', { settings });
+  async create(settings: Settings = defaultSettings, access: {dedicatedRoomId?:string;password?:string|null} = {}): Promise<RoomView> {
+    const { room } = await this.api.request<{ room: RoomView }>('/rooms', { settings, ...access });
     this.room = room;
     return room;
   }
-  async join(key: string): Promise<RoomView> {
-    const { room } = await this.api.request<{ room: RoomView }>('/rooms/join', { key: key.trim() });
+  async join(key: string, password?:string): Promise<RoomView> {
+    const { room } = await this.api.request<{ room: RoomView }>('/rooms/join', { key: key.trim(), ...(password?{password}:{}) });
     this.room = room;
     return room;
   }
@@ -55,6 +55,7 @@ export function lobbyScreen(room: RoomView, user: User, status = ''): ScreenMode
     ...(room.hostId === user.id ? [
       { id: 'start', text: '开始游戏' },
       { id: 'settings', text: '房间玩法设置' },
+      ...(room.phase==='waiting'?[{id:'roomPassword',text:room.hasPassword?'修改或关闭房间密码':'设置房间密码'}]:[]),
       { id: 'presets', text: '保存或应用玩法预设' },
       { id: 'admission', text: room.acceptingNewMembers ? '关闭新玩家加入' : '允许新玩家加入' },
     ] : []),
