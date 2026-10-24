@@ -25,6 +25,7 @@ export function AdminDashboard({ onBackToGame }: AdminDashboardProps) {
 
   // Tabs: 'overview' | 'strategy' | 'users' | 'rooms' | 'codes'
   const [activeTab, setActiveTab] = useState<'overview' | 'strategy' | 'users' | 'rooms' | 'codes' | 'special'>('overview');
+  const [specialRefresh,setSpecialRefresh]=useState(0);
 
   // Overview Data
   const [overview, setOverview] = useState<AdminOverview | null>(null);
@@ -438,6 +439,7 @@ export function AdminDashboard({ onBackToGame }: AdminDashboardProps) {
               else if (activeTab === 'users') { void loadUsers(userSearchQuery); }
               else if (activeTab === 'rooms') { void loadRooms(); }
               else if (activeTab === 'codes') { void loadCodes(); }
+              else if (activeTab === 'special') { setSpecialRefresh(v=>v+1); }
             }}
           >
             🔄 刷新数据
@@ -493,7 +495,7 @@ export function AdminDashboard({ onBackToGame }: AdminDashboardProps) {
 
       {/* Main Container */}
       <main className="admin-main-container">
-        {activeTab==='special'&&<SpecialAdmin request={adminApi}/>}
+        {activeTab==='special'&&<SpecialAdmin request={adminApi} refreshToken={specialRefresh}/>}
         {codeUser&&<PlayerCodeEditor user={codeUser} request={adminApi} onClose={()=>setCodeUser(null)} onSaved={()=>void loadUsers(userSearchQuery)}/>}
         {/* ================= Tab 1: Overview ================= */}
         {activeTab === 'overview' && (

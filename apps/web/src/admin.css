@@ -751,6 +751,8 @@
   box-sizing: border-box;
 }
 .admin-viewport .special-list { display: grid; gap: 10px; margin-top: 12px; }
+.admin-viewport .special-code-counts { margin: 12px 0 0; color: #94a3b8; font-variant-numeric: tabular-nums; }
+.admin-viewport .special-list + .admin-action-btn { margin-top: 12px !important; }
 .admin-viewport .special-card {
   padding: 12px;
   min-width: 0;

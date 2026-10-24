@@ -1,9 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import type { z } from 'zod';
-import { dedicatedRoomSchema, type DedicatedRoom, type PlayerCodeAvailability, type PlayerCodeReservation } from '@avalon/contracts';
+import { dedicatedRoomSchema, type DedicatedRoom, type PlayerCodeAvailability, type PlayerCodeReservation, type PlayerCodeHistoryPage } from '@avalon/contracts';
 import { DomainError, type PostgresStore } from './store.js';
 import { hashSecret } from './access-secrets.js';
 import { lockPlayerCodes } from './player-codes.js';
+import { readCursor } from './accounts.js';
 
 export class SpecialManagement {
   constructor(private store: PostgresStore) {}
@@ -45,8 +46,29 @@ export class SpecialManagement {
     });
   }
   async reservations(): Promise<PlayerCodeReservation[]> {
-    return this.store.tx(async c => (await c.query(`SELECT r.code,r.state,r.user_id AS "userId",r.note,u.nickname
-      FROM player_code_reservations r LEFT JOIN users u ON u.id=r.user_id ORDER BY r.code`)).rows);
+    return this.store.tx(async c => (await c.query(`SELECT r.code,r.state,r.user_id AS "userId",r.note,u.nickname,
+        NULL::text AS "oldCode",NULL::timestamptz AS "assignedAt"
+      FROM player_code_reservations r LEFT JOIN users u ON u.id=r.user_id
+      UNION ALL
+      SELECT u.player_code,'assigned',u.id,a.reservation_note,u.nickname,a.old_code,a.created_at
+      FROM users u JOIN LATERAL (
+        SELECT old_code,reservation_note,created_at FROM player_code_audit
+        WHERE user_id=u.id AND new_code=u.player_code ORDER BY created_at DESC,id DESC LIMIT 1
+      ) a ON true ORDER BY code`)).rows.map(r=>({...r,assignedAt:r.assignedAt?.toISOString()??null})));
+  }
+  async allocationHistory(cursorValue?:string,limit=20):Promise<PlayerCodeHistoryPage> {
+    const cursor=readCursor(cursorValue);
+    return this.store.tx(async c=>{
+      const rows=(await c.query(`SELECT a.id,a.user_id,a.old_code,a.new_code,a.retained,a.reservation_note,a.created_at,u.nickname,
+        to_char(a.created_at AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"') AS cursor_at
+        FROM player_code_audit a LEFT JOIN users u ON u.id=a.user_id
+        WHERE ($1::timestamptz IS NULL OR (a.created_at,a.id)<($1::timestamptz,$2::uuid))
+        ORDER BY a.created_at DESC,a.id DESC LIMIT $3`,[cursor?.at??null,cursor?.id??null,limit+1])).rows;
+      const page=rows.slice(0,limit),last=page.at(-1);
+      return {history:page.map(r=>({id:r.id,userId:r.user_id,nickname:r.nickname,oldCode:r.old_code,newCode:r.new_code,
+        retained:r.retained,note:r.reservation_note,createdAt:r.created_at.toISOString()})),
+        nextCursor:rows.length>limit&&last?Buffer.from(JSON.stringify({at:last.cursor_at,id:last.id})).toString('base64url'):null};
+    });
   }
   async reserveCode(code: string, note: string) {
     await this.store.tx(async c => {
@@ -80,7 +102,7 @@ export class SpecialManagement {
       await c.query('DELETE FROM player_code_reservations WHERE code=$1',[code]);
       await c.query('UPDATE users SET player_code=$2 WHERE id=$1',[userId,code]);
       if (retained) await c.query("INSERT INTO player_code_reservations(code,state,user_id,note) VALUES($1,'retired',$2,'已有开局记录，旧号保留')",[user.player_code,userId]);
-      await c.query('INSERT INTO player_code_audit(id,user_id,old_code,new_code,retained) VALUES($1,$2,$3,$4,$5)',[randomUUID(),userId,user.player_code,code,retained]);
+      await c.query('INSERT INTO player_code_audit(id,user_id,old_code,new_code,retained,reservation_note) VALUES($1,$2,$3,$4,$5,$6)',[randomUUID(),userId,user.player_code,code,retained,reserved?.state==='reserved'?reserved.note:'']);
       return {oldCode:user.player_code,newCode:code,retained};
     });
   }

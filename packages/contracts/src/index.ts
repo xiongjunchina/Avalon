@@ -27,7 +27,15 @@ export interface DedicatedRoom {
   activeRoomId?: string; activePhase?: 'waiting' | 'playing' | 'finished';
 }
 export interface PlayerCodeReservation {
-  code: string; state: 'reserved' | 'retired'; userId?: string; nickname?: string; note: string;
+  code: string; state: 'reserved' | 'assigned' | 'retired'; userId?: string | null; nickname?: string | null; note: string;
+  oldCode?: string | null; assignedAt?: string | null;
+}
+export interface PlayerCodeAllocation {
+  id: string; userId: string | null; nickname: string | null;
+  oldCode: string; newCode: string; retained: boolean; note: string; createdAt: string;
+}
+export interface PlayerCodeHistoryPage {
+  history: PlayerCodeAllocation[]; nextCursor: string | null;
 }
 export interface PlayerCodeAvailability {
   code: string; status: 'available' | 'reserved' | 'occupied' | 'retired' | 'current';

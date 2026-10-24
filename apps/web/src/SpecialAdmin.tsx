@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { defaultSettings, type AdminUserSummary, type DedicatedRoom, type PlayerCodeAvailability, type PlayerCodeReservation, type Settings } from '@avalon/contracts';
+import { defaultSettings, type AdminUserSummary, type DedicatedRoom, type PlayerCodeAvailability, type PlayerCodeReservation, type PlayerCodeAllocation, type PlayerCodeHistoryPage, type Settings } from '@avalon/contracts';
 import { Modal } from './Modal';
 import { PasswordChoice } from './RoomAccess';
 import { SettingsFields } from './PresetsPanel';
@@ -7,12 +7,13 @@ import { errors } from './api';
 
 export type AdminApi = <T>(path:string,body?:unknown,method?:string)=>Promise<T>;
 const message=(e:unknown)=>e instanceof Error?errors[e.message]??e.message:'操作失败，请重试。';
-export function SpecialAdmin({request}:{request:AdminApi}) {
+export function SpecialAdmin({request,refreshToken=0}:{request:AdminApi;refreshToken?:number}) {
   const [rooms,setRooms]=useState<DedicatedRoom[]>([]),[codes,setCodes]=useState<PlayerCodeReservation[]>([]),[error,setError]=useState(''),[notice,setNotice]=useState(''),[busy,setBusy]=useState(false);
+  const [allocations,setAllocations]=useState<PlayerCodeAllocation[]>([]),[nextCursor,setNextCursor]=useState<string|null>(null);
   const [editing,setEditing]=useState<DedicatedRoom|null|undefined>(),[code,setCode]=useState(''),[name,setName]=useState(''),[managerCode,setManagerCode]=useState(''),[settings,setSettings]=useState<Settings>({...defaultSettings}),[password,setPassword]=useState<string|null|undefined>();
   const [reserve,setReserve]=useState(''),[note,setNote]=useState('');
-  async function load(){const [r,c]=await Promise.all([request<{rooms:DedicatedRoom[]}>('/dedicated-rooms'),request<{codes:PlayerCodeReservation[]}>('/player-codes')]);setRooms(r.rooms);setCodes(c.codes);}
-  useEffect(()=>{void load().catch(e=>setError(message(e)));},[]);
+  async function load(){const [r,c,h]=await Promise.all([request<{rooms:DedicatedRoom[]}>('/dedicated-rooms'),request<{codes:PlayerCodeReservation[]}>('/player-codes'),request<PlayerCodeHistoryPage>('/player-codes/history')]);setRooms(r.rooms);setCodes(c.codes);setAllocations(h.history);setNextCursor(h.nextCursor);setError('');}
+  useEffect(()=>{void load().catch(e=>setError(message(e)));},[refreshToken]);
   async function run(action:()=>Promise<void>){setBusy(true);setError('');setNotice('');try{await action();await load();}catch(e){setError(message(e));}finally{setBusy(false);}}
   function edit(r:DedicatedRoom|null){setError('');setEditing(r);setCode(r?.code??'');setName(r?.name??'');setManagerCode(r?.managerCode??'');setSettings(r?.settings??{...defaultSettings});setPassword(undefined);}
   return <div className="special-admin">
@@ -24,14 +25,26 @@ export function SpecialAdmin({request}:{request:AdminApi}) {
         {r.activeRoomId&&<small>本次房间关闭后可编辑配置；等待区改密可由房主直接操作。</small>}
       </article>)}{!rooms.length&&<p>尚无专属房，可在此创建。</p>}</div>
     </section>
-    <section className="admin-panel"><h3 className="admin-panel-title">仙友靓号预留</h3><p className="hint">预留号不会随机分配。给玩家分配号码，请在“仙友用户”中点击“改仙友码”。</p>
+    <section className="admin-panel"><h3 className="admin-panel-title">仙友靓号管理</h3><p className="hint">预留号不会随机分配；分配后仍在此显示持有玩家和分配记录。分配号码请在“仙友用户”中点击“改仙友码”。</p>
       <form className="special-form" onSubmit={e=>{e.preventDefault();void run(async()=>{await request('/player-codes',{code:reserve,note});setReserve('');setNote('');setNotice('号码已预留。');});}}>
         <label className="admin-input-label">六位仙友码<input className="admin-input" inputMode="numeric" pattern="[1-9][0-9]{5}" maxLength={6} required value={reserve} onChange={e=>setReserve(e.target.value.replace(/\D/g,''))}/></label>
         <label className="admin-input-label">备注<input className="admin-input" maxLength={80} value={note} onChange={e=>setNote(e.target.value)}/></label><button disabled={busy} className="admin-primary-btn">预留号码</button>
       </form>
-      <div className="special-list">{codes.map(c=><article className="special-card" key={c.code}><strong>{c.code} · {c.state==='retired'?'历史旧号保留':'待分配'}</strong><p>{c.nickname??''} {c.note}</p>
+      <p className="special-code-counts">待分配 {codes.filter(c=>c.state==='reserved').length} · 已分配 {codes.filter(c=>c.state==='assigned').length} · 历史旧号 {codes.filter(c=>c.state==='retired').length}</p>
+      <div className="special-list">{codes.map(c=><article className="special-card" key={c.code}><strong>{c.code} · {c.state==='assigned'?'已分配':c.state==='retired'?'历史旧号保留':'待分配'}</strong>
+        {c.nickname&&<p>{c.state==='assigned'?'持有玩家':'原玩家'}：{c.nickname}</p>}{c.note&&<p>备注：{c.note}</p>}
+        {c.state==='assigned'&&<p>原仙友码：{c.oldCode} · 分配时间：{c.assignedAt?new Date(c.assignedAt).toLocaleString():'—'}</p>}
         {c.state==='reserved'&&<button type="button" className="admin-action-btn" disabled={busy} onClick={()=>void run(async()=>{await request(`/player-codes/${c.code}`,undefined,'DELETE');setNotice('预留已解除。');})}>解除预留</button>}
-      </article>)}</div>
+      </article>)}{!codes.length&&<p>暂无预留或已分配的靓号。</p>}</div>
+    </section>
+    <section className="admin-panel"><h3 className="admin-panel-title">分配记录</h3><p className="hint">按时间倒序展示改号历史；号码释放或重新分配后，历史记录仍可回看。</p>
+      <div className="special-list">{allocations.map(a=><article className="special-card" key={a.id}>
+        <strong>{a.oldCode} → {a.newCode}</strong><p>玩家：{a.nickname??'账号已删除'} · {a.retained?'当时保留旧号':'当时释放旧号'}</p>
+        {a.note&&<p>预留备注：{a.note}</p>}<small><time dateTime={a.createdAt}>{new Date(a.createdAt).toLocaleString()}</time></small>
+      </article>)}{!allocations.length&&<p>暂无分配记录。</p>}</div>
+      {nextCursor&&<button type="button" className="admin-action-btn" disabled={busy} onClick={()=>void(async()=>{
+        setBusy(true);setError('');try{const h=await request<PlayerCodeHistoryPage>(`/player-codes/history?cursor=${encodeURIComponent(nextCursor)}`);setAllocations(list=>[...list,...h.history.filter(a=>!list.some(old=>old.id===a.id))]);setNextCursor(h.nextCursor);}catch(e){setError(message(e));}finally{setBusy(false);}
+      })()}>{busy?'正在读取…':'加载更多分配记录'}</button>}
     </section>
     {editing!==undefined&&<Modal label={editing?'编辑专属房':'创建专属房'} scene="gate" onClose={()=>{if(!busy)setEditing(undefined);}}>
       <section className="admin-panel special-editor"><div className="special-editor-head"><strong>{editing?'编辑专属房':'创建专属房'}</strong><button type="button" disabled={busy} className="admin-back-btn" onClick={()=>setEditing(undefined)}>关闭</button></div>

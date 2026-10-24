@@ -1,7 +1,8 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
-import {defaultSettings} from '@avalon/contracts';
+import type {LightMyRequestResponse} from 'fastify';
+import {defaultSettings,type PlayerCodeHistoryPage} from '@avalon/contracts';
 import {headers,service,database} from './helpers.js';
 import {gameFixture} from './game-helpers.js';
 import {SpecialManagement} from '../src/special-management.js';
@@ -120,4 +121,41 @@ test('renumbering and starting a game serialize without losing history or enteri
  if(results[0].status==='rejected')assert.match(results[0].reason.message,/USER_IN_ACTIVE_GAME/);
  assert.equal((await f.state()).phase,'playing');
  assert.ok((await f.pool.query('SELECT 1 FROM game_participants WHERE user_id=$1',[p.user.id])).rowCount);
+});
+
+test('assigned codes remain visible with holder, reservation note and durable allocation history',async t=>{
+ const f=await service(t),m=new SpecialManagement(f.store),a=await f.store.createGuest('内测朋友');
+ const code=await vacant(m,888888),old=a.user.playerCode!;
+ await m.reserveCode(code,'给内测朋友');await m.assignCode(a.user.id,code,old);
+ await f.restart();
+ const list=await f.app.inject({url:'/api/admin/player-codes',headers:adminHeaders()});assert.equal(list.statusCode,200);
+ const assigned=list.json().codes.find((c:{code:string})=>c.code===code);
+ assert.equal(assigned.state,'assigned');assert.equal(assigned.userId,a.user.id);assert.equal(assigned.nickname,'内测朋友');assert.equal(assigned.note,'给内测朋友');assert.equal(assigned.oldCode,old);assert.ok(assigned.assignedAt);
+ const history=await f.app.inject({url:'/api/admin/player-codes/history',headers:adminHeaders()});assert.equal(history.statusCode,200);
+ assert.equal(history.json().history[0].newCode,code);assert.equal(history.json().history[0].oldCode,old);assert.equal(history.json().history[0].note,'给内测朋友');
+ assert.equal((await m.availability(old)).status,'available');
+ // Existing pre-fix rows did not retain reservation notes; they must still appear without recreating a reservation.
+ await f.pool.query("UPDATE player_code_audit SET reservation_note='' WHERE user_id=$1",[a.user.id]);
+ assert.equal((await f.pool.query('SELECT 1 FROM player_code_reservations WHERE code=$1',[code])).rowCount,0);
+ assert.equal((await m.reservations()).find(c=>c.code===code)!.state,'assigned');
+ assert.equal((await f.app.inject({url:'/api/admin/player-codes/history'})).statusCode,401);
+ for(const query of ['limit=0','limit=51','cursor=invalid'])assert.equal((await f.app.inject({url:'/api/admin/player-codes/history?'+query,headers:adminHeaders()})).statusCode,400);
+});
+
+test('code reassignment shows the current holder once and pages all audit records with a stable cursor',async t=>{
+ const f=await service(t),m=new SpecialManagement(f.store),a=await f.store.createGuest('原持有人'),b=await f.store.createGuest('现持有人');
+ const code=await vacant(m,888888),replacement=await vacant(m,900000),old=a.user.playerCode!;
+ await m.reserveCode(code,'首位朋友');await m.assignCode(a.user.id,code,old);
+ await m.assignCode(a.user.id,replacement,code);assert.equal((await m.availability(code)).status,'available');
+ await m.reserveCode(code,'下一位朋友');await m.assignCode(b.user.id,code,b.user.playerCode!);
+ const listed=(await m.reservations()).filter(c=>c.code===code);assert.equal(listed.length,1);assert.equal(listed[0].userId,b.user.id);assert.equal(listed[0].note,'下一位朋友');
+ await f.pool.query("UPDATE player_code_audit SET created_at='2026-10-24T00:00:00.123456Z'");
+ const expected=(await f.pool.query('SELECT id FROM player_code_audit ORDER BY created_at DESC,id DESC')).rows.map(r=>r.id);
+ const ids:string[]=[];let cursor:string|null=null;
+ do {
+  const response:LightMyRequestResponse=await f.app.inject({url:'/api/admin/player-codes/history?limit=1'+(cursor?'&cursor='+encodeURIComponent(cursor):''),headers:adminHeaders()});assert.equal(response.statusCode,200,response.body);
+  const page:PlayerCodeHistoryPage=response.json();ids.push(...page.history.map(h=>h.id));cursor=page.nextCursor;
+ }while(cursor);
+ assert.deepEqual(ids,expected);assert.equal(ids.length,3);
+ const history=(await m.allocationHistory()).history;assert.equal(history.filter(h=>h.newCode===code).length,2);assert.equal(history.find(h=>h.oldCode===code)!.retained,false);
 });

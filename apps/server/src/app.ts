@@ -365,6 +365,10 @@ export async function buildApp(options: { store: PostgresStore; origin?: string;
   app.post('/api/admin/dedicated-rooms',async(req,reply)=>{requireAdmin(req,reply);await special.saveRoom(dedicatedRoomSchema.parse(req.body));return {ok:true};});
   app.put<{Params:{id:string}}>('/api/admin/dedicated-rooms/:id',async(req,reply)=>{requireAdmin(req,reply);await special.saveRoom(dedicatedRoomSchema.parse(req.body),z.string().uuid().parse(req.params.id));return {ok:true};});
   app.get('/api/admin/player-codes',async(req,reply)=>{requireAdmin(req,reply);return {codes:await special.reservations()};});
+  app.get('/api/admin/player-codes/history',async(req,reply)=>{
+    requireAdmin(req,reply);const {cursor,limit}=z.object({cursor:z.string().min(1).max(512).optional(),limit:z.coerce.number().int().min(1).max(50).default(20)}).strict().parse(req.query);
+    return special.allocationHistory(cursor,limit);
+  });
   app.get('/api/admin/player-codes/check',async(req,reply)=>{
     requireAdmin(req,reply);const {code,userId}=z.object({code:specialCodeSchema,userId:z.string().uuid().optional()}).parse(req.query);
     return special.availability(code,userId);
