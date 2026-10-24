@@ -56,6 +56,28 @@ docker compose --env-file deploy/.env.ecs -f deploy/compose.yaml up -d --wait --
 
 备案通过后，配置 DNS、将 `APP_ORIGIN` 改为正式 HTTPS 域名，改用 `compose.public.example.yaml` 作为 override，申请域名证书。原数据库保留，但浏览器不会将 IP 地址的访客 Cookie 自动迁移到域名，迁移前应说明账号恢复方式。
 
+## 一键更新 GitHub 代码
+
+仓库提供 [ECS 更新脚本](../scripts/update-ecs.sh)。在 ECS 终端执行一次安装；这里只拉取代码和安装文件，不启动发布：
+
+```bash
+cd /opt/avalon && git pull --ff-only && install -m 700 scripts/update-ecs.sh /root/update-avalon.sh
+```
+
+后续需要发布时执行：
+
+```bash
+/root/update-avalon.sh
+```
+
+脚本在 `/opt/avalon` 拉取当前分支，使用提交编号构建 `server` 和 `gateway`，构建成功后保存 `IMAGE_TAG`，启动容器并最多等待 180 秒。它根据 Compose 实际解析的 `APP_ORIGIN` 自动选择 IP 或域名 override：`https://47.112.7.117` 使用 `compose.ip.example.yaml`，`https://完整域名` 使用 `compose.public.example.yaml`。入口须为标准 HTTPS，不带端口或路径。
+
+因此，备案后切换域名无需替换 `/root/update-avalon.sh`。完成 DNS 指向，并将 `deploy/.env.ecs` 中的 `APP_ORIGIN` 改为实际 HTTPS 域名后，保持 `COOKIE_SECURE=true`、`GATEWAY_PORT=443`、原 `PROJECT` 和数据库配置，再执行同一脚本即可。已有 `PUBLIC_IP` 可保留，域名模式不使用它。切换后需另外确认域名证书、公网 `/api/health`、网页和 WebSocket；容器健康等待不能证明公网证书或 DNS 已生效。
+
+脚本拒绝并发发布和包含未提交改动的仓库；Git 拉取或镜像构建失败时不会启动新版容器。配置更新前会将上一份私密环境文件保存至 `deploy/runtime/.env.ecs.before-update`（权限 0600，仅保留最近一次）；这不是数据库备份。容器启动失败会返回非零退出码并保留错误，不会自动回退。发布会重建应用容器，宜在空闲时执行。
+
+如将来更新脚本本身，重新执行上方安装命令即可；普通代码发布和 IP 切换域名无需重新安装。此脚本仅用于已有 ECS 实例，不启动本机 Docker 或 ngrok。
+
 依据：
 - https://letsencrypt.org/2026/01/15/6day-and-ip-general-availability
 - https://caddyserver.com/docs/caddyfile/directives/tls
