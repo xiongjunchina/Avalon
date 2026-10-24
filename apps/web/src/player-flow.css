@@ -16,8 +16,12 @@
 .setup-role-preview .mp-portrait-card { position: relative; }
 .setup-role-preview .mp-portrait-label strong { white-space: nowrap; }
 .setup-role-preview .mp-count-tag { position: absolute; top: 6px; right: 6px; }
-.is-live-table .waiting-play-priority { min-height: 0 !important; gap: 10px !important; }
-.is-live-table .waiting-settings-summary { width: 100%; min-height: 34px; margin: 0; padding: 5px 8px; font: 600 12px/1.4 var(--sans); }
+/* Waiting and active tables use the same spacing in every display mode. */
+main.app-shell.is-live-table { --table-gap: 8px; }
+.is-live-table .room-table-screen { justify-content: flex-start; margin: 0; padding: 0; gap: var(--table-gap) !important; }
+.is-live-table :is(.waiting-play-priority, .table-game-screen.game-play-priority) { min-height: 0 !important; gap: var(--table-gap) !important; }
+.is-live-table .waiting-play-priority > :is(.waiting-settings-summary, .scheme3-middle-zone) { flex: 0 0 auto; margin: 0 !important; }
+.is-live-table .waiting-settings-summary { width: 100%; min-height: 30px; margin: 0; padding: 5px 8px; font: 600 12px/1.4 var(--sans); }
 .is-live-table .waiting-play-priority .waiting-dock { margin: 0 !important; }
 .is-live-table .waiting-mission-preview { width: 100%; margin-top: 2px; }
 .is-live-table .waiting-play-priority .waiting-voice-social-row { margin: 0 !important; }
@@ -81,8 +85,7 @@
 .game-play-priority .mission-submit-btn { margin-top: 0 !important; }
 /* Recover phone viewport space through spacing, preserving text and avatar sizes. */
 @media (max-width: 600px) {
-  .is-live-table .room-table-screen { gap: 4px !important; }
-  .is-live-table :is(.table-game-screen.game-play-priority, .waiting-table-body.waiting-play-priority) { gap: 4px !important; }
+  main.app-shell.is-live-table { --table-gap: 4px; padding-top: max(4px, env(safe-area-inset-top)) !important; }
   .is-live-table .waiting-play-priority .scheme3-ink-ribbon { min-height: 36px !important; }
   .is-live-table .waiting-play-priority .table-seats-grid { margin: 0 !important; row-gap: 12px !important; }
   .is-live-table .waiting-play-priority .waiting-dock { padding: 6px 8px !important; }
@@ -91,9 +94,6 @@
   .is-live-table .game-play-priority .scheme-a-flank { gap: 10px !important; }
   .is-live-table .game-play-priority .table-action-dock,
   .is-live-table .game-play-priority .table-action-dock .dock-panel { padding: 6px 8px !important; }
-}
-@media (max-width: 600px) and (display-mode: browser) {
-  main.app-shell.is-live-table { padding-top: 4px !important; }
 }
 /* Account actions share the existing button typography and a compact header. */
 .account-flow .profile-bar { padding: 12px; margin-bottom: 10px; gap: 10px; }
@@ -118,15 +118,18 @@
 .round-jump-nav > button { flex: 0 0 auto; width: auto; min-height: 36px; padding: 5px 10px; margin: 0; white-space: nowrap; font: 600 12px/1.4 var(--sans); }
 .round-jump-nav [aria-pressed="true"] { border-color: #ffd875; background: #67231e; }
 .battle-round-anchor { scroll-margin-top: 62px; }
-.guide-flow .guide-controls { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; justify-content: space-between; gap: 8px; background: #260e0df5; border: 1px solid #d4a35980; border-radius: 12px; padding: 6px; }
+.guide-flow .guide-navigation { position: sticky; top: 0; z-index: 5; padding: 6px; background: #260e0d; border: 1px solid #d4a35980; border-radius: 12px; }
+.guide-flow .guide-controls { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .guide-controls > button { flex: 0 0 auto; width: auto; min-height: 40px; margin: 0; padding: 5px 8px; font-size: 12px; }
 .guide-controls .guide-nav { flex: 0 1 340px; display: flex; gap: 6px; margin: 0; }
 .guide-controls .guide-nav > button { flex: 1; min-width: 0; min-height: 40px; margin: 0; padding: 5px 7px; font-size: 13px; }
 .guide-flow .guide-heading { padding: 10px 12px; margin-top: 8px; }
-/* All destinations stay visible; only the compact page controls follow scrolling. */
-.guide-index { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,96px),1fr)); gap: 6px; margin: 10px 0; padding: 8px; border: 1px solid #d4a35966; border-radius: 12px; background: #260e0df5; }
+/* Keep every chapter reachable after a jump, with no collapsed menus. */
+.guide-index-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 6px; border-top: 1px solid #d4a35966; padding-top: 4px; font: 600 12px/1.4 var(--sans); color: #ffd875; }
+.guide-index-heading > button { width: auto; min-height: 32px; margin: 0; padding: 4px 8px; box-shadow: none; font: 600 12px/1.4 var(--sans); }
+.guide-index { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 6px; margin: 4px 0 0; }
 .guide-index > button { width: 100%; min-width: 0; min-height: 40px; padding: 6px 4px; margin: 0; white-space: nowrap; font: 600 12px/1.4 var(--sans); }
-.guide-flow .guide-section, .guide-flow .guide-role { scroll-margin-top: 72px; }
+.guide-flow .guide-section, .guide-flow .guide-role { scroll-margin-top: calc(var(--guide-navigation-height, 240px) + 12px); }
 @media (max-width: 380px) {
   .account-flow .profile-bar { flex-direction: column; align-items: stretch; }
   .game-result-actions .result-actions { width: 100%; }

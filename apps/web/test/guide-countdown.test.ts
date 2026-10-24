@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { defaultSettings, type RoomView } from '@avalon/contracts';
-import { createGame, projectGame } from '@avalon/game-core';
+import { createGame, projectGame, transition } from '@avalon/game-core';
 import { GuideRules, GuideRoles, roleDescriptions } from '../src/GuidePanel.js';
 import { remainingSeconds, DealCountdown } from '../src/DealCountdown.js';
 import { GamePanel } from '../src/GamePanel.js';
@@ -18,6 +18,28 @@ test('guide covers all retained roles, asymmetric vision and standard/extension 
   assert.match(roleDescriptions.guinevere.ability,/黄眉老怪/);
   for(const text of ['倒计时5秒','赞成多于反对','平票或全员弃权不通过','两张失败牌','提前刺杀','匿名','全局累计'])assert.ok(rules.includes(text),text);
   for(let n=5;n<=12;n++)assert.ok(rules.includes(`${n}人局各任务人数`));
+  assert.doesNotMatch(rules,/<details|<summary|展开 5–12 人配置表/);
+  assert.match(rules,/领队点击“预选阵容”/);
+});
+
+test('captain preselects a lineup before discussion and confirms it only when opening the vote',()=>{
+  const players=Array.from({length:12},(_,i)=>({id:randomUUID(),seat:i+1,nickname:`仙友${i+1}`}));
+  let game=createGame(randomUUID(),players,{...defaultSettings,playerCount:12},a=>a);
+  game.phase='proposing';
+  const captainId=game.captainOrder[game.captainIndex];
+  const team=players.slice(0,3).map(p=>p.id);
+  game=transition(game,captainId,{type:'updateTeamDraft',payload:{playerIds:team,direction:'clockwise'}},players.map(p=>p.id));
+  const render=()=>{
+    const room:RoomView={id:randomUUID(),code:'TEAM',hostId:players[0].id,version:1,phase:'playing',settings:game.settings,acceptingNewMembers:false,members:players.map(p=>({...p,online:true,ready:true})),game:projectGame(game,captainId)};
+    return renderToStaticMarkup(createElement(GamePanel,{room,userId:captainId,disabled:false,connected:true,send:()=>{}}));
+  };
+  assert.match(render(),/预选阵容 \(3\/3\)/);
+  assert.match(render(),/待提交预选/);
+  assert.doesNotMatch(render(),/确认阵容 \(3\/3\)|已确认阵容 · 开启投票|待确认提交/);
+  game=transition(game,captainId,{type:'proposeTeam',payload:{playerIds:team,direction:'clockwise'}},players.map(p=>p.id));
+  assert.equal(game.phase,'discussion');
+  assert.match(render(),/已确认阵容 · 开启投票/);
+  assert.doesNotMatch(render(),/预选阵容 \(3\/3\)/);
 });
 
 test('countdown uses server time and elapsed monotonic duration, and never shows a role or early confirmation',()=>{

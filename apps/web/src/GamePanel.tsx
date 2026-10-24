@@ -565,7 +565,7 @@ export function GamePanel({
                       <span className="slim-status-divider">·</span>
                       <span className="slim-status-phase">
                         {selected.length === size ? (
-                          <strong className="text-gold">已选齐 {size} 人 · 待确认提交</strong>
+                          <strong className="text-gold">已选齐 {size} 人 · 待提交预选</strong>
                         ) : (
                           <>正在点将（已选 <strong>{selected.length}</strong>/{size} 人）</>
                         )}
@@ -878,7 +878,7 @@ export function GamePanel({
             >
               <fieldset disabled={disabled} className="dock-propose-fieldset">
                 <legend className="dock-rule-hint">
-                  —◇ 点击头像选人 · 确认阵容后进入论道 ◇—
+                  —◇ 点击头像选人 · 预选阵容后进入论道 ◇—
                 </legend>
                 <div className="team-picker sr-only">
                   {g.players.map(p => (
@@ -915,7 +915,7 @@ export function GamePanel({
                   >
                     <span className="btn-cloud-flourish left" aria-hidden="true"><CloudFlourish side="left" /></span>
                     <span className="btn-cta-text">
-                      {selected.length === size ? `确认阵容 (${selected.length}/${size})` : `待选队员 (${selected.length}/${size})`}
+                      {selected.length === size ? `预选阵容 (${selected.length}/${size})` : `待选队员 (${selected.length}/${size})`}
                     </span>
                     <span className="btn-cloud-flourish right" aria-hidden="true"><CloudFlourish side="right" /></span>
                   </button>

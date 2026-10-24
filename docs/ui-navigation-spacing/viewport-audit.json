@@ -1,0 +1,682 @@
+{
+  "tables": [
+    {
+      "count": 5,
+      "viewport": {
+        "width": 320,
+        "height": 568
+      },
+      "stages": [
+        {
+          "stage": "waiting",
+          "top": 4,
+          "gaps": [
+            4,
+            4
+          ],
+          "overflow": false,
+          "seats": 5
+        },
+        {
+          "stage": "proposing",
+          "top": 4,
+          "gaps": [
+            4,
+            4
+          ],
+          "overflow": false,
+          "seats": 5
+        },
+        {
+          "stage": "discussion",
+          "top": 4,
+          "gaps": [
+            4,
+            4
+          ],
+          "overflow": false,
+          "seats": 5
+        }
+      ]
+    },
+    {
+      "count": 5,
+      "viewport": {
+        "width": 375,
+        "height": 553
+      },
+      "stages": [
+        {
+          "stage": "waiting",
+          "top": 4,
+          "gaps": [
+            4,
+            4
+          ],
+          "overflow": false,
+          "seats": 5
+        },
+        {
+          "stage": "proposing",
+          "top": 4,
+          "gaps": [
+            4,
+            4
+          ],
+          "overflow": false,
+          "seats": 5
+        },
+        {
+          "stage": "discussion",
+          "top": 4,
+          "gaps": [
+            4,
+            4
+          ],
+          "overflow": false,
+          "seats": 5
+        }
+      ]
+    },
+    {
+      "count": 5,
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stages": [
+        {
+          "stage": "waiting",
+          "top": 4,
+          "gaps": [
+            4,
+            4
+          ],
+          "overflow": false,
+          "seats": 5
+        },
+        {
+          "stage": "proposing",
+          "top": 4,
+          "gaps": [
+            4,
+            4
+          ],
+          "overflow": false,
+          "seats": 5
+        },
+        {
+          "stage": "discussion",
+          "top": 4,
+          "gaps": [
+            4,
+            4
+          ],
+          "overflow": false,
+          "seats": 5
+        }
+      ]
+    },
+    {
+      "count": 5,
+      "viewport": {
+        "width": 430,
+        "height": 716
+      },
+      "stages": [
+        {
+          "stage": "waiting",
+          "top": 4,
+          "gaps": [
+            4,
+            4
+          ],
+          "overflow": false,
+          "seats": 5
+        },
+        {
+          "stage": "proposing",
+          "top": 4,
+          "gaps": [
+            4,
+            4
+          ],
+          "overflow": false,
+          "seats": 5
+        },
+        {
+          "stage": "discussion",
+          "top": 4,
+          "gaps": [
+            4,
+            4
+          ],
+          "overflow": false,
+          "seats": 5
+        }
+      ]
+    },
+    {
+      "count": 5,
+      "viewport": {
+        "width": 640,
+        "height": 900
+      },
+      "stages": [
+        {
+          "stage": "waiting",
+          "top": 6,
+          "gaps": [
+            8,
+            8
+          ],
+          "overflow": false,
+          "seats": 5
+        },
+        {
+          "stage": "proposing",
+          "top": 6,
+          "gaps": [
+            8,
+            8
+          ],
+          "overflow": false,
+          "seats": 5
+        },
+        {
+          "stage": "discussion",
+          "top": 6,
+          "gaps": [
+            8,
+            8
+          ],
+          "overflow": false,
+          "seats": 5
+        }
+      ]
+    },
+    {
+      "count": 8,
+      "viewport": {
+        "width": 320,
+        "height": 568
+      },
+      "stages": [
+        {
+          "stage": "waiting",
+          "top": 4,
+          "gaps": [
+            4,
+            4
+          ],
+          "overflow": false,
+          "seats": 8
+        },
+        {
+          "stage": "proposing",
+          "top": 4,
+          "gaps": [
+            4,
+            4
+          ],
+          "overflow": false,
+          "seats": 8
+        },
+        {
+          "stage": "discussion",
+          "top": 4,
+          "gaps": [
+            4,
+            4
+          ],
+          "overflow": false,
+          "seats": 8
+        }
+      ]
+    },
+    {
+      "count": 8,
+      "viewport": {
+        "width": 375,
+        "height": 553
+      },
+      "stages": [
+        {
+          "stage": "waiting",
+          "top": 4,
+          "gaps": [
+            4,
+            4
+          ],
+          "overflow": false,
+          "seats": 8
+        },
+        {
+          "stage": "proposing",
+          "top": 4,
+          "gaps": [
+            4,
+            4
+          ],
+          "overflow": false,
+          "seats": 8
+        },
+        {
+          "stage": "discussion",
+          "top": 4,
+          "gaps": [
+            4,
+            4
+          ],
+          "overflow": false,
+          "seats": 8
+        }
+      ]
+    },
+    {
+      "count": 8,
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stages": [
+        {
+          "stage": "waiting",
+          "top": 4,
+          "gaps": [
+            4,
+            4
+          ],
+          "overflow": false,
+          "seats": 8
+        },
+        {
+          "stage": "proposing",
+          "top": 4,
+          "gaps": [
+            4,
+            4
+          ],
+          "overflow": false,
+          "seats": 8
+        },
+        {
+          "stage": "discussion",
+          "top": 4,
+          "gaps": [
+            4,
+            4
+          ],
+          "overflow": false,
+          "seats": 8
+        }
+      ]
+    },
+    {
+      "count": 8,
+      "viewport": {
+        "width": 430,
+        "height": 716
+      },
+      "stages": [
+        {
+          "stage": "waiting",
+          "top": 4,
+          "gaps": [
+            4,
+            4
+          ],
+          "overflow": false,
+          "seats": 8
+        },
+        {
+          "stage": "proposing",
+          "top": 4,
+          "gaps": [
+            4,
+            4
+          ],
+          "overflow": false,
+          "seats": 8
+        },
+        {
+          "stage": "discussion",
+          "top": 4,
+          "gaps": [
+            4,
+            4
+          ],
+          "overflow": false,
+          "seats": 8
+        }
+      ]
+    },
+    {
+      "count": 8,
+      "viewport": {
+        "width": 640,
+        "height": 900
+      },
+      "stages": [
+        {
+          "stage": "waiting",
+          "top": 6,
+          "gaps": [
+            8,
+            8
+          ],
+          "overflow": false,
+          "seats": 8
+        },
+        {
+          "stage": "proposing",
+          "top": 6,
+          "gaps": [
+            8,
+            8
+          ],
+          "overflow": false,
+          "seats": 8
+        },
+        {
+          "stage": "discussion",
+          "top": 6,
+          "gaps": [
+            8,
+            8
+          ],
+          "overflow": false,
+          "seats": 8
+        }
+      ]
+    },
+    {
+      "count": 12,
+      "viewport": {
+        "width": 320,
+        "height": 568
+      },
+      "stages": [
+        {
+          "stage": "waiting",
+          "top": 4,
+          "gaps": [
+            4,
+            4
+          ],
+          "overflow": false,
+          "seats": 12
+        },
+        {
+          "stage": "proposing",
+          "top": 4,
+          "gaps": [
+            4,
+            4
+          ],
+          "overflow": false,
+          "seats": 12
+        },
+        {
+          "stage": "discussion",
+          "top": 4,
+          "gaps": [
+            4,
+            4
+          ],
+          "overflow": false,
+          "seats": 12
+        }
+      ]
+    },
+    {
+      "count": 12,
+      "viewport": {
+        "width": 375,
+        "height": 553
+      },
+      "stages": [
+        {
+          "stage": "waiting",
+          "top": 4,
+          "gaps": [
+            4,
+            4
+          ],
+          "overflow": false,
+          "seats": 12
+        },
+        {
+          "stage": "proposing",
+          "top": 4,
+          "gaps": [
+            4,
+            4
+          ],
+          "overflow": false,
+          "seats": 12
+        },
+        {
+          "stage": "discussion",
+          "top": 4,
+          "gaps": [
+            4,
+            4
+          ],
+          "overflow": false,
+          "seats": 12
+        }
+      ]
+    },
+    {
+      "count": 12,
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "stages": [
+        {
+          "stage": "waiting",
+          "top": 4,
+          "gaps": [
+            4,
+            4
+          ],
+          "overflow": false,
+          "seats": 12
+        },
+        {
+          "stage": "proposing",
+          "top": 4,
+          "gaps": [
+            4,
+            4
+          ],
+          "overflow": false,
+          "seats": 12
+        },
+        {
+          "stage": "discussion",
+          "top": 4,
+          "gaps": [
+            4,
+            4
+          ],
+          "overflow": false,
+          "seats": 12
+        }
+      ]
+    },
+    {
+      "count": 12,
+      "viewport": {
+        "width": 430,
+        "height": 716
+      },
+      "stages": [
+        {
+          "stage": "waiting",
+          "top": 4,
+          "gaps": [
+            4,
+            4
+          ],
+          "overflow": false,
+          "seats": 12
+        },
+        {
+          "stage": "proposing",
+          "top": 4,
+          "gaps": [
+            4,
+            4
+          ],
+          "overflow": false,
+          "seats": 12
+        },
+        {
+          "stage": "discussion",
+          "top": 4,
+          "gaps": [
+            4,
+            4
+          ],
+          "overflow": false,
+          "seats": 12
+        }
+      ]
+    },
+    {
+      "count": 12,
+      "viewport": {
+        "width": 640,
+        "height": 900
+      },
+      "stages": [
+        {
+          "stage": "waiting",
+          "top": 6,
+          "gaps": [
+            8,
+            8
+          ],
+          "overflow": false,
+          "seats": 12
+        },
+        {
+          "stage": "proposing",
+          "top": 6,
+          "gaps": [
+            8,
+            8
+          ],
+          "overflow": false,
+          "seats": 12
+        },
+        {
+          "stage": "discussion",
+          "top": 6,
+          "gaps": [
+            8,
+            8
+          ],
+          "overflow": false,
+          "seats": 12
+        }
+      ]
+    }
+  ],
+  "guides": [
+    {
+      "viewport": {
+        "width": 320,
+        "height": 568
+      },
+      "category": "游戏规则",
+      "chapters": 6,
+      "pass": true
+    },
+    {
+      "viewport": {
+        "width": 320,
+        "height": 568
+      },
+      "category": "角色介绍",
+      "chapters": 9,
+      "pass": true
+    },
+    {
+      "viewport": {
+        "width": 375,
+        "height": 553
+      },
+      "category": "游戏规则",
+      "chapters": 6,
+      "pass": true
+    },
+    {
+      "viewport": {
+        "width": 375,
+        "height": 553
+      },
+      "category": "角色介绍",
+      "chapters": 9,
+      "pass": true
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "category": "游戏规则",
+      "chapters": 6,
+      "pass": true
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "category": "角色介绍",
+      "chapters": 9,
+      "pass": true
+    },
+    {
+      "viewport": {
+        "width": 430,
+        "height": 716
+      },
+      "category": "游戏规则",
+      "chapters": 6,
+      "pass": true
+    },
+    {
+      "viewport": {
+        "width": 430,
+        "height": 716
+      },
+      "category": "角色介绍",
+      "chapters": 9,
+      "pass": true
+    },
+    {
+      "viewport": {
+        "width": 640,
+        "height": 900
+      },
+      "category": "游戏规则",
+      "chapters": 6,
+      "pass": true
+    },
+    {
+      "viewport": {
+        "width": 640,
+        "height": 900
+      },
+      "category": "角色介绍",
+      "chapters": 9,
+      "pass": true
+    }
+  ],
+  "pass": true
+}
