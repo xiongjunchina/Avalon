@@ -16,12 +16,13 @@ function composition(roles:Role[]) {
 }
 export function GuideRules() {
   return <div className="guide-rules">
-    <section className="panel guide-section"><p className="eyebrow">01 / 佛魔真假对决</p><h2>一念佛魔皆幻相，谁是修道取经人</h2>
+    <nav className="guide-index" aria-label="规则章节定位">{['胜负条件','对局流程','人数配置','房主设置','刺杀与天机','专属法宝'].map((title,i)=><button type="button" className="secondary" key={title} onClick={()=>document.getElementById(`guide-rule-${i+1}`)?.scrollIntoView({block:'start'})}>{title}</button>)}</nav>
+    <section id="guide-rule-1" className="panel guide-section"><p className="eyebrow">01 / 佛魔真假对决</p><h2>一念佛魔皆幻相，谁是修道取经人</h2>
       <div className="guide-victories"><div className="allegiance-blue"><h3><Emblem kind="blue"/>蓝方 · 取经正果</h3><p>在五轮劫难中完成三次取经任务，并护住齐天大圣孙悟空躲过红孩儿的三昧真火刺杀，即可获胜。</p></div>
       <div className="allegiance-red"><h3><Emblem kind="red"/>红方 · 群妖乱道</h3><p>破坏三次取经任务、让流局次数达到五次，或由红孩儿刺杀命中孙悟空，任一条件成立即可获胜。</p></div></div>
       <p className="hint">开启提前刺杀时，红孩儿若刺错目标，蓝方立即获胜。中断对局不计胜负。</p>
     </section>
-    <section className="panel guide-section"><p className="eyebrow">02 / 取经五难流程</p><h2>从聚义，到证果</h2><ol className="guide-steps">
+    <section id="guide-rule-2" className="panel guide-section"><p className="eyebrow">02 / 取经五难流程</p><h2>从聚义，到证果</h2><ol className="guide-steps">
       <li className="guide-step-card">
         <div className="guide-step-header">
           <Emblem kind="cards"/>
@@ -75,10 +76,10 @@ export function GuideRules() {
         <p>每场任务结束后换下一位队长。三场任务失败立即红方胜；三场任务成功则进入终局刺杀，红方可当面商议，由红孩儿确认刺杀目标。命中孙悟空红方翻盘获胜，否则蓝方取经正果获胜。</p>
       </li>
     </ol><p className="hint">投票提交成功后不可修改。断线不代投、不自动判负；重连后可继续。确实无法继续时，可向房主申请中止；房主同意或主动结束后关闭房间，全员返回大厅，不计胜负。</p></section>
-    <section className="panel guide-section"><p className="eyebrow">03 / 配置与规模</p><h2>人数、角色与取经五难</h2><div className="guide-configs">
+    <section id="guide-rule-3" className="panel guide-section"><p className="eyebrow">03 / 配置与规模</p><h2>人数、角色与取经五难</h2><details className="flow-details"><summary>展开 5–12 人配置表</summary><div className="guide-configs">
       {Object.entries(ROLE_CONFIG).map(([count,roles])=><article key={count} className="guide-config"><h3>{count} 人局</h3><p><strong>蓝方</strong> {composition(roles.filter(r=>roleTeam(r)==='blue'))}</p><p><strong>红方</strong> {composition(roles.filter(r=>roleTeam(r)==='red'))}</p><p className="hint">取经五难（1–5）出征人数</p><ol aria-label={`${count}人局各任务人数`} className="guide-missions">{MISSION_SIZES[Number(count)].map((size,i)=><li key={i}><span>{WUYUE_MISSIONS[i]?.shortLabel ?? `第${i+1}次`}</span><strong>{size}人</strong></li>)}</ol></article>)}
-    </div></section>
-    <section className="panel guide-section"><p className="eyebrow">04 / 房主约定</p><h2>开局前，约定取经规矩</h2><dl className="guide-options">
+    </div></details></section>
+    <section id="guide-rule-4" className="panel guide-section"><p className="eyebrow">04 / 房主约定</p><h2>开局前，约定取经规矩</h2><dl className="guide-options">
       <dt>队长顺序</dt><dd>默认按座位循环；也可开局打乱一次，此后整局按该顺序循环。房主与当轮队长是两个概念。</dd>
       <dt>组队投票是否匿名</dt><dd>5–7人默认匿名，8–12人默认公开；房主开局前可修改。公开模式实时显示已提交的赞成、反对或弃权；匿名模式只展示是否已投和最终总票数。任务出牌在两种设置下都始终匿名。</dd>
       <dt>五次流局</dt><dd>默认全局累计，达到五次红方胜；也可只累计当前任务，实际任务结束后清零。一次组队表决未通过记一次流局。</dd>
@@ -86,7 +87,7 @@ export function GuideRules() {
       <dt>实时语音房与麦克风指示</dt><dd>支持开启声网高清实时语音；入座仙友的头像座次上将实时显示麦克风指示（绿波开麦、浅绿就绪、灰色静音），方便相互感知开麦状态。</dd>
       <dt>新成员加入</dt><dd>等待时房主可关闭新成员加入，已有成员仍可重连。开局后锁定席位。修改玩法会清除准备状态，切换接纳开关不会。</dd>
     </dl></section>
-    <section className="panel guide-section"><p className="eyebrow">05 / 刺杀与天机</p><h2>提前刺杀与护法天机</h2>
+    <section id="guide-rule-5" className="panel guide-section"><p className="eyebrow">05 / 刺杀与天机</p><h2>提前刺杀与护法天机</h2>
       <h3 className="guide-sub-heading">提前刺杀</h3><p>可选开启。完成第二个实际任务起，在轮间确认窗口由红孩儿（刺客）私下决定发起或跳过；此后的任务结束或组队流局也可能再出现窗口，流局本身不计实际任务。</p>
       <ul><li>每局最多发起一次。跳过本次窗口不会消耗机会。</li><li>发起后不能撤回，红孩儿必须选人；命中孙悟空红方胜，刺错则立即蓝方胜。</li><li>不能在投票或任务出牌过程中随时打断。</li><li>其他玩家只看到“轮间确认中”，不会获知谁是红孩儿。</li></ul>
       <p>新开对局按护法人数依次选入白龙、猪八戒、沙悟净、金刚，再随机分配给护法玩家；人物各自的护法天机能力保持不变。旧局及历史复盘沿用原分配结果。</p>
@@ -99,7 +100,7 @@ export function GuideRules() {
       </ul>
       <p className="notice">判定顺序：先判断终局；未终局时进入提前刺杀窗口。三次任务成功走正常刺杀，三次失败或五次流局直接结束。护法天机线索为私下查验信息，不直接揭示大圣真身，兼顾平衡与乐趣。</p>
     </section>
-    <section className="panel guide-section"><p className="eyebrow">06 / 仙家专属法宝</p><h2>8–12人局专属法宝奇谋</h2>
+    <section id="guide-rule-6" className="panel guide-section"><p className="eyebrow">06 / 仙家专属法宝</p><h2>8–12人局专属法宝奇谋</h2>
       <p>为解决 8–12 人大型局中好人信息匮乏、坏人人数占优的痛点，房主开局前可勾选开启【8–12人专属法宝模式】。对局页统一提供【法宝】入口，按角色、人数与房间设置开放使用。法宝规则公开，私密查验与传音仅当事人可见：</p>
       <ul>
         <li><strong>大唐圣僧 ·【九环锡杖】</strong>：第 2 轮任务完成后，私密查验 1 位盲区仙友气息（排除自己与真假猴王，查验黄眉老怪仍显蓝方）。整局限用 1 次。</li>
@@ -132,6 +133,7 @@ export function GuideRoles() {
 
   return (
     <div className="guide-roles">
+      <nav className="guide-index" aria-label="角色快速定位">{allRoles.map(role=><button type="button" className="secondary" key={role} onClick={()=>document.getElementById(`guide-role-${role}`)?.scrollIntoView({block:'start'})}>{roleNames[role]}</button>)}</nav>
       <p className="hint">这里介绍《嘻游 · 真假猴王》全部神魔人物的通用规则，不显示本局谁拿到了什么身份。准确角色仅由本人查看，终局才公开。点击任意法相可鉴赏高清立绘大图。</p>
       {(['blue', 'red'] as const).map(team => (
         <section key={team} aria-label={`${team === 'blue' ? '蓝方' : '红方'}角色介绍`} className={`guide-faction allegiance-${team}`}>
@@ -141,7 +143,7 @@ export function GuideRoles() {
           </h2>
           <div className="guide-role-grid">
             {allRoles.filter(r => roleTeam(r) === team).map(role => (
-              <article className={`guide-role allegiance-${team}`} key={role}>
+              <article id={`guide-role-${role}`} className={`guide-role allegiance-${team}`} key={role}>
                 <div
                   className="guide-role-heading guide-role-interactive"
                   onClick={() => openViewer(role)}
@@ -249,8 +251,10 @@ export function GuideRoles() {
 export function GuidePanel({onBack}:{onBack:()=>void}) {
   const [section,setSection]=useState<'rules'|'roles'>('rules');
   usePageSound(section);
-  return <section className="guide"><div className="guide-heading"><div><p className="eyebrow">JOURNEY TO THE WEST / 真假猴王秘卷</p><h1>《嘻游 · 真假猴王》</h1><p className="muted">一念佛魔皆幻相，谁是修道取经人</p></div><button className="secondary" onClick={onBack}>返回原页面</button></div>
-    <nav className="guide-nav" aria-label="说明分类"><button className="secondary" aria-pressed={section==='rules'} onClick={()=>setSection('rules')}>游戏规则</button><button className="secondary" aria-pressed={section==='roles'} onClick={()=>setSection('roles')}>角色介绍</button></nav>
+  const changeSection=(next:'rules'|'roles')=>{setSection(next);window.scrollTo({top:0});};
+  return <section className="guide guide-flow">
+    <div className="guide-controls"><button className="secondary" onClick={onBack}>返回原页面</button><nav className="guide-nav" aria-label="说明分类"><button className="secondary" aria-pressed={section==='rules'} onClick={()=>changeSection('rules')}>游戏规则</button><button className="secondary" aria-pressed={section==='roles'} onClick={()=>changeSection('roles')}>角色介绍</button></nav></div>
+    <div className="guide-heading"><div><p className="eyebrow">JOURNEY TO THE WEST / 真假猴王秘卷</p><h1>《嘻游 · 真假猴王》</h1><p className="muted">一念佛魔皆幻相，谁是修道取经人</p></div></div>
     {section==='rules'?<GuideRules/>:<GuideRoles/>}
   </section>;
 }

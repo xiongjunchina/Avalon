@@ -374,13 +374,6 @@ export function GamePanel({
           const targetRole =
             g.result.targetId && g.revealedRoles ? g.revealedRoles[g.result.targetId] : undefined;
           const targetLoyalGuardian = g.result.targetId ? revealedLoyalGuardians[g.result.targetId] : undefined;
-          const bluePlayers = g.players.filter(
-            p => g.revealedRoles?.[p.id] && roleTeam(g.revealedRoles[p.id]) === 'blue'
-          );
-          const redPlayers = g.players.filter(
-            p => g.revealedRoles?.[p.id] && roleTeam(g.revealedRoles[p.id]) === 'red'
-          );
-
           return (
             <section
               className={[
@@ -457,43 +450,6 @@ export function GamePanel({
                 </p>
               </div>
 
-              {g.revealedRoles && (
-                <div className="ended-factions-roster">
-                  <div className="ended-faction-row faction-blue">
-                    <span className="faction-row-label">
-                      🛡️ 蓝方阵营 {winnerTeam === 'blue' ? '· 🏆胜' : ''}
-                    </span>
-                    <div className="faction-row-chips">
-                      {bluePlayers.map(p => (
-                        <span
-                          key={p.id}
-                          className={`faction-player-chip ${p.id === userId ? 'is-self' : ''} ${
-                            g.result?.targetId === p.id ? 'is-target' : ''
-                          }`}
-                        >
-                          {p.seat}号 {p.nickname} · <strong>{formatRoleName(g.revealedRoles![p.id], revealedLoyalGuardians[p.id], revealedFemaleDemons[p.id])}</strong>
-                          {g.result?.targetId === p.id ? ' 🎯' : ''}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="ended-faction-row faction-red">
-                    <span className="faction-row-label">
-                      🗡️ 红方阵营 {winnerTeam === 'red' ? '· 🏆胜' : ''}
-                    </span>
-                    <div className="faction-row-chips">
-                      {redPlayers.map(p => (
-                        <span
-                          key={p.id}
-                          className={`faction-player-chip ${p.id === userId ? 'is-self' : ''}`}
-                        >
-                          {p.seat}号 {p.nickname} · <strong>{formatRoleName(g.revealedRoles![p.id], revealedLoyalGuardians[p.id], revealedFemaleDemons[p.id])}</strong>
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
             </section>
           );
         })()
@@ -659,6 +615,44 @@ export function GamePanel({
           <span>🌪️ {g.bananaFanNotice}</span>
         </div>
       )}
+
+        {g.result && (
+          <section className="result-box dock-panel game-result-actions">
+            <div className="result-summary-row">
+              <div>
+                <h3>
+                  {g.result.winner
+                    ? g.result.winner === 'blue'
+                      ? '蓝方获胜'
+                      : '红方获胜'
+                    : '本局不计胜负'}
+                </h3>
+                <p>
+                  {reasons[g.result.reason]}
+                  {g.result.targetId ? `，目标为 ${name(g.result.targetId)}` : ''}。
+                </p>
+              </div>
+              <div className="result-actions">
+                {onOpenReplay && (
+                  <button
+                    type="button"
+                    className="secondary"
+                    onClick={() => onOpenReplay(g.id)}
+                  >
+                    查看完整复盘
+                  </button>
+                )}
+                {room.hostId === userId ? (
+                  <button disabled={disabled} onClick={() => send({ type: 'returnToLobby', payload: {} })}>
+                    回到仙境等待区，再开一局
+                  </button>
+                ) : (
+                  <span className="hint">等待房主返回等待区</span>
+                )}
+              </div>
+            </div>
+          </section>
+        )}
 
       {/* 3. Scheme A: Dual-Flank Altar Arena (Hidden for non-assassins during assassination phase) */}
       {!(g.phase === 'assassination' && self?.role !== 'assassin') && (() => {
@@ -1155,43 +1149,6 @@ export function GamePanel({
           </div>
         )}
 
-        {g.result && (
-          <section className="result-box dock-panel">
-            <div className="result-summary-row">
-              <div>
-                <h3>
-                  {g.result.winner
-                    ? g.result.winner === 'blue'
-                      ? '蓝方获胜'
-                      : '红方获胜'
-                    : '本局不计胜负'}
-                </h3>
-                <p>
-                  {reasons[g.result.reason]}
-                  {g.result.targetId ? `，目标为 ${name(g.result.targetId)}` : ''}。
-                </p>
-              </div>
-              <div className="result-actions">
-                {onOpenReplay && (
-                  <button
-                    type="button"
-                    className="secondary"
-                    onClick={() => onOpenReplay(g.id)}
-                  >
-                    查看完整复盘
-                  </button>
-                )}
-                {room.hostId === userId ? (
-                  <button disabled={disabled} onClick={() => send({ type: 'returnToLobby', payload: {} })}>
-                    回到仙境等待区，再开一局
-                  </button>
-                ) : (
-                  <span className="hint">等待房主返回等待区</span>
-                )}
-              </div>
-            </div>
-          </section>
-        )}
         {privateUnread && !privateNoticeVisible && connected && guanyinNotice.pageVisible && (
           <p className="treasure-unread-notice" role="status">有一条私密消息，点击「法宝」查看。</p>
         )}

@@ -29,7 +29,7 @@ export function TeamVoteDialog({ game, players, anonymous, userId, serverTime, d
 
   return (
     <Modal label="出征组队表决" scene="sword" onClose={onClose}>
-      <section className="table-modal-sheet team-vote-sheet dedicated-vote-sheet">
+      <section className={`table-modal-sheet team-vote-sheet dedicated-vote-sheet vote-flow-sheet ${submitted ? 'is-submitted' : ''}`}>
         {/* Header */}
         <header className="table-modal-head dedicated-vote-head">
           <div className="vote-head-title-block">
@@ -49,6 +49,7 @@ export function TeamVoteDialog({ game, players, anonymous, userId, serverTime, d
           准行多于封驳即准予出征 · 平票或封驳视为流局
         </p>
 
+        <div className="vote-scroll-body flow-scroll-body">
         {/* 1. 组队结果专区 (Imperial Team Formation Result matching Screenshot 1) */}
         <section className="vote-result-container imperial-expedition-panel" aria-label="本轮出征阵容">
           {/* Captain Banner matching Screenshot 1 Top Bar */}
@@ -111,6 +112,41 @@ export function TeamVoteDialog({ game, players, anonymous, userId, serverTime, d
           </div>
         </section>
         {/* 往难前情折叠抽屉 (Historical Missions Accordion) */}
+        {/* 3. 投票进度区 */}
+        <div className="vote-progress-panel">
+          <div className="vote-progress-head">
+            <span>投票进度</span>
+            <strong>{voted.length} / {players.length} 人已投</strong>
+          </div>
+          <div className="live-voters dedicated-voters-list" aria-label="玩家投票状态">
+            {players.map(p => {
+              const done = voted.includes(p.id);
+              const ballot = !anonymous ? game.teamVote?.ballots?.[p.id] : undefined;
+              return (
+                <div key={p.id} className={`dedicated-voter-chip ${done ? 'is-done' : 'is-pending'} ${!done && late ? 'awaiting-vote' : ''}`}>
+                  <span className="voter-chip-seat">{p.seat}号</span>
+                  <span className="voter-chip-name">{p.nickname}</span>
+                  {ballot !== undefined ? (
+                    <span className={`voter-chip-ballot ${ballot === 'abstain' ? 'abstain' : ballot ? 'approve' : 'reject'}`}>
+                      {ballot === 'abstain' ? '− 旁观' : ballot ? '✓ 准行' : '× 封驳'}
+                    </span>
+                  ) : (
+                    <span className={`voter-chip-status ${done ? 'done' : 'pending'}`}>
+                      {done ? '已落印' : '待落印'}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          <p className="vote-waiting-footer" role="status">
+            {late && missing.length
+              ? `等待 ${missing.map(p => `${p.seat}号 ${p.nickname}`).join('、')} 投票`
+              : anonymous
+                ? '🔒 匿名表决：仅公开落印进度，不公开个人票型'
+                : '🔓 公开表决：提交后全员可见票型'}
+          </p>
+        </div>
         <div className="vote-history-accordion">
           <button
             type="button"
@@ -184,6 +220,8 @@ export function TeamVoteDialog({ game, players, anonymous, userId, serverTime, d
           )}
         </div>
 
+        </div>
+        <div className="vote-fixed-actions flow-fixed-actions">
         {/* 2. 投票操作区 (Voting Buttons) */}
         {submitted ? (
           <div className="vote-submitted-card" role="status">
@@ -233,40 +271,6 @@ export function TeamVoteDialog({ game, players, anonymous, userId, serverTime, d
           </form>
         )}
 
-        {/* 3. 投票进度区 */}
-        <div className="vote-progress-panel">
-          <div className="vote-progress-head">
-            <span>投票进度</span>
-            <strong>{voted.length} / {players.length} 人已投</strong>
-          </div>
-          <div className="live-voters dedicated-voters-list" aria-label="玩家投票状态">
-            {players.map(p => {
-              const done = voted.includes(p.id);
-              const ballot = !anonymous ? game.teamVote?.ballots?.[p.id] : undefined;
-              return (
-                <div key={p.id} className={`dedicated-voter-chip ${done ? 'is-done' : 'is-pending'} ${!done && late ? 'awaiting-vote' : ''}`}>
-                  <span className="voter-chip-seat">{p.seat}号</span>
-                  <span className="voter-chip-name">{p.nickname}</span>
-                  {ballot !== undefined ? (
-                    <span className={`voter-chip-ballot ${ballot === 'abstain' ? 'abstain' : ballot ? 'approve' : 'reject'}`}>
-                      {ballot === 'abstain' ? '− 旁观' : ballot ? '✓ 准行' : '× 封驳'}
-                    </span>
-                  ) : (
-                    <span className={`voter-chip-status ${done ? 'done' : 'pending'}`}>
-                      {done ? '已落印' : '待落印'}
-                    </span>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-          <p className="vote-waiting-footer" role="status">
-            {late && missing.length
-              ? `等待 ${missing.map(p => `${p.seat}号 ${p.nickname}`).join('、')} 投票`
-              : anonymous
-                ? '🔒 匿名表决：仅公开落印进度，不公开个人票型'
-                : '🔓 公开表决：提交后全员可见票型'}
-          </p>
         </div>
       </section>
     </Modal>

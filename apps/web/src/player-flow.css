@@ -1,0 +1,97 @@
+/* Preserve the established palette and type scale; prioritize the current action. */
+.flow-details { border: 1px solid rgba(212,163,89,.4); border-radius: 12px; padding: 10px 12px; background: rgba(34,11,10,.85); }
+.flow-details > summary { cursor: pointer; color: #ffd875; font: 600 13px/1.5 var(--sans); }
+.flow-details[open] > summary { margin-bottom: 10px; }
+.flow-details > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.mp-setup-screen { justify-content: flex-start !important; gap: 12px !important; }
+.mp-setup-screen .room-creation-options { width: 100%; margin: 0; padding: 10px 12px !important; }
+.room-creation-options > summary > span { display: block; color: var(--muted); font-size: 11px; }
+.room-access-editor { display: grid; gap: 6px; }
+.mp-setup-screen .mp-setup-footer { position: sticky; bottom: max(8px,env(safe-area-inset-bottom)); z-index: 4; padding: 8px !important; border: 1px solid #d4a35980; border-radius: 18px; background: #260e0df5; }
+.mp-setup-screen .setup-role-preview { width: 100%; }
+.setup-role-preview .mp-factions-stack { margin-top: 10px; }
+.is-live-table .waiting-play-priority { min-height: 0 !important; gap: 10px !important; }
+.is-live-table .waiting-settings-summary { width: 100%; min-height: 34px; margin: 0; padding: 5px 8px; font: 600 12px/1.4 var(--sans); }
+.is-live-table .waiting-play-priority .waiting-dock { margin: 0 !important; }
+.is-live-table .waiting-mission-preview { width: 100%; margin-top: 2px; }
+.is-live-table .waiting-play-priority .waiting-voice-social-row { margin: 0 !important; }
+/* Scroll details inside the sheet while keeping the current decision reachable. */
+.table-modal-sheet.flow-editor-sheet,
+.table-modal-sheet.vote-flow-sheet,
+.table-modal-sheet.report-flow-sheet { display: flex; flex-direction: column; overflow: hidden !important; max-height: calc(100dvh - 28px); gap: 10px; }
+.table-modal-sheet.flow-editor-sheet { width: min(100%,570px); padding: 16px; }
+.flow-editor-sheet > .table-modal-head,
+.vote-flow-sheet > .table-modal-head,
+.report-flow-sheet > .table-modal-head { flex-shrink: 0; margin-bottom: 0 !important; }
+.flow-editor-sheet > .table-modal-head strong { font-size: 18px !important; }
+.flow-scroll-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 2px; }
+.flow-fixed-actions { flex: 0 0 auto; padding-top: 8px; border-top: 1px solid #d4a35966; }
+.flow-fixed-actions > button { width: 100%; min-height: 44px; margin: 0; font: 700 15px/1.4 var(--sans); }
+.vote-flow-sheet .vote-rule-prompt { flex-shrink: 0; margin: 0 !important; }
+.vote-flow-sheet .vote-scroll-body { display: flex; flex-direction: column; gap: 10px; }
+.vote-flow-sheet .vote-scroll-body > * { flex-shrink: 0; margin: 0 !important; }
+.vote-flow-sheet.is-submitted .vote-progress-panel { order: -1; }
+.vote-flow-sheet .vote-actions-form, .vote-flow-sheet .vote-choices-fieldset { margin: 0 !important; padding: 0 !important; }
+.vote-flow-sheet .dedicated-choices-grid { margin: 0 0 8px !important; gap: 8px !important; }
+.vote-flow-sheet .dedicated-submit-btn { margin: 0 !important; }
+.vote-flow-sheet .vote-submitted-card { margin: 0 !important; }
+.vote-flow-sheet .vote-history-toggle { padding: 10px !important; }
+.vote-flow-sheet .imperial-expedition-panel { box-shadow: none !important; }
+.game-play-priority .game-result-actions { margin: 0; padding: 12px; border-radius: 18px; background: #280e0df5; border: 1px solid #d4a359; }
+.game-result-actions .result-summary-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; }
+.game-result-actions h3 { font: 700 18px/1.4 var(--display); margin: 0 0 4px; }
+.game-result-actions p { font: 500 13px/1.5 var(--sans); margin: 0; }
+.game-result-actions .result-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.game-result-actions button { min-height: 44px; margin: 0; padding: 7px 12px; font: 700 14px/1.4 var(--sans); }
+.report-flow-sheet .mission-report-hero { display: flex; gap: 10px; padding: 12px !important; margin: 0 0 12px !important; }
+.report-flow-sheet .mission-report-hero-emblem { font-size: 32px !important; width: 38px !important; height: 42px !important; flex-shrink: 0; }
+.report-flow-sheet .mission-report-title { font-size: 20px !important; margin: 4px 0 8px !important; }
+.report-flow-sheet .mission-report-card-stats { gap: 8px; }
+.report-flow-sheet .stat-card { padding: 6px 8px !important; }
+.report-flow-sheet .stat-val { font-size: 20px !important; }
+.report-flow-sheet .mission-report-footer { flex-shrink: 0; margin: 0 !important; padding-top: 8px !important; }
+.report-flow-sheet .report-captain-compact { margin: 0 0 8px; font: 600 13px/1.5 var(--sans); color: #ffd875; }
+.report-flow-sheet .mission-report-team-tray { display: block; padding: 10px !important; }
+/* Account actions share the existing button typography and a compact header. */
+.account-flow .profile-bar { padding: 12px; margin-bottom: 10px; gap: 10px; }
+.account-flow .profile-heading { gap: 10px; }
+.account-flow .profile-heading > .avatar { width: 56px; height: 56px; min-width: 56px; }
+.account-flow .profile-heading h1 { font-size: 22px; }
+.account-flow .profile-bar .compact-button { min-height: 38px; padding: 6px 10px; font-size: 12px; }
+.account-quick-tools { display: flex; gap: 8px; margin: 8px 0; }
+.account-quick-tools > button { flex: 1; min-width: 0; min-height: 40px; padding: 6px; margin: 0; font: 600 13px/1.4 var(--sans); }
+.account-flow .account-tabs { margin-top: 10px; }
+.account-flow .history-list article { padding: 12px; }
+.history-game-details { margin-top: 8px; padding: 6px 10px; }
+.profile-editor form { margin: 0; }
+.profile-editor .profile-vip-details { margin-top: 10px; }
+.presets > .preset-new-button { margin: 6px 0 10px; width: 100%; min-height: 44px; font-size: 14px; }
+.flow-editor-sheet .preset-form fieldset { margin: 0; }
+.flow-editor-sheet .preset-form { padding: 0 4px; }
+.replay-metadata, .replay-identities { margin: 8px 0; }
+.replay-favorite-action button { width: auto; min-height: 40px; font-size: 13px; }
+/* Keep all records mounted; navigation only scrolls to the requested proposal. */
+.round-jump-nav, .guide-index { display: flex; align-items: center; gap: 6px; overflow-x: auto; position: sticky; top: 0; z-index: 3; padding: 6px; border: 1px solid #d4a35966; border-radius: 10px; background: #260e0df5; scrollbar-width: thin; }
+.round-jump-nav > button, .guide-index > button { flex: 0 0 auto; width: auto; min-height: 36px; padding: 5px 10px; margin: 0; white-space: nowrap; font: 600 12px/1.4 var(--sans); }
+.round-jump-nav [aria-pressed="true"] { border-color: #ffd875; background: #67231e; }
+.battle-round-anchor { scroll-margin-top: 62px; }
+.guide-flow .guide-controls { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 8px; background: #260e0df5; border: 1px solid #d4a35980; border-radius: 12px; padding: 6px; }
+.guide-controls > button { flex: 0 0 auto; width: auto; min-height: 40px; margin: 0; padding: 5px 8px; font-size: 12px; }
+.guide-controls .guide-nav { flex: 1; display: flex; gap: 6px; margin: 0; }
+.guide-controls .guide-nav > button { flex: 1; min-width: 0; min-height: 40px; margin: 0; padding: 5px 7px; font-size: 13px; }
+.guide-flow .guide-heading { padding: 10px 12px; margin-top: 8px; }
+.guide-flow .guide-index { top: 60px; margin: 10px 0; }
+.guide-flow .guide-section, .guide-flow .guide-role { scroll-margin-top: 116px; }
+@media (max-width: 380px) {
+  .account-flow .profile-bar { flex-direction: column; align-items: stretch; }
+  .game-result-actions .result-actions { width: 100%; }
+  .game-result-actions .result-actions button { flex: 1; }
+}
+.table-modal-sheet.battle-sheet { display: flex; flex-direction: column; overflow: hidden; gap: 8px; }
+.battle-sheet > .table-modal-head { flex-shrink: 0; margin-bottom: 0; }
+.battle-sheet > .battle-history { flex: 1; min-height: 0; overflow-y: auto; display: block; }
+.battle-sheet .battle-round-anchor { margin-top: 12px; }
+.panel.replay > .section-head { position: sticky; top: 0; z-index: 5; padding: 8px; background: #260e0df5; border-radius: 12px; }
+.replay .round-jump-nav { top: 72px; }
+.replay .battle-round-anchor { scroll-margin-top: 136px; }
+.flow-fixed-actions > :is(.error,.notice) { margin: 0 0 6px; padding: 6px 8px; font: 500 13px/1.4 var(--sans); }

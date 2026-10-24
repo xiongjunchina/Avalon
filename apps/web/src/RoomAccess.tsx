@@ -16,18 +16,18 @@ export function PasswordChoice({ hasSaved, onChange }: { hasSaved?: boolean; onC
   </fieldset>;
 }
 export function RoomCreationAccess({onChange,onSettings}:{onChange:(value:CreationAccess)=>void;onSettings:(s:Settings)=>void}) {
-  const [rooms,setRooms]=useState<DedicatedRoom[]>([]),[selected,setSelected]=useState(''),[error,setError]=useState('');
+  const [rooms,setRooms]=useState<DedicatedRoom[]>([]),[selected,setSelected]=useState(''),[error,setError]=useState(''),[password,setPassword]=useState<string|null|undefined>();
   useEffect(()=>{let active=true;void api<{rooms:DedicatedRoom[]}>('/me/dedicated-rooms').then(r=>{if(active)setRooms(r.rooms);}).catch(e=>{if(active)setError(describe(e));});return()=>{active=false;};},[]);
-  return <section className="panel room-access-card">
+  return <details className="panel room-access-card room-creation-options flow-details"><summary>{selected ? rooms.find(r=>r.id===selected)?.name ?? '专属房' : '普通房 · 随机房号'} · {typeof password==='string' ? (password.length>=4&&password.length<=8 ? '已设密码' : '密码待补全') : selected && password===undefined ? '沿用密码设置' : '无密码'}<span>房号与密码设置</span></summary><div className="room-access-editor">
     <label htmlFor="dedicated-room">开桌方式</label>
-    <select id="dedicated-room" value={selected} onChange={e=>{const value=e.target.value;setSelected(value);onChange(value?{dedicatedRoomId:value}:{});const room=rooms.find(r=>r.id===value);if(room)onSettings(room.settings);}}>
+    <select id="dedicated-room" value={selected} onChange={e=>{const value=e.target.value;setSelected(value);setPassword(undefined);onChange(value?{dedicatedRoomId:value}:{});const room=rooms.find(r=>r.id===value);if(room)onSettings(room.settings);}}>
       <option value="">普通房 · 随机房号</option>
       {rooms.map(r=><option key={r.id} value={r.id} disabled={!!r.activeRoomId}>{r.code} · {r.name}{r.activeRoomId?'（已开桌）':''}</option>)}
     </select>
     {error && <p className="error" role="alert">{error}</p>}
-    <PasswordChoice key={selected} hasSaved={!!selected} onChange={password=>onChange({...(selected?{dedicatedRoomId:selected}:{}),password})}/>
+    <PasswordChoice key={selected} hasSaved={!!selected} onChange={password=>{setPassword(password);onChange({...(selected?{dedicatedRoomId:selected}:{}),password});}}/>
     <p className="hint">房号入房按需验证密码；有效邀请链接可直接入房。倒计时开始后锁定密码设置。</p>
-  </section>;
+  </div></details>;
 }
 export function RoomPasswordSettings({room,onSaved}:{room:RoomView;onSaved:(room:RoomView)=>void}) {
   const [password,setPassword]=useState<string|null|undefined>(),[busy,setBusy]=useState(false),[message,setMessage]=useState(''),[error,setError]=useState('');

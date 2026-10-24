@@ -1,4 +1,5 @@
-import { BattleRound } from './BattleRound';
+import { BattleHistory } from './BattleRound';
+import { Modal } from './Modal';
 import { useEffect, useRef, useState } from 'react';
 import type { Avatar, User, Statistics, Score, HistoryPage, GameSummary, Replay, GameResult } from '@avalon/contracts';
 import { assignFemaleDemons, assignLoyalGuardians } from '@avalon/game-core';
@@ -76,7 +77,7 @@ function StatisticsPanel() {
   useEffect(()=>{let active=true;setError('');api<Statistics>('/me/stats').then(r=>{if(active)setStats(r);}).catch(e=>{if(active)setError(describe(e));});return()=>{active=false;};},[retry]);
   return error?<p role="alert" className="error">{error}<button className="secondary" onClick={()=>setRetry(n=>n+1)}>重新读取战绩</button></p>:stats?<StatisticsView stats={stats}/>:<p role="status">正在统计战绩…</p>;
 }
-function ProfileEditor({user,onUser}:{user:User;onUser:(u:User)=>void}) {
+function ProfileEditor({user,onUser,onClose}:{user:User;onUser:(u:User)=>void;onClose:()=>void}) {
   const [nickname,setNickname]=useState(user.nickname);
   const [avatar,setAvatar]=useState<Avatar>(user.avatar??'leaf');
   const [avatarUrl,setAvatarUrl]=useState<string|null>(user.avatarUrl??null);
@@ -135,40 +136,10 @@ function ProfileEditor({user,onUser}:{user:User;onUser:(u:User)=>void}) {
     }
   }
 
-  return <details className="profile-editor"><summary>修仙功果与仙位资料</summary>
-    <div style={{ margin: '10px 0 14px', padding: '12px 14px', background: 'rgba(212,163,89,0.08)', border: '1px solid rgba(212,163,89,0.3)', borderRadius: '10px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
-        <div>
-          <strong style={{ color: '#ffd875', fontSize: '14px' }}>
-            {user.isVip ? '⭐ 尊享 VIP 仙友' : '🎉 公测全员畅玩阶段'}
-          </strong>
-          <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#cbd5e1' }}>
-            {user.isVip
-              ? `VIP 到期时间：${new Date(user.vipUntil!).toLocaleDateString()}`
-              : '当前处于公测体验期，全员零门槛免费畅享战绩复盘与高级板子！'}
-          </p>
-        </div>
-      </div>
-      <form onSubmit={handleRedeem} className="account-redeem-form">
-        <input
-          placeholder="输入 8 位 VIP 授权兑换码…"
-          value={redeemCode}
-          onChange={e => setRedeemCode(e.target.value.toUpperCase())}
-          maxLength={16}
-          className="account-redeem-input"
-        />
-        <button
-          type="submit"
-          disabled={redeemBusy || !redeemCode.trim()}
-          className="account-redeem-btn"
-        >
-          {redeemBusy ? '核销中…' : '核销兑换'}
-        </button>
-      </form>
-      {redeemMsg && <p style={{ fontSize: '12px', color: '#34d399', margin: '6px 0 0' }}>{redeemMsg}</p>}
-    </div>
-
-    <form onSubmit={e=>{e.preventDefault();setBusy(true);setError('');setSaved(false);void api<{user:User}>('/me',{nickname,avatar,avatarUrl,wechatAvatarUrl},'PATCH').then(r=>{onUser(r.user);setNickname(r.user.nickname);setAvatarUrl(r.user.avatarUrl??null);setWechatAvatarUrl(r.user.wechatAvatarUrl??null);setSaved(true);}).catch(e=>setError(describe(e))).finally(()=>setBusy(false));}}>
+  return <Modal label="修改昵称与头像" scene="dawn" onClose={()=>{if(!busy)onClose();}}><section className="table-modal-sheet flow-editor-sheet profile-editor">
+    <header className="table-modal-head"><strong>修改昵称与头像</strong><button type="button" className="secondary tool-pill" disabled={busy} onClick={onClose}>关闭</button></header>
+    <div className="flow-scroll-body">
+    <form id="profile-editor-form" onSubmit={e=>{e.preventDefault();setBusy(true);setError('');setSaved(false);void api<{user:User}>('/me',{nickname,avatar,avatarUrl,wechatAvatarUrl},'PATCH').then(r=>{onUser(r.user);setNickname(r.user.nickname);setAvatarUrl(r.user.avatarUrl??null);setWechatAvatarUrl(r.user.wechatAvatarUrl??null);setSaved(true);}).catch(e=>setError(describe(e))).finally(()=>setBusy(false));}}>
     <fieldset disabled={busy}><legend className="sr-only">编辑资料</legend>
       <div className="profile-avatar-manager">
         <div className="profile-avatar-preview-box">
@@ -202,11 +173,42 @@ function ProfileEditor({user,onUser}:{user:User;onUser:(u:User)=>void}) {
       </div>
       <label htmlFor="profile-nickname">昵称</label><input id="profile-nickname" maxLength={20} required value={nickname} onChange={e=>{setNickname(e.target.value);setSaved(false);}}/>
       <label htmlFor="profile-avatar">预置头像（未设置微信/自定义头像时生效）</label><select id="profile-avatar" value={avatar} onChange={e=>{setAvatar(e.target.value as Avatar);setSaved(false);}}>{Object.entries(avatarNames).map(([id,a])=><option value={id} key={id}>{a.symbol} {a.name}</option>)}</select>
-      <button disabled={!nickname.trim()}>保存资料</button>
     </fieldset>
     <p className="hint">旧对局保留当时昵称。浏览器登录状态连续 30 天未使用会失效；换设备或清除浏览器数据后，可输入当前仙友码找回原账号。</p>
-    {error&&<p role="alert" className="error">{error}</p>}{saved&&<p role="status" className="notice">资料已保存，旧局记录保持原样。</p>}
-  </form></details>;
+  </form><details className="profile-vip-details flow-details"><summary>VIP 兑换与权益</summary>
+    <div style={{ margin: '10px 0 14px', padding: '12px 14px', background: 'rgba(212,163,89,0.08)', border: '1px solid rgba(212,163,89,0.3)', borderRadius: '10px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+        <div>
+          <strong style={{ color: '#ffd875', fontSize: '14px' }}>
+            {user.isVip ? '⭐ 尊享 VIP 仙友' : '🎉 公测全员畅玩阶段'}
+          </strong>
+          <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#cbd5e1' }}>
+            {user.isVip
+              ? `VIP 到期时间：${new Date(user.vipUntil!).toLocaleDateString()}`
+              : '当前处于公测体验期，全员零门槛免费畅享战绩复盘与高级板子！'}
+          </p>
+        </div>
+      </div>
+      <form onSubmit={handleRedeem} className="account-redeem-form">
+        <input
+          placeholder="输入 8 位 VIP 授权兑换码…"
+          value={redeemCode}
+          onChange={e => setRedeemCode(e.target.value.toUpperCase())}
+          maxLength={16}
+          className="account-redeem-input"
+        />
+        <button
+          type="submit"
+          disabled={redeemBusy || !redeemCode.trim()}
+          className="account-redeem-btn"
+        >
+          {redeemBusy ? '核销中…' : '核销兑换'}
+        </button>
+      </form>
+      {redeemMsg && <p style={{ fontSize: '12px', color: '#34d399', margin: '6px 0 0' }}>{redeemMsg}</p>}
+    </div>
+
+    </details></div><footer className="flow-fixed-actions">{error&&<p role="alert" className="error">{error}</p>}{saved&&<p role="status" className="notice">资料已保存，旧局记录保持原样。</p>}<button form="profile-editor-form" type="submit" disabled={busy||!nickname.trim()}>{busy?'正在保存…':'保存资料'}</button></footer></section></Modal>;
 }
 function HistoryPanel({favorites,onReplay}:{favorites:boolean;onReplay:(id:string)=>void}) {
   const [page,setPage]=useState<HistoryPage|null>(null),[busy,setBusy]=useState(false),[error,setError]=useState(''),[retry,setRetry]=useState(0);
@@ -217,7 +219,7 @@ function HistoryPanel({favorites,onReplay}:{favorites:boolean;onReplay:(id:strin
     {error&&<p role="alert" className="error">{error}<button className="secondary" disabled={busy} onClick={()=>setRetry(n=>n+1)}>重新读取记录</button></p>}
     {!page&&busy&&<p role="status">正在读取记录…</p>}
     {page?.games.length===0&&<p className="empty-state">{favorites?'还没有收藏。在一局复盘中点击“收藏这局”，方便下次再看。':'还没有结束的对局。和朋友玩完一局后，战绩会出现在这里。'}</p>}
-    <div className="history-list">{page?.games.map(g=><article key={g.id}><div className="section-head"><h3>{outcome(g)} <small>{g.playerCount} 人局</small></h3><span className="status">{g.favorite?'已收藏':'已结束'}</span></div><p>{roleNames[g.self.role]} · {g.self.team==='blue'?'蓝方':'红方'} · {reasons[g.result.reason]}</p><p className="hint"><time dateTime={g.endedAt}>{date(g.endedAt)}</time> · 当时昵称：{g.self.nickname}</p><p className="hint game-uid-line">对局编号 ID：<span>{g.id}</span></p><button className="secondary" onClick={()=>onReplay(g.id)}>查看复盘 · {date(g.endedAt)}</button></article>)}</div>
+    <div className="history-list">{page?.games.map(g=><article key={g.id}><div className="section-head"><h3>{outcome(g)} <small>{g.playerCount} 人局</small></h3><span className="status">{g.favorite?'已收藏':'已结束'}</span></div><p>{roleNames[g.self.role]} · {g.self.team==='blue'?'蓝方':'红方'} · {reasons[g.result.reason]}</p><button className="secondary" onClick={()=>onReplay(g.id)}>查看复盘 · {date(g.endedAt)}</button><details className="history-game-details flow-details"><summary>对局信息</summary><p className="hint"><time dateTime={g.endedAt}>{date(g.endedAt)}</time> · 当时昵称：{g.self.nickname}</p><p className="hint game-uid-line">对局编号 ID：<span>{g.id}</span></p></details></article>)}</div>
     {page?.nextCursor&&<button className="secondary" disabled={busy} onClick={()=>void more()}>{busy?'正在读取…':'加载更多'}</button>}
   </>;
 }
@@ -227,34 +229,38 @@ export function ReplayView({replay:g}:{replay:Replay}) {
   const loyalGuardians = assignLoyalGuardians(g.id, g.players, g.roles, g.rulesetVersion);
   const femaleDemons = assignFemaleDemons(g.id, g.players, g.roles);
   return <>
-    <div className="result-box"><h2>{g.result.winner===null?'本局中断':`${g.result.winner==='blue'?'蓝方':'红方'}获胜`}</h2><p>{reasons[g.result.reason]}{g.result.targetId?` · 刺杀目标：${name(g.result.targetId)}`:''}</p><p className="hint">开始 {date(g.startedAt)}<br/>结束 {date(g.endedAt)} · 你的结果：{outcome(g)}</p><p className="hint game-uid-line">对局编号 ID：<span>{g.id}</span></p></div>
+    <div className="result-box"><h2>{g.result.winner===null?'本局中断':`${g.result.winner==='blue'?'蓝方':'红方'}获胜`}</h2><p>{reasons[g.result.reason]}{g.result.targetId?` · 刺杀目标：${name(g.result.targetId)}`:''}</p></div>
+    <details className="replay-metadata flow-details"><summary>时间、编号与规则配置</summary><p className="hint">开始 {date(g.startedAt)}<br/>结束 {date(g.endedAt)} · 你的结果：{outcome(g)}</p><p className="hint game-uid-line">对局编号 ID：<span>{g.id}</span></p>
     <p className="hint">{settingsText(g.settings)}<br/>规则版本：{g.rulesetVersion}</p>
     <p className="notice">仅本局参与者可看。{g.settings.anonymousTeamVote?'组队投票仅展示总数。':'组队投票展示当时公开的个人赞反。'}任务出牌始终不对应个人。</p>
-    <h3>最终身份</h3><ul className="role-list">{g.players.map(p=><li key={p.id}><span>{name(p.id)}</span><strong className={`revealed-role allegiance-${roleTeam(g.roles[p.id])}`}><RolePortrait role={g.roles[p.id]} loyalGuardian={loyalGuardians[p.id]} femaleDemon={femaleDemons[p.id]} size="mini"/>{formatRoleName(g.roles[p.id], loyalGuardians[p.id], femaleDemons[p.id])}</strong></li>)}</ul>
+</details>
+    <details className="replay-identities flow-details">    <summary>全员最终身份（{g.players.length} 人）</summary><ul className="role-list">{g.players.map(p=><li key={p.id}><span>{name(p.id)}</span><strong className={`revealed-role allegiance-${roleTeam(g.roles[p.id])}`}><RolePortrait role={g.roles[p.id]} loyalGuardian={loyalGuardians[p.id]} femaleDemon={femaleDemons[p.id]} size="mini"/>{formatRoleName(g.roles[p.id], loyalGuardians[p.id], femaleDemons[p.id])}</strong></li>)}</ul>
+</details>
     <h3>逐轮记录</h3>{!g.rounds.length&&<p className="muted">本局在第一次组队前结束。</p>}
-    <div className="replay-rounds">{g.rounds.map(r=><div key={r.number}>
-      <BattleRound round={r} players={g.players} anonymous={g.settings.anonymousTeamVote}/>
-      {(g.inspections ?? []).filter(i=>i.afterMission===r.mission&&r.result).map(i=><p key={i.afterMission} className="hint">宝镜查验：{name(i.inspectorId)} 查验 {name(i.targetId)}，随后交接给被查验者。</p>)}
-      {g.earlyWindows.filter(w=>w.afterProposal===r.number).map((w,i)=><p className="hint" key={i}>轮间窗口：{w.decision==='skip'?'跳过提前刺杀':'发起提前刺杀'}（完成任务 {w.afterMission} 后）。</p>)}
-    </div>)}</div>
+    <BattleHistory rounds={g.rounds} players={g.players} anonymous={g.settings.anonymousTeamVote}/>
+    {!!g.inspections?.length&&<details className="flow-details"><summary>宝镜查验记录</summary>{g.inspections.map(i=><p key={i.afterMission} className="hint">第{i.afterMission}难：{name(i.inspectorId)} 查验 {name(i.targetId)}，随后交接给被查验者。</p>)}</details>}
+    {!!g.earlyWindows.length&&<details className="flow-details"><summary>轮间确认记录</summary>{g.earlyWindows.map((w,i)=><p key={i} className="hint">第{w.afterProposal}次提案后：{w.decision==='skip'?'跳过提前刺杀':'发起提前刺杀'}（完成任务 {w.afterMission} 后）</p>)}</details>}
   </>;
 }
 function ReplayPanel({id,onBack}:{id:string;onBack:()=>void}) {
   const [replay,setReplay]=useState<Replay|null>(null),[error,setError]=useState(''),[busy,setBusy]=useState(false),[retry,setRetry]=useState(0);
   useEffect(()=>{let active=true;setError('');api<Replay>(`/games/${id}/replay`).then(r=>{if(active)setReplay(r);}).catch(e=>{if(active)setError(describe(e));});return()=>{active=false;};},[id,retry]);
   return <section className="panel replay"><div className="section-head"><h1>对局复盘</h1><button className="secondary compact-button" onClick={onBack}>返回记录</button></div>
+    {replay&&<div className="replay-favorite-action"><button className="secondary" disabled={busy} aria-pressed={replay.favorite} onClick={()=>{setBusy(true);setError('');void api<{favorite:boolean}>(`/me/favorites/${id}`,undefined,replay.favorite?'DELETE':'PUT').then(r=>setReplay(g=>g?{...g,favorite:r.favorite}:g)).catch(e=>setError(describe(e))).finally(()=>setBusy(false));}}>{replay.favorite?'取消收藏':'收藏这局'}</button></div>}
     {error&&<p className="error" role="alert">{error}<button className="secondary" onClick={()=>setRetry(n=>n+1)}>重新读取复盘</button></p>}
-    {!replay&&!error?<p role="status">正在读取复盘…</p>:replay&&<><ReplayView replay={replay}/><button className="secondary" disabled={busy} aria-pressed={replay.favorite} onClick={()=>{setBusy(true);setError('');void api<{favorite:boolean}>(`/me/favorites/${id}`,undefined,replay.favorite?'DELETE':'PUT').then(r=>setReplay(g=>g?{...g,favorite:r.favorite}:g)).catch(e=>setError(describe(e))).finally(()=>setBusy(false));}}>{replay.favorite?'取消收藏':'收藏这局'}</button><p className="hint">收藏只在你的个人中心可见，不会创建公开链接。取消收藏保留历史对局。</p></>}
+    {!replay&&!error?<p role="status">正在读取复盘…</p>:replay&&<><ReplayView replay={replay}/><p className="hint">收藏只在你的个人中心可见，不会创建公开链接。取消收藏保留历史对局。</p></>}
   </section>;
 }
 export function AccountPanel({user,onUser,initialReplay,onBack,onLogout}:{user:User;onUser:(u:User)=>void;initialReplay:string|null;onBack:()=>void;onLogout?:()=>void}) {
   const [tab,setTab]=useState<'stats'|'history'|'favorites'|'presets'>('stats'),[replay,setReplay]=useState(initialReplay);
+  const [profileOpen,setProfileOpen]=useState(false),[soundOpen,setSoundOpen]=useState(false);
   usePageSound(`${tab}:${replay ?? ''}`);
   const avatar=avatarNames[user.avatar??'leaf'];
   if(replay)return <ReplayPanel key={replay} id={replay} onBack={()=>{setReplay(null);if(initialReplay)setTab('history');}}/>;
-  return <section className="panel account"><div className="account-banner" aria-hidden="true"><span>取经功果</span></div><div className="section-head profile-bar"><div className="profile-heading"><span className="avatar" aria-label={`${avatar.name}头像`}><PlayerAvatar avatar={user.avatar??'leaf'} avatarUrl={user.avatarUrl} wechatAvatarUrl={user.wechatAvatarUrl} fallbackKind="leaf"/></span><div><p className="eyebrow">嘻游 · 真假猴王 / 个人中心</p><div style={{display:'flex',alignItems:'center',gap:'8px',flexWrap:'wrap'}}><h1 style={{margin:0}}>{user.nickname}</h1>{user.playerCode&&<button type="button" onClick={()=>{navigator.clipboard.writeText(user.playerCode||'');alert(`仙友码【${user.playerCode}】已复制！在换设备或换号登录时输入此码即可切回查看历史战绩。`);}} title="点击复制仙友码" style={{width:'auto',minHeight:'unset',margin:0,padding:'2px 8px',fontSize:'12px',fontWeight:700,color:'#ffd875',background:'rgba(255,216,117,0.12)',border:'1px solid rgba(255,216,117,0.3)',borderRadius:'4px',cursor:'pointer',fontFamily:'monospace'}}>#{user.playerCode} 📋复制</button>}</div><p style={{margin:'4px 0 0',fontSize:'11.5px',color:'#cbd5e1'}}>专属仙友码全局唯一 · 微信小程序静默对应 · 换号凭此码随时找回战绩</p></div></div><div style={{display:'flex',gap:6}}>{onLogout&&<button className="secondary compact-button" onClick={onLogout} style={{color:'#fca5a5'}}>🚪 更换身份</button>}<button className="secondary compact-button" onClick={onBack}>返回原页面</button></div></div>
-    <ProfileEditor user={user} onUser={onUser}/>
-    <details className="account-sound-settings"><summary>声音设置</summary><SoundControls /></details>
+  return <section className="panel account account-flow" aria-label="个人中心"><div className="section-head profile-bar"><div className="profile-heading"><span className="avatar" aria-label={`${avatar.name}头像`}><PlayerAvatar avatar={user.avatar??'leaf'} avatarUrl={user.avatarUrl} wechatAvatarUrl={user.wechatAvatarUrl} fallbackKind="leaf"/></span><div><p className="eyebrow">嘻游 · 真假猴王 / 个人中心</p><div style={{display:'flex',alignItems:'center',gap:'8px',flexWrap:'wrap'}}><h1 style={{margin:0}}>{user.nickname}</h1>{user.playerCode&&<button type="button" onClick={()=>{navigator.clipboard.writeText(user.playerCode||'');alert(`仙友码【${user.playerCode}】已复制！在换设备或换号登录时输入此码即可切回查看历史战绩。`);}} title="点击复制仙友码" style={{width:'auto',minHeight:'unset',margin:0,padding:'2px 8px',fontSize:'12px',fontWeight:700,color:'#ffd875',background:'rgba(255,216,117,0.12)',border:'1px solid rgba(255,216,117,0.3)',borderRadius:'4px',cursor:'pointer',fontFamily:'monospace'}}>#{user.playerCode} 📋复制</button>}</div><p style={{margin:'4px 0 0',fontSize:'11.5px',color:'#cbd5e1'}}>专属仙友码全局唯一 · 微信小程序静默对应 · 换号凭此码随时找回战绩</p></div></div><div style={{display:'flex',gap:6}}>{onLogout&&<button className="secondary compact-button" onClick={onLogout} style={{color:'#fca5a5'}}>🚪 更换身份</button>}<button className="secondary compact-button" onClick={onBack}>返回原页面</button></div></div>
+    <div className="account-quick-tools"><button type="button" className="secondary" onClick={()=>setProfileOpen(true)}>修改昵称与头像</button><button type="button" className="secondary" onClick={()=>setSoundOpen(true)}>声音设置</button></div>
+    {profileOpen&&<ProfileEditor user={user} onUser={onUser} onClose={()=>setProfileOpen(false)}/>}
+    {soundOpen&&<Modal label="声音设置" scene="dawn" onClose={()=>setSoundOpen(false)}><section className="table-modal-sheet flow-editor-sheet"><header className="table-modal-head"><strong>声音设置</strong><button type="button" className="secondary tool-pill" onClick={()=>setSoundOpen(false)}>关闭</button></header><div className="flow-scroll-body"><SoundControls /></div></section></Modal>}
     <nav className="account-tabs" aria-label="个人中心栏目">{([['stats','我的战绩'],['history','历史对局'],['favorites','我的收藏'],['presets','常用设置']] as const).map(([id,label])=><button className="secondary" key={id} aria-current={id===tab?'page':undefined} onClick={()=>setTab(id)}>{label}</button>)}</nav>
     {tab==='stats'?<StatisticsPanel/>:tab==='presets'?<PresetsPanel/>:<HistoryPanel key={tab} favorites={tab==='favorites'} onReplay={setReplay}/>}
   </section>;

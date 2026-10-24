@@ -2,6 +2,7 @@ import type { Player, RoundView } from '@avalon/contracts';
 import { Emblem } from './Heraldry';
 import { PlayerToken } from './PlayerToken';
 import { WUYUE_MISSIONS } from './roles';
+import { useRef, useState } from 'react';
 
 /** Shared by live mission details, all rounds and historical replays. */
 export function BattleRound({ round: r, players, anonymous, userId }: {
@@ -37,8 +38,15 @@ export function BattleRound({ round: r, players, anonymous, userId }: {
 
 /** Keep every proposal in chronological order; each individual card stays compact. */
 export function BattleHistory({ rounds, ...props }: Omit<Parameters<typeof BattleRound>[0], 'round'> & { rounds: RoundView[] }) {
+  const cards=useRef(new Map<number, HTMLDivElement>());
+  const [active,setActive]=useState<number|null>(null);
+  const jump=(number:number)=>{setActive(number);cards.current.get(number)?.scrollIntoView({block:'start'});};
   if (!rounds.length) return <p>尚无提案记录。</p>;
   return <div className="battle-history">
-    {rounds.map(round => <BattleRound key={round.number} {...props} round={round} />)}
+    <nav className="round-jump-nav" aria-label="提案快速定位">
+      <button type="button" className="secondary" onClick={()=>jump(rounds.at(-1)!.number)}>最近一轮</button>
+      {rounds.map(r=><button key={r.number} type="button" className="secondary" aria-pressed={active===r.number} onClick={()=>jump(r.number)}>第{r.number}次 · 第{r.mission}难</button>)}
+    </nav>
+    {rounds.map(round => <div className="battle-round-anchor" key={round.number} ref={el=>{if(el)cards.current.set(round.number,el);else cards.current.delete(round.number);}}><BattleRound {...props} round={round} /></div>)}
   </div>;
 }

@@ -28,7 +28,7 @@ export function MissionReportDialog({
 
   return (
     <Modal label={`第 ${round.mission} 难战报通报`} scene={result.passed ? 'dawn' : 'sword'} onClose={onClose}>
-      <section className="table-modal-sheet mission-report-sheet">
+      <section className="table-modal-sheet mission-report-sheet report-flow-sheet">
         {/* Header */}
         <header className="table-modal-head mission-report-head">
           <div className="mission-report-head-title">
@@ -40,6 +40,7 @@ export function MissionReportDialog({
           </button>
         </header>
 
+        <div className="report-scroll-body flow-scroll-body">
         {/* 1. Hero Result Banner */}
         <div className={`mission-report-hero ${result.passed ? 'is-pass' : 'is-fail'}`}>
           <div className="mission-report-hero-glow" aria-hidden="true" />
@@ -80,17 +81,7 @@ export function MissionReportDialog({
           </h4>
           <div className="mission-report-team-tray">
             {captain && (
-              <div className="mission-report-captain-card">
-                <div className="report-captain-avatar-wrap">
-                  <PlayerToken player={captain} captain self={captain.id === userId} />
-                </div>
-                <div className="report-captain-meta">
-                  <span className="report-meta-tag">本难领队</span>
-                  <span className="report-meta-dir">
-                    {round.direction === 'clockwise' ? '↻ 顺时针论道' : '↺ 逆时针论道'}
-                  </span>
-                </div>
-              </div>
+              <p className="report-captain-compact">领队：{captain.seat}号 {captain.nickname} · {round.direction === 'clockwise' ? '顺时针' : '逆时针'}发言</p>
             )}
             <div className="mission-report-party-members">
               <span className="report-party-label">同行出征仙众（{round.team.length}人）：</span>
@@ -125,17 +116,11 @@ export function MissionReportDialog({
             </div>
 
             {ballots ? (
-              <div
-                className="mission-report-voters-grid"
-                data-count={players.length}
-                aria-label="全员公开票型"
-              >
-                {players.map(p => (
-                  <div key={p.id} className="report-voter-item">
-                    <PlayerToken player={p} vote={ballots[p.id]} self={p.id === userId} />
-                  </div>
-                ))}
-              </div>
+              <details className="report-vote-details flow-details"><summary>查看全员公开票型</summary>
+                <div className="mission-report-voters-grid" data-count={players.length} aria-label="全员公开票型">
+                  {players.map(p => <div key={p.id} className="report-voter-item"><PlayerToken player={p} vote={ballots[p.id]} self={p.id === userId}/></div>)}
+                </div>
+              </details>
             ) : (
               <p className="mission-report-anon-hint">
                 {anonymous
@@ -146,6 +131,7 @@ export function MissionReportDialog({
           </div>
         )}
 
+        </div>
         {/* 4. Bottom Acknowledge Button */}
         <div className="mission-report-footer">
           <button

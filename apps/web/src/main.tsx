@@ -27,6 +27,7 @@ import {
 } from '@avalon/game-core';
 import './style.css';
 import './scenes.css';
+import './player-flow.css';
 import './sound.css';
 import { ReadyReminder } from './ReadyReminder';
 import './feedback.css';
@@ -909,7 +910,6 @@ function App() {
               </button></div>
             </header>
 
-            <RoomCreationAccess onChange={setCreationAccess} onSettings={setSetupSettings}/>
 
             {/* Room Type Selector in Setup Screen */}
             <div className="mp-setup-mode-row" role="radiogroup" aria-label="房间类型选择">
@@ -956,6 +956,35 @@ function App() {
               ))}
             </div>
 
+            <RoomCreationAccess onChange={setCreationAccess} onSettings={setSetupSettings}/>
+
+            <footer className="mp-setup-footer">
+              <button
+                type="button"
+                className="mp-cyan-pill"
+                disabled={busy || (typeof creationAccess.password==='string' && (creationAccess.password.length<4||creationAccess.password.length>8))}
+                onClick={() =>
+                  void run(async () => {
+                    pendingSettingsRef.current = setupSettings;
+                    const data = await api<{ room: RoomView }>('/rooms', { settings: setupSettings,...creationAccess });
+                    setRoom(data.room);
+                    setRoomId(data.room.id);
+                    setSetupOpen(false);
+                  })
+                }
+              >
+                {busy ? '正在开启法坛…' : setupSettings.voiceChatEnabled ? '开启远端语音房' : '开启线下常规房'}
+              </button>
+              <button
+                type="button"
+                className="mp-subtle-link"
+                onClick={() => startPracticeGame(setupSettings)}
+              >
+                幻境单人演练 {setupSettings.playerCount} 人取经牌局 ›
+              </button>
+            </footer>
+            <details className="setup-role-preview flow-details">
+              <summary>本局角色配置（{setupSettings.playerCount} 人）</summary>
             <div className="mp-factions-stack">
               <section className="mp-faction-panel is-blue">
                 <h3>蓝方 · 取经正果 ({setupBlueRoles.length}人)</h3>
@@ -998,31 +1027,8 @@ function App() {
               </section>
             </div>
 
-            <footer className="mp-setup-footer">
-              <button
-                type="button"
-                className="mp-cyan-pill"
-                disabled={busy || (typeof creationAccess.password==='string' && (creationAccess.password.length<4||creationAccess.password.length>8))}
-                onClick={() =>
-                  void run(async () => {
-                    pendingSettingsRef.current = setupSettings;
-                    const data = await api<{ room: RoomView }>('/rooms', { settings: setupSettings,...creationAccess });
-                    setRoom(data.room);
-                    setRoomId(data.room.id);
-                    setSetupOpen(false);
-                  })
-                }
-              >
-                {busy ? '正在开启法坛…' : setupSettings.voiceChatEnabled ? '开启远端语音房' : '开启线下常规房'}
-              </button>
-              <button
-                type="button"
-                className="mp-subtle-link"
-                onClick={() => startPracticeGame(setupSettings)}
-              >
-                幻境单人演练 {setupSettings.playerCount} 人取经牌局 ›
-              </button>
-            </footer>
+            </details>
+
           </div>
         ) : (
           <>
@@ -1243,55 +1249,11 @@ function App() {
               )}
             </>
           ) : (
-            /* Waiting Room Single-Screen Table with Physical Quest Board at Top */
-            <div className="waiting-table-body">
-              {/* Top Physical 5-Mission Quest Board Preview for Current Player Count */}
-              <div className="avalon-quest-board">
-                <div className="game-score quest-circles-row" aria-label="本局五轮任务配置">
-                  {(MISSION_SIZES[room.settings.playerCount] ?? MISSION_SIZES[6]).map((count, i) => {
-                    const twoFailsRequired = failuresRequiredFor(room.settings.playerCount, i + 1) === 2;
-                    return (
-                      <QuestMedallion key={i} mission={i + 1} count={count} twoFailsRequired={twoFailsRequired} />
-                    );
-                  })}
-                </div>
-
-                <div
-                  className="quest-vote-track-zone is-clickable"
-                  onClick={() => setSettingsModalOpen(true)}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      setSettingsModalOpen(true);
-                    }
-                  }}
-                  title={host ? '点击修改房间规则与人数配置' : '点击查看房间详细规则配置'}
-                  aria-label={host ? '点击修改房间规则与人数配置' : '点击查看房间详细规则配置'}
-                >
-                  <div className="quest-vote-track-left">
-                    <div className="quest-track-head">
-                      <span className="quest-track-sub">
-                        {settingsText(room.settings)}
-                        <span className="quest-track-edit-cue" aria-hidden="true">
-                          {host ? ' ⚙️修改' : ' ⚙️'}
-                        </span>
-                      </span>
-                    </div>
-
-                  </div>
-
-                  <div className="quest-faction-plaque">
-                    <strong>{room.settings.playerCount}位玩家</strong>
-                    <span>
-                      {(ROLE_CONFIG[room.settings.playerCount] ?? []).filter(r => roleTeam(r) === 'red').length}
-                      名群妖乱道
-                    </span>
-                  </div>
-                </div>
-              </div>
-
+            /* Waiting room: readiness and current actions before optional mission details */
+            <div className="waiting-table-body waiting-play-priority">
+              <button type="button" className="secondary waiting-settings-summary" onClick={() => setSettingsModalOpen(true)} aria-label={host ? '点击修改房间规则与人数配置' : '点击查看房间详细规则配置'}>
+                {room.settings.playerCount} 人局 · {room.settings.anonymousTeamVote ? '匿名表决' : '公开表决'} · {room.settings.voiceChatEnabled ? '语音房' : '线下房'} · 房间设置
+              </button>
               {/* Phase & Host Hint Banner */}
               <div className="scheme3-middle-zone">
                 <div className="scheme3-ink-ribbon">
@@ -1443,49 +1405,6 @@ function App() {
               </div>
 
 
-              {/* Bottom Waiting Voice & Social Action Bar */}
-              <div className="waiting-voice-social-row">
-                {room.settings.voiceChatEnabled ? (
-                  <div className="waiting-voice-capsule">
-                    <VoiceControls
-                      voiceState={voiceState}
-                      onJoin={handleJoinVoice}
-                      onLeave={handleLeaveVoice}
-                      onToggleMute={handleToggleMute}
-                      onToggleDeafen={handleToggleDeafen}
-                      onReconnect={handleReconnectVoice}
-                    />
-                  </div>
-                ) : (
-                  <div className="waiting-offline-badge" title="本房间为线下常规聚会房，无语音干扰">
-                    <span>🏛️ 线下房</span>
-                  </div>
-                )}
-                <button
-                  type="button"
-                  className="secondary tool-pill waiting-friends-pill-btn"
-                  onClick={handleOpenChatDrawer}
-                  title="法坛传音"
-                  style={{ position: 'relative' }}
-                >
-                  <span className="friends-btn-icon">💬</span>
-                  <span className="friends-btn-label">传音</span>
-                  {unreadChatCount > 0 && <span className="chat-unread-dot" />}
-                </button>
-                <button
-                  type="button"
-                  className="secondary tool-pill waiting-friends-pill-btn"
-                  onClick={() => setFriendsModalOpen(true)}
-                  title="仙友录 · 召集与好友"
-                >
-                  <span className="friends-btn-icon">👥</span>
-                  <span className="friends-btn-label">仙友</span>
-                  {incomingFriendRequestsCount > 0 && (
-                    <span className="friends-badge-dot">{incomingFriendRequestsCount}</span>
-                  )}
-                </button>
-              </div>
-
               {/* Bottom Waiting Action Dock */}
               <div className="table-action-dock waiting-dock">
                 <div className="dock-inline-controls waiting-dock-controls">
@@ -1531,6 +1450,99 @@ function App() {
                   )}
                 </div>
               </div>
+              {/* Bottom Waiting Voice & Social Action Bar */}
+              <div className="waiting-voice-social-row">
+                {room.settings.voiceChatEnabled ? (
+                  <div className="waiting-voice-capsule">
+                    <VoiceControls
+                      voiceState={voiceState}
+                      onJoin={handleJoinVoice}
+                      onLeave={handleLeaveVoice}
+                      onToggleMute={handleToggleMute}
+                      onToggleDeafen={handleToggleDeafen}
+                      onReconnect={handleReconnectVoice}
+                    />
+                  </div>
+                ) : (
+                  <div className="waiting-offline-badge" title="本房间为线下常规聚会房，无语音干扰">
+                    <span>🏛️ 线下房</span>
+                  </div>
+                )}
+                <button
+                  type="button"
+                  className="secondary tool-pill waiting-friends-pill-btn"
+                  onClick={handleOpenChatDrawer}
+                  title="法坛传音"
+                  style={{ position: 'relative' }}
+                >
+                  <span className="friends-btn-icon">💬</span>
+                  <span className="friends-btn-label">传音</span>
+                  {unreadChatCount > 0 && <span className="chat-unread-dot" />}
+                </button>
+                <button
+                  type="button"
+                  className="secondary tool-pill waiting-friends-pill-btn"
+                  onClick={() => setFriendsModalOpen(true)}
+                  title="仙友录 · 召集与好友"
+                >
+                  <span className="friends-btn-icon">👥</span>
+                  <span className="friends-btn-label">仙友</span>
+                  {incomingFriendRequestsCount > 0 && (
+                    <span className="friends-badge-dot">{incomingFriendRequestsCount}</span>
+                  )}
+                </button>
+              </div>
+
+              <details className="waiting-mission-preview flow-details">
+                <summary>五难人数与本局配置</summary>
+              {/* Optional five-mission preview for the current player count */}
+              <div className="avalon-quest-board">
+                <div className="game-score quest-circles-row" aria-label="本局五轮任务配置">
+                  {(MISSION_SIZES[room.settings.playerCount] ?? MISSION_SIZES[6]).map((count, i) => {
+                    const twoFailsRequired = failuresRequiredFor(room.settings.playerCount, i + 1) === 2;
+                    return (
+                      <QuestMedallion key={i} mission={i + 1} count={count} twoFailsRequired={twoFailsRequired} />
+                    );
+                  })}
+                </div>
+
+                <div
+                  className="quest-vote-track-zone is-clickable"
+                  onClick={() => setSettingsModalOpen(true)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setSettingsModalOpen(true);
+                    }
+                  }}
+                  title={host ? '点击修改房间规则与人数配置' : '点击查看房间详细规则配置'}
+                  aria-label="查看完整房间配置"
+                >
+                  <div className="quest-vote-track-left">
+                    <div className="quest-track-head">
+                      <span className="quest-track-sub">
+                        {settingsText(room.settings)}
+                        <span className="quest-track-edit-cue" aria-hidden="true">
+                          {host ? ' ⚙️修改' : ' ⚙️'}
+                        </span>
+                      </span>
+                    </div>
+
+                  </div>
+
+                  <div className="quest-faction-plaque">
+                    <strong>{room.settings.playerCount}位玩家</strong>
+                    <span>
+                      {(ROLE_CONFIG[room.settings.playerCount] ?? []).filter(r => roleTeam(r) === 'red').length}
+                      名群妖乱道
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              </details>
             </div>
           )}
 
@@ -1592,7 +1604,18 @@ function App() {
                   </button>
                 </div>
                 <div className="settings-body">
-                  {host&&<RoomPasswordSettings room={room} onSaved={next=>{setRoom(next);if(next.inviteKey)setInvite(next.inviteKey);}}/>}
+
+                  {room.phase === 'waiting' && (
+                    <details className="preset-details">
+                      <summary>常用设置 · 保存与应用</summary>
+                      <PresetsPanel
+                        currentSettings={settings!}
+                        disabled={disabled}
+                        canApply={!!host}
+                        onApply={s => command({ type: 'updateSettings', payload: s })}
+                      />
+                    </details>
+                  )}
                   <p className="hint settings-hint">
                     {room.phase !== 'waiting'
                       ? '对局进行中设置已锁定，结束后返回等待区可调整。'
@@ -1620,8 +1643,8 @@ function App() {
                     <SettingsFields settings={settings!} onChange={updateSettings} />
                   </fieldset>
                   {host && room.phase !== 'playing' && room.members.some(m => m.id !== user.id) && (
-                    <div className="settings-member-list">
-                      <strong>房间成员管理</strong>
+                    <details className="settings-member-list flow-details">
+                      <summary>房间成员管理</summary>
                       <div className="settings-member-rows">
                         {room.members
                           .filter(m => m.id !== user.id)
@@ -1646,38 +1669,15 @@ function App() {
                             </div>
                           ))}
                       </div>
-                    </div>
-                  )}
-                  {room.phase === 'waiting' && (
-                    <details className="preset-details">
-                      <summary>常用设置 · 保存与应用</summary>
-                      <PresetsPanel
-                        currentSettings={settings!}
-                        disabled={disabled}
-                        canApply={!!host}
-                        onApply={s => command({ type: 'updateSettings', payload: s })}
-                      />
                     </details>
                   )}
+                  {host && <details className="flow-details room-password-details"><summary>房间密码 · {room.hasPassword ? '已设置' : '未设置'}</summary><RoomPasswordSettings room={room} onSaved={next=>{setRoom(next);if(next.inviteKey)setInvite(next.inviteKey);}}/></details>}
+
                 </div>
                 <button type="button" className="return-table-btn" onClick={() => setSettingsModalOpen(false)}>返回法坛</button>
               </div>
             </Modal>
           )}
-
-          {/* Friends & Invitation Modal */}
-          <FriendsModal
-            open={friendsModalOpen}
-            onClose={() => {
-              setFriendsModalOpen(false);
-              setChatFriendToOpen(null);
-            }}
-            currentUser={user}
-            currentRoom={room}
-            onJoinRoom={handleJoinByCode}
-            incomingDirectChat={pendingDirectChat}
-            initialChatFriend={chatFriendToOpen}
-          />
 
           {/* Role Preference Matching Modal */}
           {room && (
@@ -1695,6 +1695,31 @@ function App() {
               }}
             />
           )}
+
+          {/* Room In-game / Waiting Floating Chat Drawer */}
+          {chatDrawerOpen && room && (
+            <ChatDrawer
+              roomId={room.id}
+              messages={roomChatMessages}
+              onClose={() => setChatDrawerOpen(false)}
+            />
+          )}
+        </div>
+      )}
+      {user && <>
+          {/* Friends & Invitation Modal */}
+          <FriendsModal
+            open={friendsModalOpen}
+            onClose={() => {
+              setFriendsModalOpen(false);
+              setChatFriendToOpen(null);
+            }}
+            currentUser={user}
+            currentRoom={room}
+            onJoinRoom={handleJoinByCode}
+            incomingDirectChat={pendingDirectChat}
+            initialChatFriend={chatFriendToOpen}
+          />
 
           {/* Floating Room Invitation Toast */}
           <RoomInvitationToast
@@ -1714,16 +1739,7 @@ function App() {
             onDismiss={() => setPendingDirectChat(null)}
           />
 
-          {/* Room In-game / Waiting Floating Chat Drawer */}
-          {chatDrawerOpen && room && (
-            <ChatDrawer
-              roomId={room.id}
-              messages={roomChatMessages}
-              onClose={() => setChatDrawerOpen(false)}
-            />
-          )}
-        </div>
-      )}
+      </>}
       {!user && entryIntent && <EntryDialog intent={entryIntent} knownAccounts={knownAccounts}
         onClose={() => setEntryIntent(null)}
         onAuthenticated={(authenticatedUser, existingRoomId) => {
