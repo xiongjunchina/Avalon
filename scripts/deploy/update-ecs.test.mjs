@@ -81,6 +81,7 @@ for (const [origin, override] of [
     const build = commands.findIndex(c => c.tool === 'docker' && c.args.includes('build'));
     const up = commands.findIndex(c => c.tool === 'docker' && c.args.includes('up'));
     assert.ok(build >= 0 && up > build);
+    assert.deepEqual(commands.find(c => c.tool === 'git' && c.args[0] === 'pull').args, ['pull', '--ipv4', '--ff-only']);
     for (const command of commands.filter(c => c.tool === 'docker' && !(c.args.includes('config') && !c.args.includes('--quiet')))) {
       assert.ok(command.args.includes(override));
       assert.equal(command.tag, 'abc1234');
@@ -109,7 +110,7 @@ test('scheduled check fast-forwards and records a newly deployed commit', (t) =>
   assert.equal(readFileSync(headFile, 'utf8'), newRevision);
   assert.equal(readFileSync(stateFile, 'utf8').trim(), newRevision);
   assert.equal(statSync(stateFile).mode & 0o777, 0o600);
-  assert.deepEqual(commands.filter(c => c.args[0] === 'fetch').map(c => c.args), [['fetch', '--no-tags', 'origin', 'main']]);
+  assert.deepEqual(commands.filter(c => c.args[0] === 'fetch').map(c => c.args), [['fetch', '--ipv4', '--no-tags', 'origin', 'main']]);
   assert.ok(commands.some(c => c.args[0] === 'merge' && c.args[1] === '--ff-only' && c.args[2] === newRevision));
   assert.ok(!commands.some(c => c.args[0] === 'pull'));
 });

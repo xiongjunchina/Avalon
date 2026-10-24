@@ -51,7 +51,7 @@ if "$automatic"; then
   [[ "$(git symbolic-ref --short HEAD)" == main ]] || fail '自动发布只允许在 main 分支运行。'
   export GIT_TERMINAL_PROMPT=0
   printf '检查 origin/main 是否有新版本……\n'
-  git fetch --no-tags origin main
+  git fetch --ipv4 --no-tags origin main
   target_revision="$(git rev-parse FETCH_HEAD)"
   current_revision="$(git rev-parse HEAD)"
   git merge-base --is-ancestor "$current_revision" "$target_revision" || fail '本地 main 与远端不满足快进条件，请人工检查。'
@@ -64,7 +64,7 @@ if "$automatic"; then
   git merge --ff-only "$target_revision"
 else
   printf '拉取当前分支代码……\n'
-  git pull --ff-only
+  git pull --ipv4 --ff-only
 fi
 revision="$(git rev-parse HEAD)"
 IMAGE_TAG="$(git rev-parse --short HEAD)"

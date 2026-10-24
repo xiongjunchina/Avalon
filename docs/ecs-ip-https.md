@@ -13,7 +13,7 @@ https://www.alibabacloud.com/help/en/icp-filing/basic-icp-service/product-overvi
 
 ```bash
 cd /opt/avalon
-git pull --ff-only
+git pull --ipv4 --ff-only
 if [ ! -f deploy/.env.ecs.before-ip ]; then cp -p deploy/.env.ecs deploy/.env.ecs.before-ip; fi
 sed -i \
   -e 's|^APP_ORIGIN=.*|APP_ORIGIN=https://47.112.7.117|' \
@@ -61,7 +61,7 @@ docker compose --env-file deploy/.env.ecs -f deploy/compose.yaml up -d --wait --
 仓库提供 [ECS 更新脚本](../scripts/update-ecs.sh)。在 ECS 终端执行一次安装；这里只拉取代码和安装文件，不启动发布：
 
 ```bash
-cd /opt/avalon && git pull --ff-only && install -m 700 scripts/ecs-launcher.sh /root/update-avalon.sh
+cd /opt/avalon && git pull --ipv4 --ff-only && install -m 700 scripts/ecs-launcher.sh /root/update-avalon.sh
 ```
 
 后续需要发布时执行：
@@ -85,12 +85,14 @@ cd /opt/avalon && git pull --ff-only && install -m 700 scripts/ecs-launcher.sh /
 在 ECS 网页终端以 root 身份安装并启用：
 
 ```bash
-cd /opt/avalon && git pull --ff-only && bash scripts/install-ecs-auto-update.sh
+cd /opt/avalon && git pull --ipv4 --ff-only && bash scripts/install-ecs-auto-update.sh
 ```
 
 安装器保留 `deploy/.env.ecs` 和已有发布记录，将固定入口放入 `/root/update-avalon.sh`，将 service／timer 安装到 `/etc/systemd/system`，校验配置并启用定时器。需要 Bash、Git、Docker Compose、flock 和运行中的 systemd；Git 访问须支持无人值守认证。安装器不会单独执行一次发布；定时器启动后按计划检查，若存在关机期间错过的检查，systemd 可能立即补跑一次。以后修改 service 或 timer 配置时，重新执行本节安装命令应用配置。
 
 定时器在 ECS 本地时间每小时的 00、10、20、30、40、50 分检查 `origin/main`。自动检查只允许在干净的 `main` 分支上运行，先 fetch，再以快进方式更新到本次获取的确切提交；分支分叉或存在本地改动时停止并记录错误。发现待发布版本后执行构建和容器健康等待，无更新时不调用 Docker。自动和手动更新共用发布锁；已有发布在运行时，本次自动检查跳过，下一轮再检查。
+
+手动 pull 与自动 fetch 均显式使用 `--ipv4`，与 ECS 上已成功的 `curl -4` 检查一样，选择 IPv4。GitHub 首页返回 HTTP 200 只证明该次网页请求可达，仍需以实际 Git 拉取结果确认仓库访问；网络故障时保留原成功记录，下轮再试。若 SSH 443 提示缺少已知主机密钥，表示尚未完成主机校验，不能据此认为 GitHub 仓库的 SSH 认证已通过。
 
 成功记录保存在 `deploy/runtime/last-successful-deploy`，只有容器健康等待和状态查询均成功后才写入完整提交编号。构建或启动失败不更新成功记录；即使代码已经拉取，下次仍会重试。旧的 `IMAGE_TAG` 不是成功证明，因此首次检查没有成功记录时，会发布一次建立基线。手动执行 `/root/update-avalon.sh` 也会更新成功记录。无自动回退；启动失败可能已影响容器，应查看日志处理。单次自动运行最多 30 分钟，超时后同样不会推进成功记录。
 
