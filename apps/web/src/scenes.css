@@ -3860,8 +3860,8 @@ dialog.table-modal-backdrop::backdrop { background: #081b2d55; }
 
 /* Team Selection Highlight on Capsule */
 .is-live-table .table-seat-card.is-on-team .flank-nameplate {
-  border-color: #38bdf8 !important;
-  background: linear-gradient(135deg, rgba(14, 38, 54, 0.96) 0%, rgba(8, 22, 34, 0.98) 100%) !important;
+  border-color: #7ef5dc !important;
+  background: #087f78 !important;
   box-shadow: 0 0 10px rgba(56, 189, 248, 0.45), inset 0 0 6px rgba(56, 189, 248, 0.2) !important;
 }
 
@@ -7554,3 +7554,64 @@ button.seat-mic-badge:active {
 .access-options { display:flex; gap:8px 16px; flex-wrap:wrap; }
 .access-options label { display:inline-flex; align-items:center; gap:5px; min-height:32px; margin:0; font-size:13px; font-weight:500; }
 .access-options input { min-height:0; margin:0; }
+
+/* Active play comes first; full mission history follows the action dock. */
+.is-live-table .table-game-screen.game-play-priority { gap: 8px !important; }
+.game-current-summary {
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;
+  gap: 3px 10px; padding: 5px 10px;
+  border: 1px solid rgba(229, 185, 100, 0.6); border-radius: 10px;
+  background: rgba(40, 14, 13, 0.9); color: #fff2d5;
+  font: 600 12px/1.5 var(--sans);
+}
+.game-current-summary strong, .game-current-summary b { color: #ffd875; }
+.game-current-summary .current-two-fails { color: #ffcb80; }
+.is-live-table .game-play-priority .slim-game-status-bar {
+  min-height: 40px !important; max-height: none !important;
+  margin: 0 !important; padding: 6px 10px !important;
+}
+.is-live-table .game-play-priority .slim-status-text {
+  flex-wrap: wrap !important; justify-content: center; white-space: normal !important;
+  line-height: 1.35 !important; gap: 2px 5px !important;
+}
+.is-live-table .game-play-priority .table-seats-grid.altar-dual-flank-arena {
+  min-height: 0 !important; margin: 0 auto !important; padding: 18px 8px 10px !important;
+}
+.is-live-table .game-play-priority .scheme-a-main-arena {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) clamp(48px, 15vw, 72px) minmax(0, 1fr);
+  align-items: center !important; gap: 4px !important;
+}
+.is-live-table .game-play-priority .scheme-a-flank { width: 100% !important; min-width: 0; gap: 14px !important; }
+.is-live-table .game-play-priority .flank-seat-card { width: 100% !important; min-width: 0 !important; height: 44px !important; }
+.is-live-table .game-play-priority .flank-avatar-wrap { width: 40px !important; height: 40px !important; }
+.is-live-table .game-play-priority .flank-nameplate {
+  width: auto !important; min-width: 0; max-width: 105px; flex: 1 1 0 !important; padding: 0 4px !important;
+}
+.is-live-table .game-play-priority .scheme-a-center-altar { width: 100% !important; min-width: 0 !important; }
+.is-live-table .game-play-priority .altar-bagua-disc { width: 100% !important; height: auto !important; aspect-ratio: 1; }
+.is-live-table .game-play-priority .altar-core-taichi { font-size: clamp(18px, 5.4vw, 28px) !important; }
+.is-live-table .game-play-priority .altar-direction-tag { font-size: 9px !important; padding: 2px 3px !important; }
+.is-live-table .game-play-priority .altar-mission-tag { font-size: 10px !important; }
+.seat-status-badges { position: absolute; top: -12px; left: 0; display: flex; align-items: center; gap: 2px; z-index: 5; }
+.flank-seat-right .seat-status-badges { left: auto; right: 0; flex-direction: row-reverse; }
+.flank-avatar-wrap .seat-status-badges .seat-badge { position: static !important; transform: none !important; padding: 2px 4px !important; }
+.flank-avatar-wrap .seat-badge.badge-team { background: #087f78 !important; border: 1px solid #7ef5dc !important; color: #fff !important; }
+.game-play-priority .is-on-team .flank-nameplate :is(.flank-seat-num, .flank-nickname, .flank-name-sep) { color: #fff !important; }
+.game-play-priority .is-on-team .flank-me-pill { background: #07564f !important; color: #fff !important; border-color: #a3f9e6 !important; }
+.is-live-table .game-play-priority .table-action-dock { padding: 8px 10px !important; gap: 6px; }
+.is-live-table .game-play-priority .table-action-dock .dock-panel { padding: 8px 10px !important; gap: 6px; }
+.is-live-table .game-play-priority .dock-waiting-hero { padding: 4px !important; min-height: 0 !important; gap: 10px !important; }
+.is-live-table .game-play-priority .dock-waiting-desc { margin: 3px 0 0 !important; }
+.is-live-table .game-play-priority .table-action-dock .dock-utility-row { padding-top: 6px !important; margin-top: 2px !important; }
+.mission-overview-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 8px 4px 4px; }
+.mission-overview-heading h2 { margin: 0; color: #ffd875; font: 700 16px/1.4 var(--display); }
+.mission-overview-heading > span { font: 500 11px/1.4 var(--sans); color: #fff2d5; }
+.is-live-table .game-play-priority .game-mission-overview { margin-top: 8px; border-top: 1px solid rgba(229, 185, 100, 0.5) !important; }
+@media (max-width: 359px) {
+  .is-live-table .game-play-priority .scheme-a-main-arena { grid-template-columns: minmax(0, 1fr) 36px minmax(0, 1fr); gap: 3px !important; }
+  .is-live-table .game-play-priority .altar-direction-tag { display: none !important; }
+  .is-live-table .game-play-priority .slim-status-ornament { width: 15px !important; }
+}
+.mission-overview-heading { background: rgba(40, 14, 13, 0.88); border-radius: 10px; padding: 6px 10px; }
+.is-live-table .game-play-priority .dock-inline-controls .btn-cloud-flourish { display: none !important; }

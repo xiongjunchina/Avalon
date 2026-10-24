@@ -165,6 +165,7 @@ function drawDocumentNode(ctx:CanvasRenderingContext2D,n:WebNode,model:ScreenMod
     ctx.restore();
   };
   if(n.skin==='rule'){rule(ctx,n,'#d0be8d66');return;}
+  if(n.skin==='current-summary'){fill(ctx,n,'#280e0de6',10,'#e5b96499');write(n.text,cx,cy,n.width-16,12,'center',sans,'600','#ffd875');return;}
   if(n.skin==='text'||n.skin==='section-title'||n.skin==='page-heading') {
     if(n.skin==='section-title'||n.skin==='page-heading'){box(n.skin==='page-heading'?'page-heading':'tip');}
     const lines=n.lines??n.text.split('\n'),lh=n.lineHeight??(n.fontSize??13)*1.5;
@@ -396,8 +397,8 @@ function drawNode(ctx: CanvasRenderingContext2D, n: WebNode, model: ScreenModel,
       ctx.save();
       shadow(ctx, n.selected ? '#38bdf866' : n.badge ? '#ffd87566' : 'rgba(0,0,0,.6)', 6, 2);
       fill(ctx, { ...n, x: labelX, y: nameY, width: labelW, height: labelH },
-        gradient(ctx, n, n.selected ? ['#0e2636f5', '#081622fa'] : ['#2e0e0df0', '#140606f5']),
-        labelH / 2, n.selected ? '#38bdf8' : n.badge ? '#ffd875' : '#d4a35999');
+        n.teamStatus ? '#087f78' : gradient(ctx, n, n.selected ? ['#0e2636f5', '#081622fa'] : ['#2e0e0df0', '#140606f5']),
+        labelH / 2, n.teamStatus ? '#7ef5dc' : n.selected ? '#38bdf8' : n.badge ? '#ffd875' : '#d4a35999');
       edge(ctx, { ...n, x: labelX, y: nameY, width: labelW, height: labelH }, labelH / 2);
       ctx.restore();
 
@@ -430,7 +431,7 @@ function drawNode(ctx: CanvasRenderingContext2D, n: WebNode, model: ScreenModel,
         text(ctx, String(n.count) + '号·' + n.text, labelX + labelW / 2, nameY + labelH / 2, labelW - 5, 10, '#f5eedf', 'center', sans, '600');
       } else {
         const meW = n.selfPlayer ? 15 : 0;
-        text(ctx, String(n.count) + '号', labelX + 7, nameY + labelH / 2, 25, 11, webTheme.accent, 'left', sans, '700');
+        text(ctx, String(n.count) + '号', labelX + 7, nameY + labelH / 2, 25, 11, n.teamStatus ? '#fff' : webTheme.accent, 'left', sans, '700');
         text(ctx, '·', labelX + 30, nameY + labelH / 2, 7, 10, '#d4a359aa');
         text(ctx, n.text, labelX + 36 + (labelW - 42 - meW) / 2, nameY + labelH / 2, labelW - 42 - meW, 11.5, '#f5eedf', 'center', sans, '600');
         if (n.selfPlayer) {
@@ -441,9 +442,14 @@ function drawNode(ctx: CanvasRenderingContext2D, n: WebNode, model: ScreenModel,
 
       if (n.badge) {
         const bw = 46;
-        fill(ctx, { ...n, x: avatarX + diameter / 2 - bw / 2, y: avatarY - 8, width: bw, height: 14 },
+        fill(ctx, { ...n, x: avatarX + diameter / 2 - bw / 2, y: avatarY - 12, width: bw, height: 14 },
           gradient(ctx, n, ['#f59e0b', '#d97706']), 7, '#fef3c7');
-        text(ctx, n.badge, avatarX + diameter / 2, avatarY - 1, bw - 3, 9.5, '#fffbeb', 'center', sans, '700');
+        text(ctx, n.badge, avatarX + diameter / 2, avatarY - 5, bw - 3, 9.5, '#fffbeb', 'center', sans, '700');
+      }
+      if (n.teamStatus) {
+        const bx = n.badge ? (left ? avatarX + 46 : avatarX - 34) : avatarX;
+        fill(ctx,{...n,x:bx,y:avatarY-12,width:30,height:14},'#087f78',7,'#7ef5dc');
+        text(ctx,n.teamStatus,bx+15,avatarY-5,28,9.5,'#fff','center',sans,'700');
       }
 
       if (n.detail) {
@@ -458,9 +464,11 @@ function drawNode(ctx: CanvasRenderingContext2D, n: WebNode, model: ScreenModel,
     const r=n.width/2;
     ctx.save();shadow(ctx,'rgba(255,216,117,0.35)',20,0);circle(ctx,cx,cy,r,'#190808','#ffd875');ctx.restore();
     circle(ctx,cx,cy,r-3,'#170706','rgba(212,163,89,0.6)');
-    ctx.save();shadow(ctx,'rgba(255,216,117,0.9)',12,0);text(ctx,n.text,cx,cy-15,n.width,clamp(26,n.width/.19*.065,34),webTheme.accent);ctx.restore();
-    fill(ctx,{...n,x:cx-30,y:cy+2,width:60,height:14},'#0f0404cc',7,'#e5b96480');
-    text(ctx,n.detail??'',cx,cy+9,60,9.5,'#eedcc4','center',sans,'700');if(n.count)text(ctx,'第 '+n.count+' 难',cx,cy+23,n.width,9,webTheme.accent,'center',sans,'600');
+    const compact=n.width<48, directionW=Math.min(60,n.width-4);
+    ctx.save();shadow(ctx,'rgba(255,216,117,0.9)',12,0);text(ctx,n.text,cx,cy-(compact?5:12),n.width,clamp(18,n.width*.36,28),webTheme.accent);ctx.restore();
+    if(!compact){fill(ctx,{...n,x:cx-directionW/2,y:cy+1,width:directionW,height:12},'#0f0404cc',7,'#e5b96480');
+    text(ctx,n.detail??'',cx,cy+7,directionW,9,'#eedcc4','center',sans,'700');}
+    if(n.count)text(ctx,'第 '+n.count+' 难',cx,cy+(compact?9:19),n.width,9,webTheme.accent,'center',sans,'600');
   } else if (n.kind === 'panel') {
     ctx.save();
     if(n.id==='arena-frame') {

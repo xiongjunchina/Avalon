@@ -356,51 +356,11 @@ export function GamePanel({
     : {};
 
   return (
-    <div className="game table-game-screen" data-sound="tap" data-phase={effectivePhase} data-player-count={g.players.length}>
-      {/* 1. Physical Board-Game Style Quest & Vote Track Board */}
-      <div className="avalon-quest-board" data-sound="page">
-        {/* Top Row: 5 Large Circular Quest Medallions (Clickable to inspect that mission's team & vote history) */}
-        <div className="game-score quest-circles-row" aria-label="任务进度（点击对应任务查看组队与投票记录）">
-          {g.missionSizes.map((count, i) => {
-            const missionNum = i + 1;
-            const missionProposals = g.rounds.filter(r => r.mission === missionNum);
-            const result = missionProposals.find(r => r.result)?.result;
-            const isCurrent = !ended && g.phase !== 'assassination' && missionNum === g.mission;
-            const twoFailsRequired = failuresRequiredFor(g.players.length, missionNum) >= 2;
-            return (
-              <QuestMedallion
-                key={missionNum}
-                mission={missionNum}
-                count={count}
-                current={isCurrent}
-                passed={result?.passed}
-                twoFailsRequired={twoFailsRequired}
-                onInspect={() => {
-                  const settled = missionProposals.find(r => r.result);
-                  if (settled) {
-                    setMissionReportRound(settled);
-                  } else {
-                    setInspectMission(missionNum);
-                  }
-                }}
-              />
-            );
-          })}
-        </div>
-
-        {/* Bottom Row of Quest Board: Compact Imperial Summary Track matching Scheme A-2 */}
-        <div className="quest-vote-track-zone" aria-label={`护经进度：${successes}胜${failures}负，流局${g.rejectionCount}/5，${g.players.length}人局，仙${blueCount} 妖${redCount}`}>
-          <span className="quest-summary-item">⚔ 护经 <strong>{successes}:{failures}</strong> 群妖</span>
-          <span className="quest-summary-divider">◇</span>
-          <span className="quest-summary-item">♨ 流局 <strong>{g.rejectionCount}/5</strong></span>
-          <span className="quest-summary-divider">◇</span>
-          <span className="quest-summary-item">👥 <strong>{g.players.length}</strong>人局</span>
-          <span className="quest-summary-divider">◇</span>
-          <span className="quest-summary-item camp-ratio-summary" title={`本局共${g.players.length}人：取经仙班${blueCount}人，作乱妖魔${redCount}人`}>
-            <span className="camp-pill-blue">仙<strong>{blueCount}</strong></span>
-            <span className="camp-pill-red">妖<strong>{redCount}</strong></span>
-          </span>
-        </div>
+    <div className="game table-game-screen game-play-priority" data-sound="tap" data-phase={effectivePhase} data-player-count={g.players.length}>
+      <div className="game-current-summary" aria-label="本轮任务摘要">
+        <strong>第 {g.mission} 难 · {size} 人出征</strong>
+        {failuresRequiredFor(g.players.length, g.mission) >= 2 && <span className="current-two-fails">需 2 败</span>}
+        <span>护经 <b>{successes}:{failures}</b> 群妖</span>
       </div>
 
       {/* 2. Hybrid Scheme A: Scheme 3 Ink Ribbon + Scheme 6 Captain & Team Formation Spotlight Banner */}
@@ -714,6 +674,7 @@ export function GamePanel({
             (effectivePhase === 'proposing'
               ? selected.includes(p.id)
               : ['discussion', 'team_vote', 'guanyin_window', 'mission'].includes(effectivePhase) && Boolean(round?.team.includes(p.id)));
+          const teamStatus = ['guanyin_window', 'mission'].includes(effectivePhase) ? '出征' : '已选';
           const isTargeted =
             g.phase === 'assassination' && target === p.id;
           const canTapSeat =
@@ -803,17 +764,17 @@ export function GamePanel({
                   voiceState={voiceState}
                   onToggleMute={p.id === userId ? onToggleMute : undefined}
                 />
-                {/* Floating role/captain badge over avatar */}
-                {self?.role === 'percival' && jinguAllyId === p.id && (
-                  <span className="seat-badge badge-jingu-ally" title="取经护法同修（紧箍佛印自证，百分百纯正蓝方！）">
-                    📿 护法
-                  </span>
-                )}
-                {isCaptain && (
-                  <span className={`seat-badge ${isNextCaptain ? 'badge-next-captain' : 'badge-captain'}`} title={isNextCaptain ? '候任领队' : '当前队长'}>
-                    {isNextCaptain ? '👑 候任' : '👑 队长'}
-                  </span>
-                )}
+                <div className="seat-status-badges">
+                  {isCaptain && (
+                    <span className={`seat-badge ${isNextCaptain ? 'badge-next-captain' : 'badge-captain'}`} title={isNextCaptain ? '候任领队' : '当前队长'}>
+                      {isNextCaptain ? '👑 候任' : '👑 队长'}
+                    </span>
+                  )}
+                  {isProposed && <span className="seat-badge badge-team">{teamStatus}</span>}
+                  {self?.role === 'percival' && jinguAllyId === p.id && (
+                    <span className="seat-badge badge-jingu-ally" title="取经护法同修（紧箍佛印自证，百分百纯正蓝方！）">📿 护法</span>
+                  )}
+                </div>
                 {g.humanBagBannedPlayerId === p.id && (
                   <span className="seat-badge badge-banned" title="被收入后天人种袋，本轮禁选上车">
                     🎒 禁选
@@ -843,7 +804,6 @@ export function GamePanel({
                   {p.nickname}
                 </span>
                 {p.id === userId && <span className="flank-me-pill">我</span>}
-                {isProposed && <span className="flank-tag-proposed">⚔️</span>}
               </div>
 
               {/* Hidden interactive prompt for screen-readers & test assertions */}
@@ -924,7 +884,7 @@ export function GamePanel({
             >
               <fieldset disabled={disabled} className="dock-propose-fieldset">
                 <legend className="dock-rule-hint">
-                  —◇ 钦点同行仙友并指定发言方向，完成后开启论道 ◇—
+                  —◇ 点击头像选人 · 确认阵容后进入论道 ◇—
                 </legend>
                 <div className="team-picker sr-only">
                   {g.players.map(p => (
@@ -961,7 +921,7 @@ export function GamePanel({
                   >
                     <span className="btn-cloud-flourish left" aria-hidden="true"><CloudFlourish side="left" /></span>
                     <span className="btn-cta-text">
-                      {selected.length === size ? `完成预选 (${selected.length}/${size})` : `待选满同行人 (${selected.length}/${size})`}
+                      {selected.length === size ? `确认阵容 (${selected.length}/${size})` : `待选队员 (${selected.length}/${size})`}
                     </span>
                     <span className="btn-cloud-flourish right" aria-hidden="true"><CloudFlourish side="right" /></span>
                   </button>
@@ -1146,7 +1106,7 @@ export function GamePanel({
                     <span className="btn-cloud-flourish left" aria-hidden="true"><CloudFlourish side="left" /></span>
                     <span className="btn-cta-text">
                       {choice === null
-                        ? '请先点击选择【任务成功】或【任务失败】'
+                        ? '请先选择任务牌'
                         : choice === true
                           ? '✨ 确认提交【任务成功】'
                           : '🔥 确认提交【任务失败】'}
@@ -1301,6 +1261,52 @@ export function GamePanel({
         <DragonPlinthDecor side="left" />
         <DragonPlinthDecor side="right" />
       </div>
+
+      <section className="avalon-quest-board game-mission-overview" data-sound="page" aria-label="五难进度与任务记录">
+        <div className="mission-overview-heading"><h2>五难进度</h2><span>点击任务查看记录</span></div>
+        {/* Top Row: 5 Large Circular Quest Medallions (Clickable to inspect that mission's team & vote history) */}
+        <div className="game-score quest-circles-row" aria-label="任务进度（点击对应任务查看组队与投票记录）">
+          {g.missionSizes.map((count, i) => {
+            const missionNum = i + 1;
+            const missionProposals = g.rounds.filter(r => r.mission === missionNum);
+            const result = missionProposals.find(r => r.result)?.result;
+            const isCurrent = !ended && g.phase !== 'assassination' && missionNum === g.mission;
+            const twoFailsRequired = failuresRequiredFor(g.players.length, missionNum) >= 2;
+            return (
+              <QuestMedallion
+                key={missionNum}
+                mission={missionNum}
+                count={count}
+                current={isCurrent}
+                passed={result?.passed}
+                twoFailsRequired={twoFailsRequired}
+                onInspect={() => {
+                  const settled = missionProposals.find(r => r.result);
+                  if (settled) {
+                    setMissionReportRound(settled);
+                  } else {
+                    setInspectMission(missionNum);
+                  }
+                }}
+              />
+            );
+          })}
+        </div>
+
+        {/* Bottom Row of Quest Board: Compact Imperial Summary Track matching Scheme A-2 */}
+        <div className="quest-vote-track-zone" aria-label={`护经进度：${successes}胜${failures}负，流局${g.rejectionCount}/5，${g.players.length}人局，仙${blueCount} 妖${redCount}`}>
+          <span className="quest-summary-item">⚔ 护经 <strong>{successes}:{failures}</strong> 群妖</span>
+          <span className="quest-summary-divider">◇</span>
+          <span className="quest-summary-item">♨ 流局 <strong>{g.rejectionCount}/5</strong></span>
+          <span className="quest-summary-divider">◇</span>
+          <span className="quest-summary-item">👥 <strong>{g.players.length}</strong>人局</span>
+          <span className="quest-summary-divider">◇</span>
+          <span className="quest-summary-item camp-ratio-summary" title={`本局共${g.players.length}人：取经仙班${blueCount}人，作乱妖魔${redCount}人`}>
+            <span className="camp-pill-blue">仙<strong>{blueCount}</strong></span>
+            <span className="camp-pill-red">妖<strong>{redCount}</strong></span>
+          </span>
+        </div>
+      </section>
 
       {g.phase === 'team_vote' && !voteDismissed && !privateNoticeVisible && <TeamVoteDialog game={g} players={publicPlayers} anonymous={room.settings.anonymousTeamVote} userId={userId} serverTime={room.serverTime} disabled={disabled} send={send} onClose={() => setVoteDismissed(true)} />}
       {g.phase === 'guanyin_window' && !guanyinWindowDismissed && (

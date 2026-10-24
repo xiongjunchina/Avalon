@@ -35,7 +35,7 @@ test('390px home geometry follows the web CSS instead of a separate mini game co
   assert.ok(Math.abs(nodes.find(n => n.id === 'create')!.y - 702.14) < 1);
 });
 
-test('same proposing fixture uses alternating flanks and the web arena/dock proportions', async () => {
+test('active round, alternating seats and actions precede the full mission history', async () => {
   const { parityFixture } = await import('../scripts/parity-fixture.js');
   const { gameScreen } = await import('../src/screens/game.js');
   const { user, room } = parityFixture();
@@ -43,14 +43,19 @@ test('same proposing fixture uses alternating flanks and the web arena/dock prop
   const model = gameScreen(room, user, { privateRoleVisible: false, ballotVisible: false, selectedIds: [] });
   const { nodes, maxScroll } = layoutWebScreen(model, { width: 390, height: 844, top: 0, bottom: 0 });
   const arena = nodes.find(n => n.id === 'arena-frame')!;
-  assert.ok(Math.abs(arena.y - 273.3) < 1);
-  assert.ok(Math.abs(arena.height - 303.84) < 1);
-  assert.ok(Math.abs(nodes.find(n => n.id === 'action-dock')!.y - 595.14) < 1);
+  const current=nodes.find(n=>n.id==='current-round')!;
+  const dock=nodes.find(n=>n.id==='action-dock')!;
+  const quests=nodes.filter(n=>n.kind==='quest');
+  assert.ok(current.y<arena.y && arena.y+arena.height<=dock.y);
+  assert.ok(dock.y+dock.height<quests[0]!.y);
+  assert.ok(dock.y+dock.height<=844, 'main actions fit in the first screen');
+  assert.equal(quests.length,5);
+  assert.ok(arena.height<210, 'six players do not leave a large empty arena');
   assert.deepEqual(nodes.filter(n => n.kind === 'seat' && n.x < 100).map(n => n.count), [1, 3, 5]);
   assert.equal(nodes.filter(n => n.kind === 'seat').length, 6);
   assert.ok(nodes.some(n => n.id === 'endGame'));
   assert.equal(nodes.find(n => n.id === 'propose')!.disabled, true);
-  assert.equal(maxScroll, 0);
+  assert.ok(maxScroll >= 0);
 });
 
 
@@ -70,4 +75,20 @@ test('small and safe-area screens can scroll the live dock into view without off
     const action=last.nodes.find(n=>n.id==='confirmRole');
     assert.ok(action && action.y>=viewport.top && action.y+action.height<=viewport.height-viewport.bottom);
   }
+});
+
+test('selected captains keep both public badges and mission teammates show departure status', async () => {
+  const { parityFixture }=await import('../scripts/parity-fixture.js');
+  const { gameScreen }=await import('../src/screens/game.js');
+  const { user,room }=parityFixture();
+  const selected=room.members.slice(0,2).map(p=>p.id);
+  const ui={privateRoleVisible:false,ballotVisible:false,selectedIds:selected};
+  let nodes=layoutWebScreen(gameScreen(room,user,ui),{width:390,height:844,top:0,bottom:0}).nodes;
+  const captain=nodes.find(n=>n.id==='player:'+user.id)!;
+  assert.equal(captain.badge,'👑 队长');
+  assert.equal(captain.teamStatus,'已选');
+  room.game.phase='mission';
+  room.game.rounds=[{number:1,mission:1,captainId:user.id,team:selected,direction:'clockwise'}];
+  nodes=layoutWebScreen(gameScreen(room,user,ui),{width:390,height:844,top:0,bottom:0}).nodes;
+  assert.equal(nodes.filter(n=>n.teamStatus==='出征').length,2);
 });

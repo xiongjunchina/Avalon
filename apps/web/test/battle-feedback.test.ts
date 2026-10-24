@@ -44,6 +44,45 @@ test('end-game controls follow room ownership, independently of captain or viewi
   }
 });
 
+test('gameplay actions precede all five inspectable missions', () => {
+  const game = createGame('play-first', players, defaultSettings, a => a);
+  const room: RoomView = {
+    id: 'room', code: 'TEST', hostId: 'p1', version: 1, phase: 'playing',
+    settings: defaultSettings, acceptingNewMembers: false,
+    members: players.map(p => ({ ...p, online: true, ready: true })), game: projectGame(game, 'p1'),
+  };
+  const html = renderToStaticMarkup(createElement(GamePanel, { room, userId: 'p1', disabled: false, connected: true, send: () => {} }));
+  assert.ok(html.indexOf('game-current-summary') < html.indexOf('aria-label="对局座位表"'));
+  assert.ok(html.indexOf('dock-utility-row') < html.indexOf('aria-label="五难进度与任务记录"'));
+  assert.equal((html.match(/quest-medallion-wrap/g) ?? []).length, 5);
+});
+
+test('public teammate badges follow drafts, discussion edits and accepted missions', () => {
+  const game = createGame('team-markers', players, defaultSettings, a => a);
+  game.phase = 'proposing';
+  game.captainIndex = 0;
+  game.draftTeam = { playerIds: ['p1', 'p2'], direction: 'clockwise' };
+  const render = () => renderToStaticMarkup(createElement(GamePanel, {
+    room: {
+      id: 'room', code: 'TEST', hostId: 'p1', version: 1, phase: 'playing',
+      settings: defaultSettings, acceptingNewMembers: false,
+      members: players.map(p => ({ ...p, online: true, ready: true })), game: projectGame(game, 'p3'),
+    }, userId: 'p3', disabled: false, connected: true, send: () => {},
+  }));
+  let html = render();
+  assert.equal((html.match(/badge-team">已选/g) ?? []).length, 2);
+  assert.match(html, /seat-status-badges"><span class="seat-badge badge-captain"[^>]*>👑 队长<\/span><span class="seat-badge badge-team">已选/);
+  game.draftTeam.playerIds = ['p2'];
+  assert.equal((render().match(/badge-team">已选/g) ?? []).length, 1);
+  game.rounds = [{ number: 1, mission: 1, captainId: 'p1', team: ['p1', 'p3'], direction: 'clockwise' }];
+  game.phase = 'discussion';
+  assert.equal((render().match(/badge-team">已选/g) ?? []).length, 2);
+  game.phase = 'mission';
+  html = render();
+  assert.equal((html.match(/badge-team">出征/g) ?? []).length, 2);
+  assert.doesNotMatch(html, /badge-team">已选/);
+});
+
 test('GamePanel renders active Jingu Seal notification and ally seat badge for Percival', () => {
   const p8 = Array.from({ length: 8 }, (_, i) => ({ id: `p${i + 1}`, seat: i + 1, nickname: `仙友${i + 1}` }));
   const roles = ['percival', 'merlin', 'morgana', 'loyal', 'loyal', 'loyal', 'assassin', 'mordred'];
