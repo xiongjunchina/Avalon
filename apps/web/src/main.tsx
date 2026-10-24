@@ -1002,7 +1002,7 @@ function App() {
               <button
                 type="button"
                 className="mp-cyan-pill"
-                disabled={busy || (typeof creationAccess.password==='string' && creationAccess.password.length<4)}
+                disabled={busy || (typeof creationAccess.password==='string' && (creationAccess.password.length<4||creationAccess.password.length>8))}
                 onClick={() =>
                   void run(async () => {
                     pendingSettingsRef.current = setupSettings;

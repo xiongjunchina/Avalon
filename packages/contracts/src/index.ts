@@ -15,7 +15,7 @@ export const settingsSchema = z.object({
 }).strict();
 export type Settings = z.infer<typeof settingsSchema>;
 export const specialCodeSchema = z.string().regex(/^[1-9]\d{5}$/);
-export const roomPasswordSchema = z.string().min(4).max(64).nullable();
+export const roomPasswordSchema = z.string().min(4).max(8).nullable();
 export const dedicatedRoomSchema = z.object({
   code: specialCodeSchema, name: z.string().trim().min(1).max(30),
   managerId: z.string().uuid(), settings: settingsSchema,

@@ -179,6 +179,7 @@ export async function buildApp(options: { store: PostgresStore; origin?: string;
   });
   app.post('/api/rooms/join',{config:{rateLimit:{max:20,timeWindow:'1 minute'}}},async(req,reply)=>{
     const user=await authenticate(req,reply);
+    // Accept existing longer passwords for joining; new or changed passwords use roomPasswordSchema (4–8).
     const {key,password}=z.object({key:z.string().trim().min(1).max(200),password:z.string().max(64).optional()}).strict().parse(req.body);
     const room=await store.join(user,key,password);publish(room.id);return {room};
   });

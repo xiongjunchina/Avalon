@@ -93,13 +93,23 @@ test('admin endpoints require configured key, validate input, return no hashes a
 test('HTTP room access validates passwords and administrator renumbering returns explicit collision errors',async t=>{
  const f=await service(t),a=await f.store.createGuest('密码房主'),b=await f.store.createGuest('受邀玩家');
  const call=(token:string,url:string,payload:Record<string,unknown>)=>f.app.inject({method:'POST',url,headers:{...headers,...cookie(token)},payload});
- const created=await call(a.token,'/api/rooms',{password:'door-code'});assert.equal(created.statusCode,200,created.body);const r=created.json().room;
+ const created=await call(a.token,'/api/rooms',{password:'doorcode'});assert.equal(created.statusCode,200,created.body);const r=created.json().room;
  assert.equal((await call(b.token,'/api/rooms/join',{key:r.code})).json().error,'ROOM_PASSWORD_REQUIRED');
  assert.equal((await call(b.token,'/api/rooms/join',{key:r.code,password:'wrong'})).json().error,'ROOM_PASSWORD_INVALID');
  assert.equal((await call(b.token,'/api/rooms/join',{key:r.inviteKey})).statusCode,200);
  const status=(await f.app.inject({url:`/api/rooms/${r.id}`,headers:cookie(a.token)})).json().room;
+ for(const password of ['abc','abcdefghi']) {
+  assert.equal((await call(a.token,'/api/rooms',{password})).statusCode,400);
+  assert.equal((await call(a.token,`/api/rooms/${r.id}/password`,{password,expectedVersion:status.version})).statusCode,400);
+  assert.equal((await f.app.inject({method:'POST',url:'/api/admin/dedicated-rooms',headers:adminHeaders(),payload:{code:'767676',name:'密码长度验证',managerId:a.user.id,settings:defaultSettings,password}})).statusCode,400);
+ }
  assert.equal((await call(b.token,`/api/rooms/${r.id}/password`,{password:null,expectedVersion:status.version})).statusCode,403);
- assert.equal((await call(a.token,`/api/rooms/${r.id}/password`,{password:null,expectedVersion:status.version})).statusCode,200);
+ const changed=await call(a.token,`/api/rooms/${r.id}/password`,{password:'aB!1',expectedVersion:status.version});assert.equal(changed.statusCode,200);
+ const cleared=await call(a.token,`/api/rooms/${r.id}/password`,{password:null,expectedVersion:changed.json().room.version});assert.equal(cleared.statusCode,200);
+ // Simulate an existing room configured before the shorter creation limit: its password must still work.
+ await f.store.updateRoomPassword(a.user.id,r.id,'existing-long-password',cleared.json().room.version);
+ const legacyGuest=await f.store.createGuest('旧密码入房');
+ assert.equal((await call(legacyGuest.token,'/api/rooms/join',{key:r.code,password:'existing-long-password'})).statusCode,200);
  const conflict=await f.app.inject({method:'POST',url:`/api/admin/users/${b.user.id}/player-code`,headers:adminHeaders(),payload:{playerCode:a.user.playerCode,expectedCode:b.user.playerCode}});assert.equal(conflict.statusCode,409);assert.equal(conflict.json().error,'PLAYER_CODE_TAKEN');
 });
 

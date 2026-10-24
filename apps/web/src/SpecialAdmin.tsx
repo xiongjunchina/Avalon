@@ -47,7 +47,7 @@ export function SpecialAdmin({request}:{request:AdminApi}) {
           <PasswordChoice key={editing?.id??'new'} hasSaved={!!editing} onChange={setPassword}/>
           <fieldset disabled={busy}><SettingsFields settings={settings} onChange={patch=>setSettings(s=>({...s,...patch}))}/></fieldset>
           {error&&<p className="error" role="alert">{error}</p>}
-          <button disabled={busy||(typeof password==='string'&&password.length<4)} className="mp-cyan-pill">{busy?'正在保存…':'保存专属房'}</button>
+          <button disabled={busy||(typeof password==='string'&&(password.length<4||password.length>8))} className="mp-cyan-pill">{busy?'正在保存…':'保存专属房'}</button>
         </form>
       </section>
     </Modal>}

@@ -12,7 +12,7 @@ export function PasswordChoice({ hasSaved, onChange }: { hasSaved?: boolean; onC
       <label><input type="radio" name={id} checked={mode==='none'} onChange={()=>choose('none')}/>不设密码</label>
       <label><input type="radio" name={id} checked={mode==='set'} onChange={()=>choose('set')}/>设置新密码</label>
     </div>
-    {mode==='set' && <><label htmlFor={id}>新密码（4–64位）</label><input id={id} type="password" autoComplete="new-password" minLength={4} maxLength={64} value={password} onChange={e=>{setPassword(e.target.value);onChange(e.target.value);}}/></>}
+    {mode==='set' && <><label htmlFor={id}>新密码（4–8位字符）</label><input id={id} type="password" autoComplete="new-password" minLength={4} maxLength={8} value={password} onChange={e=>{setPassword(e.target.value);onChange(e.target.value);}}/></>}
   </fieldset>;
 }
 export function RoomCreationAccess({onChange,onSettings}:{onChange:(value:CreationAccess)=>void;onSettings:(s:Settings)=>void}) {
@@ -34,7 +34,7 @@ export function RoomPasswordSettings({room,onSaved}:{room:RoomView;onSaved:(room
   return <section className="room-access-card"><h3>房间密码</h3>
     <p className="hint">当前{room.hasPassword?'已设置密码':'无密码'}。保存后旧邀请链接失效，请重新分享。</p>
     <PasswordChoice hasSaved onChange={v=>{setPassword(v);setMessage('');setError('');}}/>
-    <button type="button" disabled={busy||room.phase!=='waiting'||password===undefined||(typeof password==='string'&&password.length<4)} onClick={()=>void(async()=>{
+    <button type="button" disabled={busy||room.phase!=='waiting'||password===undefined||(typeof password==='string'&&(password.length<4||password.length>8))} onClick={()=>void(async()=>{
       setBusy(true);setError('');try{const r=await api<{room:RoomView}>(`/rooms/${room.id}/password`,{password,expectedVersion:room.version});onSaved(r.room);setMessage('密码设置已保存，邀请链接已更新。');}catch(e){setError(describe(e));}finally{setBusy(false);}
     })()}>{busy?'正在保存…':'保存密码设置'}</button>
     {error&&<p className="error" role="alert">{error}</p>}{message&&<p className="notice" role="status">{message}</p>}

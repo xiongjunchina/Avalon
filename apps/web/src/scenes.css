@@ -7542,12 +7542,17 @@ button.seat-mic-badge:active {
 }
 
 /* Room admission and account recovery use the existing panel and dialog primitives. */
-.room-access-card { width:100%; padding:14px; margin-block:10px; }
-.room-access-card > label { margin-top:0; }
-.room-access-field { margin:12px 0; padding:10px 12px; border:1px solid var(--border); border-radius:12px; min-width:0; }
-.room-access-field legend { color:var(--accent); padding-inline:5px; }
+.room-access-card { width:100%; padding:12px; margin-block:8px; font:500 13.5px/1.5 var(--sans); }
+.room-access-card > label { margin:0 0 6px; font-size:13.5px; }
+.room-access-card > h3 { margin:0 0 6px; font-size:15px; }
+.room-access-card > .hint { margin:8px 0 0; font-size:12px; line-height:1.5; }
+.room-access-card select { height:40px; min-height:40px; padding:6px 10px; font:500 13.5px/1.5 var(--sans); border-radius:10px; }
+.room-access-field { margin:10px 0; padding:8px 10px; border:1px solid var(--border); border-radius:12px; min-width:0; font:500 13.5px/1.5 var(--sans); }
+.room-access-field legend { color:var(--accent); padding-inline:5px; font-size:13.5px; }
+.room-access-field > label { font-size:13px; margin:6px 0 4px; }
+.room-access-field input[type=password] { display:block; width:min(100%,220px); height:40px; min-height:40px; padding:6px 10px; font:500 16px/1.5 var(--sans); border-radius:10px; }
 .access-options { display:flex; gap:8px 16px; flex-wrap:wrap; }
-.access-options label { display:inline-flex; align-items:center; gap:5px; margin:2px 0; font-size:14px; }
+.access-options label { display:inline-flex; align-items:center; gap:5px; min-height:32px; margin:0; font-size:13px; font-weight:500; }
 .access-options input { min-height:0; margin:0; }
 .recovery-access { padding:16px; margin-block:14px; }
 .recovery-access summary { cursor:pointer; color:var(--accent); }
