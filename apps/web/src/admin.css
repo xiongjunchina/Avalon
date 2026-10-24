@@ -711,3 +711,86 @@
   flex-direction: column;
   gap: 12px;
 }
+
+/* Dedicated rooms and player codes follow the existing admin typography and controls. */
+.admin-viewport :is(.special-admin, .special-editor) {
+  font-size: 13px;
+  line-height: 1.5;
+}
+.admin-viewport .special-admin .admin-panel-title > .admin-panel-title { margin: 0; }
+.admin-viewport :is(.special-admin, .special-editor) .hint {
+  font: inherit;
+  color: #94a3b8;
+  margin: 0 0 12px;
+}
+.admin-viewport :is(.special-admin, .special-editor) p { line-height: 1.5; }
+.admin-viewport .special-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  align-items: end;
+  gap: 10px;
+}
+.admin-viewport :is(.special-admin, .special-editor) label {
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  margin: 0 0 6px;
+  color: #cbd5e1;
+}
+.admin-viewport :is(.special-admin, .special-editor) :is(input:not([type=checkbox]):not([type=radio]), select) {
+  min-height: 38px;
+  height: 38px;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 400;
+  padding: 8px 10px;
+  background: rgba(11, 15, 23, 0.85);
+  color: #f8fafc;
+  border: 1px solid rgba(212, 163, 89, 0.3);
+  border-radius: 8px;
+  box-sizing: border-box;
+}
+.admin-viewport .special-list { display: grid; gap: 10px; margin-top: 12px; }
+.admin-viewport .special-card {
+  padding: 12px;
+  min-width: 0;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+}
+.admin-viewport .special-card > strong { font-size: 14px; }
+.admin-viewport .special-card p { margin: 6px 0; color: #cbd5e1; }
+.admin-viewport .special-card small { display: block; margin-top: 6px; font: inherit; color: #94a3b8; }
+.admin-viewport .special-editor {
+  width: min(100%, 540px);
+  max-height: calc(100dvh - 28px);
+  margin: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: #121826;
+  color: #e2e8f0;
+}
+.admin-viewport .special-editor-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+.admin-viewport .special-editor-head > strong { font-size: 15px; color: #ffd875; }
+.admin-viewport .special-editor-head button { flex-shrink: 0; }
+.admin-viewport .special-editor form > label { display: block; margin-top: 10px; }
+.admin-viewport .special-editor form > .admin-primary-btn { margin-top: 14px !important; }
+.admin-viewport .special-editor form > fieldset:not(.room-access-field) { margin: 12px 0; padding: 0; border: 0; min-width: 0; }
+.admin-viewport .special-editor :is(.room-access-field, legend) { font-family: inherit; font-size: 12.5px; }
+.admin-viewport .special-editor .player-count-field { margin: 8px 0; padding: 0; border: 0; }
+.admin-viewport .special-editor .count-medallions { grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 3px; padding: 6px 0; }
+.admin-viewport .special-editor .count-medallions span { width: 100%; max-width: 34px; height: 32px; min-height: 32px; font-family: inherit; font-size: 13px; font-weight: 600; line-height: 1; }
+.admin-viewport .special-editor .check { min-height: 38px; padding: 4px 0; }
+.admin-viewport .special-editor .check label { margin: 0; font-size: 13px; }
+.admin-viewport .special-editor .check input { width: 40px; height: 22px; min-height: 22px; }
+.admin-viewport .special-editor .check input::before { width: 16px; height: 16px; top: 2px; left: 3px; }
+.admin-viewport .special-editor .check input:checked::before { transform: translateX(16px); }
+.admin-viewport .special-editor details { margin-top: 14px; padding-top: 10px; border-top: 1px solid rgba(255, 255, 255, 0.08); }
+.admin-viewport .special-editor summary { cursor: pointer; color: #ffd875; }
