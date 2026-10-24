@@ -1,0 +1,11 @@
+[Unit]
+Description=Check Avalon updates every ten minutes
+
+[Timer]
+OnCalendar=*-*-* *:00/10:00
+AccuracySec=1s
+Persistent=true
+Unit=avalon-auto-update.service
+
+[Install]
+WantedBy=timers.target
