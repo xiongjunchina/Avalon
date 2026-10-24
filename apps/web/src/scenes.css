@@ -832,7 +832,8 @@ main.app-shell.is-live-table {
   min-height: 100dvh;
   height: auto !important;
   max-height: none !important;
-  padding: max(6px, env(safe-area-inset-top)) 10px max(24px, env(safe-area-inset-bottom)) !important;
+  /* The browser already positions this viewport below its top chrome. */
+  padding: 6px 10px max(24px, env(safe-area-inset-bottom)) !important;
   overflow-x: hidden !important;
   overflow-y: auto !important;
   -webkit-overflow-scrolling: touch !important;

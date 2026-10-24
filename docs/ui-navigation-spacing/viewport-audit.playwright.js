@@ -19,19 +19,26 @@ async (page) => {
       return { user, waiting: room, proposing, discussion: { ...proposing, game: projectGame(game, captainId) }, teamSize: team.length };
     });
   });
-  let current = fixtures[0], stage = 'waiting';
+  let current = fixtures[0], stage = 'waiting', simulatedSafeAreaTop = 0, waitingReady = true;
   await page.unrouteAll({ behavior: 'wait' });
+  // Simulate a browser reporting a top inset, including Vite's injected CSS.
+  await page.route('**/src/*.css', async route => {
+    const response = await route.fetch();
+    const body = (await response.text()).replace(/env\(safe-area-inset-top(?:,[^)]*)?\)/g, `${simulatedSafeAreaTop}px`);
+    await route.fulfill({ response, body });
+  });
   await page.route('**/api/**', route => {
     const path = new URL(route.request().url()).pathname;
+    const room = stage === 'waiting' ? { ...current.waiting, members: current.waiting.members.map(m => ({ ...m, ready: waitingReady })) } : current[stage];
     const json = path === '/api/me' ? { user: current.user, roomId: current[stage].id }
-      : path.includes('/rooms/') ? { room: current[stage], invite: '' }
+      : path.includes('/rooms/') ? { room, invite: '' }
       : path.endsWith('/friends') ? { friends: [] }
       : { announcement: { enabled: false, text: '' }, freeAccessMode: true };
     return route.fulfill({ json });
   });
   await page.routeWebSocket('**/api/rooms/*/socket', ws => ws.onMessage(() => {}));
   const viewports = [{ width: 320, height: 568 }, { width: 375, height: 553 }, { width: 390, height: 844 }, { width: 430, height: 716 }, { width: 640, height: 900 }];
-  const tables = [], guides = [];
+  const tables = [], guides = [], topInsets = [];
   const check = (condition, message, data) => { if (!condition) throw new Error(`${message}: ${JSON.stringify(data)}`); };
   const settle = () => page.evaluate(async () => { await document.fonts.ready; await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))); });
   for (current of fixtures) {
@@ -64,6 +71,43 @@ async (page) => {
       tables.push({ count: current.waiting.settings.playerCount, viewport, stages: pair });
     }
   }
+  // Cover the nonzero inset missed by the original desktop-browser audit.
+  current = fixtures.at(-1);
+  simulatedSafeAreaTop = 44;
+  await page.setViewportSize({ width: 430, height: 716 });
+  const recordInset = async name => {
+    await page.evaluate(() => { window.scrollTo(0, 0); document.querySelector('main').scrollTop = 0; });
+    await settle();
+    const metrics = await page.evaluate(() => ({ top: document.querySelector('.room-top-bar').getBoundingClientRect().top, paddingTop: getComputedStyle(document.querySelector('main')).paddingTop, overflow: document.documentElement.scrollWidth > innerWidth }));
+    check(metrics.top === 4 && !metrics.overflow, 'Duplicate top inset', { name, simulatedSafeAreaTop, ...metrics });
+    topInsets.push({ name, simulatedSafeAreaTop, ...metrics });
+  };
+  for (stage of ['waiting', 'proposing', 'discussion']) {
+    await page.reload();
+    await page.locator(stage === 'waiting' ? '.waiting-settings-summary' : `[data-phase="${stage}"]`).waitFor();
+    await settle();
+    await recordInset(stage);
+  }
+  stage = 'waiting';
+  waitingReady = false;
+  await page.reload();
+  await page.getByRole('dialog', { name: '准备提醒', exact: true }).waitFor();
+  await page.getByRole('button', { name: '稍后准备', exact: true }).click();
+  await recordInset('waiting-unready');
+  await page.screenshot({ path: 'docs/ui-navigation-spacing/waiting-inset-430.png' });
+  await page.getByRole('button', { name: /幻化分身试玩/ }).click();
+  await page.locator('.is-practice-top-bar').waitFor();
+  await page.getByRole('button', { name: '⚡ 电脑代操下一步', exact: true }).click();
+  for (let i = 0; i < current.teamSize; i++) await page.locator('.table-seat-card').nth(i).click();
+  await page.getByRole('button', { name: `预选阵容 (${current.teamSize}/${current.teamSize})`, exact: true }).waitFor();
+  await recordInset('practice-proposing');
+  await page.getByRole('button', { name: `预选阵容 (${current.teamSize}/${current.teamSize})`, exact: true }).click();
+  await page.locator('[data-phase="discussion"]').waitFor();
+  await page.getByRole('button', { name: '已确认阵容 · 开启投票', exact: true }).waitFor();
+  await recordInset('practice-discussion');
+  await page.screenshot({ path: 'docs/ui-navigation-spacing/practice-inset-430.png' });
+  await page.getByRole('button', { name: '退出试玩', exact: true }).click();
+  waitingReady = true;
   stage = 'waiting';
   for (const viewport of viewports) {
     await page.setViewportSize(viewport);
@@ -72,30 +116,33 @@ async (page) => {
     for (const category of ['游戏规则', '角色介绍']) {
       await page.getByRole('button', { name: category, exact: true }).click();
       await settle();
-      const buttons = page.locator('.guide-index button');
-      const count = await buttons.count();
+      const select = page.getByRole('combobox', { name: category === '游戏规则' ? '跳转规则章节' : '跳转角色介绍', exact: true });
+      const options = await select.locator('option').evaluateAll(es => es.filter(e => e.value).map(e => ({ id: e.value, title: e.textContent })));
+      const count = options.length;
       for (let i = 0; i < count; i++) {
-        await buttons.nth(i).click();
-        const metrics = await page.evaluate(({ category, i }) => {
+        await select.selectOption(options[i].id);
+        const metrics = await page.evaluate(id => {
           const nav = document.querySelector('.guide-navigation').getBoundingClientRect();
-          const targets = category === '游戏规则' ? [...document.querySelectorAll('.guide-section')]
-            : [...document.querySelectorAll('.guide-index button')].map(b => [...document.querySelectorAll('.guide-role')].find(r => r.querySelector('h3')?.textContent.includes(b.textContent)));
-          const target = targets[i]?.getBoundingClientRect();
-          return { navTop: nav.top, navBottom: nav.bottom, targetTop: target?.top, visibleButtons: [...document.querySelectorAll('.guide-navigation button')].every(b => { const r = b.getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth && r.top >= 0 && r.bottom <= innerHeight; }), overflow: document.documentElement.scrollWidth > innerWidth };
-        }, { category, i });
-        check(metrics.visibleButtons && !metrics.overflow && metrics.targetTop >= metrics.navBottom - 1 && metrics.targetTop < viewport.height, 'Chapter hidden by navigation', { viewport, category, i, ...metrics });
+          const target = document.getElementById(id)?.getBoundingClientRect();
+          return { navTop: nav.top, navBottom: nav.bottom, navHeight: nav.height, targetTop: target?.top, visibleControls: [...document.querySelectorAll('.guide-navigation button,.guide-navigation select')].every(b => { const r = b.getBoundingClientRect(); return r.width > 0 && r.left >= 0 && r.right <= innerWidth && r.top >= 0 && r.bottom <= innerHeight; }), overflow: document.documentElement.scrollWidth > innerWidth };
+        }, options[i].id);
+        check(metrics.navHeight <= 54 && metrics.visibleControls && !metrics.overflow && metrics.targetTop >= metrics.navBottom - 1 && metrics.targetTop < viewport.height, 'Chapter hidden or toolbar too tall', { viewport, category, i, ...metrics });
       }
       if (category === '游戏规则') {
         check(await page.locator('.guide-config').count() === 8 && await page.locator('.guide-rules details').count() === 0, 'Configuration is hidden');
-        await page.getByRole('button', { name: '房主设置', exact: true }).click();
+        await select.selectOption('guide-rule-4');
       }
       if (viewport.width === 430) await page.screenshot({ path: `docs/ui-navigation-spacing/${category === '游戏规则' ? 'rules' : 'roles'}-430.png` });
-      await page.getByRole('button', { name: '返回目录 ↑', exact: true }).click();
-      check(await page.evaluate(() => scrollY) === 0, 'Return to directory failed', { viewport, category });
-      guides.push({ viewport, category, chapters: count, pass: true });
+      await page.getByRole('button', { name: '返回目录', exact: true }).click();
+      const directory = await page.locator('#guide-directory').boundingBox(), toolbar = await page.locator('.guide-navigation').boundingBox();
+      check(directory.y >= toolbar.y + toolbar.height && directory.y < viewport.height, 'Return to directory failed', { viewport, category, directory, toolbar });
+      check(await page.locator('.guide-index button').count() === count, 'Missing full index entries', { viewport, category });
+      await page.locator('.guide-index button').first().click();
+      check(await select.inputValue() === options[0].id, 'Index does not synchronize jump selector', { viewport, category });
+      guides.push({ viewport, category, chapters: count, toolbarHeight: toolbar.height, pass: true });
     }
     await page.getByRole('button', { name: '返回原页面', exact: true }).click();
     await page.locator('.waiting-settings-summary').waitFor();
   }
-  return { tables, guides, pass: true };
+  return { tables, topInsets, guides, pass: true };
 }

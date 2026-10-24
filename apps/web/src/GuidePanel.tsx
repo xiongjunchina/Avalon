@@ -12,13 +12,16 @@ export { roleDescriptions, roleTreasures };
 
 const allRoles=Object.keys(roleNames) as Role[];
 const ruleChapters=['胜负条件','对局流程','人数配置','房主设置','刺杀与天机','专属法宝'];
-function GuideIndex({section}:{section:'rules'|'roles'}) {
-  const chapters=section==='rules'
+type GuideSection='rules'|'roles';
+function guideChapters(section:GuideSection) {
+  return section==='rules'
     ? ruleChapters.map((title,i)=>({title,id:`guide-rule-${i+1}`}))
     : allRoles.map(role=>({title:roleNames[role],id:`guide-role-${role}`}));
-  return <div className="guide-directory">
-    <div className="guide-index-heading"><span>{section==='rules'?'规则目录':'角色目录'}</span><button type="button" className="secondary" onClick={()=>window.scrollTo({top:0})}>返回目录 ↑</button></div>
-    <nav className="guide-index" aria-label={section==='rules'?'规则章节定位':'角色快速定位'}>{chapters.map(({title,id})=><button type="button" className="secondary" key={id} onClick={()=>document.getElementById(id)?.scrollIntoView({block:'start'})}>{title}</button>)}</nav>
+}
+function GuideIndex({section,onJump}:{section:GuideSection;onJump:(id:string)=>void}) {
+  return <div className="guide-directory" id="guide-directory">
+    <p className="guide-index-heading">{section==='rules'?'规则目录':'角色目录'}</p>
+    <nav className="guide-index" aria-label={section==='rules'?'规则章节定位':'角色快速定位'}>{guideChapters(section).map(({title,id})=><button type="button" className="secondary" key={id} onClick={()=>onJump(id)}>{title}</button>)}</nav>
   </div>;
 }
 function composition(roles:Role[]) {
@@ -257,7 +260,8 @@ export function GuideRoles() {
   );
 }
 export function GuidePanel({onBack}:{onBack:()=>void}) {
-  const [section,setSection]=useState<'rules'|'roles'>('rules');
+  const [section,setSection]=useState<GuideSection>('rules');
+  const [destination,setDestination]=useState('');
   const guideRef=useRef<HTMLElement>(null);
   const navigationRef=useRef<HTMLDivElement>(null);
   useLayoutEffect(()=>{
@@ -270,13 +274,26 @@ export function GuidePanel({onBack}:{onBack:()=>void}) {
     return ()=>observer.disconnect();
   },[]);
   usePageSound(section);
-  const changeSection=(next:'rules'|'roles')=>{setSection(next);window.scrollTo({top:0});};
+  const changeSection=(next:GuideSection)=>{setSection(next);setDestination('');window.scrollTo({top:0});};
+  const jumpTo=(id:string)=>{setDestination(id);document.getElementById(id)?.scrollIntoView({block:'start'});};
+  const returnToDirectory=()=>{setDestination('');document.getElementById('guide-directory')?.scrollIntoView({block:'start'});};
   return <section className="guide guide-flow" ref={guideRef}>
     <div className="guide-navigation" ref={navigationRef}>
-    <div className="guide-controls"><button className="secondary" onClick={onBack}>返回原页面</button><nav className="guide-nav" aria-label="说明分类"><button className="secondary" aria-pressed={section==='rules'} onClick={()=>changeSection('rules')}>游戏规则</button><button className="secondary" aria-pressed={section==='roles'} onClick={()=>changeSection('roles')}>角色介绍</button></nav></div>
-    <GuideIndex section={section}/>
+      <div className="guide-controls">
+        <button type="button" className="secondary" aria-label="返回原页面" onClick={onBack}>返回</button>
+        <nav className="guide-nav" aria-label="说明分类">
+          <button type="button" className="secondary" aria-label="游戏规则" aria-pressed={section==='rules'} onClick={()=>changeSection('rules')}>规则</button>
+          <button type="button" className="secondary" aria-label="角色介绍" aria-pressed={section==='roles'} onClick={()=>changeSection('roles')}>角色</button>
+        </nav>
+        <select className="guide-chapter-select" aria-label={section==='rules'?'跳转规则章节':'跳转角色介绍'} value={destination} onChange={e=>jumpTo(e.target.value)}>
+          <option value="" disabled>章节跳转</option>
+          {guideChapters(section).map(({title,id})=><option key={id} value={id}>{title}</option>)}
+        </select>
+        <button type="button" className="secondary" aria-label="返回目录" onClick={returnToDirectory}>目录 ↑</button>
+      </div>
     </div>
     <div className="guide-heading"><div><p className="eyebrow">JOURNEY TO THE WEST / 真假猴王秘卷</p><h1>《嘻游 · 真假猴王》</h1><p className="muted">一念佛魔皆幻相，谁是修道取经人</p></div></div>
+    <GuideIndex section={section} onJump={jumpTo}/>
     {section==='rules'?<GuideRules/>:<GuideRoles/>}
   </section>;
 }

@@ -586,6 +586,50 @@
       ]
     }
   ],
+  "topInsets": [
+    {
+      "name": "waiting",
+      "simulatedSafeAreaTop": 44,
+      "top": 4,
+      "paddingTop": "4px",
+      "overflow": false
+    },
+    {
+      "name": "proposing",
+      "simulatedSafeAreaTop": 44,
+      "top": 4,
+      "paddingTop": "4px",
+      "overflow": false
+    },
+    {
+      "name": "discussion",
+      "simulatedSafeAreaTop": 44,
+      "top": 4,
+      "paddingTop": "4px",
+      "overflow": false
+    },
+    {
+      "name": "waiting-unready",
+      "simulatedSafeAreaTop": 44,
+      "top": 4,
+      "paddingTop": "4px",
+      "overflow": false
+    },
+    {
+      "name": "practice-proposing",
+      "simulatedSafeAreaTop": 44,
+      "top": 4,
+      "paddingTop": "4px",
+      "overflow": false
+    },
+    {
+      "name": "practice-discussion",
+      "simulatedSafeAreaTop": 44,
+      "top": 4,
+      "paddingTop": "4px",
+      "overflow": false
+    }
+  ],
   "guides": [
     {
       "viewport": {
@@ -594,6 +638,7 @@
       },
       "category": "游戏规则",
       "chapters": 6,
+      "toolbarHeight": 50,
       "pass": true
     },
     {
@@ -603,6 +648,7 @@
       },
       "category": "角色介绍",
       "chapters": 9,
+      "toolbarHeight": 50,
       "pass": true
     },
     {
@@ -612,6 +658,7 @@
       },
       "category": "游戏规则",
       "chapters": 6,
+      "toolbarHeight": 50,
       "pass": true
     },
     {
@@ -621,6 +668,7 @@
       },
       "category": "角色介绍",
       "chapters": 9,
+      "toolbarHeight": 50,
       "pass": true
     },
     {
@@ -630,6 +678,7 @@
       },
       "category": "游戏规则",
       "chapters": 6,
+      "toolbarHeight": 50,
       "pass": true
     },
     {
@@ -639,6 +688,7 @@
       },
       "category": "角色介绍",
       "chapters": 9,
+      "toolbarHeight": 50,
       "pass": true
     },
     {
@@ -648,6 +698,7 @@
       },
       "category": "游戏规则",
       "chapters": 6,
+      "toolbarHeight": 50,
       "pass": true
     },
     {
@@ -657,6 +708,7 @@
       },
       "category": "角色介绍",
       "chapters": 9,
+      "toolbarHeight": 50,
       "pass": true
     },
     {
@@ -666,6 +718,7 @@
       },
       "category": "游戏规则",
       "chapters": 6,
+      "toolbarHeight": 50,
       "pass": true
     },
     {
@@ -675,6 +728,7 @@
       },
       "category": "角色介绍",
       "chapters": 9,
+      "toolbarHeight": 50,
       "pass": true
     }
   ],
