@@ -21,12 +21,20 @@ if (tool === 'git') {
 }
 if (tool === 'flock' && process.env.MOCK_FAIL === 'lock') process.exit(1);
 if (tool === 'docker') {
-  if (args.includes('--environment')) process.stdout.write(fs.readFileSync('deploy/.env.ecs', 'utf8'));
+  if (args.includes('--environment')) {
+    console.error('unknown flag: --environment');
+    process.exit(1);
+  }
+  if (args.includes('config') && !args.includes('--quiet')) {
+    const origin = fs.readFileSync('deploy/.env.ecs', 'utf8').match(/^APP_ORIGIN=(.*)$/m)[1];
+    const value = (process.env.MOCK_QUOTE || '') + origin + (process.env.MOCK_QUOTE || '');
+    process.stdout.write('services:\\n  gateway:\\n    environment:\\n      APP_ORIGIN: ' + value + '\\n  server:\\n    environment:\\n      APP_ORIGIN: ' + value + '\\n      PRIVATE_VALUE: private-test-value\\n');
+  }
   if (args.includes(process.env.MOCK_FAIL)) process.exit(1);
 }
 `;
 
-function run(t, { origin = 'https://47.112.7.117', failure = '' } = {}) {
+function run(t, { origin = 'https://47.112.7.117', failure = '', quote = '' } = {}) {
   const dir = mkdtempSync(join(tmpdir(), 'avalon-ecs-update-'));
   t.after(() => rmSync(dir, { recursive: true, force: true }));
   mkdirSync(join(dir, 'deploy'));
@@ -40,7 +48,7 @@ function run(t, { origin = 'https://47.112.7.117', failure = '' } = {}) {
   const log = join(dir, 'commands.jsonl');
   const result = spawnSync('bash', [script], {
     encoding: 'utf8',
-    env: { ...process.env, AVALON_DIR: dir, MOCK_LOG: log, MOCK_FAIL: failure, PATH: `${join(dir, 'bin')}:${process.env.PATH}` },
+    env: { ...process.env, AVALON_DIR: dir, MOCK_LOG: log, MOCK_FAIL: failure, MOCK_QUOTE: quote, PATH: `${join(dir, 'bin')}:${process.env.PATH}` },
   });
   const commands = existsSync(log) ? readFileSync(log, 'utf8').trim().split('\n').map(JSON.parse) : [];
   assert.ok(!`${result.stdout}${result.stderr}`.includes('private-test-value'), 'private config must not appear in output');
@@ -57,7 +65,7 @@ for (const [origin, override] of [
     const build = commands.findIndex(c => c.tool === 'docker' && c.args.includes('build'));
     const up = commands.findIndex(c => c.tool === 'docker' && c.args.includes('up'));
     assert.ok(build >= 0 && up > build);
-    for (const command of commands.filter(c => c.tool === 'docker' && !c.args.includes('--environment'))) {
+    for (const command of commands.filter(c => c.tool === 'docker' && !(c.args.includes('config') && !c.args.includes('--quiet')))) {
       assert.ok(command.args.includes(override));
       assert.equal(command.tag, 'abc1234');
     }
@@ -71,13 +79,14 @@ for (const [origin, override] of [
   });
 }
 
-for (const failure of ['lock', 'dirty', 'status', 'pull', 'rev-parse', 'build']) {
+for (const failure of ['lock', 'dirty', 'status', 'pull', 'rev-parse', 'config', 'build']) {
   test(`ECS update stops before publication and preserves configuration on ${failure} failure`, (t) => {
     const { envFile, original, result, commands } = run(t, { failure });
     assert.notEqual(result.status, 0);
     assert.equal(readFileSync(envFile, 'utf8'), original);
     assert.ok(!commands.some(c => c.tool === 'docker' && c.args.includes('up')));
     if (failure !== 'build') assert.ok(!commands.some(c => c.tool === 'docker' && c.args.includes('build')));
+    if (['config', 'build'].includes(failure)) assert.equal(result.stderr.match(/发布未完成/g)?.length, 1);
   });
 }
 
@@ -86,7 +95,22 @@ test('ECS update reports failed container startup without a success message', (t
   assert.notEqual(result.status, 0);
   assert.ok(!result.stdout.includes('容器更新及健康等待已完成'));
   assert.ok(!commands.some(c => c.tool === 'docker' && c.args.includes('ps')));
+  assert.equal(result.stderr.match(/发布未完成/g)?.length, 1);
 });
+
+test('ECS update supports Compose without config --environment', (t) => {
+  const { result, commands } = run(t);
+  assert.equal(result.status, 0, result.stderr);
+  assert.ok(!commands.some(c => c.args.includes('--environment')));
+});
+
+for (const quote of ['"', "'"]) {
+  test(`ECS update reads ${quote}-quoted origin from rendered Compose YAML`, (t) => {
+    const { result, commands } = run(t, { origin: 'https://avalon.example.com', quote });
+    assert.equal(result.status, 0, result.stderr);
+    assert.ok(commands.some(c => c.tool === 'docker' && c.args.includes('build') && c.args.includes('deploy/compose.public.example.yaml')));
+  });
+}
 
 for (const origin of ['http://47.112.7.117', 'https://avalon.example.com/path', 'https://999.112.7.117']) {
   test(`ECS update rejects unsupported origin ${origin} before building`, (t) => {

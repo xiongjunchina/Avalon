@@ -78,6 +78,8 @@ cd /opt/avalon && git pull --ff-only && install -m 700 scripts/update-ecs.sh /ro
 
 如将来更新脚本本身，重新执行上方安装命令即可；普通代码发布和 IP 切换域名无需重新安装。此脚本仅用于已有 ECS 实例，不启动本机 Docker 或 ngrok。
 
+脚本通过普通 `docker compose config` 的解析结果读取入口，不依赖 `config --environment`。若已安装的旧脚本提示 `unknown flag: --environment`，执行上方安装命令更新 `/root/update-avalon.sh` 后重试；仅拉取仓库不会替换 `/root` 中的脚本副本。
+
 依据：
 - https://letsencrypt.org/2026/01/15/6day-and-ip-general-availability
 - https://caddyserver.com/docs/caddyfile/directives/tls

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Install on the ECS host: install -m 700 scripts/update-ecs.sh /root/update-avalon.sh
-set -Eeuo pipefail
+set -euo pipefail
 umask 077
 
 fail() {
@@ -8,9 +8,17 @@ fail() {
   exit 1
 }
 
-trap 'printf "发布未完成（第 %s 行）。请查看上方错误，修复后重试。\n" "$LINENO" >&2' ERR
 env_tmp=''
-trap 'if [[ -n "$env_tmp" ]]; then rm -f -- "$env_tmp"; fi' EXIT
+cleanup() {
+  local status=$?
+  trap - EXIT
+  if [[ -n "$env_tmp" ]]; then rm -f -- "$env_tmp" || true; fi
+  if (( status != 0 )); then
+    printf '发布未完成（退出码 %s）。请查看上方错误，修复后重试。\n' "$status" >&2
+  fi
+  exit "$status"
+}
+trap cleanup EXIT
 
 cd "${AVALON_DIR:-/opt/avalon}"
 env_file=deploy/.env.ecs
@@ -35,9 +43,20 @@ base_dc() {
   docker compose --env-file "$env_file" -f deploy/compose.yaml "$@"
 }
 
-# Let Compose resolve dotenv quoting/interpolation and environment precedence.
-# Only APP_ORIGIN is emitted; other private settings stay out of the output.
-app_origin="$(base_dc config --environment | awk '/^APP_ORIGIN=/ {sub(/^APP_ORIGIN=/, ""); print}')"
+# Read the resolved YAML using the basic config command for Compose compatibility.
+# Consume the whole stream; only the first APP_ORIGIN reaches the script output.
+app_origin="$(base_dc config | awk '
+  $1 == "APP_ORIGIN:" && !found {
+    sub(/^[[:space:]]*APP_ORIGIN:[[:space:]]*/, "")
+    sub(/[[:space:]]*$/, "")
+    print
+    found = 1
+  }
+')"
+case "$app_origin" in
+  \"*\") app_origin="${app_origin#\"}"; app_origin="${app_origin%\"}" ;;
+  \'*\') app_origin="${app_origin#\'}"; app_origin="${app_origin%\'}" ;;
+esac
 if [[ "$app_origin" =~ ^https://([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
   IFS=. read -r -a octets <<< "${app_origin#https://}"
   for octet in "${octets[@]}"; do
