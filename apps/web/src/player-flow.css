@@ -58,6 +58,19 @@
 .report-flow-sheet .mission-report-footer { flex-shrink: 0; margin: 0 !important; padding-top: 8px !important; }
 .report-flow-sheet .report-captain-compact { margin: 0 0 8px; font: 600 13px/1.5 var(--sans); color: #ffd875; }
 .report-flow-sheet .mission-report-team-tray { display: block; padding: 10px !important; }
+/* Recover phone viewport space through spacing, preserving text and avatar sizes. */
+@media (max-width: 600px) {
+  .is-live-table .room-table-screen:has(> .game-play-priority) { gap: 4px !important; }
+  .is-live-table .table-game-screen.game-play-priority { gap: 4px !important; }
+  .is-live-table .game-play-priority .slim-game-status-bar { min-height: 36px !important; padding: 4px 10px !important; }
+  .is-live-table .game-play-priority .table-seats-grid.altar-dual-flank-arena { padding: 14px 8px 8px !important; }
+  .is-live-table .game-play-priority .scheme-a-flank { gap: 10px !important; }
+  .is-live-table .game-play-priority .table-action-dock,
+  .is-live-table .game-play-priority .table-action-dock .dock-panel { padding: 6px 8px !important; }
+}
+@media (max-width: 600px) and (display-mode: browser) {
+  main.app-shell.is-live-table:has(.game-play-priority) { padding-top: 4px !important; }
+}
 /* Account actions share the existing button typography and a compact header. */
 .account-flow .profile-bar { padding: 12px; margin-bottom: 10px; gap: 10px; }
 .account-flow .profile-heading { gap: 10px; }
