@@ -43,6 +43,9 @@ export function VoiceControls({
       <div className="voice-connecting-box">
         <span className="voice-status-dot connecting" />
         <span className="voice-connecting-label">连接中…</span>
+        <button type="button" className="voice-btn leave-voice-btn" onClick={onLeave} aria-label="取消语音连接" title="取消语音连接">
+          <span className="voice-icon-inner">✕</span>
+        </button>
       </div>
     );
   }
