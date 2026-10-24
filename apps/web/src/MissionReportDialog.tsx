@@ -44,33 +44,35 @@ export function MissionReportDialog({
         {/* 1. Hero Result Banner */}
         <div className={`mission-report-hero ${result.passed ? 'is-pass' : 'is-fail'}`}>
           <div className="mission-report-hero-glow" aria-hidden="true" />
-          <div className="mission-report-hero-emblem" aria-hidden="true">
-            {result.passed ? '🪷' : '🔥'}
-          </div>
-          <div className="mission-report-hero-content">
-            <span className="mission-report-kicker">
-              {result.passed ? 'MISSION SUCCESS · 取经护持' : 'MISSION FAILED · 妖孽作祟'}
-            </span>
-            <h3 className="mission-report-title">
-              {result.passed ? '✓ 护经成功 · 此难化解' : '× 妖魔作祟 · 任务失败'}
-            </h3>
-            <div className="mission-report-card-stats">
-              <span className="stat-card stat-success">
-                <span className="stat-icon" aria-hidden="true">🪷</span>
-                <span className="stat-label">护经牌 (成功)</span>
-                <strong className="stat-val">{result.successes} 张</strong>
-              </span>
-              <span className="stat-card stat-failure">
-                <span className="stat-icon" aria-hidden="true">🔥</span>
-                <span className="stat-label">作祟牌 (失败)</span>
-                <strong className="stat-val">{result.failures} 张</strong>
-              </span>
+          <div className="mission-report-outcome">
+            <div className="mission-report-hero-emblem" aria-hidden="true">
+              {result.passed ? '🪷' : '🔥'}
             </div>
-            <p className="mission-report-rule-note">
-              {twoFailsRequired ? '本难规则：需 2 张及以上失败牌方判定失败' : '本难规则：只要出现 1 张失败牌即判定失败'}
-              ，出牌过程始终匿名。
-            </p>
+            <div>
+              <span className="mission-report-kicker">
+                {result.passed ? 'MISSION SUCCESS · 取经护持' : 'MISSION FAILED · 妖孽作祟'}
+              </span>
+              <h3 className="mission-report-title">
+                {result.passed ? '✓ 护经成功 · 此难化解' : '× 妖魔作祟 · 任务失败'}
+              </h3>
+            </div>
           </div>
+          <div className="mission-report-card-stats">
+            <span className="stat-card stat-success">
+              <span className="stat-icon" aria-hidden="true">🪷</span>
+              <span className="stat-label">成功牌</span>
+              <strong className="stat-val">{result.successes} 张</strong>
+            </span>
+            <span className="stat-card stat-failure">
+              <span className="stat-icon" aria-hidden="true">🔥</span>
+              <span className="stat-label">失败牌</span>
+              <strong className="stat-val">{result.failures} 张</strong>
+            </span>
+          </div>
+          <p className="mission-report-rule-note">
+            {twoFailsRequired ? '本难规则：需 2 张及以上失败牌方判定失败' : '本难规则：只要出现 1 张失败牌即判定失败'}
+            ，出牌过程始终匿名。
+          </p>
         </div>
 
         {/* 2. Team Formation Details (Captain & Members) */}
@@ -116,11 +118,11 @@ export function MissionReportDialog({
             </div>
 
             {ballots ? (
-              <details className="report-vote-details flow-details"><summary>查看全员公开票型</summary>
+              <section className="report-vote-details" aria-label="全员公开票型">
                 <div className="mission-report-voters-grid" data-count={players.length} aria-label="全员公开票型">
                   {players.map(p => <div key={p.id} className="report-voter-item"><PlayerToken player={p} vote={ballots[p.id]} self={p.id === userId}/></div>)}
                 </div>
-              </details>
+              </section>
             ) : (
               <p className="mission-report-anon-hint">
                 {anonymous

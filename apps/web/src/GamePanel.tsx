@@ -1048,10 +1048,6 @@ export function GamePanel({
                       <div className="mission-card-inner">
                         <span className="mission-card-icon" aria-hidden="true">🪷</span>
                         <strong className="mission-card-title">任务成功</strong>
-                        <span className="mission-card-desc">诚心助道 · 愿力圆满</span>
-                        <span className="mission-card-status">
-                          {choice === true ? '✓ 已选中' : '点击选择'}
-                        </span>
                       </div>
                     </button>
 
@@ -1073,12 +1069,6 @@ export function GamePanel({
                       <div className="mission-card-inner">
                         <span className="mission-card-icon" aria-hidden="true">🔥</span>
                         <strong className="mission-card-title">任务失败</strong>
-                        <span className="mission-card-desc">
-                          {self?.team === 'blue' ? '蓝方阵营不可出失败牌' : '妖魔作祟 · 破坏任务'}
-                        </span>
-                        <span className="mission-card-status">
-                          {choice === false ? '✓ 已选中' : '点击选择'}
-                        </span>
                       </div>
                     </button>
                   </div>

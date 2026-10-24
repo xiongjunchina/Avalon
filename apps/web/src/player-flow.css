@@ -24,11 +24,11 @@
 /* Scroll details inside the sheet while keeping the current decision reachable. */
 .table-modal-sheet.flow-editor-sheet,
 .table-modal-sheet.vote-flow-sheet,
-.table-modal-sheet.report-flow-sheet { display: flex; flex-direction: column; overflow: hidden !important; max-height: calc(100dvh - 28px); gap: 10px; }
+.table-modal-sheet.mission-report-sheet.report-flow-sheet { display: flex; flex-direction: column; overflow: hidden !important; max-height: calc(100dvh - 28px); gap: 10px; }
 .table-modal-sheet.flow-editor-sheet { width: min(100%,570px); padding: 16px; }
 .flow-editor-sheet > .table-modal-head,
 .vote-flow-sheet > .table-modal-head,
-.report-flow-sheet > .table-modal-head { flex-shrink: 0; margin-bottom: 0 !important; }
+.mission-report-sheet.report-flow-sheet > .table-modal-head { flex-shrink: 0; margin-bottom: 0 !important; }
 .flow-editor-sheet > .table-modal-head strong { font-size: 18px !important; }
 .flow-scroll-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 2px; }
 .flow-fixed-actions { flex: 0 0 auto; padding-top: 8px; border-top: 1px solid #d4a35966; }
@@ -36,28 +36,49 @@
 .vote-flow-sheet .vote-rule-prompt { flex-shrink: 0; margin: 0 !important; }
 .vote-flow-sheet .vote-scroll-body { display: flex; flex-direction: column; gap: 10px; }
 .vote-flow-sheet .vote-scroll-body > * { flex-shrink: 0; margin: 0 !important; }
-.vote-flow-sheet.is-submitted .vote-progress-panel { order: -1; }
+.vote-flow-sheet .vote-actions-section { padding-top: 8px; border-top: 1px solid #d4a35966; }
 .vote-flow-sheet .vote-actions-form, .vote-flow-sheet .vote-choices-fieldset { margin: 0 !important; padding: 0 !important; }
 .vote-flow-sheet .dedicated-choices-grid { margin: 0 0 8px !important; gap: 8px !important; }
 .vote-flow-sheet .dedicated-submit-btn { margin: 0 !important; }
 .vote-flow-sheet .vote-submitted-card { margin: 0 !important; }
-.vote-flow-sheet .vote-history-toggle { padding: 10px !important; }
+.vote-flow-sheet .vote-history-drawer { max-height: none !important; overflow: visible !important; }
+.vote-flow-sheet .vote-history-heading { margin: 0 0 6px; color: #ffd875; font: 600 12px/1.4 var(--sans); }
 .vote-flow-sheet .imperial-expedition-panel { box-shadow: none !important; }
+.vote-flow-sheet .imperial-slots-section { padding: 8px 10px 10px !important; }
+.vote-flow-sheet .vote-member-card.imperial-ruyi-card { aspect-ratio: auto !important; height: 92px !important; }
 .game-play-priority .game-result-actions { margin: 0; padding: 12px; border-radius: 18px; background: #280e0df5; border: 1px solid #d4a359; }
 .game-result-actions .result-summary-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; }
 .game-result-actions h3 { font: 700 18px/1.4 var(--display); margin: 0 0 4px; }
 .game-result-actions p { font: 500 13px/1.5 var(--sans); margin: 0; }
 .game-result-actions .result-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .game-result-actions button { min-height: 44px; margin: 0; padding: 7px 12px; font: 700 14px/1.4 var(--sans); }
-.report-flow-sheet .mission-report-hero { display: flex; gap: 10px; padding: 12px !important; margin: 0 0 12px !important; }
-.report-flow-sheet .mission-report-hero-emblem { font-size: 32px !important; width: 38px !important; height: 42px !important; flex-shrink: 0; }
-.report-flow-sheet .mission-report-title { font-size: 20px !important; margin: 4px 0 8px !important; }
-.report-flow-sheet .mission-report-card-stats { gap: 8px; }
-.report-flow-sheet .stat-card { padding: 6px 8px !important; }
-.report-flow-sheet .stat-val { font-size: 20px !important; }
-.report-flow-sheet .mission-report-footer { flex-shrink: 0; margin: 0 !important; padding-top: 8px !important; }
-.report-flow-sheet .report-captain-compact { margin: 0 0 8px; font: 600 13px/1.5 var(--sans); color: #ffd875; }
-.report-flow-sheet .mission-report-team-tray { display: block; padding: 10px !important; }
+.mission-report-sheet.report-flow-sheet .mission-report-hero { padding: 10px !important; margin: 0 0 8px !important; }
+.mission-report-sheet.report-flow-sheet .mission-report-outcome { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; text-align: left; }
+.mission-report-sheet.report-flow-sheet .mission-report-hero-emblem { font-size: 24px !important; width: 28px; margin: 0; flex-shrink: 0; }
+.mission-report-sheet.report-flow-sheet .mission-report-kicker { font-size: 10px; letter-spacing: .6px; }
+.mission-report-sheet.report-flow-sheet .mission-report-title { font-size: 17px !important; line-height: 1.3; letter-spacing: .5px; margin: 2px 0 0 !important; }
+.mission-report-sheet.report-flow-sheet .mission-report-card-stats { gap: 6px; margin-bottom: 6px; }
+.mission-report-sheet.report-flow-sheet .stat-card { flex-direction: row; justify-content: center; gap: 4px; padding: 6px !important; }
+.mission-report-sheet.report-flow-sheet .stat-card .stat-icon { font-size: 14px; }
+.mission-report-sheet.report-flow-sheet .stat-val { font-size: 17px !important; white-space: nowrap; }
+.mission-report-sheet.report-flow-sheet .mission-report-rule-note { margin: 0; font-size: 11px; line-height: 1.4; }
+.mission-report-sheet.report-flow-sheet .mission-report-section { padding: 8px; margin-bottom: 8px; }
+.mission-report-sheet.report-flow-sheet .mission-report-section-title { font-size: 13px; margin-bottom: 6px; }
+.mission-report-sheet.report-flow-sheet .mission-report-section-title .emblem { width: 22px; height: 22px; }
+.mission-report-sheet.report-flow-sheet .mission-report-footer { flex-shrink: 0; margin: 0 !important; padding-top: 8px !important; }
+.mission-report-sheet.report-flow-sheet .report-captain-compact { margin: 0 0 6px; font: 600 12px/1.4 var(--sans); color: #ffd875; }
+.mission-report-sheet.report-flow-sheet .mission-report-team-tray { display: block; padding: 0 !important; }
+.mission-report-sheet.report-flow-sheet .report-party-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 6px; }
+.mission-report-sheet.report-flow-sheet .report-party-member-chip { min-width: 0; padding: 3px 6px 3px 3px; }
+.mission-report-sheet.report-flow-sheet .report-party-member-chip .token-portrait { width: 26px !important; height: 26px !important; }
+.mission-report-sheet.report-flow-sheet .report-party-member-chip .token-caption { min-width: 0; font: 600 12px/1.35 var(--sans) !important; }
+.mission-report-sheet.report-flow-sheet .report-party-member-chip .token-caption small { font: inherit; }
+.mission-report-sheet.report-flow-sheet .report-party-member-chip .token-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.game-play-priority .mission-card { min-height: 54px !important; margin: 0; padding: 8px !important; }
+.game-play-priority .mission-card-inner { flex-direction: row !important; justify-content: center; gap: 6px !important; }
+.game-play-priority .mission-card-icon { font-size: 20px !important; margin: 0 !important; }
+.game-play-priority .mission-vote-fieldset { gap: 6px !important; }
+.game-play-priority .mission-submit-btn { margin-top: 0 !important; }
 /* Recover phone viewport space through spacing, preserving text and avatar sizes. */
 @media (max-width: 600px) {
   .is-live-table .room-table-screen:has(> .game-play-priority) { gap: 4px !important; }

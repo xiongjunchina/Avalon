@@ -24,7 +24,6 @@ export function TeamVoteDialog({ game, players, anonymous, userId, serverTime, d
   const captainPlayer = players.find(p => p.id === game.captainId);
   const teamPlayers = round ? round.team.map(id => players.find(p => p.id === id)!).filter(Boolean) : [];
   const missionMeta = WUYUE_MISSIONS[game.mission - 1];
-  const [showHistory, setShowHistory] = useState(false);
   const completedRounds = game.rounds.filter(r => r.result);
 
   return (
@@ -111,57 +110,59 @@ export function TeamVoteDialog({ game, players, anonymous, userId, serverTime, d
             </div>
           </div>
         </section>
-        {/* 往难前情折叠抽屉 (Historical Missions Accordion) */}
-        {/* 3. 投票进度区 */}
-        <div className="vote-progress-panel">
-          <div className="vote-progress-head">
-            <span>投票进度</span>
-            <strong>{voted.length} / {players.length} 人已投</strong>
+        <div className="vote-actions-section">
+        {/* 2. 投票操作区 (Voting Buttons) */}
+        {submitted ? (
+          <div className="vote-submitted-card" role="status">
+            <div className="vote-submitted-icon" aria-hidden="true">📜</div>
+            <strong>法旨已落印，静候众仙表决</strong>
+            <p>全员完成表决后，将自动揭晓结果并返回法坛</p>
           </div>
-          <div className="live-voters dedicated-voters-list" aria-label="玩家投票状态">
-            {players.map(p => {
-              const done = voted.includes(p.id);
-              const ballot = !anonymous ? game.teamVote?.ballots?.[p.id] : undefined;
-              return (
-                <div key={p.id} className={`dedicated-voter-chip ${done ? 'is-done' : 'is-pending'} ${!done && late ? 'awaiting-vote' : ''}`}>
-                  <span className="voter-chip-seat">{p.seat}号</span>
-                  <span className="voter-chip-name">{p.nickname}</span>
-                  {ballot !== undefined ? (
-                    <span className={`voter-chip-ballot ${ballot === 'abstain' ? 'abstain' : ballot ? 'approve' : 'reject'}`}>
-                      {ballot === 'abstain' ? '− 旁观' : ballot ? '✓ 准行' : '× 封驳'}
-                    </span>
-                  ) : (
-                    <span className={`voter-chip-status ${done ? 'done' : 'pending'}`}>
-                      {done ? '已落印' : '待落印'}
-                    </span>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-          <p className="vote-waiting-footer" role="status">
-            {late && missing.length
-              ? `等待 ${missing.map(p => `${p.seat}号 ${p.nickname}`).join('、')} 投票`
-              : anonymous
-                ? '🔒 匿名表决：仅公开落印进度，不公开个人票型'
-                : '🔓 公开表决：提交后全员可见票型'}
-          </p>
-        </div>
-        <div className="vote-history-accordion">
-          <button
-            type="button"
-            className="vote-history-toggle"
-            onClick={() => setShowHistory(v => !v)}
-            aria-expanded={showHistory}
+        ) : (
+          <form
+            className="vote-actions-form"
+            onSubmit={e => {
+              e.preventDefault();
+              if (choice !== null) send({ type: 'teamVote', payload: { approve: choice } });
+            }}
           >
-            <span className="history-toggle-title">
-              📜 往难功过簿（{completedRounds.length ? `已历 ${completedRounds.length} 难` : '初难暂无记录'}）
-            </span>
-            <span className="history-toggle-arrow" aria-hidden="true">
-              {showHistory ? '▲ 收起' : '▼ 展开参详'}
-            </span>
-          </button>
-          {showHistory && (
+            <fieldset disabled={disabled} className="vote-choices-fieldset">
+              <legend className="sr-only">选择你的法旨，落印后不可更改</legend>
+              <div className="team-vote-choices dedicated-choices-grid">
+                {([
+                  { value: true, label: '准行', sub: '赞同出征', icon: '✓', style: 'approve' },
+                  { value: false, label: '封驳', sub: '异议阻滞', icon: '×', style: 'reject' },
+                  { value: 'abstain', label: '旁观', sub: '默许中立', icon: '−', style: 'abstain' },
+                ] as const).map(option => (
+                  <button
+                    type="button"
+                    key={option.label}
+                    className={`vote-option ${option.style} ${choice === option.value ? 'selected' : ''}`}
+                    onClick={() => setChoice(option.value)}
+                    aria-pressed={choice === option.value}
+                  >
+                    <span className="vote-option-icon" aria-hidden="true">{option.icon}</span>
+                    <strong className="vote-option-title">{option.label}</strong>
+                    <small className="vote-option-sub">{option.sub}</small>
+                  </button>
+                ))}
+              </div>
+              <button
+                type="submit"
+                className="vote-submit btn-dragon-cta dedicated-submit-btn"
+                disabled={choice === null}
+              >
+                <span className="btn-cloud-flourish left" aria-hidden="true"><CloudFlourish side="left" /></span>
+                <span className="btn-cta-text">📜 落印法旨 · 提交表决</span>
+                <span className="btn-cloud-flourish right" aria-hidden="true"><CloudFlourish side="right" /></span>
+              </button>
+            </fieldset>
+          </form>
+        )}
+
+        </div>
+        <section className="vote-history-section" aria-label="往难功过簿">
+          <h3 className="vote-history-heading">📜 往难功过簿（{completedRounds.length ? `已历 ${completedRounds.length} 难` : '初难暂无记录'}）</h3>
             <div className="vote-history-drawer">
               {completedRounds.length === 0 ? (
                 <p className="vote-history-empty">此乃西行首难，尚无往难战况记录，凭慧眼明断！</p>
@@ -217,61 +218,45 @@ export function TeamVoteDialog({ game, players, anonymous, userId, serverTime, d
                 })
               )}
             </div>
-          )}
-        </div>
-
-        </div>
-        <div className="vote-fixed-actions flow-fixed-actions">
-        {/* 2. 投票操作区 (Voting Buttons) */}
-        {submitted ? (
-          <div className="vote-submitted-card" role="status">
-            <div className="vote-submitted-icon" aria-hidden="true">📜</div>
-            <strong>法旨已落印，静候众仙表决</strong>
-            <p>全员完成表决后，将自动揭晓结果并返回法坛</p>
+        </section>
+        {/* 3. 投票进度区 */}
+        <div className="vote-progress-panel">
+          <div className="vote-progress-head">
+            <span>投票进度</span>
+            <strong>{voted.length} / {players.length} 人已投</strong>
           </div>
-        ) : (
-          <form
-            className="vote-actions-form"
-            onSubmit={e => {
-              e.preventDefault();
-              if (choice !== null) send({ type: 'teamVote', payload: { approve: choice } });
-            }}
-          >
-            <fieldset disabled={disabled} className="vote-choices-fieldset">
-              <legend className="sr-only">选择你的法旨，落印后不可更改</legend>
-              <div className="team-vote-choices dedicated-choices-grid">
-                {([
-                  { value: true, label: '准行', sub: '赞同出征', icon: '✓', style: 'approve' },
-                  { value: false, label: '封驳', sub: '异议阻滞', icon: '×', style: 'reject' },
-                  { value: 'abstain', label: '旁观', sub: '默许中立', icon: '−', style: 'abstain' },
-                ] as const).map(option => (
-                  <button
-                    type="button"
-                    key={option.label}
-                    className={`vote-option ${option.style} ${choice === option.value ? 'selected' : ''}`}
-                    onClick={() => setChoice(option.value)}
-                    aria-pressed={choice === option.value}
-                  >
-                    <span className="vote-option-icon" aria-hidden="true">{option.icon}</span>
-                    <strong className="vote-option-title">{option.label}</strong>
-                    <small className="vote-option-sub">{option.sub}</small>
-                  </button>
-                ))}
-              </div>
-              <button
-                type="submit"
-                className="vote-submit btn-dragon-cta dedicated-submit-btn"
-                disabled={choice === null}
-              >
-                <span className="btn-cloud-flourish left" aria-hidden="true"><CloudFlourish side="left" /></span>
-                <span className="btn-cta-text">📜 落印法旨 · 提交表决</span>
-                <span className="btn-cloud-flourish right" aria-hidden="true"><CloudFlourish side="right" /></span>
-              </button>
-            </fieldset>
-          </form>
-        )}
+          <div className="live-voters dedicated-voters-list" aria-label="玩家投票状态">
+            {players.map(p => {
+              const done = voted.includes(p.id);
+              const ballot = !anonymous ? game.teamVote?.ballots?.[p.id] : undefined;
+              return (
+                <div key={p.id} className={`dedicated-voter-chip ${done ? 'is-done' : 'is-pending'} ${!done && late ? 'awaiting-vote' : ''}`}>
+                  <span className="voter-chip-seat">{p.seat}号</span>
+                  <span className="voter-chip-name">{p.nickname}</span>
+                  {ballot !== undefined ? (
+                    <span className={`voter-chip-ballot ${ballot === 'abstain' ? 'abstain' : ballot ? 'approve' : 'reject'}`}>
+                      {ballot === 'abstain' ? '− 旁观' : ballot ? '✓ 准行' : '× 封驳'}
+                    </span>
+                  ) : (
+                    <span className={`voter-chip-status ${done ? 'done' : 'pending'}`}>
+                      {done ? '已落印' : '待落印'}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          <p className="vote-waiting-footer" role="status">
+            {late && missing.length
+              ? `等待 ${missing.map(p => `${p.seat}号 ${p.nickname}`).join('、')} 投票`
+              : anonymous
+                ? '🔒 匿名表决：仅公开落印进度，不公开个人票型'
+                : '🔓 公开表决：提交后全员可见票型'}
+          </p>
+        </div>
 
         </div>
+
       </section>
     </Modal>
   );
