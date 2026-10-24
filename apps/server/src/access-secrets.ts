@@ -14,4 +14,3 @@ export async function verifySecret(secret: string, encoded?: string | null): Pro
   const key = await derive(secret, salt, 32) as Buffer;
   return timingSafeEqual(key, Buffer.from(hex, 'hex'));
 }
-export const newRecoveryCode = () => randomBytes(15).toString('base64url');

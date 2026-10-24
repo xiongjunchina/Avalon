@@ -87,10 +87,10 @@ export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout 
       add('panel', 'login-panel', web.authMode === 'switch' ? '仙友归位' : '请留取经尊号', pad, y, full, panelHeight);
       add('tab', 'auth:create', '新入仙途', pad + 14, y + 50, (full - 36) / 2, 40, { selected: web.authMode !== 'switch' });
       add('tab', 'auth:switch', '仙友归位', w / 2 + 4, y + 50, (full - 36) / 2, 40, { selected: web.authMode === 'switch' });
-      add('label', 'auth-help', web.authMode === 'switch' ? '输入6位仙友码，下一步验证恢复码' : '微信验证身份，取名踏入取经大道', pad + 16, y + 105, full - 32, 42, { muted: true });
+      add('label', 'auth-help', web.authMode === 'switch' ? '输入6位仙友码，找回原账号和功果簿' : '微信验证身份，取名踏入取经大道', pad + 16, y + 105, full - 32, 42, { muted: true });
       add('input', web.authMode === 'switch' ? 'input:switch' : 'input:nickname', web.authMode === 'switch' ? web.switchCode || '6位专属仙友码' : web.nickname || '你的尊号（昵称）', pad + 16, y + 158, full - 32, 48);
       add('label', 'auth-note', '仙友码永久关联个人战绩与复盘', pad + 16, y + 218, full - 32, 28, { muted: true });
-      add('button', 'login', web.authMode === 'switch' ? '验证恢复码并归位' : '踏入取经大道', pad + 16, y + 258, full - 32, 48, { primary: true });
+      add('button', 'login', web.authMode === 'switch' ? '确认仙友码并归位' : '踏入取经大道', pad + 16, y + 258, full - 32, 48, { primary: true });
       add('button', 'practice', '幻境单人试玩', pad, y + panelHeight + 18, (full - 10) / 2, 44);
       add('button', 'guide', '嘻游识妖谱', w / 2 + 5, y + panelHeight + 18, (full - 10) / 2, 44);
       for (const [index, account] of (web.knownAccounts ?? []).entries()) add('button', 'known:' + account.playerCode, account.nickname + ' · #' + account.playerCode, pad, y + panelHeight + 74 + index * 48, full, 40);

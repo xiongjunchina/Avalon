@@ -55,10 +55,10 @@ test('reserved codes reject collisions and concurrent assignment; unused old cod
  assert.equal((await m.availability(previous)).status,'available');assert.equal((await m.audit(changed.user.id))[0].retained,false);
  assert.equal((await s.authenticate(changed.token))!.id,changed.user.id);assert.equal((await s.authenticate(changed.token))!.playerCode,code);
  await assert.rejects(m.assignCode(changed.user.id,previous,previous),/PLAYER_CODE_CHANGED/);
- await assert.rejects(s.switchAccount(code),/RECOVERY_INVALID/);assert.equal((await s.switchAccount(code,changed.recoveryCode)).user.id,changed.user.id);
+ assert.equal((await s.switchAccount(code)).user.id,changed.user.id);
  const second=owner===a.user.id?b:a;await m.assignCode(second.user.id,previous,second.user.playerCode!);
- await assert.rejects(s.switchAccount(previous,changed.recoveryCode,changed.user.id),/ACCOUNT_CODE_CHANGED/);
- assert.equal((await s.switchAccount(previous,second.recoveryCode)).user.id,second.user.id);
+ await assert.rejects(s.switchAccount(previous,changed.user.id),/ACCOUNT_CODE_CHANGED/);
+ assert.equal((await s.switchAccount(previous)).user.id,second.user.id);
 });
 
 test('any started game retains its old code, active game blocks renumbering and history stays on internal user ID',async t=>{
@@ -71,7 +71,7 @@ test('any started game retains its old code, active game blocks renumbering and 
  await m.assignCode(p.user.id,old,code);assert.equal((await s.authenticate(p.token))!.playerCode,old);assert.equal((await m.audit(p.user.id)).length,2);
 });
 
-test('admin endpoints require configured key, validate input, return no hashes and support recovery for legacy accounts',async t=>{
+test('admin endpoints require configured key, validate input and code-only switching restores legacy accounts',async t=>{
  const f=await service(t),admin=new AdminService(f.store),key=process.env.ADMIN_KEY!;
  delete process.env.ADMIN_KEY;assert.equal(admin.verifyKey(key),false);process.env.ADMIN_KEY=key;
  assert.equal(admin.verifyKey(key),true);assert.equal(admin.verifyKey(key.toUpperCase()),false);assert.equal(admin.verifyKey(),false);
@@ -80,15 +80,15 @@ test('admin endpoints require configured key, validate input, return no hashes a
  const create=await f.app.inject({method:'POST',url:'/api/admin/dedicated-rooms',headers:ah,payload:{code:'777777',name:'内测',managerId:p.user.id,settings:defaultSettings,password:'safe'}});assert.equal(create.statusCode,200,create.body);
  const list=await f.app.inject({url:'/api/admin/dedicated-rooms',headers:ah});assert.equal(list.json().rooms.length,1);assert.ok(!list.body.includes('hash'));assert.ok(!list.body.includes('safe'));
  assert.equal((await f.app.inject({method:'POST',url:'/api/admin/player-codes',headers:ah,payload:{code:'012345'}})).statusCode,400);
- const guest=await f.app.inject({method:'POST',url:'/api/sessions/guest',headers,payload:{nickname:'新朋友'}});assert.equal(typeof guest.json().recoveryCode,'string');assert.ok(!guest.body.includes('recovery_hash'));
- const existing=await f.app.inject({method:'POST',url:'/api/sessions/guest',headers:{...headers,...cookie(p.token)},payload:{nickname:'原设备'}});assert.equal(existing.json().recoveryCode,undefined);
- await f.pool.query('UPDATE users SET recovery_hash=NULL WHERE id=$1',[p.user.id]);
- const missing=await f.app.inject({method:'POST',url:'/api/sessions/switch',headers,payload:{playerCode:p.user.playerCode}});assert.equal(missing.json().error,'RECOVERY_REQUIRED');
- const reset=await f.app.inject({method:'POST',url:`/api/admin/users/${p.user.id}/recovery-code`,headers:ah,payload:{}});assert.equal(reset.statusCode,200);
- const recovered=await f.app.inject({method:'POST',url:'/api/sessions/switch',headers,payload:{playerCode:p.user.playerCode,recoveryCode:reset.json().recoveryCode,expectedUserId:p.user.id}});assert.equal(recovered.statusCode,200,recovered.body);
- const bad=await f.app.inject({method:'POST',url:'/api/sessions/switch',headers,payload:{playerCode:p.user.playerCode,recoveryCode:p.recoveryCode}});assert.equal(bad.statusCode,403);
- const fresh=await f.app.inject({method:'POST',url:'/api/me/recovery-code',headers:{...headers,...cookie(p.token)},payload:{}});assert.equal(fresh.statusCode,200);
- await assert.rejects(f.store.switchAccount(p.user.playerCode!,reset.json().recoveryCode),/RECOVERY_INVALID/);
+ const guest=await f.app.inject({method:'POST',url:'/api/sessions/guest',headers,payload:{nickname:'新朋友'}});assert.equal(guest.json().recoveryCode,undefined);assert.ok(!guest.body.includes('recovery_hash'));
+ await f.pool.query("UPDATE users SET recovery_hash='obsolete-unneeded-value' WHERE id=$1",[p.user.id]);
+ const resumed=await f.app.inject({method:'POST',url:'/api/sessions/switch',headers,payload:{playerCode:p.user.playerCode}});assert.equal(resumed.statusCode,200,resumed.body);assert.equal(resumed.json().user.id,p.user.id);
+ const loginCookie=String(resumed.headers['set-cookie']);assert.ok(loginCookie.includes('HttpOnly'));
+ const restored=await f.app.inject({url:'/api/me',headers:{cookie:loginCookie.split(';')[0]}});assert.equal(restored.json().user.id,p.user.id);assert.equal(restored.json().user.nickname,p.user.nickname);
+ const stale=await f.app.inject({method:'POST',url:'/api/sessions/switch',headers,payload:{playerCode:p.user.playerCode,expectedUserId:randomUUID()}});assert.equal(stale.statusCode,409);assert.equal(stale.json().error,'ACCOUNT_CODE_CHANGED');
+ const cached=await f.app.inject({method:'POST',url:'/api/sessions/switch',headers,payload:{playerCode:p.user.playerCode,recoveryCode:'obsolete-value'}});assert.equal(cached.statusCode,200);
+ await f.pool.query('INSERT INTO user_memberships(user_id,is_banned) VALUES($1,true)',[p.user.id]);
+ const banned=await f.app.inject({method:'POST',url:'/api/sessions/switch',headers,payload:{playerCode:p.user.playerCode}});assert.equal(banned.statusCode,403);assert.equal(banned.json().error,'USER_BANNED');
 });
 
 test('HTTP room access validates passwords and administrator renumbering returns explicit collision errors',async t=>{

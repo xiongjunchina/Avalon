@@ -1,5 +1,5 @@
 import { createHash, randomBytes, randomUUID, randomInt } from 'node:crypto';
-import { hashSecret, verifySecret, newRecoveryCode } from './access-secrets.js';
+import { hashSecret, verifySecret } from './access-secrets.js';
 import { allocatePlayerCode } from './player-codes.js';
 import { createGame, transition, projectGame, isEnded, finish, RuleError, ROLE_CONFIG, type GameState } from '@avalon/game-core';
 import { isDeepStrictEqual } from 'node:util';
@@ -81,16 +81,15 @@ export class PostgresStore {
   }
   async health() { return this.tx(async c => { await c.query('SELECT 1'); }); }
   async createGuest(nickname: string) {
-    const recoveryCode = newRecoveryCode(), recoveryHash = await hashSecret(recoveryCode);
     const user: User = { id: randomUUID(), nickname, avatar:'leaf' }, token = randomBytes(32).toString('base64url');
     return this.tx(async c => {
       user.playerCode = await allocatePlayerCode(c);
-      await c.query('INSERT INTO users(id,nickname,created_at,player_code,recovery_hash) VALUES($1,$2,$3,$4,$5)', [user.id,nickname,this.date(),user.playerCode,recoveryHash]);
+      await c.query('INSERT INTO users(id,nickname,created_at,player_code) VALUES($1,$2,$3,$4)', [user.id,nickname,this.date(),user.playerCode]);
       await c.query('INSERT INTO sessions(token_hash,user_id,expires_at) VALUES($1,$2,$3)', [digest(token),user.id,new Date(this.now()+SESSION_MS)]);
-      return { user, token, recoveryCode };
+      return { user, token };
     });
   }
-  async switchAccount(playerCode: string, recoveryCode?: string, expectedUserId?: string, currentUserId?: string): Promise<{ user: User; token: string }> {
+  async switchAccount(playerCode: string, expectedUserId?: string): Promise<{ user: User; token: string }> {
     const token = randomBytes(32).toString('base64url');
     return this.tx(async c => {
       const u = (await c.query<{
@@ -99,11 +98,11 @@ export class PostgresStore {
         avatar: User['avatar'];
         avatar_url?: string | null;
         wechat_avatar_url?: string | null;
-        player_code: string; recovery_hash: string | null;
+        player_code: string;
         is_banned?: boolean | null;
         vip_until?: Date | null;
       }>(
-        `SELECT u.id, u.nickname, u.avatar, u.avatar_url, u.wechat_avatar_url, u.player_code, u.recovery_hash,
+        `SELECT u.id, u.nickname, u.avatar, u.avatar_url, u.wechat_avatar_url, u.player_code,
                 m.is_banned, m.vip_until
          FROM users u
          LEFT JOIN user_memberships m ON m.user_id = u.id
@@ -113,7 +112,6 @@ export class PostgresStore {
 
       if (!u) throw new DomainError('USER_NOT_FOUND', 404);
       if (expectedUserId && expectedUserId !== u.id) throw new DomainError('ACCOUNT_CODE_CHANGED', 409);
-      if (currentUserId !== u.id && !await verifySecret(recoveryCode ?? '', u.recovery_hash)) throw new DomainError(u.recovery_hash ? 'RECOVERY_INVALID' : 'RECOVERY_REQUIRED', 403);
       if (u.is_banned) throw new DomainError('USER_BANNED', 403);
 
       await c.query('INSERT INTO sessions(token_hash, user_id, expires_at) VALUES($1, $2, $3)', [
@@ -281,14 +279,6 @@ export class PostgresStore {
       if (r.dedicated_room_id) await c.query('UPDATE dedicated_rooms SET password_hash=$2,updated_at=$3 WHERE id=$1',[r.dedicated_room_id,encoded,this.date()]);
       return this.view(c,await this.lock(c,roomId),await this.members(c,roomId),userId);
     });
-  }
-  async resetRecoveryCode(userId: string) {
-    const recoveryCode = newRecoveryCode(), encoded = await hashSecret(recoveryCode);
-    await this.tx(async c => {
-      const result = await c.query('UPDATE users SET recovery_hash=$2 WHERE id=$1',[userId,encoded]);
-      if (!result.rowCount) throw new DomainError('USER_NOT_FOUND',404);
-    });
-    return { recoveryCode };
   }
   private async addMember(c: PoolClient, roomId: string, userId: string, seat: number) {
     await c.query(`INSERT INTO room_members(room_id,user_id,seat,joined_at,last_seen_at,disconnected_at) VALUES($1,$2,$3,$4,$4,$4)`, [roomId,userId,seat,this.date()]);

@@ -104,7 +104,7 @@ function App() {
   const [entryIntent, setEntryIntent] = useState<EntryIntent | null>(null);
   const [inviteKey, setInviteKey] = useState(() => new URLSearchParams(window.location.search).get('invite') ?? '');
   const [knownAccounts, setKnownAccounts] = useState<KnownAccount[]>(knownAccountsList);
-  const saveKnownAccount = (u: User, recoveryCode?: string) => setKnownAccounts(rememberAccount(u,recoveryCode));
+  const saveKnownAccount = (u: User) => setKnownAccounts(rememberAccount(u));
   useEffect(()=>{if(user)setKnownAccounts(rememberAccount(user));},[user?.id,user?.playerCode]);
   const [creationAccess,setCreationAccess]=useState<CreationAccess>({});
   const [joinPassword,setJoinPassword]=useState('');
@@ -1726,9 +1726,9 @@ function App() {
       )}
       {!user && entryIntent && <EntryDialog intent={entryIntent} knownAccounts={knownAccounts}
         onClose={() => setEntryIntent(null)}
-        onAuthenticated={(authenticatedUser, existingRoomId, recoveryCode) => {
+        onAuthenticated={(authenticatedUser, existingRoomId) => {
           setUser(authenticatedUser);
-          saveKnownAccount(authenticatedUser,recoveryCode);
+          saveKnownAccount(authenticatedUser);
           setEntryIntent(null);
           setRoomId(existingRoomId);
           if (existingRoomId) {

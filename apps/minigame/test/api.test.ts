@@ -50,9 +50,9 @@ test('account switch replaces the mini-game bearer token', async () => {
   const stored = new Map<string, unknown>([['avalon_minigame_session', 'old-token']]);
   const platform = {
     get: (key: string) => stored.get(key), set: (key: string, value: unknown) => stored.set(key, value),
-    request: (options: WxRequestOptions) => { assert.deepEqual(options.data,{playerCode:'123456',recoveryCode:'private-proof',expectedUserId:'new-user'});options.success({ statusCode: 200, data: { user: { id: 'new-user' }, token: 'new-token' } }); },
+    request: (options: WxRequestOptions) => { assert.deepEqual(options.data,{playerCode:'123456',expectedUserId:'new-user'});options.success({ statusCode: 200, data: { user: { id: 'new-user' }, token: 'new-token' } }); },
   } as unknown as WechatPlatform;
   const api = new MiniGameApi(platform, 'https://avalon.example:8443');
-  assert.equal((await api.switchAccount('123456','private-proof','new-user')).id, 'new-user');
+  assert.equal((await api.switchAccount('123456','new-user')).id, 'new-user');
   assert.equal(stored.get('avalon_minigame_session'), 'new-token');
 });

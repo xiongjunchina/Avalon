@@ -119,18 +119,17 @@ export async function buildApp(options: { store: PostgresStore; origin?: string;
     if (!forceNew) {
       try{return {user:await authenticate(req,reply)};}catch(err){if(!(err instanceof DomainError)||err.code!=='UNAUTHENTICATED')throw err;}
     }
-    const {user,token,recoveryCode}=await store.createGuest(nickname); setSession(reply,token);return {user,recoveryCode};
+    const {user,token}=await store.createGuest(nickname); setSession(reply,token);return {user};
   });
   app.post('/api/sessions/refresh',async(req,reply)=>({user:await authenticate(req,reply)}));
   app.post('/api/sessions/switch', { config: { rateLimit: { max: 30, timeWindow: '1 minute' } } }, async (req, reply) => {
     const miniGameToken = bearerToken(req.headers.authorization);
-    let currentUserId: string | undefined;
-    try { currentUserId = (await authenticate(req)).id; }
-    catch (err) { if (miniGameToken || !(err instanceof DomainError) || err.code !== 'UNAUTHENTICATED') throw err; }
-    const { playerCode, recoveryCode, expectedUserId } = z.object({
+    if(miniGameToken)await authenticate(req,reply);
+    // Tolerate the obsolete recovery field from cached clients without requiring or using it.
+    const { playerCode, expectedUserId } = z.object({
       playerCode: specialCodeSchema, recoveryCode: z.string().min(1).max(128).optional(), expectedUserId: z.string().uuid().optional(),
     }).strict().parse(req.body);
-    const { user, token } = await store.switchAccount(playerCode, recoveryCode, expectedUserId, currentUserId);
+    const { user, token } = await store.switchAccount(playerCode, expectedUserId);
     setSession(reply, token);
     return miniGameToken ? { user, token } : { user };
   });
@@ -168,7 +167,6 @@ export async function buildApp(options: { store: PostgresStore; origin?: string;
   app.post('/api/me/presets',async(req,reply)=>({preset:await accounts.savePreset((await authenticate(req,reply)).id,presetSchema.parse(req.body))}));
   app.delete<{Params:{id:string}}>('/api/me/presets/:id',async(req,reply)=>accounts.deletePreset((await authenticate(req,reply)).id,z.string().uuid().parse(req.params.id)));
   app.get('/api/me/dedicated-rooms',async(req,reply)=>({rooms:await special.rooms((await authenticate(req,reply)).id)}));
-  app.post('/api/me/recovery-code',{config:{rateLimit:{max:5,timeWindow:'1 minute'}}},async(req,reply)=>store.resetRecoveryCode((await authenticate(req,reply)).id));
   const roomAccess = z.object({settings:settingsSchema.optional(),dedicatedRoomId:z.string().uuid().optional(),password:roomPasswordSchema.optional()}).strict();
   const createRoomBody = z.union([settingsSchema,roomAccess]).optional();
   app.post('/api/rooms',async(req,reply)=>{
@@ -384,7 +382,6 @@ export async function buildApp(options: { store: PostgresStore; origin?: string;
     return result;
   });
   app.get<{Params:{id:string}}>('/api/admin/users/:id/player-code-history',async(req,reply)=>{requireAdmin(req,reply);return {history:await special.audit(z.string().uuid().parse(req.params.id))};});
-  app.post<{Params:{id:string}}>('/api/admin/users/:id/recovery-code',async(req,reply)=>{requireAdmin(req,reply);return store.resetRecoveryCode(z.string().uuid().parse(req.params.id));});
   app.get('/api/admin/users', async (req, reply) => {
     requireAdmin(req, reply);
     const { query, limit, offset } = req.query as any;

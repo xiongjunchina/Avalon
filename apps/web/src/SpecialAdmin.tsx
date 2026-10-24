@@ -70,7 +70,7 @@ export function SpecialAdmin({request,refreshToken=0}:{request:AdminApi;refreshT
 
 export function PlayerCodeEditor({user,request,onClose,onSaved}:{user:AdminUserSummary;request:AdminApi;onClose:()=>void;onSaved:()=>void}) {
   const [currentCode,setCurrentCode]=useState(user.playerCode);
-  const [code,setCode]=useState(user.playerCode),[check,setCheck]=useState<PlayerCodeAvailability|null>(null),[error,setError]=useState(''),[notice,setNotice]=useState(''),[busy,setBusy]=useState(false),[recovery,setRecovery]=useState('');
+  const [code,setCode]=useState(user.playerCode),[check,setCheck]=useState<PlayerCodeAvailability|null>(null),[error,setError]=useState(''),[notice,setNotice]=useState(''),[busy,setBusy]=useState(false);
   const [history,setHistory]=useState<Array<{oldCode:string;newCode:string;retained:boolean;createdAt:string}>>([]);
   useEffect(()=>{let active=true;setCheck(null);if(!/^[1-9]\d{5}$/.test(code))return;const t=setTimeout(()=>void request<PlayerCodeAvailability>(`/player-codes/check?code=${code}&userId=${user.id}`).then(r=>{if(active)setCheck(r);}).catch(e=>{if(active)setError(message(e));}),250);return()=>{active=false;clearTimeout(t);};},[code,user.id,currentCode]);
   useEffect(()=>{void request<{history:typeof history}>(`/users/${user.id}/player-code-history`).then(r=>setHistory(r.history)).catch(e=>setError(message(e)));},[user.id,currentCode]);
@@ -84,10 +84,6 @@ export function PlayerCodeEditor({user,request,onClose,onSaved}:{user:AdminUserS
       <button disabled={busy||!available} className="admin-primary-btn">保存仙友码</button>
     </form>
     <details><summary>改号记录</summary>{history.length?history.map((h,i)=><p key={i}>{h.oldCode} → {h.newCode} · 旧号{h.retained?'保留':'释放'} · {new Date(h.createdAt).toLocaleString()}</p>):<p>尚无改号记录。</p>}</details>
-    <details><summary>账号恢复码重置</summary><p className="hint">用于协助失去原设备的玩家。重置后旧恢复码失效；请私下交付给本人。</p>
-      <button type="button" disabled={busy} className="admin-action-btn" onClick={()=>void(async()=>{if(!confirm('确认重置此玩家的恢复码？旧恢复码将失效。'))return;setBusy(true);try{const r=await request<{recoveryCode:string}>(`/users/${user.id}/recovery-code`,{});setRecovery(r.recoveryCode);}catch(e){setError(message(e));}finally{setBusy(false);}})()}>重置恢复码</button>
-      {recovery&&<label className="admin-input-label">仅本次显示，请私下保存<input readOnly value={recovery} autoComplete="off"/></label>}
-    </details>
     {error&&<p className="error" role="alert">{error}</p>}{notice&&<p className="notice" role="status">{notice}</p>}
   </section></Modal>;
 }

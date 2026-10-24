@@ -9,7 +9,6 @@ export const errors: Record<string, string> = {
   ROOM_CODE_TAKEN: '房号已被占用，请更换。', DEDICATED_ROOM_ACTIVE: '专属房已开桌，请关闭本次房间后修改配置。',
   PLAYER_CODE_TAKEN: '该仙友码已被占用。', PLAYER_CODE_RETIRED: '该号码关联历史对局，已保留，不能重新分配。',
   PLAYER_CODE_CHANGED: '玩家号码已被更新，请刷新后重试。', ACCOUNT_CODE_CHANGED: '原仙友码已变更，已停止快捷切换，请使用新仙友码。',
-  RECOVERY_INVALID: '恢复码不正确，请核对后重试。', RECOVERY_REQUIRED: '请在原设备个人中心生成恢复码，或联系管理员重置。',
   USER_IN_ACTIVE_GAME: '玩家正在对局中，请结束本局后改号。', MANAGES_DEDICATED_ROOMS: '该玩家管理专属房，请先转移房主管理权。',
   NOT_READY: '需要人数到齐且所有人准备后，房主才能开局。',
   GAME_IN_PROGRESS: '本局已开始，人数、设置与席位已锁定。请先完成本局，或请房主结束游戏。',

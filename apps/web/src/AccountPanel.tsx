@@ -1,4 +1,3 @@
-import { RecoveryAccess } from './RecoveryAccess';
 import { BattleRound } from './BattleRound';
 import { useEffect, useRef, useState } from 'react';
 import type { Avatar, User, Statistics, Score, HistoryPage, GameSummary, Replay, GameResult } from '@avalon/contracts';
@@ -205,7 +204,7 @@ function ProfileEditor({user,onUser}:{user:User;onUser:(u:User)=>void}) {
       <label htmlFor="profile-avatar">预置头像（未设置微信/自定义头像时生效）</label><select id="profile-avatar" value={avatar} onChange={e=>{setAvatar(e.target.value as Avatar);setSaved(false);}}>{Object.entries(avatarNames).map(([id,a])=><option value={id} key={id}>{a.symbol} {a.name}</option>)}</select>
       <button disabled={!nickname.trim()}>保存资料</button>
     </fieldset>
-    <p className="hint">旧对局保留当时昵称。浏览器身份连续 30 天未使用会失效；清除数据或换设备无法找回，无密码或恢复码。</p>
+    <p className="hint">旧对局保留当时昵称。浏览器登录状态连续 30 天未使用会失效；换设备或清除浏览器数据后，可输入当前仙友码找回原账号。</p>
     {error&&<p role="alert" className="error">{error}</p>}{saved&&<p role="status" className="notice">资料已保存，旧局记录保持原样。</p>}
   </form></details>;
 }
@@ -254,7 +253,7 @@ export function AccountPanel({user,onUser,initialReplay,onBack,onLogout}:{user:U
   const avatar=avatarNames[user.avatar??'leaf'];
   if(replay)return <ReplayPanel key={replay} id={replay} onBack={()=>{setReplay(null);if(initialReplay)setTab('history');}}/>;
   return <section className="panel account"><div className="account-banner" aria-hidden="true"><span>取经功果</span></div><div className="section-head profile-bar"><div className="profile-heading"><span className="avatar" aria-label={`${avatar.name}头像`}><PlayerAvatar avatar={user.avatar??'leaf'} avatarUrl={user.avatarUrl} wechatAvatarUrl={user.wechatAvatarUrl} fallbackKind="leaf"/></span><div><p className="eyebrow">嘻游 · 真假猴王 / 个人中心</p><div style={{display:'flex',alignItems:'center',gap:'8px',flexWrap:'wrap'}}><h1 style={{margin:0}}>{user.nickname}</h1>{user.playerCode&&<button type="button" onClick={()=>{navigator.clipboard.writeText(user.playerCode||'');alert(`仙友码【${user.playerCode}】已复制！在换设备或换号登录时输入此码即可切回查看历史战绩。`);}} title="点击复制仙友码" style={{width:'auto',minHeight:'unset',margin:0,padding:'2px 8px',fontSize:'12px',fontWeight:700,color:'#ffd875',background:'rgba(255,216,117,0.12)',border:'1px solid rgba(255,216,117,0.3)',borderRadius:'4px',cursor:'pointer',fontFamily:'monospace'}}>#{user.playerCode} 📋复制</button>}</div><p style={{margin:'4px 0 0',fontSize:'11.5px',color:'#cbd5e1'}}>专属仙友码全局唯一 · 微信小程序静默对应 · 换号凭此码随时找回战绩</p></div></div><div style={{display:'flex',gap:6}}>{onLogout&&<button className="secondary compact-button" onClick={onLogout} style={{color:'#fca5a5'}}>🚪 更换身份</button>}<button className="secondary compact-button" onClick={onBack}>返回原页面</button></div></div>
-    <ProfileEditor user={user} onUser={onUser}/><RecoveryAccess user={user}/>
+    <ProfileEditor user={user} onUser={onUser}/>
     <details className="account-sound-settings"><summary>声音设置</summary><SoundControls /></details>
     <nav className="account-tabs" aria-label="个人中心栏目">{([['stats','我的战绩'],['history','历史对局'],['favorites','我的收藏'],['presets','常用设置']] as const).map(([id,label])=><button className="secondary" key={id} aria-current={id===tab?'page':undefined} onClick={()=>setTab(id)}>{label}</button>)}</nav>
     {tab==='stats'?<StatisticsPanel/>:tab==='presets'?<PresetsPanel/>:<HistoryPanel key={tab} favorites={tab==='favorites'} onReplay={setReplay}/>}
