@@ -81,8 +81,11 @@
 .game-play-priority .mission-submit-btn { margin-top: 0 !important; }
 /* Recover phone viewport space through spacing, preserving text and avatar sizes. */
 @media (max-width: 600px) {
-  .is-live-table .room-table-screen:has(> .game-play-priority) { gap: 4px !important; }
-  .is-live-table .table-game-screen.game-play-priority { gap: 4px !important; }
+  .is-live-table .room-table-screen { gap: 4px !important; }
+  .is-live-table :is(.table-game-screen.game-play-priority, .waiting-table-body.waiting-play-priority) { gap: 4px !important; }
+  .is-live-table .waiting-play-priority .scheme3-ink-ribbon { min-height: 36px !important; }
+  .is-live-table .waiting-play-priority .table-seats-grid { margin: 0 !important; row-gap: 12px !important; }
+  .is-live-table .waiting-play-priority .waiting-dock { padding: 6px 8px !important; }
   .is-live-table .game-play-priority .slim-game-status-bar { min-height: 36px !important; padding: 4px 10px !important; }
   .is-live-table .game-play-priority .table-seats-grid.altar-dual-flank-arena { padding: 14px 8px 8px !important; }
   .is-live-table .game-play-priority .scheme-a-flank { gap: 10px !important; }
@@ -90,7 +93,7 @@
   .is-live-table .game-play-priority .table-action-dock .dock-panel { padding: 6px 8px !important; }
 }
 @media (max-width: 600px) and (display-mode: browser) {
-  main.app-shell.is-live-table:has(.game-play-priority) { padding-top: 4px !important; }
+  main.app-shell.is-live-table { padding-top: 4px !important; }
 }
 /* Account actions share the existing button typography and a compact header. */
 .account-flow .profile-bar { padding: 12px; margin-bottom: 10px; gap: 10px; }
