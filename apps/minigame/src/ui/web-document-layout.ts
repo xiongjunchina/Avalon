@@ -1,6 +1,6 @@
 import type { GameView, Player, Role, Score } from '@avalon/contracts';
 import { assignFemaleDemons, assignLoyalGuardians, failuresRequiredFor, ROLE_CONFIG, teamOf } from '@avalon/game-core';
-import { ALL_GALLERY_ROLES, formatRoleName, getRoleGalleryItem, roleMottos, roleNames, roleTitles, WUYUE_MISSIONS } from '../../../web/src/roles.js';
+import { defaultRoleArtPrefix, ALL_GALLERY_ROLES, formatRoleName, getRoleGalleryItem, roleMottos, roleNames, roleTitles, WUYUE_MISSIONS } from '../../../web/src/roles.js';
 import { webGuideRules } from './web-guide-rules.js';
 import { roleTreasures } from '../../../web/src/role-descriptions.js';
 import { reasons } from '../../../web/src/game-presentation.js';
@@ -144,7 +144,7 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
         heading('faction-heading','阵营战绩');
         for(const [i,team] of ['blue','red'].entries()){const score=s.byTeam[team as 'blue'|'red'];scoreCard('team:'+team,team==='blue'?'蓝方阵营':'红方阵营',score,x+i*(w+8)/2,y,(w-8)/2,team==='blue'?'emblems/blue.png':'emblems/red.png',team as 'blue'|'red');}y+=216;
         heading('role-heading','角色战绩');
-        Object.entries(roleNames).forEach(([role,name],i)=>{scoreCard('role:'+role,name,s.byRole[role as Role],x+(i%2)*(w+8)/2,y+Math.floor(i/2)*198,(w-8)/2,'roles/'+role+'-160.webp',teamOf(role as Role));});y+=Math.ceil(Object.keys(roleNames).length/2)*198;
+        Object.entries(roleNames).forEach(([role,name],i)=>{scoreCard('role:'+role,name,s.byRole[role as Role],x+(i%2)*(w+8)/2,y+Math.floor(i/2)*198,(w-8)/2,'roles/'+defaultRoleArtPrefix(role as Role)+'-160.webp',teamOf(role as Role));});y+=Math.ceil(Object.keys(roleNames).length/2)*198;
       }
       if(model.rows.some(r=>r.id==='admin')){button('admin','管理员入口',y,{skin:'pill'});y+=52;}
     } else if(doc.kind==='friends') {
@@ -207,7 +207,7 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
           add('label','faction-heading:'+team,(team==='blue'?'蓝方 · 取经正果':'红方 · 群妖乱道')+'（'+roles.length+'人）',28,y+12,v.width-56,28,{skin:'text',fontSize:17,fontFace:'display',tone:'gold',align:'center'});
           unique.forEach((role,i)=>{
             const cols=Math.min(3,unique.length),px=v.width/2-(cols*cw+(cols-1)*10)/2+i%3*(cw+10);
-            add('button','setupRole:'+role,roleNames[role],px,y+44+Math.floor(i/3)*(cardH+8),cw,cardH,{skin:'setup-role',image:'roles/'+role+'-160.webp',team,detail:roleTitles[role],badge:roles.filter(r=>r===role).length>1?'x'+roles.filter(r=>r===role).length:undefined});
+            add('button','setupRole:'+role,roleNames[role],px,y+44+Math.floor(i/3)*(cardH+8),cw,cardH,{skin:'setup-role',image:'roles/'+defaultRoleArtPrefix(role as Role)+'-160.webp',team,detail:roleTitles[role],badge:roles.filter(r=>r===role).length>1?'x'+roles.filter(r=>r===role).length:undefined});
           });
           y+=gh+14;
         }
@@ -222,7 +222,7 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
       para('replay-date','开始 '+g.startedAt.replace('T',' ').slice(0,16)+'\n结束 '+g.endedAt.replace('T',' ').slice(0,16)+'\n对局编号 ID：'+g.id,11.5);
       para('replay-privacy','规则版本：'+g.rulesetVersion+' · '+(g.settings.anonymousTeamVote?'组队投票仅展示总数。':'组队投票展示当时公开的个人赞反。')+'任务出牌始终不对应个人。');
       heading('replay-roles','最终身份');
-      const guardians=assignLoyalGuardians(g.id,g.players,g.roles),demons=assignFemaleDemons(g.id,g.players,g.roles);
+      const guardians=assignLoyalGuardians(g.id,g.players,g.roles,g.rulesetVersion),demons=assignFemaleDemons(g.id,g.players,g.roles);
       for(const p of g.players){const role=g.roles[p.id];if(!role)continue;const item=getRoleGalleryItem(role,guardians[p.id],demons[p.id]);add('label','replay-player:'+p.id,name(p.id)+' · '+item.fullName,x,y,w,62,{skin:'friend-card',image:'roles/'+item.artPrefix+'-160.webp',detail:item.team==='blue'?'蓝方 · 取经正果':'红方 · 群妖乱道'});y+=70;}
       heading('replay-rounds','逐轮记录');
       for(const r of g.rounds){heading('round:'+r.number,'第 '+r.number+' 轮 · 第 '+r.mission+' 难');para('round-captain:'+r.number,'队长：'+name(r.captainId)+' · '+(r.direction==='clockwise'?'顺时针':'逆时针')+'发言');

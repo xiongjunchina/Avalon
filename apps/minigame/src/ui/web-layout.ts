@@ -3,7 +3,7 @@ import type { WebDocument } from './web-document.js';
 import { layoutDocument } from './web-document-layout.js';
 import type { RoomView, Settings, User } from '@avalon/contracts';
 import { MISSION_SIZES, ROLE_CONFIG, failuresRequiredFor, teamOf, assignLoyalGuardians, assignFemaleDemons } from '@avalon/game-core';
-import { roleNames, roleMottos, WUYUE_MISSIONS, getRoleGalleryItem, formatRoleName } from '../../../web/src/roles.js';
+import { defaultRoleArtPrefix, roleNames, roleMottos, WUYUE_MISSIONS, getRoleGalleryItem, formatRoleName } from '../../../web/src/roles.js';
 import { wrapText, type HitRegion, type SafeViewport } from './layout.js';
 import type { ScreenModel } from './widgets.js';
 
@@ -67,7 +67,7 @@ export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout 
       const diameter = cssClamp(120, w * .34, 160);
       const portraitY = bannerY + (web.freeAccess !== false ? bannerH+16 : 10);
       add('portrait', 'showcase', roleNames[role], (w - diameter) / 2, portraitY, diameter, diameter,
-        { image: 'roles/' + role + '-160.webp', detail: roleMottos[role], team: teamOf(role) });
+        { image: 'roles/' + defaultRoleArtPrefix(role) + '-160.webp', detail: roleMottos[role], team: teamOf(role) });
       const actionH = cssClamp(42, w * .11, 48);
       const footer = Math.max(portraitY + diameter + 74, v.height - v.bottom - 12 - (141 + actionH));
       add('panel', 'mode-frame', '', 35, footer + 2, w - 70, 40);
@@ -173,7 +173,7 @@ export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout 
     if(ended&&game){
       const role=game.revealedRoles?.[web.user?.id??''];const ownTeam=role?teamOf(role):web.ownTeam;
       const headline=game.result!.winner===null?'本局中断':game.result!.winner===ownTeam?'本局胜利！':'本局惜败';
-      const guardian=game.revealedRoles?assignLoyalGuardians(game.id,game.players,game.revealedRoles):{};
+      const guardian=game.revealedRoles?assignLoyalGuardians(game.id,game.players,game.revealedRoles,game.rulesetVersion):{};
       const demons=game.revealedRoles?assignFemaleDemons(game.id,game.players,game.revealedRoles):{};
       nodes.splice(nodes.findIndex(n=>n.id==='ribbon'),1);
       add('label','result-hero',headline,10,ribbonY-2,w-20,279,{skin:'result-hero',team:game.result!.winner??undefined,
@@ -204,7 +204,7 @@ export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout 
               micState,
               badge: isWinnerSeat ? '🏆 胜' : (!ended && member?.id === game?.captainId ? '👑 队长' : (!game && member?.id === room.hostId ? '房主' : undefined)),
               detail: !game ? memberView?.ready ? '已就位' : '待出发' : ballot === true ? '✓' : ballot === false ? '×' : ballot === 'abstain' ? '−' : undefined,
-              image: revealed ? 'roles/' + getRoleGalleryItem(revealed,assignLoyalGuardians(game!.id,game!.players,game!.revealedRoles!)[member!.id],assignFemaleDemons(game!.id,game!.players,game!.revealedRoles!)[member!.id]).artPrefix + '-160.webp' : memberView?.avatarUrl ?? memberView?.wechatAvatarUrl ?? (member ? 'emblems/' + (memberView?.avatar ?? 'cards') + '.png' : undefined) });
+              image: revealed ? 'roles/' + getRoleGalleryItem(revealed,assignLoyalGuardians(game!.id,game!.players,game!.revealedRoles!,game!.rulesetVersion)[member!.id],assignFemaleDemons(game!.id,game!.players,game!.revealedRoles!)[member!.id]).artPrefix + '-160.webp' : memberView?.avatarUrl ?? memberView?.wechatAvatarUrl ?? (member ? 'emblems/' + (memberView?.avatar ?? 'cards') + '.png' : undefined) });
         }
         const altarW = cssClamp(74,w * .19,92);
         add('altar','altar','☯',(10+arenaInset+rightEnd-altarW)/2,arenaTop + (arenaH - altarW)/2,altarW,altarW,{ detail: ended ? '胜负已分' : (game?.draftTeam?.direction === 'counterclockwise' ? '⟲ 逆时针' : '⟳ 顺时针'), count: ended ? undefined : (game?.mission ?? 1) });
@@ -263,7 +263,7 @@ export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout 
       label('faction:' + team, (team === 'blue' ? '蓝方 · 取经正果' : '红方 · 群妖乱道') + '（' + roles.length + '人）', y, { team });
       y += 38;
       const unique = [...new Set(roles)], cardW = (full - 18) / 3;
-      unique.forEach((role, index) => add('portrait', 'setupRole:' + role, roleNames[role] + (roles.filter(item => item === role).length > 1 ? ' ×' + roles.filter(item => item === role).length : ''), pad + index % 3 * (cardW + 9), y + Math.floor(index / 3) * 145, cardW, 118, { image: 'roles/' + role + '-160.webp', team }));
+      unique.forEach((role, index) => add('portrait', 'setupRole:' + role, roleNames[role] + (roles.filter(item => item === role).length > 1 ? ' ×' + roles.filter(item => item === role).length : ''), pad + index % 3 * (cardW + 9), y + Math.floor(index / 3) * 145, cardW, 118, { image: 'roles/' + defaultRoleArtPrefix(role) + '-160.webp', team }));
       y += Math.ceil(unique.length / 3) * 145 + 8;
     }
   } else if (model.portrait) {

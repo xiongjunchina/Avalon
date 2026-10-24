@@ -89,6 +89,7 @@ export function GuideRules() {
     <section className="panel guide-section"><p className="eyebrow">05 / 刺杀与天机</p><h2>提前刺杀与护法天机</h2>
       <h3 className="guide-sub-heading">提前刺杀</h3><p>可选开启。完成第二个实际任务起，在轮间确认窗口由红孩儿（刺客）私下决定发起或跳过；此后的任务结束或组队流局也可能再出现窗口，流局本身不计实际任务。</p>
       <ul><li>每局最多发起一次。跳过本次窗口不会消耗机会。</li><li>发起后不能撤回，红孩儿必须选人；命中孙悟空红方胜，刺错则立即蓝方胜。</li><li>不能在投票或任务出牌过程中随时打断。</li><li>其他玩家只看到“轮间确认中”，不会获知谁是红孩儿。</li></ul>
+      <p>新开对局按护法人数依次选入白龙、猪八戒、沙悟净、金刚，再随机分配给护法玩家；人物各自的护法天机能力保持不变。旧局及历史复盘沿用原分配结果。</p>
       <h3 className="guide-sub-heading">护法天机（建议7-12人）</h3><p>可选开启，建议7人以上对局开启。开启后为闭眼的「取经护法」赋予专属微弱灵觉，各显神通：</p>
       <ul>
         <li><strong>猪八戒（八戒巡山）</strong>：探知一名仙友绝非六耳猕猴（假猴王）。</li>
@@ -162,7 +163,7 @@ export function GuideRoles() {
                     </div>
                     <h3>
                       {roleNames[role]}
-                      {role === 'loyal' ? '（猪八戒 / 沙悟净 / 白龙 / 金刚）' : ''}
+                      {role === 'loyal' ? '（白龙 / 猪八戒 / 沙悟净 / 金刚）' : ''}
                       {role === 'minion' ? '（玉兔精 / 白骨精 / 老鼠精 / 蜘蛛精）' : ''}
                     </h3>
                     <p className="guide-role-motto">{roleMottos[role]}</p>

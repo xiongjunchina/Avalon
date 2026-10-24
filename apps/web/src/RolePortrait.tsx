@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { FemaleDemon, LoyalGuardian, Role } from '@avalon/contracts';
 import { Emblem, roleTeam } from './Heraldry';
-import { FEMALE_DEMONS, LOYAL_GUARDIANS, formatRoleName, roleMottos, roleNames, roleTitles } from './roles';
+import { FEMALE_DEMONS, LOYAL_GUARDIANS, defaultRoleArtPrefix, formatRoleName, roleMottos, roleNames, roleTitles } from './roles';
 
 // Generic artwork is public. Mount a player's portrait only where their role may be revealed.
 export function RolePortrait({
@@ -19,7 +19,7 @@ export function RolePortrait({
   const large = size === 'card';
   const guardian = role === 'loyal' && loyalGuardian ? LOYAL_GUARDIANS[loyalGuardian] : undefined;
   const demon = role === 'minion' ? FEMALE_DEMONS[femaleDemon || 'yutu'] : undefined;
-  const artKey = guardian ? guardian.artPrefix : demon ? demon.artPrefix : role;
+  const artKey = guardian ? guardian.artPrefix : demon ? demon.artPrefix : defaultRoleArtPrefix(role);
   const labelName = guardian ? guardian.fullName : demon ? demon.fullName : roleNames[role];
   return (
     <span

@@ -224,7 +224,7 @@ function HistoryPanel({favorites,onReplay}:{favorites:boolean;onReplay:(id:strin
 
 export function ReplayView({replay:g}:{replay:Replay}) {
   const name=(id:string)=>{const p=g.players.find(p=>p.id===id);return p?`${p.seat} 号 ${p.nickname}`:'未知成员';};
-  const loyalGuardians = assignLoyalGuardians(g.id, g.players, g.roles);
+  const loyalGuardians = assignLoyalGuardians(g.id, g.players, g.roles, g.rulesetVersion);
   const femaleDemons = assignFemaleDemons(g.id, g.players, g.roles);
   return <>
     <div className="result-box"><h2>{g.result.winner===null?'本局中断':`${g.result.winner==='blue'?'蓝方':'红方'}获胜`}</h2><p>{reasons[g.result.reason]}{g.result.targetId?` · 刺杀目标：${name(g.result.targetId)}`:''}</p><p className="hint">开始 {date(g.startedAt)}<br/>结束 {date(g.endedAt)} · 你的结果：{outcome(g)}</p><p className="hint game-uid-line">对局编号 ID：<span>{g.id}</span></p></div>

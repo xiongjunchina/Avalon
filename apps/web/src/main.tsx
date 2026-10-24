@@ -830,7 +830,7 @@ function App() {
                   <path d="M5 10h11a4 4 0 1 1 0 8h-1" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </button>
-              <PracticeSeatPicker gameId={practiceGame.id} players={practiceGame.players} roles={practiceGame.roles}
+              <PracticeSeatPicker gameId={practiceGame.id} rulesetVersion={practiceGame.rulesetVersion} players={practiceGame.players} roles={practiceGame.roles}
                 value={practiceUserId} onChange={setPracticeUserId} />
             </div>
             <h1 className="table-top-title">嘻游 · 真假猴王</h1>

@@ -5,12 +5,12 @@ import { Modal } from './Modal';
 import { formatRoleName } from './roles';
 
 /** A compact trigger avoids making the whole practice toolbar a large form field. */
-export function PracticeSeatPicker({ gameId = 'practice', players, roles, value, onChange }: {
-  gameId?: string; players: Player[]; roles: Record<string, Role>; value: string; onChange: (id: string) => void;
+export function PracticeSeatPicker({ gameId = 'practice', rulesetVersion, players, roles, value, onChange }: {
+  gameId?: string; rulesetVersion?: string; players: Player[]; roles: Record<string, Role>; value: string; onChange: (id: string) => void;
 }) {
   const [open, setOpen] = useState(false);
   const player = players.find(p => p.id === value);
-  const loyalGuardians = assignLoyalGuardians(gameId, players, roles);
+  const loyalGuardians = assignLoyalGuardians(gameId, players, roles, rulesetVersion);
   const femaleDemons = assignFemaleDemons(gameId, players, roles);
   return <>
     <button type="button" className="practice-view-trigger" aria-label="切换试玩视角" aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(true)}>

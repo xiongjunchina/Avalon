@@ -7,7 +7,7 @@ import { defaultSettings, type RoomView, type Role } from '@avalon/contracts';
 import { createGame, projectGame } from '@avalon/game-core';
 import { GamePanel } from '../src/GamePanel.js';
 import { IdentityCard } from '../src/RolePortrait.js';
-import { roleNames } from '../src/roles.js';
+import { defaultRoleArtPrefix, getRoleGalleryItem, roleNames } from '../src/roles.js';
 
 test('closed identities never mount or preload character images, for every supported role',()=>{
   const seen=new Set<Role>();
@@ -22,7 +22,7 @@ test('closed identities never mount or preload character images, for every suppo
       assert.doesNotMatch(html,/\/art\/roles\/|角色图案|identity-card|portrait-card/);
       assert.match(html,/私下查看我的身份/);
       const card=renderToStaticMarkup(createElement(IdentityCard,{role:game.roles[player.id]}));
-      assert.match(card,new RegExp(`${game.roles[player.id]}(-[a-z]+)?-640.webp`));
+      assert.match(card,new RegExp(`${defaultRoleArtPrefix(game.roles[player.id])}(-[a-z]+)?-640.webp`));
       assert.ok(card.includes(roleNames[game.roles[player.id]]));
     }
   }
@@ -38,5 +38,24 @@ test('ended game portraits match the server-revealed roles, including after an i
   const html=renderToStaticMarkup(createElement(GamePanel,{room,userId:players[0].id,disabled:true,connected:false,send:()=>{}}));
   assert.equal((html.match(/portrait-mini/g)??[]).length,players.length);
   assert.doesNotMatch(html,/portrait-card/);
-  for(const role of Object.values(game.roles))assert.ok(html.includes(`${role}-160.webp`));
+  for(const player of players) {
+    const self=projectGame(game,player.id).self!;
+    assert.ok(html.includes(`${getRoleGalleryItem(self.role,self.loyalGuardian,self.femaleDemon).artPrefix}-160.webp`));
+  }
+});
+
+test('legacy settlement and replay keep their original guardian portrait',async()=>{
+  const {ReplayView}=await import('../src/AccountPanel.js');
+  const players=Array.from({length:5},(_,i)=>({id:`p${i}`,seat:i+1,nickname:`仙友${i}`}));
+  const game=createGame('legacy-guardian',players,{...defaultSettings,playerCount:5},a=>a);
+  game.rulesetVersion='standard-no-lancelot-v3';game.phase='aborted';game.result={winner:null,reason:'unanimous_abort'};
+  const room:RoomView={id:'legacy-room',code:'OLD',hostId:'p0',version:1,phase:'finished',settings:game.settings,acceptingNewMembers:true,
+    members:players.map(p=>({...p,ready:true,online:false})),game:projectGame(game,'p0')};
+  const settlement=renderToStaticMarkup(createElement(GamePanel,{room,userId:'p0',disabled:true,connected:false,send:()=>{}}));
+  const replay=renderToStaticMarkup(createElement(ReplayView,{replay:{...game,startedAt:'2026-10-23T10:00:00Z',endedAt:'2026-10-23T11:00:00Z',playerCount:5,
+    self:{nickname:'仙友0',seat:1,role:'merlin',team:'blue'},favorite:false,inspections:[],earlyWindows:[],result:game.result}}));
+  for(const html of [settlement,replay]){
+    assert.match(html,/zhubajie-loyal-160.webp/);
+    assert.doesNotMatch(html,/bailong-loyal-160.webp/);
+  }
 });

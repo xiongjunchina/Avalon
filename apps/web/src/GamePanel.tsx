@@ -349,7 +349,7 @@ export function GamePanel({
     ? g.rounds.filter(r => r.mission === inspectMission)
     : [];
   const revealedLoyalGuardians = g.revealedRoles
-    ? assignLoyalGuardians(g.id, g.players, g.revealedRoles)
+    ? assignLoyalGuardians(g.id, g.players, g.revealedRoles, g.rulesetVersion)
     : {};
   const revealedFemaleDemons = g.revealedRoles
     ? assignFemaleDemons(g.id, g.players, g.revealedRoles)

@@ -1,18 +1,21 @@
 import type { Command, GameResult, GameView, LoyalGuardian, FemaleDemon, Player, Role, RoundView, Settings, Team, PrivateInspection, EarlyWindow, TeamBallot, GuardianClue, SelfTreasures, HeartBellAdvice } from '@avalon/contracts';
-export const RULESET_VERSION = 'standard-no-lancelot-v3';
-export const LOYAL_GUARDIAN_POOL: readonly LoyalGuardian[] = ['zhubajie', 'shawujing', 'bailong', 'jingang'];
-export function assignLoyalGuardians(gameId: string, players: Player[], roles: Record<string, Role>): Record<string, LoyalGuardian> {
+export const RULESET_VERSION = 'standard-no-lancelot-v4';
+export const LOYAL_GUARDIAN_POOL: readonly LoyalGuardian[] = ['bailong', 'zhubajie', 'shawujing', 'jingang'];
+const LEGACY_LOYAL_GUARDIAN_POOL: readonly LoyalGuardian[] = ['zhubajie', 'shawujing', 'bailong', 'jingang'];
+export function assignLoyalGuardians(gameId: string, players: Player[], roles: Record<string, Role>, rulesetVersion = RULESET_VERSION): Record<string, LoyalGuardian> {
   let seed = 2166136261;
   for (let i = 0; i < gameId.length; i++) {
     seed = Math.imul(seed ^ gameId.charCodeAt(i), 16777619) >>> 0;
   }
-  const pool = [...LOYAL_GUARDIAN_POOL];
+  const sortedLoyal = [...players].sort((a, b) => a.seat - b.seat).filter(p => roles[p.id] === 'loyal');
+  // Select the priority roster before shuffling recipients. Preserve v1–v3 games and replays.
+  const priorityEnabled = Number(rulesetVersion.match(/-v(\d+)$/)?.[1]) >= 4;
+  const pool = priorityEnabled ? LOYAL_GUARDIAN_POOL.slice(0, sortedLoyal.length) : [...LEGACY_LOYAL_GUARDIAN_POOL];
   for (let i = pool.length - 1; i > 0; i--) {
     seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
     const j = seed % (i + 1);
     [pool[i], pool[j]] = [pool[j], pool[i]];
   }
-  const sortedLoyal = [...players].sort((a, b) => a.seat - b.seat).filter(p => roles[p.id] === 'loyal');
   return Object.fromEntries(sortedLoyal.map((p, idx) => [p.id, pool[idx % pool.length]]));
 }
 export const FEMALE_DEMON_POOL: readonly FemaleDemon[] = ['spider', 'baigu', 'yutu', 'laoshu'];
@@ -593,7 +596,7 @@ export function projectGame(g: GameState, userId?: string): GameView {
     ...(g.result ? { result: { ...g.result }, revealedRoles: { ...g.roles } } : {}),
     ...(g.abortPoll ? { abortPoll: { requestedBy: g.abortPoll.requestedBy, approvals: g.abortPoll.approvals.length,
       required: g.abortPoll.electorate.length, voted: !!userId && g.abortPoll.approvals.includes(userId) } } : {}),
-    ...(role && userId ? { self: { role, ...(role === 'loyal' ? { loyalGuardian: assignLoyalGuardians(g.id, g.players, g.roles)[userId] } : {}), ...(role === 'minion' ? { femaleDemon: assignFemaleDemons(g.id, g.players, g.roles)[userId] } : {}), team: teamOf(role), evilIds,
+    ...(role && userId ? { self: { role, ...(role === 'loyal' ? { loyalGuardian: assignLoyalGuardians(g.id, g.players, g.roles, g.rulesetVersion)[userId] } : {}), ...(role === 'minion' ? { femaleDemon: assignFemaleDemons(g.id, g.players, g.roles)[userId] } : {}), team: teamOf(role), evilIds,
       merlinCandidates: role === 'percival' ? g.players.filter(p => ['merlin','morgana'].includes(g.roles[p.id])).map(p => p.id) : [],
       guinevereCandidates: role === 'guinevere' ? [...(g.guinevereCandidates ?? [])] : [],
       guardianClue: role === 'loyal' && g.guardianClues ? g.guardianClues[userId] : undefined,

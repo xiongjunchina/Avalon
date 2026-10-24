@@ -46,6 +46,14 @@ export interface LoyalGuardianMeta {
 }
 
 export const LOYAL_GUARDIANS: Record<LoyalGuardian, LoyalGuardianMeta> = {
+  bailong: {
+    key: 'bailong',
+    name: '白龙',
+    fullName: '取经护法 · 白龙',
+    title: '玉龙三太子',
+    motto: '踏破群山驮圣僧，银枪破浪护真经',
+    artPrefix: 'bailong-loyal',
+  },
   zhubajie: {
     key: 'zhubajie',
     name: '猪八戒',
@@ -62,14 +70,6 @@ export const LOYAL_GUARDIANS: Record<LoyalGuardian, LoyalGuardianMeta> = {
     motto: '降妖宝杖担行李，任劳任怨卫正途',
     artPrefix: 'shawujing-loyal',
   },
-  bailong: {
-    key: 'bailong',
-    name: '白龙',
-    fullName: '取经护法 · 白龙',
-    title: '玉龙三太子',
-    motto: '踏破群山驮圣僧，银枪破浪护真经',
-    artPrefix: 'bailong-loyal',
-  },
   jingang: {
     key: 'jingang',
     name: '金刚',
@@ -79,6 +79,11 @@ export const LOYAL_GUARDIANS: Record<LoyalGuardian, LoyalGuardianMeta> = {
     artPrefix: 'jingang-loyal',
   },
 };
+
+/** Public category cards use white dragon; individual identities still resolve their assigned guardian. */
+export function defaultRoleArtPrefix(role: Role): string {
+  return role === 'loyal' ? LOYAL_GUARDIANS.bailong.artPrefix : role;
+}
 
 export interface FemaleDemonMeta {
   key: FemaleDemon;
@@ -200,6 +205,18 @@ export const ALL_GALLERY_ROLES: RoleGalleryItem[] = [
     story: '大慈大悲观世音，开局听闻两道南海天机，能识破假扮佛祖的隐身黄眉老怪的一半虚实，弥补孙悟空的视野盲区。',
   },
   {
+    id: 'bailong',
+    role: 'loyal',
+    loyalGuardian: 'bailong',
+    team: 'blue',
+    name: '白龙',
+    fullName: '取经护法 · 白龙',
+    title: '玉龙三太子',
+    motto: '踏破群山驮圣僧，银枪破浪护真经',
+    artPrefix: 'bailong-loyal',
+    story: '西海龙王三太子，化为白龙良驹踏破千山万壑驮负圣僧，危难之时化现龙身银枪破浪护佑师门。',
+  },
+  {
     id: 'zhubajie',
     role: 'loyal',
     loyalGuardian: 'zhubajie',
@@ -222,18 +239,6 @@ export const ALL_GALLERY_ROLES: RoleGalleryItem[] = [
     motto: '降妖宝杖担行李，任劳任怨卫正途',
     artPrefix: 'shawujing-loyal',
     story: '原卷帘大将，流沙河皈依正道后肩挑重担，降妖宝杖威震邪崇，任劳任怨护持圣僧直达灵山宝地。',
-  },
-  {
-    id: 'bailong',
-    role: 'loyal',
-    loyalGuardian: 'bailong',
-    team: 'blue',
-    name: '白龙',
-    fullName: '取经护法 · 白龙',
-    title: '玉龙三太子',
-    motto: '踏破群山驮圣僧，银枪破浪护真经',
-    artPrefix: 'bailong-loyal',
-    story: '西海龙王三太子，化为白龙良驹踏破千山万壑驮负圣僧，危难之时化现龙身银枪破浪护佑师门。',
   },
   {
     id: 'jingang',
