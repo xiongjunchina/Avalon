@@ -7,9 +7,15 @@
 .mp-setup-screen .room-creation-options { width: 100%; margin: 0; padding: 10px 12px !important; }
 .room-creation-options > summary > span { display: block; color: var(--muted); font-size: 11px; }
 .room-access-editor { display: grid; gap: 6px; }
-.mp-setup-screen .mp-setup-footer { position: sticky; bottom: max(8px,env(safe-area-inset-bottom)); z-index: 4; padding: 8px !important; border: 1px solid #d4a35980; border-radius: 18px; background: #260e0df5; }
+.mp-setup-screen .mp-setup-footer { gap: 6px; padding: 4px 0 !important; background: none; }
+.mp-setup-screen .mp-setup-footer .mp-cyan-pill { width: min(100%,220px); min-height: 44px; padding: 8px 16px; font: 700 15px/1.4 var(--sans); letter-spacing: .5px; }
+.mp-setup-screen .mp-setup-footer .mp-subtle-link { min-height: 32px; padding: 4px 8px; font: 500 12px/1.5 var(--sans); }
 .mp-setup-screen .setup-role-preview { width: 100%; }
+.setup-role-preview > h2 { margin: 0; color: #ffd875; font: 600 14px/1.5 var(--sans); }
 .setup-role-preview .mp-factions-stack { margin-top: 10px; }
+.setup-role-preview .mp-portrait-card { position: relative; }
+.setup-role-preview .mp-portrait-label strong { white-space: nowrap; }
+.setup-role-preview .mp-count-tag { position: absolute; top: 6px; right: 6px; }
 .is-live-table .waiting-play-priority { min-height: 0 !important; gap: 10px !important; }
 .is-live-table .waiting-settings-summary { width: 100%; min-height: 34px; margin: 0; padding: 5px 8px; font: 600 12px/1.4 var(--sans); }
 .is-live-table .waiting-play-priority .waiting-dock { margin: 0 !important; }
@@ -71,17 +77,19 @@
 .replay-metadata, .replay-identities { margin: 8px 0; }
 .replay-favorite-action button { width: auto; min-height: 40px; font-size: 13px; }
 /* Keep all records mounted; navigation only scrolls to the requested proposal. */
-.round-jump-nav, .guide-index { display: flex; align-items: center; gap: 6px; overflow-x: auto; position: sticky; top: 0; z-index: 3; padding: 6px; border: 1px solid #d4a35966; border-radius: 10px; background: #260e0df5; scrollbar-width: thin; }
-.round-jump-nav > button, .guide-index > button { flex: 0 0 auto; width: auto; min-height: 36px; padding: 5px 10px; margin: 0; white-space: nowrap; font: 600 12px/1.4 var(--sans); }
+.round-jump-nav { display: flex; align-items: center; gap: 6px; overflow-x: auto; position: sticky; top: 0; z-index: 3; padding: 6px; border: 1px solid #d4a35966; border-radius: 10px; background: #260e0df5; scrollbar-width: thin; }
+.round-jump-nav > button { flex: 0 0 auto; width: auto; min-height: 36px; padding: 5px 10px; margin: 0; white-space: nowrap; font: 600 12px/1.4 var(--sans); }
 .round-jump-nav [aria-pressed="true"] { border-color: #ffd875; background: #67231e; }
 .battle-round-anchor { scroll-margin-top: 62px; }
-.guide-flow .guide-controls { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 8px; background: #260e0df5; border: 1px solid #d4a35980; border-radius: 12px; padding: 6px; }
+.guide-flow .guide-controls { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; justify-content: space-between; gap: 8px; background: #260e0df5; border: 1px solid #d4a35980; border-radius: 12px; padding: 6px; }
 .guide-controls > button { flex: 0 0 auto; width: auto; min-height: 40px; margin: 0; padding: 5px 8px; font-size: 12px; }
-.guide-controls .guide-nav { flex: 1; display: flex; gap: 6px; margin: 0; }
+.guide-controls .guide-nav { flex: 0 1 340px; display: flex; gap: 6px; margin: 0; }
 .guide-controls .guide-nav > button { flex: 1; min-width: 0; min-height: 40px; margin: 0; padding: 5px 7px; font-size: 13px; }
 .guide-flow .guide-heading { padding: 10px 12px; margin-top: 8px; }
-.guide-flow .guide-index { top: 60px; margin: 10px 0; }
-.guide-flow .guide-section, .guide-flow .guide-role { scroll-margin-top: 116px; }
+/* All destinations stay visible; only the compact page controls follow scrolling. */
+.guide-index { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,96px),1fr)); gap: 6px; margin: 10px 0; padding: 8px; border: 1px solid #d4a35966; border-radius: 12px; background: #260e0df5; }
+.guide-index > button { width: 100%; min-width: 0; min-height: 40px; padding: 6px 4px; margin: 0; white-space: nowrap; font: 600 12px/1.4 var(--sans); }
+.guide-flow .guide-section, .guide-flow .guide-role { scroll-margin-top: 72px; }
 @media (max-width: 380px) {
   .account-flow .profile-bar { flex-direction: column; align-items: stretch; }
   .game-result-actions .result-actions { width: 100%; }

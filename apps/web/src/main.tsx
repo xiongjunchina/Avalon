@@ -983,8 +983,8 @@ function App() {
                 幻境单人演练 {setupSettings.playerCount} 人取经牌局 ›
               </button>
             </footer>
-            <details className="setup-role-preview flow-details">
-              <summary>本局角色配置（{setupSettings.playerCount} 人）</summary>
+            <section className="setup-role-preview" aria-labelledby="setup-role-heading">
+              <h2 id="setup-role-heading">本局角色配置（{setupSettings.playerCount} 人）</h2>
             <div className="mp-factions-stack">
               <section className="mp-faction-panel is-blue">
                 <h3>蓝方 · 取经正果 ({setupBlueRoles.length}人)</h3>
@@ -1027,7 +1027,7 @@ function App() {
               </section>
             </div>
 
-            </details>
+            </section>
 
           </div>
         ) : (
