@@ -1,5 +1,6 @@
 import { useId, useState } from 'react';
 import type { Avatar, Role, Team } from '@avalon/contracts';
+import { BUILTIN_AVATARS, builtinAvatarFor } from './avatar-catalog';
 
 type Mark = Role | Avatar | 'blue' | 'red' | 'crown' | 'cards' | 'chronicle';
 // Small, original vector emblems. They carry no game state or hidden role information.
@@ -103,10 +104,7 @@ export function WuYueBackdrop({ mission }: { mission: number }) {
 
 export const roleTeam=(role:Role):Team=>['merlin','percival','guinevere','loyal'].includes(role)?'blue':'red';
 
-export const WECHAT_SAMPLE_AVATARS = Array.from(
-  { length: 12 },
-  (_, i) => `/art/avatars/wx-${i + 1}.webp?v=artifact1`
-);
+export const WECHAT_SAMPLE_AVATARS = BUILTIN_AVATARS.map(item => item.src);
 
 export function PlayerAvatar({
   avatar,
@@ -121,7 +119,7 @@ export function PlayerAvatar({
   fallbackKind?: Mark;
   className?: string;
 }) {
-  const rawSrc = avatarUrl || wechatAvatarUrl || null;
+  const rawSrc = avatarUrl || wechatAvatarUrl || (avatar ? builtinAvatarFor(avatar).src : null);
   const src =
     rawSrc && rawSrc.startsWith('/art/avatars/wx-')
       ? `${rawSrc.split('?')[0]}?v=artifact1`

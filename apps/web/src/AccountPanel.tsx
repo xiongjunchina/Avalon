@@ -7,11 +7,11 @@ import { formatRoleName, roleNames } from './roles';
 import { RolePortrait } from './RolePortrait';
 import { api, describe } from './api';
 import { PresetsPanel, settingsText } from './PresetsPanel';
-import { Emblem, PlayerAvatar, WECHAT_SAMPLE_AVATARS, roleTeam } from './Heraldry';
+import { Emblem, PlayerAvatar, roleTeam } from './Heraldry';
+import { BUILTIN_AVATARS, builtinAvatarFor, findBuiltinAvatar } from './avatar-catalog';
 import { SoundControls } from './SoundSettings';
 import { usePageSound } from './audio-interactions';
 
-export const avatarNames:Record<Avatar,{symbol:string;name:string}>={leaf:{symbol:'❧',name:'绿叶'},moon:{symbol:'☾',name:'月亮'},sun:{symbol:'☀',name:'太阳'},mountain:{symbol:'△',name:'山峰'},wave:{symbol:'≋',name:'海浪'},star:{symbol:'✦',name:'星星'}};
 const reasons:Record<GameResult['reason'],string>={three_failures:'三次取经任务失败',five_rejections:'五次组队未通过',merlin_found:'红孩儿刺中孙悟空',merlin_survived:'孙悟空躲过刺杀',early_merlin_found:'提前刺杀命中孙悟空',early_merlin_survived:'提前刺杀未命中孙悟空',unanimous_abort:'在线成员一致同意中断',host_ended:'房主结束游戏',offline_timeout:'全员离线超过 24 小时'};
 const date=(s:string)=>new Date(s).toLocaleString('zh-CN',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false});
 export const rate=(s:Score)=>s.winRate===null?'—':`${Math.round(s.winRate*100)}%`;
@@ -79,22 +79,20 @@ function StatisticsPanel() {
 }
 function ProfileEditor({user,onUser,onClose}:{user:User;onUser:(u:User)=>void;onClose:()=>void}) {
   const [nickname,setNickname]=useState(user.nickname);
-  const [avatar,setAvatar]=useState<Avatar>(user.avatar??'leaf');
-  const [avatarUrl,setAvatarUrl]=useState<string|null>(user.avatarUrl??null);
+  const avatar:Avatar=user.avatar??'leaf';
+  const [avatarUrl,setAvatarUrl]=useState<string|null>(user.avatarUrl??findBuiltinAvatar(user.wechatAvatarUrl)?.src??null);
   const [wechatAvatarUrl,setWechatAvatarUrl]=useState<string|null>(user.wechatAvatarUrl??null);
   const [busy,setBusy]=useState(false),[error,setError]=useState(''),[saved,setSaved]=useState(false);
   const fileInputRef=useRef<HTMLInputElement|null>(null);
 
-  const activeSource = avatarUrl ? '自定义上传头像' : wechatAvatarUrl ? '仙友人物头像' : `预置徽章（${avatarNames[avatar].name}）`;
+  const activeImage=avatarUrl||wechatAvatarUrl;
+  const selectedPreset=findBuiltinAvatar(activeImage)??(!activeImage?builtinAvatarFor(avatar):undefined);
+  const activeSource=selectedPreset?`法宝头像（${selectedPreset.name}）`:avatarUrl?'自定义上传头像':'已有头像';
 
-  function handleSyncWechatAvatar() {
+  function selectPreset(src:string) {
     setError('');
     setSaved(false);
-    const currentIdx = wechatAvatarUrl ? WECHAT_SAMPLE_AVATARS.indexOf(wechatAvatarUrl) : -1;
-    const hash = Array.from(user.id).reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
-    const nextIdx = currentIdx >= 0 ? (currentIdx + 1) % WECHAT_SAMPLE_AVATARS.length : hash % WECHAT_SAMPLE_AVATARS.length;
-    setWechatAvatarUrl(WECHAT_SAMPLE_AVATARS[nextIdx]);
-    setAvatarUrl(null);
+    setAvatarUrl(src);
   }
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -147,32 +145,32 @@ function ProfileEditor({user,onUser,onClose}:{user:User;onUser:(u:User)=>void;on
             <PlayerAvatar avatar={avatar} avatarUrl={avatarUrl} wechatAvatarUrl={wechatAvatarUrl} fallbackKind="leaf" />
           </span>
           <div className="profile-avatar-meta">
-            <span className="avatar-source-tag">当前生效：{activeSource}</span>
-            <small className="hint">选择仙友人物头像，或上传自己的照片；头像只用于朋友之间辨认。</small>
+            <span className="avatar-source-tag">头像预览：{activeSource}</span>
+            <small className="hint">选择下方法宝头像，或上传自己的照片；头像只用于朋友之间辨认。</small>
           </div>
         </div>
         <div className="profile-avatar-actions">
-          <button type="button" className="secondary compact-button wechat-sync-btn" onClick={handleSyncWechatAvatar}>
-            {wechatAvatarUrl ? '换一张仙友头像' : '选择仙友人物头像'}
-          </button>
           <button type="button" className="secondary compact-button upload-avatar-btn" onClick={()=>fileInputRef.current?.click()}>
             上传自定义头像
           </button>
-          {avatarUrl && wechatAvatarUrl && (
+          {avatarUrl && wechatAvatarUrl && !findBuiltinAvatar(wechatAvatarUrl) && (
             <button type="button" className="secondary compact-button" onClick={()=>{setAvatarUrl(null);setSaved(false);}}>
-              恢复仙友人物头像
-            </button>
-          )}
-          {(avatarUrl || wechatAvatarUrl) && (
-            <button type="button" className="secondary compact-button" onClick={()=>{setAvatarUrl(null);setWechatAvatarUrl(null);setSaved(false);}}>
-              ✦ 改用预置符号
+              恢复原有头像
             </button>
           )}
           <input ref={fileInputRef} type="file" accept="image/*" className="sr-only" aria-label="上传自定义头像文件" onChange={e=>void handleFileChange(e)} />
         </div>
       </div>
       <label htmlFor="profile-nickname">昵称</label><input id="profile-nickname" maxLength={20} required value={nickname} onChange={e=>{setNickname(e.target.value);setSaved(false);}}/>
-      <label htmlFor="profile-avatar">预置头像（未设置微信/自定义头像时生效）</label><select id="profile-avatar" value={avatar} onChange={e=>{setAvatar(e.target.value as Avatar);setSaved(false);}}>{Object.entries(avatarNames).map(([id,a])=><option value={id} key={id}>{a.symbol} {a.name}</option>)}</select>
+      <fieldset className="profile-preset-fieldset"><legend>预置头像</legend>
+        <p className="hint">十二件法宝，点击选择并预览；保存资料后生效。</p>
+        <div className="profile-avatar-options">
+          {BUILTIN_AVATARS.map(item=><label className="profile-avatar-option" key={item.src}>
+            <input type="radio" className="sr-only" name="profile-preset-avatar" value={item.src} checked={selectedPreset?.src===item.src} onChange={()=>selectPreset(item.src)}/>
+            <span className="profile-avatar-option-card"><img src={item.src} alt="" loading="lazy" decoding="async"/><span>{item.name}</span></span>
+          </label>)}
+        </div>
+      </fieldset>
     </fieldset>
     <p className="hint">旧对局保留当时昵称。浏览器登录状态连续 30 天未使用会失效；换设备或清除浏览器数据后，可输入当前仙友码找回原账号。</p>
   </form><details className="profile-vip-details flow-details"><summary>VIP 兑换与权益</summary>
@@ -255,9 +253,8 @@ export function AccountPanel({user,onUser,initialReplay,onBack,onLogout}:{user:U
   const [tab,setTab]=useState<'stats'|'history'|'favorites'|'presets'>('stats'),[replay,setReplay]=useState(initialReplay);
   const [profileOpen,setProfileOpen]=useState(false),[soundOpen,setSoundOpen]=useState(false);
   usePageSound(`${tab}:${replay ?? ''}`);
-  const avatar=avatarNames[user.avatar??'leaf'];
   if(replay)return <ReplayPanel key={replay} id={replay} onBack={()=>{setReplay(null);if(initialReplay)setTab('history');}}/>;
-  return <section className="panel account account-flow" aria-label="个人中心"><div className="section-head profile-bar"><div className="profile-heading"><span className="avatar" aria-label={`${avatar.name}头像`}><PlayerAvatar avatar={user.avatar??'leaf'} avatarUrl={user.avatarUrl} wechatAvatarUrl={user.wechatAvatarUrl} fallbackKind="leaf"/></span><div><p className="eyebrow">嘻游 · 真假猴王 / 个人中心</p><div style={{display:'flex',alignItems:'center',gap:'8px',flexWrap:'wrap'}}><h1 style={{margin:0}}>{user.nickname}</h1>{user.playerCode&&<button type="button" onClick={()=>{navigator.clipboard.writeText(user.playerCode||'');alert(`仙友码【${user.playerCode}】已复制！在换设备或换号登录时输入此码即可切回查看历史战绩。`);}} title="点击复制仙友码" style={{width:'auto',minHeight:'unset',margin:0,padding:'2px 8px',fontSize:'12px',fontWeight:700,color:'#ffd875',background:'rgba(255,216,117,0.12)',border:'1px solid rgba(255,216,117,0.3)',borderRadius:'4px',cursor:'pointer',fontFamily:'monospace'}}>#{user.playerCode} 📋复制</button>}</div><p style={{margin:'4px 0 0',fontSize:'11.5px',color:'#cbd5e1'}}>专属仙友码全局唯一 · 微信小程序静默对应 · 换号凭此码随时找回战绩</p></div></div><div style={{display:'flex',gap:6}}>{onLogout&&<button className="secondary compact-button" onClick={onLogout} style={{color:'#fca5a5'}}>🚪 更换身份</button>}<button className="secondary compact-button" onClick={onBack}>返回原页面</button></div></div>
+  return <section className="panel account account-flow" aria-label="个人中心"><div className="section-head profile-bar"><div className="profile-heading"><span className="avatar" aria-label={`${user.nickname}的头像`}><PlayerAvatar avatar={user.avatar??'leaf'} avatarUrl={user.avatarUrl} wechatAvatarUrl={user.wechatAvatarUrl} fallbackKind="leaf"/></span><div><p className="eyebrow">嘻游 · 真假猴王 / 个人中心</p><div style={{display:'flex',alignItems:'center',gap:'8px',flexWrap:'wrap'}}><h1 style={{margin:0}}>{user.nickname}</h1>{user.playerCode&&<button type="button" onClick={()=>{navigator.clipboard.writeText(user.playerCode||'');alert(`仙友码【${user.playerCode}】已复制！在换设备或换号登录时输入此码即可切回查看历史战绩。`);}} title="点击复制仙友码" style={{width:'auto',minHeight:'unset',margin:0,padding:'2px 8px',fontSize:'12px',fontWeight:700,color:'#ffd875',background:'rgba(255,216,117,0.12)',border:'1px solid rgba(255,216,117,0.3)',borderRadius:'4px',cursor:'pointer',fontFamily:'monospace'}}>#{user.playerCode} 📋复制</button>}</div><p style={{margin:'4px 0 0',fontSize:'11.5px',color:'#cbd5e1'}}>专属仙友码全局唯一 · 微信小程序静默对应 · 换号凭此码随时找回战绩</p></div></div><div style={{display:'flex',gap:6}}>{onLogout&&<button className="secondary compact-button" onClick={onLogout} style={{color:'#fca5a5'}}>🚪 更换身份</button>}<button className="secondary compact-button" onClick={onBack}>返回原页面</button></div></div>
     <div className="account-quick-tools"><button type="button" className="secondary" onClick={()=>setProfileOpen(true)}>修改昵称与头像</button><button type="button" className="secondary" onClick={()=>setSoundOpen(true)}>声音设置</button></div>
     {profileOpen&&<ProfileEditor user={user} onUser={onUser} onClose={()=>setProfileOpen(false)}/>}
     {soundOpen&&<Modal label="声音设置" scene="dawn" onClose={()=>setSoundOpen(false)}><section className="table-modal-sheet flow-editor-sheet"><header className="table-modal-head"><strong>声音设置</strong><button type="button" className="secondary tool-pill" onClick={()=>setSoundOpen(false)}>关闭</button></header><div className="flow-scroll-body"><SoundControls /></div></section></Modal>}

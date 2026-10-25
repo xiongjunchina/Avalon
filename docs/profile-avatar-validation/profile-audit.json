@@ -1,0 +1,61 @@
+{
+  "choices": 12,
+  "customPhotoPreservedOnOpen": true,
+  "cancelPreservesSavedAvatar": true,
+  "presetSavedAndReloaded": true,
+  "uploadedAndReloaded": true,
+  "existingPhotoRestored": true,
+  "keyboardSelection": true,
+  "profileSaves": 3,
+  "viewports": [
+    {
+      "width": 320,
+      "height": 568,
+      "fonts": [
+        "14px",
+        "14px",
+        "14px",
+        "14px"
+      ],
+      "horizontalOverflow": false,
+      "headerTop": 25,
+      "saveTop": 477,
+      "saveBottom": 525,
+      "backdropScroll": 0,
+      "pass": true
+    },
+    {
+      "width": 393,
+      "height": 724,
+      "fonts": [
+        "14px",
+        "14px",
+        "14px",
+        "14px"
+      ],
+      "horizontalOverflow": false,
+      "headerTop": 25,
+      "saveTop": 633,
+      "saveBottom": 681,
+      "backdropScroll": 0,
+      "pass": true
+    },
+    {
+      "width": 430,
+      "height": 716,
+      "fonts": [
+        "14px",
+        "14px",
+        "14px",
+        "14px"
+      ],
+      "horizontalOverflow": false,
+      "headerTop": 25,
+      "saveTop": 625,
+      "saveBottom": 673,
+      "backdropScroll": 0,
+      "pass": true
+    }
+  ],
+  "pass": true
+}

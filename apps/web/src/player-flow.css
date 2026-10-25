@@ -107,6 +107,22 @@ main.app-shell.is-live-table { --table-gap: 8px; }
 .account-flow .history-list article { padding: 12px; }
 .history-game-details { margin-top: 8px; padding: 6px 10px; }
 .profile-editor form { margin: 0; }
+.profile-editor { font: 500 14px/1.5 var(--sans); }
+.profile-editor :is(label, legend), .profile-editor #profile-nickname, .profile-editor .hint { font: inherit; }
+.profile-editor #profile-nickname { min-height: 44px; padding: 8px 12px; }
+.profile-editor .profile-preset-fieldset { margin-top: 16px; }
+.profile-preset-fieldset > legend { margin: 0; padding: 0; }
+.profile-preset-fieldset > .hint { margin: 4px 0 8px; }
+.profile-avatar-options { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 8px; }
+.profile-editor .profile-avatar-option { position: relative; margin: 0; min-width: 0; cursor: pointer; }
+.profile-avatar-option > input { min-height: 1px; margin: 0; }
+.profile-avatar-option-card { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; min-height: 86px; height: 100%; padding: 6px 3px; border: 1px solid #d4a35966; border-radius: 12px; background: #26100edb; color: #fff3d6; text-align: center; font: 500 12px/1.4 var(--sans); }
+.profile-avatar-option-card img { display: block; width: 52px; height: 52px; border-radius: 50%; object-fit: cover; }
+.profile-avatar-option input:checked + .profile-avatar-option-card { border-color: #79f2ff; background: #124b53; color: #d9ffff; }
+.profile-avatar-option input:focus-visible + .profile-avatar-option-card { outline: 2px solid #ffd875; outline-offset: 2px; }
+@media (max-width: 360px) {
+  .profile-avatar-options { grid-template-columns: repeat(3,minmax(0,1fr)); }
+}
 .profile-editor .profile-vip-details { margin-top: 10px; }
 .presets > .preset-new-button { margin: 6px 0 10px; width: 100%; min-height: 44px; font-size: 14px; }
 .flow-editor-sheet .preset-form fieldset { margin: 0; }
