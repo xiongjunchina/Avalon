@@ -1,6 +1,10 @@
 import type { User } from '@avalon/contracts';
 export interface KnownAccount { id: string; nickname: string; playerCode: string; lastSeen: number }
 const key = 'avalon_known_accounts';
+export function knownAccountForNickname(accounts: KnownAccount[], nickname: string): KnownAccount | undefined {
+  return accounts.filter(account => account.nickname.trim() === nickname.trim())
+    .sort((a, b) => (b.lastSeen || 0) - (a.lastSeen || 0))[0];
+}
 export function knownAccountsList(): KnownAccount[] {
   try {
     const list: unknown = JSON.parse(localStorage.getItem(key) ?? '[]');

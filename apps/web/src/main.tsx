@@ -354,8 +354,11 @@ function App() {
       if (document.visibilityState !== 'visible' || refreshing) return;
       refreshing = true;
       try {
-        const data=await api<{user:User}>('/sessions/refresh', {});
-        if(active){setUser(data.user);saveKnownAccount(data.user);}
+        const data=await api<{user:User;roomId:string|null}>('/me');
+        if(active){
+          if(data.user.id!==user.id){setRoom(null);setRoomId(data.roomId);}
+          setUser(data.user);saveKnownAccount(data.user);
+        }
       } catch (err) {
         if (active) {
           setError(describe(err));
@@ -382,8 +385,10 @@ function App() {
   }, [user?.id]);
 
   useEffect(() => {
-    if (!roomId) return;
+    if (!roomId || !user) return;
+    setRoom(current=>current?.id===roomId&&current.members.some(member=>member.id===user.id)?current:null);
     const transport = new RoomConnection({
+      userId:user.id,
       fetchRoom: () => api(`/rooms/${roomId}`),
       socket: () =>
         new WebSocket(
@@ -457,7 +462,7 @@ function App() {
       document.removeEventListener('visibilitychange', resume);
       window.removeEventListener('online', resume);
     };
-  }, [roomId]);
+  }, [roomId,user?.id]);
 
   // Apply pre-room setup settings once connected as host
   useEffect(() => {

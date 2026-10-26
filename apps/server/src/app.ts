@@ -115,11 +115,12 @@ export async function buildApp(options: { store: PostgresStore; origin?: string;
   });
   app.get('/api/health',async()=>{await store.health();return {status:'ok',storage:'postgresql',stage:6};});
   app.post('/api/sessions/guest',{config:{rateLimit:{max:15,timeWindow:'1 minute'}}},async(req,reply)=>{
-    const {nickname, forceNew}=z.object({nickname:nicknameSchema, forceNew:z.boolean().optional()}).strict().parse(req.body);
+    const {nickname, forceNew,registrationId,roomKey}=z.object({nickname:nicknameSchema, forceNew:z.boolean().optional(),
+      registrationId:z.string().uuid().optional(),roomKey:z.string().trim().min(1).max(200).optional()}).strict().parse(req.body);
     if (!forceNew) {
       try{return {user:await authenticate(req,reply)};}catch(err){if(!(err instanceof DomainError)||err.code!=='UNAUTHENTICATED')throw err;}
     }
-    const {user,token}=await store.createGuest(nickname); setSession(reply,token);return {user};
+    const {user,token}=await store.createGuest(nickname,{registrationId,roomKey}); setSession(reply,token);return {user};
   });
   app.post('/api/sessions/refresh',async(req,reply)=>({user:await authenticate(req,reply)}));
   app.post('/api/sessions/switch', { config: { rateLimit: { max: 30, timeWindow: '1 minute' } } }, async (req, reply) => {
@@ -551,7 +552,12 @@ export async function buildApp(options: { store: PostgresStore; origin?: string;
         let commandId='';
         try{
           await store.authenticate(c.token);
-          const command=commandSchema.parse(JSON.parse(raw.toString()));commandId=command.commandId;
+          const message=JSON.parse(raw.toString());
+          if(message.type==='sync'){
+            const {room}=await store.roomFor(user.id,c.roomId);
+            send(socket,{type:'snapshot',room});return;
+          }
+          const command=commandSchema.parse(message);commandId=command.commandId;
           const result=await store.execute(user.id,c.roomId,command,c.id);
           if(result.dealEndsAt)scheduleDeal(c.roomId,result.dealEndsAt);
           send(socket,result.result);

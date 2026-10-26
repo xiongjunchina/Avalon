@@ -110,6 +110,21 @@ test('refresh reconnects to the same seat; latest tab takes over; invalid messag
   assert.equal((await third.next(m => m.type === 'snapshot' && m.room.members[0].online)).room.members[0].online, true);
 });
 
+test('room sync returns a fresh authenticated roster even if an earlier broadcast was missed', async t => {
+  const {guest,create,connect,store}=await fixture(t);
+  const host=await guest('房主'),player=await guest('道友辉');const room=await create(host.cookie);
+  const connection=await connect(host.cookie,room.id);await connection.next(m=>m.type==='snapshot');
+  // A committed join whose broadcast did not reach this browser.
+  await store.join(player.user,room.inviteKey!);
+  connection.send({type:'sync'});
+  const fresh=(await connection.next(m=>m.type==='snapshot'&&m.room.members.length===2)).room as RoomView;
+  assert.ok(fresh.members.some(member=>member.id===player.user.id));
+  assert.ok(fresh.members.some(member=>member.id===host.user.id));
+  const version=fresh.version;
+  connection.send({type:'sync'});
+  assert.equal((await connection.next(m=>m.type==='snapshot')).room.version,version);
+});
+
 test('host leaves and remaining player takes ownership; last departure closes room', async t => {
   const { app, guest, create, connect, store } = await fixture(t);
   const host = await guest(), player = await guest(); const room = await create(host.cookie);

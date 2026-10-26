@@ -80,11 +80,33 @@ export class PostgresStore {
     return members;
   }
   async health() { return this.tx(async c => { await c.query('SELECT 1'); }); }
-  async createGuest(nickname: string) {
-    const user: User = { id: randomUUID(), nickname, avatar:'leaf' }, token = randomBytes(32).toString('base64url');
+  async createGuest(nickname: string, options: {registrationId?:string;roomKey?:string} = {}) {
+    let user: User = { id: randomUUID(), nickname, avatar:'leaf' };
+    const token = randomBytes(32).toString('base64url');
     return this.tx(async c => {
-      user.playerCode = await allocatePlayerCode(c);
-      await c.query('INSERT INTO users(id,nickname,created_at,player_code) VALUES($1,$2,$3,$4)', [user.id,nickname,this.date(),user.playerCode]);
+      if(options.registrationId){
+        await c.query('SELECT pg_advisory_xact_lock(hashtext($1))',[`guest:${options.registrationId}`]);
+        const existing=(await c.query<{id:string;nickname:string;avatar:User['avatar'];avatar_url:string|null;wechat_avatar_url:string|null;player_code:string;is_banned:boolean|null;vip_until:Date|null}>(
+          `SELECT u.id,u.nickname,u.avatar,u.avatar_url,u.wechat_avatar_url,u.player_code,m.is_banned,m.vip_until
+           FROM users u LEFT JOIN user_memberships m ON m.user_id=u.id WHERE u.guest_registration_id=$1`,[options.registrationId])).rows[0];
+        if(existing){
+          if(existing.is_banned)throw new DomainError('USER_BANNED',403);
+          user={id:existing.id,nickname:existing.nickname,avatar:existing.avatar,playerCode:existing.player_code,
+            ...(existing.avatar_url?{avatarUrl:existing.avatar_url}:{}),...(existing.wechat_avatar_url?{wechatAvatarUrl:existing.wechat_avatar_url}:{}),
+            isVip:Boolean(existing.vip_until&&existing.vip_until.getTime()>this.now()),...(existing.vip_until?{vipUntil:existing.vip_until.toISOString()}:{})};
+        }
+      }
+      if(!user.playerCode){
+        if(options.roomKey){
+          // Only a valid invite or an unprotected room code may reveal a name collision.
+          const duplicate=await c.query(`SELECT 1 FROM rooms r JOIN room_members rm ON rm.room_id=r.id JOIN users u ON u.id=rm.user_id
+            WHERE r.phase<>'closed' AND (r.invite=$1 OR (r.code=$2 AND r.password_hash IS NULL)) AND u.nickname=$3 LIMIT 1`,
+            [options.roomKey,options.roomKey.toUpperCase(),nickname]);
+          if(duplicate.rowCount)throw new DomainError('NICKNAME_ALREADY_IN_ROOM',409);
+        }
+        user.playerCode = await allocatePlayerCode(c);
+        await c.query('INSERT INTO users(id,nickname,created_at,player_code,guest_registration_id) VALUES($1,$2,$3,$4,$5)', [user.id,nickname,this.date(),user.playerCode,options.registrationId??null]);
+      }
       await c.query('INSERT INTO sessions(token_hash,user_id,expires_at) VALUES($1,$2,$3)', [digest(token),user.id,new Date(this.now()+SESSION_MS)]);
       return { user, token };
     });

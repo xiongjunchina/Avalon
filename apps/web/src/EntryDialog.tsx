@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import * as Label from '@radix-ui/react-label';
 import type { User } from '@avalon/contracts';
 import { api, describe } from './api';
 import { Modal } from './Modal';
+import { EntrySession } from './entry-session';
 
-import type { KnownAccount } from './known-accounts';
+import { rememberAccount, type KnownAccount } from './known-accounts';
 export type { KnownAccount } from './known-accounts';
 export type EntryIntent = { type: 'home' | 'create' | 'join' | 'practice' | 'account'; inviteKey?: string };
 
@@ -17,22 +18,33 @@ export function EntryDialog({ intent, knownAccounts, onClose, onAuthenticated }:
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [accounts, setAccounts] = useState(knownAccounts);
+  const accountsRef = useRef(accounts);
+  accountsRef.current = accounts;
+  const submitting = useRef(false);
+  const session = useRef<EntrySession | null>(null);
+  if (!session.current) session.current = new EntrySession({
+    request: api, knownAccounts: () => accountsRef.current,
+    remember: user => { const next = rememberAccount(user); accountsRef.current = next; setAccounts(next); },
+    registrationId: () => crypto.randomUUID(),
+  });
   const purpose = intent.type === 'create' ? '创建房间' : intent.type === 'join' ? '加入房间'
     : intent.type === 'practice' ? '开始试玩' : intent.type === 'account' ? '查看功果簿' : '踏入取经大道';
 
   async function authenticate(playerCode?: string, account?: KnownAccount) {
-    if (busy) return;
+    if (submitting.current) return;
+    submitting.current = true;
     setBusy(true);
     setError('');
     try {
-      await api(playerCode ? '/sessions/switch' : '/sessions/guest',
-        playerCode ? { playerCode,...(account?{expectedUserId:account.id}:{}) } : { nickname: nickname.trim() });
-      // A returning account can already be seated. Restore that room before resuming an entry action.
-      const data = await api<{ user: User; roomId: string | null }>('/me');
+      const data = await session.current!.authenticate({
+        nickname, playerCode, account, roomKey: intent.inviteKey,
+      });
       onAuthenticated(data.user, data.roomId);
     } catch (err) {
       setError(describe(err));
     } finally {
+      submitting.current = false;
       setBusy(false);
     }
   }
@@ -44,6 +56,15 @@ export function EntryDialog({ intent, knownAccounts, onClose, onAuthenticated }:
         <button type="button" className="secondary tool-pill" disabled={busy} onClick={onClose}>关闭</button>
       </div>
       <p className="entry-purpose">设置身份后继续{purpose}，无需重新选择。</p>
+      {accounts.length > 0 && <section className="entry-known-accounts" aria-label="本机已保存的仙籍">
+        <p className="hint">本机仙籍 · 点击继续原账号</p>
+        <div className="guest-known-list">
+          {accounts.map(account => <button key={account.playerCode} type="button" disabled={busy}
+            className="guest-known-item" onClick={() => void authenticate(account.playerCode, account)}>
+            <span>{account.nickname}</span><small>#{account.playerCode} · 继续</small>
+          </button>)}
+        </div>
+      </section>}
       <div className="guest-tabs-bar" role="group" aria-label="登录模式选择">
         <button type="button" aria-pressed={mode === 'create'} disabled={busy}
           className={`guest-tab-btn ${mode === 'create' ? 'is-active' : ''}`}
@@ -62,22 +83,13 @@ export function EntryDialog({ intent, knownAccounts, onClose, onAuthenticated }:
             placeholder="例如：123456" disabled={busy} aria-describedby="entry-identity-hint"
             onChange={e => { setCode(e.target.value.replace(/\D/g, '').slice(0, 6)); setError(''); }} />}
         <p className="hint" id="entry-identity-hint">{mode === 'create'
-          ? '系统会为你分配唯一的 6 位仙友码，用于切换账号和保留战绩。'
+          ? '新玩家将获得唯一的 6 位仙友码；本机保存过的同昵称账号会继续使用。'
           : '输入仙友码即可找回原账号，继续使用原昵称、头像和战绩。'}</p>
         {error && <p className="error entry-error" role="alert">{error}</p>}
         <button className="mp-cyan-pill" disabled={busy || (mode === 'create' ? !nickname.trim() : code.length !== 6)} type="submit">
           {busy ? '正在设置身份…' : `确认身份，${purpose}`}
         </button>
       </form>
-      {knownAccounts.length > 0 && <details className="entry-known-accounts">
-        <summary>常用仙籍（{knownAccounts.length}）</summary>
-        <div className="guest-known-list">
-          {knownAccounts.map(account => <button key={account.playerCode} type="button" disabled={busy}
-            className="guest-known-item" onClick={() => void authenticate(account.playerCode,account)}>
-            <span>{account.nickname}</span><small>#{account.playerCode} · 切入</small>
-          </button>)}
-        </div>
-      </details>}
     </section>
   </Modal>;
 }

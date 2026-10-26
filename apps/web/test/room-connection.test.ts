@@ -14,9 +14,9 @@ class FakeSocket {
 }
 const room:RoomView={id:randomUUID(),code:'ABC',hostId:'host',version:1,phase:'waiting',settings:defaultSettings,members:[],acceptingNewMembers:true};
 const flush=()=>new Promise<void>(resolve=>setImmediate(resolve));
-function setup(fetchRoom:()=>Promise<{room:RoomView;invite:string}>=async()=>({room,invite:'test'})) {
+function setup(fetchRoom:()=>Promise<{room:RoomView;invite:string}>=async()=>({room,invite:'test'}), options: {syncIntervalMs?:number;responseTimeoutMs?:number} = {}) {
   const sockets:FakeSocket[]=[],state={busy:false,status:'',errors:[] as string[],ended:[] as string[],versions:[] as number[]};
-  const transport=new RoomConnection({fetchRoom,retryDelay:100000,
+  const transport=new RoomConnection({fetchRoom,retryDelay:100000,...options,
     socket:()=>{const s=new FakeSocket();sockets.push(s);return s as unknown as WebSocket;},
     handlers:{snapshot:r=>state.versions.push(r.version),invite:()=>{},busy:v=>state.busy=v,status:v=>state.status=v,error:e=>state.errors.push(e),ended:e=>state.ended.push(e)},
   });return {transport,sockets,state};
@@ -33,6 +33,46 @@ test('simultaneous resume events create one connection; disposed attempts never 
   const g=setup(()=>new Promise(r=>resolve=r));g.transport.start();g.transport.stop();resolve({room,invite:'test'});await flush();assert.equal(g.sockets.length,0);
 });
 
+test('returning to a still-open mobile socket requests a fresh roster and detects a half-open connection',async t=>{
+  const f=setup(undefined,{syncIntervalMs:100000,responseTimeoutMs:15});t.after(()=>f.transport.stop());
+  f.transport.start();await flush();const first=f.sockets[0];first.open();first.message({type:'snapshot',room});
+  f.transport.resume();
+  assert.deepEqual(first.sent,[{type:'sync'}]);
+  first.message({type:'snapshot',room:{...room,version:2}});
+  assert.equal(f.state.versions.at(-1),2);
+  f.transport.resume(); // This socket still says OPEN, but the network never delivers the reply.
+  await new Promise(resolve=>setTimeout(resolve,35));
+  await flush();
+  assert.equal(first.readyState,3);
+  f.transport.resume();await flush();
+  assert.equal(f.sockets.length,2);
+});
+
+test('socket handshake cannot remain stuck connecting indefinitely',async t=>{
+  const f=setup(undefined,{responseTimeoutMs:15});t.after(()=>f.transport.stop());
+  f.transport.start();await flush();const socket=f.sockets[0];
+  await new Promise(resolve=>setTimeout(resolve,35));await flush();
+  assert.equal(socket.readyState,3);
+  f.transport.resume();await flush();assert.equal(f.sockets.length,2);
+});
+
+test('periodic roster sync recovers missed broadcasts without requiring a game action',async t=>{
+  const f=setup(undefined,{syncIntervalMs:10,responseTimeoutMs:100000});t.after(()=>f.transport.stop());
+  f.transport.start();await flush();const socket=f.sockets[0];socket.open();socket.message({type:'snapshot',room});
+  await new Promise(resolve=>setTimeout(resolve,25));
+  assert.deepEqual(socket.sent,[{type:'sync'}]);
+});
+
+test('a roster without the authenticated player cannot be displayed as their room',async t=>{
+  let displayed=false,ended='';
+  const transport=new RoomConnection({userId:'道友辉',fetchRoom:async()=>({room,invite:'test'}),
+    socket:()=>{throw Error('must not open a socket for another identity');},
+    handlers:{snapshot:()=>{displayed=true;},invite:()=>{},status:()=>{},error:()=>{},busy:()=>{},ended:reason=>{ended=reason;}},
+  });
+  t.after(()=>transport.stop());transport.start();await flush();
+  assert.equal(displayed,false);assert.equal(ended,'left');
+});
+
 test('old receipts cannot clear a newer command; reconnect resends the same command id',async t=>{
   const f=setup();t.after(()=>f.transport.stop());f.transport.start();await flush();const a=f.sockets[0];a.open();a.message({type:'snapshot',room});
   const first=action();assert.equal(f.transport.send(first),true);
@@ -46,6 +86,7 @@ test('old receipts cannot clear a newer command; reconnect resends the same comm
 test('taken-over page never auto-reconnects; manual reconnect is explicit; terminal errors stop retries',async t=>{
   const f=setup();t.after(()=>f.transport.stop());f.transport.start();await flush();f.sockets[0].open();
   f.sockets[0].message({type:'takenOver'});f.sockets[0].close(4001);await flush();f.transport.resume();await flush();assert.equal(f.sockets.length,1);
+  f.sockets[0].message({type:'snapshot',room:{...room,version:9}});assert.equal(f.state.status,'其他页面已接管');
   f.transport.reconnect();await flush();assert.equal(f.sockets.length,2);f.sockets[1].open();f.sockets[1].message({type:'roomClosed'});await flush();f.transport.resume();assert.equal(f.sockets.length,2);assert.deepEqual(f.state.ended,['closed']);
   const g=setup(async()=>{throw new Error('UNAUTHENTICATED');});g.transport.start();await flush();assert.deepEqual(g.state.ended,['expired']);g.transport.resume();assert.equal(g.sockets.length,0);g.transport.stop();
 });
