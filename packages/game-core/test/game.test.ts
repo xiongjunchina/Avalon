@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { defaultSettings, settingsSchema, commandSchema, type Command, type Settings } from '@avalon/contracts';
 import { createGame, transition, projectGame, captain, ROLE_CONFIG, MISSION_SIZES, teamOf, type GameState } from '../src/index.js';
-function game(n=5, patch:Partial<Settings>={}) { return createGame(randomUUID(),Array.from({length:n},(_,i)=>({id:randomUUID(),nickname:`玩家${i+1}`,seat:i+1})),{...defaultSettings,playerCount:n,...patch},values=>values); }
+function game(n=5, patch:Partial<Settings>={}) { return createGame(randomUUID(),Array.from({length:n},(_,i)=>({id:randomUUID(),nickname:`玩家${i+1}`,seat:i+1})),{...defaultSettings,playerCount:n,...patch},values=>values,{randomBelow:()=>0n}); }
 
 test('room defaults include optional auto reveal role disabled', () => {
   assert.equal(defaultSettings.autoRevealRoleEnabled, false);
@@ -53,11 +53,11 @@ test('silent anti-3-streak loyal protection guarantees vision role to protected 
   for(let n=5;n<=12;n++){
     const players=Array.from({length:n},(_,i)=>({id:`u-${i+1}`,nickname:`玩家${i+1}`,seat:i+1}));
     // Under identity shuffle (values=>values), find seats that would normally draw 'loyal'
-    const baseline=createGame(randomUUID(),players,{...defaultSettings,playerCount:n},values=>values);
+    const baseline=createGame(randomUUID(),players,{...defaultSettings,playerCount:n},values=>values,{randomBelow:()=>0n});
     const loyalIds=players.filter(p=>baseline.roles[p.id]==='loyal').map(p=>p.id);
     assert.ok(loyalIds.length>=1);
     const protectedIds=loyalIds;
-    const protectedGame=createGame(randomUUID(),players,{...defaultSettings,playerCount:n},values=>values,protectedIds);
+    const protectedGame=createGame(randomUUID(),players,{...defaultSettings,playerCount:n},values=>values,{visionGuaranteedUserIds:protectedIds,randomBelow:()=>0n});
     for(const pid of protectedIds){
       assert.notEqual(protectedGame.roles[pid],'loyal');
       assert.notEqual(protectedGame.roles[pid],'oberon');
@@ -69,7 +69,7 @@ test('silent anti-3-streak loyal protection guarantees vision role to protected 
 test('boss cooldown and blue guaranteed anti-streak protections prevent repeated boss and red streaks',()=>{
   for(let n=5;n<=12;n++){
     const players=Array.from({length:n},(_,i)=>({id:`u-${i+1}`,nickname:`玩家${i+1}`,seat:i+1}));
-    const baseline=createGame(randomUUID(),players,{...defaultSettings,playerCount:n},values=>values);
+    const baseline=createGame(randomUUID(),players,{...defaultSettings,playerCount:n},values=>values,{randomBelow:()=>0n});
     // Find players who drew boss roles (merlin, morgana)
     const bossIds=players.filter(p=>['merlin','morgana','mordred'].includes(baseline.roles[p.id])).map(p=>p.id);
     const redIds=players.filter(p=>teamOf(baseline.roles[p.id])==='red').map(p=>p.id);
@@ -83,6 +83,7 @@ test('boss cooldown and blue guaranteed anti-streak protections prevent repeated
     const protectedGame=createGame(randomUUID(),players,{...defaultSettings,playerCount:n},values=>values,{
       bossCooldownUserIds: [cooledBossId],
       blueGuaranteedUserIds: [guaranteedBlueId],
+      randomBelow:()=>0n,
     });
 
     // The cooled boss player must not receive merlin, morgana or mordred
@@ -95,7 +96,7 @@ test('boss cooldown and blue guaranteed anti-streak protections prevent repeated
 });
 test('confirmation, permission, exact unique team size and fixed shuffled captain cycle',()=>{
   let g=game(5,{captainMode:'random_order'});
-  g=createGame(g.id,g.players,g.settings,values=>values.reverse());
+  g=createGame(g.id,g.players,g.settings,values=>values.reverse(),{randomBelow:()=>0n});
   assert.deepEqual(g.captainOrder,g.players.map(p=>p.id).reverse());
   // Captain can propose directly without waiting for manual confirmRole from all players
   assert.equal(propose(g).phase,'team_vote');

@@ -9,7 +9,7 @@ import { GamePanel } from '../src/GamePanel.js';
 import { PrivateExtensions } from '../src/Extensions.js';
 function fixture() {
   const players=Array.from({length:7},(_,i)=>({id:randomUUID(),seat:i+1,nickname:`页面测试${i+1}`}));
-  return createGame(randomUUID(),players,{...defaultSettings,playerCount:7,earlyAssassinationEnabled:true},a=>a);
+  return createGame(randomUUID(),players,{...defaultSettings,playerCount:7,earlyAssassinationEnabled:true},a=>a,{randomBelow:()=>0n});
 }
 const name=(id:string)=>id;
 const send=()=>{};

@@ -89,7 +89,7 @@ export function RolePreferenceModal({
         <div className="table-modal-head role-pref-head">
           <div className="role-pref-head-left">
             <strong className="role-pref-title">🎭 心仪选角 · 偏好匹配</strong>
-            <span className="role-pref-sub">排位靠前优先满足 · 意向全员保密</span>
+            <span className="role-pref-sub">志愿提高机会 · 不保证命中</span>
           </div>
           <button
             type="button"
@@ -239,9 +239,9 @@ export function RolePreferenceModal({
           <div className="role-pref-mechanics-note">
             <span className="note-icon">💡</span>
             <div className="note-body">
-              <strong>王者荣耀式意向匹配机制说明：</strong>
+              <strong>心仪角色加权说明：</strong>
               <span>
-                系统开局打乱玩家顺位，排位靠前优先满足其第 1、第 2、第 3 志愿；若已被抢占或未设偏好，则从剩余角色中随机发牌。<strong>选角意向全员保密，他人不可见！</strong>
+                第一、第二、第三志愿及其他角色的基础权重为 8 / 4 / 2 / 1。近期重复角色会降低权重，系统结合本局角色数量与保护条件随机发牌，不保证命中志愿。<strong>选角意向不向其他玩家公开。</strong>
               </span>
             </div>
           </div>

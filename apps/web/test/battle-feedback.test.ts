@@ -86,7 +86,7 @@ test('public teammate badges follow drafts, discussion edits and accepted missio
 test('GamePanel renders active Jingu Seal notification and ally seat badge for Percival', () => {
   const p8 = Array.from({ length: 8 }, (_, i) => ({ id: `p${i + 1}`, seat: i + 1, nickname: `仙友${i + 1}` }));
   const roles = ['percival', 'merlin', 'morgana', 'loyal', 'loyal', 'loyal', 'assassin', 'mordred'];
-  const game = createGame('jingu-test', p8, { ...defaultSettings, playerCount: 8, treasuresEnabled: true }, values => roles as unknown as typeof values);
+  const game = createGame('jingu-test', p8, { ...defaultSettings, playerCount: 8, treasuresEnabled: true }, values => roles as unknown as typeof values, { randomBelow: () => 0n });
   // Trigger jinguSeal by loyal player p4
   game.treasuresState = { jinguSeal: { used: true, activatedBy: 'p4' } };
 

@@ -33,7 +33,7 @@ function fixedRoles10(roles: string[]): <T>(values: T[]) => T[] {
 test('treasures: disabled for playerCount < 8 or when setting is false', () => {
   const players7 = makePlayers(7);
   const settings7 = { ...defaultSettings, playerCount: 7, treasuresEnabled: true };
-  const game7 = createGame('g7', players7, settings7, values => values);
+  const game7 = createGame('g7', players7, settings7, values => values, { randomBelow: () => 0n });
   const projected7 = projectGame(game7, players7[0].id);
   assert.equal(projected7.self?.treasures?.enabled, false);
 
@@ -53,7 +53,7 @@ test('treasures: enabled and usable for 8-player matches', () => {
   const roles = ['percival', 'merlin', 'morgana', 'loyal', 'loyal', 'loyal', 'assassin', 'mordred'];
   const players = makePlayers(8);
   const settings8 = { ...defaultSettings, playerCount: 8, treasuresEnabled: true };
-  let g = createGame('g8', players, settings8, values => roles as unknown as typeof values);
+  let g = createGame('g8', players, settings8, values => roles as unknown as typeof values, { randomBelow: () => 0n });
 
   const projectedPercival = projectGame(g, players[0].id);
   assert.equal(projectedPercival.self?.treasures?.enabled, true);
@@ -121,7 +121,7 @@ test('treasures: Percival tinStaff cannot inspect candidates or before 2 mission
   // Assign: 0:percival, 1:merlin, 2:morgana, 3:mordred, 4:guinevere, 5:loyal, 6:loyal, 7:loyal, 8:assassin, 9:oberon
   const roles = ['percival', 'merlin', 'morgana', 'mordred', 'guinevere', 'loyal', 'loyal', 'loyal', 'assassin', 'oberon'];
   const players = makePlayers(10);
-  let g = createGame('g10', players, defaultSettings, fixedRoles10(roles));
+  let g = createGame('g10', players, defaultSettings, fixedRoles10(roles), { randomBelow: () => 0n });
 
   // Role reveal
   for (const p of players) {
@@ -233,7 +233,7 @@ test('treasures: Percival tinStaff cannot inspect candidates or before 2 mission
 test('treasures: Mordred humanBag bans a player from being nominated in mission 3', () => {
   const roles = ['percival', 'merlin', 'morgana', 'mordred', 'guinevere', 'loyal', 'loyal', 'loyal', 'assassin', 'oberon'];
   const players = makePlayers(10);
-  let g = createGame('g10-bag', players, defaultSettings, fixedRoles10(roles));
+  let g = createGame('g10-bag', players, defaultSettings, fixedRoles10(roles), { randomBelow: () => 0n });
 
   for (const p of players) {
     g = transition(g, p.id, { type: 'confirmRole', payload: {} }, players.map(x => x.id));
@@ -303,7 +303,7 @@ test('treasures: Mordred humanBag bans a player from being nominated in mission 
 test('treasures: Loyal Guardian jinguSeal requires 2 failures and reveals ally to Percival only', () => {
   const roles = ['percival', 'merlin', 'morgana', 'mordred', 'guinevere', 'loyal', 'loyal', 'loyal', 'assassin', 'oberon'];
   const players = makePlayers(10);
-  let g = createGame('g10-seal', players, defaultSettings, fixedRoles10(roles));
+  let g = createGame('g10-seal', players, defaultSettings, fixedRoles10(roles), { randomBelow: () => 0n });
 
   for (const p of players) {
     g = transition(g, p.id, { type: 'confirmRole', payload: {} }, players.map(x => x.id));
@@ -367,7 +367,7 @@ test('treasures: Loyal Guardian jinguSeal requires 2 failures and reveals ally t
 test('treasures: Oberon bananaFan arms and blows away passed proposal without incrementing rejectionCount', () => {
   const roles = ['percival', 'merlin', 'morgana', 'mordred', 'guinevere', 'loyal', 'loyal', 'loyal', 'assassin', 'oberon'];
   const players = makePlayers(10);
-  let g = createGame('g10-fan', players, defaultSettings, fixedRoles10(roles));
+  let g = createGame('g10-fan', players, defaultSettings, fixedRoles10(roles), { randomBelow: () => 0n });
 
   for (const p of players) {
     g = transition(g, p.id, { type: 'confirmRole', payload: {} }, players.map(x => x.id));
@@ -416,7 +416,7 @@ test('treasures: Guanyin 4-second decision window - skip retains treasure, pick 
   const roles = ['merlin', 'percival', 'guinevere', 'loyal', 'loyal', 'loyal', 'morgana', 'assassin', 'mordred'];
   const players = makePlayers(9);
   const settings9 = { ...defaultSettings, playerCount: 9, treasuresEnabled: true };
-  let g = createGame('g9-guanyin', players, settings9, fixedRoles10(roles));
+  let g = createGame('g9-guanyin', players, settings9, fixedRoles10(roles), { randomBelow: () => 0n });
 
   for (const p of players) {
     g = transition(g, p.id, { type: 'confirmRole', payload: {} }, players.map(x => x.id));
@@ -527,7 +527,7 @@ test('treasures: non-treasure game transitions directly to mission without guany
   const roles = ['merlin', 'percival', 'guinevere', 'loyal', 'loyal', 'loyal', 'morgana', 'assassin', 'mordred'];
   const players = makePlayers(9);
   const settingsNoTreasures = { ...defaultSettings, playerCount: 9, treasuresEnabled: false };
-  let g = createGame('g9-notreasures', players, settingsNoTreasures, fixedRoles10(roles));
+  let g = createGame('g9-notreasures', players, settingsNoTreasures, fixedRoles10(roles), { randomBelow: () => 0n });
 
   for (const p of players) {
     g = transition(g, p.id, { type: 'confirmRole', payload: {} }, players.map(x => x.id));

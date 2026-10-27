@@ -5,7 +5,7 @@ import { captain, createGame, projectGame, transition, type GameState } from '..
 
 function fixture(count = 12) {
   const players = Array.from({ length: count }, (_, i) => ({ id: `00000000-0000-4000-8000-${String(i + 1).padStart(12, '0')}`, seat: i + 1, nickname: `仙友${i + 1}` }));
-  let game = createGame('heart-bell-game', players, { ...defaultSettings, playerCount: count, treasuresEnabled: true }, a => a);
+  let game = createGame('heart-bell-game', players, { ...defaultSettings, playerCount: count, treasuresEnabled: true }, a => a, { randomBelow: () => 0n });
   const id = (role: Role) => players.find(p => game.roles[p.id] === role)!.id;
   const online = players.map(p => p.id);
   const sender = id('minion'), target = id('morgana'), good = id('loyal');

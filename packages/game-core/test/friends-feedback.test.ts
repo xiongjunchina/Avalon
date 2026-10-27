@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {defaultSettings, defaultAnonymousTeamVote, commandSchema, type Command, type TeamBallot} from '@avalon/contracts';
 import {createGame, transition, projectGame, type GameState} from '../src/index';
-const fresh = (anonymous=false) => createGame(randomUUID(),Array.from({length:5},(_,i)=>({id:randomUUID(),nickname:`Player${i}`,seat:i+1})),{...defaultSettings,playerCount:5,anonymousTeamVote:anonymous},a=>a);
+const fresh = (anonymous=false) => createGame(randomUUID(),Array.from({length:5},(_,i)=>({id:randomUUID(),nickname:`Player${i}`,seat:i+1})),{...defaultSettings,playerCount:5,anonymousTeamVote:anonymous},a=>a,{randomBelow:()=>0n});
 const act=(g:GameState,id:string,type:Command['type'],payload:Command['payload']={})=>transition(g,id,{type,payload},g.players.map(p=>p.id));
 function voting(anonymous=false) { let g=fresh(anonymous);g=act(g,g.players[0].id,'proposeTeam',{playerIds:g.players.slice(0,2).map(p=>p.id),direction:'clockwise'});return act(g,g.players[0].id,'startTeamVote'); }
 test('drafts broadcast immediately and can be edited in discussion, then lock at voting',()=>{

@@ -478,6 +478,8 @@ export class AdminService {
           afterProposal: w.afterProposal,
           decision: w.decision,
         })),
+        ...(r.ended_at && ['finished', 'aborted'].includes(g.phase) && g.roleAssignmentAudit
+          ? { roleAssignmentAudit: g.roleAssignmentAudit } : {}),
       };
     } finally {
       client.release();

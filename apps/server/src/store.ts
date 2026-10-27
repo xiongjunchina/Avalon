@@ -1,6 +1,7 @@
 import { createHash, randomBytes, randomUUID, randomInt } from 'node:crypto';
 import { hashSecret, verifySecret } from './access-secrets.js';
 import { allocatePlayerCode } from './player-codes.js';
+import { secureRandomBelow } from './secure-random.js';
 import { createGame, transition, projectGame, isEnded, finish, RuleError, ROLE_CONFIG, type GameState } from '@avalon/game-core';
 import { isDeepStrictEqual } from 'node:util';
 import type { Pool, PoolClient } from 'pg';
@@ -438,19 +439,21 @@ export class PostgresStore {
                     ROW_NUMBER() OVER (PARTITION BY p.user_id ORDER BY g.created_at DESC,g.id DESC) AS rn
              FROM game_participants p JOIN games g ON g.id=p.game_id
              WHERE p.user_id=ANY($1::uuid[])
-           ) t WHERE rn<=2`,
+           ) t WHERE rn<=5`,
           [members.map(m=>m.user_id)]
         );
-        const redRoles = ['morgana', 'assassin', 'oberon', 'mordred', 'minion'];
         const bossRoles = ['merlin', 'morgana', 'mordred'];
         const visionGuaranteedUserIds: string[] = [];
         const bossCooldownUserIds: string[] = [];
+        const recentRoleHistory: Record<string, Role[]> = {};
 
         for (const m of members) {
           const hist = recentRoles.rows
             .filter(row => row.user_id === m.user_id)
             .sort((a,b) => Number(a.rn) - Number(b.rn));
-          if (hist.length === 2 && hist.every(row => row.role === 'loyal')) {
+          recentRoleHistory[m.user_id] = hist.map(row => row.role as Role);
+          const recentTwo = hist.slice(0, 2);
+          if (recentTwo.length === 2 && recentTwo.every(row => row.role === 'loyal')) {
             visionGuaranteedUserIds.push(m.user_id);
           }
           const lastGame = hist.find(row => Number(row.rn) === 1);
@@ -473,6 +476,8 @@ export class PostgresStore {
         const game=createGame(randomUUID(),members.map(m=>({id:m.user_id,nickname:m.nickname,seat:m.seat})),r.settings,secureShuffle,{
           visionGuaranteedUserIds,
           bossCooldownUserIds,
+          recentRoles: recentRoleHistory,
+          randomBelow: secureRandomBelow,
           rolePreferences: r.settings.rolePreferenceEnabled ? rolePreferences : undefined,
         });
         dealEndsAt=new Date(this.now()+DEAL_MS).toISOString();

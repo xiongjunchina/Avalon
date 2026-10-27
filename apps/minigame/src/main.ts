@@ -274,7 +274,7 @@ async function select(id: string) {
       } else gameUi.targetId = targetId;
       render(); return;
     }
-    if (id === 'rematch') { practice = new PracticeSession(practice.settings, user?.nickname ?? '我'); syncGameUi(gameUi, practice.view()); render(); return; }
+    if (id === 'rematch') { practice = new PracticeSession(practice.settings, user?.nickname ?? '我', practice); syncGameUi(gameUi, practice.view()); render(); return; }
     const command = gameAction(practice.view(), practice.user, id, gameUi);
     if (command) { try { practice.act(command); if (command.type === 'useTreasure') gameUi.targetId = undefined; syncGameUi(gameUi, practice.view()); } catch (cause) { error = cause instanceof Error ? cause.message : '练习操作失败'; } render(); }
     else if (['treasure:tinStaff', 'treasure:guanyinMirror', 'treasure:humanBag', 'treasure:jinguSeal', 'treasure:bananaFan'].includes(id)) { error = '当前法宝不可用，或所选目标不符合条件'; render(); }

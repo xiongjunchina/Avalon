@@ -5,7 +5,7 @@ import { defaultSettings, commandSchema, type Settings, type Command } from '@av
 import { createGame, transition, projectGame, captain, teamOf, type GameState } from '../src/index.js';
 function action(g:GameState,id:string,type:Command['type'],payload:Command['payload']={}) {return transition(g,id,{type,payload},g.players.map(p=>p.id));}
 function game(patch:Partial<Settings>={},n=7) {
-  let g=createGame(randomUUID(),Array.from({length:n},(_,i)=>({id:randomUUID(),seat:i+1,nickname:`拓展${i+1}`})),{...defaultSettings,playerCount:n,...patch},a=>a);
+  let g=createGame(randomUUID(),Array.from({length:n},(_,i)=>({id:randomUUID(),seat:i+1,nickname:`拓展${i+1}`})),{...defaultSettings,playerCount:n,...patch},a=>a,{randomBelow:()=>0n});
   for(const p of g.players)g=action(g,p.id,'confirmRole');return g;
 }
 const roleId=(g:GameState,role:string)=>g.players.find(p=>g.roles[p.id]===role)!.id;
@@ -74,7 +74,7 @@ test('extension schema rejects secret fields, forged actors and ambiguous decisi
 test('guardianPerksEnabled generates strictly bounded, role-consistent private clues without leaks',()=>{
   for (const n of [5, 6, 7, 8, 9, 10, 11, 12]) {
     const players = Array.from({ length: n }, (_, i) => ({ id: `p-${i + 1}`, seat: i + 1, nickname: `玩家${i + 1}` }));
-    const g = createGame('guardian-test', players, { ...defaultSettings, playerCount: n, guardianPerksEnabled: true }, a => a);
+    const g = createGame('guardian-test', players, { ...defaultSettings, playerCount: n, guardianPerksEnabled: true }, a => a, { randomBelow: () => 0n });
     const pub = projectGame(g);
     assert.equal('guardianClues' in pub, false);
     assert.equal(pub.self, undefined);

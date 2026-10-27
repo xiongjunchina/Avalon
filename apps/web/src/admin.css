@@ -712,6 +712,29 @@
   gap: 12px;
 }
 
+/* Deal evidence is secondary admin-only replay content, with the existing compact type scale. */
+.admin-deal-audit {
+  margin-top: 14px;
+  border: 1px solid rgba(212, 163, 89, 0.3);
+  border-radius: 8px;
+  color: #cbd5e1;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+}
+.admin-deal-audit > summary { padding: 10px 12px; cursor: pointer; color: #ffd875; font-weight: 600; }
+.admin-deal-audit-body { padding: 0 12px 12px; }
+.admin-deal-audit-meta { display: grid; grid-template-columns: 5.5em minmax(0, 1fr); gap: 4px 8px; margin: 0; }
+.admin-deal-audit-meta dt { color: #94a3b8; }
+.admin-deal-audit-meta dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.admin-deal-audit-note { margin: 10px 0; font: inherit; color: #94a3b8; text-wrap: pretty; }
+.admin-deal-audit-players { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+.admin-deal-audit-players > li { padding: 10px; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 6px; min-width: 0; }
+.admin-deal-audit-player-head { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px 12px; margin-bottom: 8px; }
+.admin-deal-audit-player-head strong { font: inherit; font-weight: 600; overflow-wrap: anywhere; }
+.admin-deal-audit-player-head span { color: #ffd875; }
+
 /* Dedicated rooms and player codes follow the existing admin typography and controls. */
 .admin-viewport :is(.special-admin, .special-editor) {
   font-size: 13px;

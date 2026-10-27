@@ -32,7 +32,7 @@ test('compact identity keeps exactly the permitted vision and uses neutral playe
 test('Merlin identity only mentions Mordred when this game configuration includes him',()=>{
   for (const count of [7,8,9,12]) {
     const players=Array.from({length:count},(_,i)=>({id:`p${i}`,seat:i+1,nickname:`同伴${i}`}));
-    const game=createGame('vision',players,{...defaultSettings,playerCount:count},a=>a);
+    const game=createGame('vision',players,{...defaultSettings,playerCount:count},a=>a,{randomBelow:()=>0n});
     const html=renderToStaticMarkup(createElement(IdentityDetails,{self:projectGame(game,'p0').self!,players}));
     assert.equal(html.includes('本局含黄眉老怪'),count>=8);
     if(count<8)assert.match(html,/本局全部群妖成员/);

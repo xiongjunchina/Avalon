@@ -9,6 +9,7 @@ import type {
   SystemAnnouncement,
 } from '@avalon/contracts';
 import { ReplayView } from './AccountPanel';
+import { AdminRoleAssignmentAudit } from './AdminRoleAssignmentAudit';
 import './admin.css';
 import { SpecialAdmin, PlayerCodeEditor } from './SpecialAdmin';
 
@@ -1229,6 +1230,7 @@ export function AdminDashboard({ onBackToGame }: AdminDashboardProps) {
             </div>
             <div className="admin-replay-modal-body">
               <ReplayView replay={inspectingReplay} />
+              <AdminRoleAssignmentAudit replay={inspectingReplay} />
             </div>
           </div>
         </div>

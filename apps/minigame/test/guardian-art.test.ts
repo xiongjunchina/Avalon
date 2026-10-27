@@ -27,7 +27,7 @@ test('mini-game public home, setup and statistics consistently show white dragon
 
 test('mini-game legacy settlement still shows the assigned pig guardian rather than the new default', () => {
   const players = Array.from({ length: 5 }, (_, i) => ({ id: `p${i}`, seat: i + 1, nickname: `仙友${i}` }));
-  const game = createGame('legacy-guardian', players, { ...defaultSettings, playerCount: 5 }, a => a);
+  const game = createGame('legacy-guardian', players, { ...defaultSettings, playerCount: 5 }, a => a, { randomBelow: () => 0n });
   game.rulesetVersion = 'standard-no-lancelot-v3';
   game.phase = 'aborted';
   game.result = { winner: null, reason: 'unanimous_abort' };

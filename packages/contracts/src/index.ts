@@ -370,8 +370,29 @@ export interface GameSummary {
   self: {nickname:string;seat:number;role:Role;team:Team}; result:GameResult; favorite:boolean;
 }
 export interface HistoryPage { games:GameSummary[]; nextCursor:string|null }
+/** Server-side deal evidence; exposed only in an administrator's completed-game replay. */
+export interface RoleAssignmentAudit {
+  algorithmVersion: string;
+  weightVersion: string;
+  /** 0: all protections; 1: release boss cooldown; 2: also release blue; 3: also release vision. */
+  protectionLevel: 0 | 1 | 2 | 3;
+  playerOrder: string[];
+  /** Explicit draw interval order; JSONB object keys cannot preserve this ordering. */
+  roleOrder?: Role[];
+  players: Record<string, {
+    preferences: Role[];
+    /** Up to five most recently dealt roles, newest first, including aborted games. */
+    recentRoles: Role[];
+    weights: Partial<Record<Role, number>>;
+    protections: { visionGuaranteed: boolean; blueGuaranteed: boolean; bossCooldown: boolean };
+    assignedRole: Role;
+  }>;
+  /** Decimal strings preserve exact bigint draw values across JSON storage and transport. */
+  draws: { userId: string; totalWeight: string; ticket: string }[];
+}
 export interface Replay extends GameSummary {
   settings:Settings; players:Player[]; roles:Record<string,Role>; rounds:RoundView[];
   inspections:Inspection[]; earlyWindows:EarlyWindow[];
+  roleAssignmentAudit?: RoleAssignmentAudit;
 }
 export interface SettingPreset { id:string; name:string; settings:Settings; updatedAt:string }

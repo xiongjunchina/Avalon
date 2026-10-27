@@ -8,7 +8,7 @@ import { BACKGROUND_MUSIC } from '../src/audio-catalog';
 import { SoundEngine } from '../src/audio-engine';
 
 const players = Array.from({ length: 5 }, (_, i) => ({ id: `p${i}`, seat: i + 1, nickname: `仙友${i}` }));
-const fresh = () => createGame('audio-game', players, { ...defaultSettings, playerCount: 5, anonymousTeamVote: true }, a => a);
+const fresh = () => createGame('audio-game', players, { ...defaultSettings, playerCount: 5, anonymousTeamVote: true }, a => a, { randomBelow: () => 0n });
 const view = () => projectGame(fresh(), 'p0');
 test('sound settings default off and reject malformed or truthy string values', () => {
   for (const value of [null, '', 'bad', 'null', '[]', '{"music":"false","effects":1}']) assert.deepEqual(parseSoundPreferences(value), { music: false, effects: false });

@@ -1,5 +1,5 @@
 import type { Command, Player, RoomView, Settings } from '@avalon/contracts';
-import { MISSION_SIZES, captain, createGame, isEnded, projectGame, teamOf, transition, type GameState } from '@avalon/game-core';
+import { MISSION_SIZES, captain, createGame, isEnded, projectGame, roleHistoryAfterDeal, randomBigIntBelow, teamOf, transition, type GameState } from '@avalon/game-core';
 import { ensureGameClone } from '../platform/clone.js';
 
 const SELF_ID = 'practice-self';
@@ -15,14 +15,20 @@ function shuffle<T>(items: T[]): T[] {
 export class PracticeSession {
   private game: GameState;
   readonly user = { id: SELF_ID, nickname: '我' };
-  constructor(readonly settings: Settings, nickname: string) {
+  constructor(readonly settings: Settings, nickname: string, previous?: PracticeSession) {
     ensureGameClone();
     this.user.nickname = nickname;
     const players: Player[] = Array.from({ length: settings.playerCount }, (_, index) => ({
       id: index === 0 ? SELF_ID : `practice-bot-${index}`, seat: index + 1,
       nickname: index === 0 ? nickname : `仙友${index + 1}号`,
     }));
-    this.game = createGame(`practice-${Date.now()}`, players, settings, shuffle);
+    this.game = createGame(`practice-${Date.now()}`, players, settings, shuffle, {
+      recentRoles: previous?.settings.playerCount === settings.playerCount ? roleHistoryAfterDeal(previous.game) : undefined,
+      // Local bots only. Authoritative online deals always use the server's crypto source.
+      randomBelow: upper => randomBigIntBelow(upper, bytes => {
+        for (let i = 0; i < bytes.length; i++) bytes[i] = Math.floor(Math.random() * 256);
+      }),
+    });
     this.stepBot();
   }
   view(): RoomView {

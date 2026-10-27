@@ -5,6 +5,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { defaultSettings } from '@avalon/contracts';
 import { RolePreferenceModal } from '../src/RolePreferenceModal';
 import { settingsText } from '../src/PresetsPanel';
+import { GuideRules } from '../src/GuidePanel';
 
 test('RolePreferenceModal: renders available roles according to player count and shows existing preferences', () => {
   // Test 6-player mode: contains Merlin, Percival, Loyal, Morgana, Assassin; excludes Mordred & Oberon
@@ -55,4 +56,18 @@ test('settingsText: displays 心仪选角 when rolePreferenceEnabled is true', (
 
   const textOn = settingsText({ ...defaultSettings, rolePreferenceEnabled: true });
   assert.match(textOn, /心仪选角/);
+});
+
+test('preference dialog and rules explain weighted chances without promising priority assignment', () => {
+  const modal = renderToStaticMarkup(createElement(RolePreferenceModal, {
+    open: true, onClose: () => {}, currentPreferences: [], playerCount: 8, onSave: async () => {},
+  }));
+  const guide = renderToStaticMarkup(createElement(GuideRules));
+  for (const html of [modal, guide]) {
+    assert.match(html, /8 \/ 4 \/ 2 \/ 1/);
+    assert.match(html, /近期重复角色会降低权重/);
+    assert.match(html, /不保证命中/);
+    assert.match(html, /不向其他玩家公开/);
+    assert.doesNotMatch(html, /排位靠前优先满足|优先逐个满足|已被抢占|王者荣耀/);
+  }
 });

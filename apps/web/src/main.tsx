@@ -21,6 +21,7 @@ import {
   failuresRequiredFor,
   isEnded,
   projectGame,
+  roleHistoryAfterDeal,
   teamOf,
   transition,
   type GameState,
@@ -578,7 +579,9 @@ function App() {
     const rolePreferences = s.rolePreferenceEnabled && room?.selfRolePreferences?.length
       ? { p1: room.selfRolePreferences }
       : undefined;
-    const g = createGame(`practice-game-${Date.now()}`, players, s, shuffleArray, { rolePreferences });
+    const previous = practiceGameRef.current;
+    const recentRoles = previous?.players.length === s.playerCount ? roleHistoryAfterDeal(previous) : undefined;
+    const g = createGame(`practice-game-${Date.now()}`, players, s, shuffleArray, { rolePreferences, recentRoles });
     setPracticeUserId('p1');
     practiceGameRef.current = g;
     setPracticeGame(g);
