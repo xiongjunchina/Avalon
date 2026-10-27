@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { User } from '@avalon/contracts';
-import { EntrySession } from '../src/entry-session';
+import { entryRoomKey, EntrySession } from '../src/entry-session';
 import { knownAccountForNickname, type KnownAccount } from '../src/known-accounts';
 import type { api } from '../src/api';
 
@@ -98,4 +98,32 @@ test('known nickname matching prefers the most recently used local identity and 
   const latest = { ...account, id: 'newer', lastSeen: 2, playerCode: '654321' };
   assert.equal(knownAccountForNickname([account, latest], '陈欣'), latest);
   assert.equal(knownAccountForNickname([account], '道友辉'), undefined);
+});
+
+test('six-digit room numbers cannot create a nickname or make any registration request',async()=>{
+  const session=new EntrySession({
+    request:requestUsing(async()=>{throw Error('must not send a request');}),knownAccounts:()=>[],remember:()=>{},registrationId:()=>{throw Error('must not create an id');},
+  });
+  for(const nickname of ['999999','１２３４５６',' 9 9 9 9 9 9 ']){
+    await assert.rejects(session.authenticate({nickname,roomKey:'999999'}),/NICKNAME_LOOKS_LIKE_ROOM_CODE/);
+  }
+});
+
+test('a saved legacy numeric nickname still restores its exact original account',async()=>{
+  const numeric={...user,nickname:'999999'},known={...account,nickname:numeric.nickname};
+  const calls:Array<{path:string;body?:unknown}>=[];
+  const session=new EntrySession({request:requestUsing(async(path,body)=>{
+    calls.push({path,body});return path==='/me'?{user:numeric,roomId:'old-room'}:{user:numeric};
+  }),knownAccounts:()=>[known],remember:()=>{},registrationId:()=>{throw Error('must not register');}});
+  await session.authenticate({nickname:'999999'});
+  assert.deepEqual(calls[0],{path:'/sessions/switch',body:{playerCode:'123456',expectedUserId:user.id}});
+});
+
+test('room entry accepts a room number or extracts an invitation without confusing it with a player code',()=>{
+  assert.equal(entryRoomKey(' 999999 '),'999999');
+  assert.equal(entryRoomKey('９９９９９９'),'999999');
+  assert.equal(entryRoomKey('https://game.example/?invite=private-token&from=wechat'),'private-token');
+  for(const input of ['', '小陈', 'https://game.example/', 'javascript:alert(1)', '12345']){
+    assert.throws(()=>entryRoomKey(input),/INVALID_ROOM_ENTRY/);
+  }
 });

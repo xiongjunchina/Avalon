@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
-import {defaultSettings} from '@avalon/contracts';
+import {defaultSettings,guestNicknameSchema,nicknameSchema,profileSchema} from '@avalon/contracts';
 import {headers,service} from './helpers.js';
 import {SpecialManagement} from '../src/special-management.js';
 
@@ -69,4 +69,44 @@ test('idempotent retries restore current profile and still enforce account bans'
   assert.equal(retry.user.id,first.user.id);assert.equal(retry.user.nickname,'新昵称');assert.equal(retry.user.avatar,'moon');
   await f.pool.query('INSERT INTO user_memberships(user_id,is_banned) VALUES($1,true)',[first.user.id]);
   await assert.rejects(f.store.createGuest('陈欣',{registrationId}),/USER_BANNED/);
+});
+
+test('new guests cannot accidentally register a six-digit room number as their nickname',async t=>{
+  const f=await service(t);
+  for(const nickname of ['999999','９９９９９９','9 9 9 9 9 9','９　９　９　９　９　９','9\t9\t9\t9\t9\t9']){
+    assert.equal(guestNicknameSchema.safeParse(nickname).success,false);
+    const response=await f.app.inject({method:'POST',url:'/api/sessions/guest',headers,payload:{nickname,registrationId:randomUUID()}});
+    assert.equal(response.statusCode,400,nickname);
+    assert.equal(response.json().error,'NICKNAME_LOOKS_LIKE_ROOM_CODE');
+    assert.equal(response.headers['set-cookie'],undefined);
+  }
+  assert.equal((await f.pool.query('SELECT count(*) FROM users')).rows[0].count,'0');
+  assert.equal((await f.pool.query('SELECT count(*) FROM sessions')).rows[0].count,'0');
+  for(const nickname of ['仙友999999','99999','9999999','道友辉']){
+    assert.equal(guestNicknameSchema.safeParse(nickname).success,true);
+    const response=await f.app.inject({method:'POST',url:'/api/sessions/guest',headers,payload:{nickname,registrationId:randomUUID()}});
+    assert.equal(response.statusCode,200,response.body);
+  }
+});
+
+test('existing numeric accounts retain cookie login, code switching, profiles and idempotent recovery',async t=>{
+  const f=await service(t),registrationId=randomUUID();
+  const original=await f.store.createGuest('既有玩家',{registrationId});
+  // Simulate an account created before the new-guest nickname safeguard was introduced.
+  await f.pool.query("UPDATE users SET nickname='999999' WHERE id=$1",[original.user.id]);
+  assert.equal(nicknameSchema.parse('999999'),'999999');
+  assert.equal(profileSchema.parse({nickname:'999999',avatar:'leaf'}).nickname,'999999');
+  const payload={nickname:'999999',registrationId};
+  const reused=await f.app.inject({method:'POST',url:'/api/sessions/guest',headers:{...headers,cookie:`avalon_session=${original.token}`},payload});
+  assert.equal(reused.statusCode,200,reused.body);assert.equal(reused.json().user.id,original.user.id);
+  const retry=await f.app.inject({method:'POST',url:'/api/sessions/guest',headers,payload});
+  assert.equal(retry.statusCode,200,retry.body);assert.equal(retry.json().user.id,original.user.id);assert.equal(retry.json().user.nickname,'999999');
+  const switched=await f.app.inject({method:'POST',url:'/api/sessions/switch',headers,payload:{playerCode:original.user.playerCode}});
+  assert.equal(switched.statusCode,200,switched.body);assert.equal(switched.json().user.id,original.user.id);
+  const cookie=String(switched.headers['set-cookie']).split(';')[0];
+  const profile=await f.app.inject({method:'PATCH',url:'/api/me',headers:{...headers,cookie},payload:{nickname:'999999',avatar:'moon'}});
+  assert.equal(profile.statusCode,200,profile.body);assert.equal(profile.json().user.nickname,'999999');
+  const newAccount=await f.app.inject({method:'POST',url:'/api/sessions/guest',headers:{...headers,cookie},payload:{nickname:'999999',forceNew:true,registrationId:randomUUID()}});
+  assert.equal(newAccount.statusCode,400);assert.equal(newAccount.json().error,'NICKNAME_LOOKS_LIKE_ROOM_CODE');
+  assert.equal((await f.pool.query('SELECT count(*) FROM users')).rows[0].count,'1');
 });

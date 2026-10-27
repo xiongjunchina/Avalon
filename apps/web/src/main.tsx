@@ -1754,7 +1754,7 @@ function App() {
       </>}
       {!user && entryIntent && <EntryDialog intent={entryIntent} knownAccounts={knownAccounts}
         onClose={() => setEntryIntent(null)}
-        onAuthenticated={(authenticatedUser, existingRoomId) => {
+        onAuthenticated={(authenticatedUser, existingRoomId, destination) => {
           setUser(authenticatedUser);
           saveKnownAccount(authenticatedUser);
           setEntryIntent(null);
@@ -1762,7 +1762,7 @@ function App() {
           if (existingRoomId) {
             setPage('table');
             setNotice('已返回当前账号所在的房间。');
-          } else resumeEntry(entryIntent, authenticatedUser);
+          } else resumeEntry(destination, authenticatedUser);
         }}
       />}
 

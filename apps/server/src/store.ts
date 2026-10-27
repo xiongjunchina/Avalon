@@ -4,7 +4,7 @@ import { allocatePlayerCode } from './player-codes.js';
 import { createGame, transition, projectGame, isEnded, finish, RuleError, ROLE_CONFIG, type GameState } from '@avalon/game-core';
 import { isDeepStrictEqual } from 'node:util';
 import type { Pool, PoolClient } from 'pg';
-import { defaultSettings, type Command, type RoomView, type Settings, type User, type ServerMessage, type Role } from '@avalon/contracts';
+import { defaultSettings, looksLikeRoomNumber, type Command, type RoomView, type Settings, type User, type ServerMessage, type Role } from '@avalon/contracts';
 
 export class DomainError extends Error {
   constructor(public code: string, public status = 400) { super(code); }
@@ -97,6 +97,7 @@ export class PostgresStore {
         }
       }
       if(!user.playerCode){
+        if(looksLikeRoomNumber(nickname))throw new DomainError('NICKNAME_LOOKS_LIKE_ROOM_CODE');
         if(options.roomKey){
           // Only a valid invite or an unprotected room code may reveal a name collision.
           const duplicate=await c.query(`SELECT 1 FROM rooms r JOIN room_members rm ON rm.room_id=r.id JOIN users u ON u.id=rm.user_id

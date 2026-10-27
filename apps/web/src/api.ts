@@ -24,6 +24,8 @@ export const errors: Record<string, string> = {
   ROOM_CLOSED: '房间已关闭，请重新创建或加入其他房间。', JOIN_DISABLED: '房主已关闭新成员加入，请联系房主。',
   USER_NOT_FOUND: '未找到该玩家，请核对6位仙友码或昵称。',
   NICKNAME_ALREADY_IN_ROOM: '房间里已有这个昵称的玩家。若是你，请用原仙友码找回账号；若是另一位朋友，请换个昵称。',
+  NICKNAME_LOOKS_LIKE_ROOM_CODE: '这是房间号，请在昵称里填写朋友认识的称呼，例如“小陈”或“阿辉”。',
+  INVALID_ROOM_ENTRY: '请在房间号一栏填写朋友发来的 6 位号码，或粘贴完整邀请链接。',
   USER_BANNED: '此账号已被系统封禁。',
   INVALID_PLAYER_CODE: '请输入6位有效数字仙友码。',
   HAS_GAME_RECORDS: '该用户存在对局记录，为维护对局复盘与数据完整性不可删除。如需限制其访问可使用封禁功能。',

@@ -53,6 +53,12 @@ export const defaultSettings: Settings = {
 export const defaultAnonymousTeamVote = (playerCount: number) => playerCount < 8;
 export type TeamBallot = boolean | 'abstain';
 export const nicknameSchema = z.string().trim().min(1).max(20);
+/** First-time room entrants sometimes paste their six-digit room code into the nickname field. */
+export const looksLikeRoomNumber = (nickname: string) => /^\d{6}$/.test(nickname.normalize('NFKC').replace(/\s/gu, ''));
+// Only use when creating a new guest. Existing accounts and profile names remain compatible.
+export const guestNicknameSchema = nicknameSchema.refine(nickname => !looksLikeRoomNumber(nickname), {
+  message: 'NICKNAME_LOOKS_LIKE_ROOM_CODE',
+});
 export const roleSchema = z.enum([
   'merlin',
   'percival',

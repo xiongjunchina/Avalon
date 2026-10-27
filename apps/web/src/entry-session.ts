@@ -1,4 +1,4 @@
-import type { User } from '@avalon/contracts';
+import {looksLikeRoomNumber, type User} from '@avalon/contracts';
 import { api } from './api';
 import { knownAccountForNickname, type KnownAccount } from './known-accounts';
 
@@ -9,6 +9,18 @@ export interface EntrySessionInput {
   roomKey?: string;
 }
 interface EntryIdentity { user: User; roomId: string | null }
+
+/** Keep the destination separate from the player's nickname before registration. */
+export function entryRoomKey(value: string): string {
+  const trimmed=value.trim().normalize('NFKC');
+  if(/^[1-9]\d{5}$/.test(trimmed))return trimmed;
+  try{
+    const url=new URL(trimmed);
+    const invite=url.searchParams.get('invite')?.trim();
+    if(['http:','https:'].includes(url.protocol)&&invite&&invite.length<=200)return invite;
+  }catch{ /* A room number is not a URL. */ }
+  throw Error('INVALID_ROOM_ENTRY');
+}
 
 /** Keeps a registration attempt stable until its account and current room have both been restored. */
 export class EntrySession {
@@ -45,6 +57,7 @@ export class EntrySession {
         playerCode, ...(expectedUserId ? { expectedUserId } : {}),
       }));
     } else {
+      if(looksLikeRoomNumber(nickname))throw Error('NICKNAME_LOOKS_LIKE_ROOM_CODE');
       if (this.registration?.nickname !== nickname) this.registration = { nickname, id: this.options.registrationId() };
       ({ user } = await this.options.request<{ user: User }>('/sessions/guest', {
         nickname, registrationId: this.registration.id, ...(input.roomKey ? { roomKey: input.roomKey } : {}),

@@ -42,8 +42,21 @@ test('identity prompt explains the pending action, retains account recovery, and
     knownAccounts: [{ id: 'old', nickname: '旧仙友', playerCode: '123456', lastSeen: 0 }],
     onClose: noop, onAuthenticated: noop,
   }));
-  assert.match(html, /确认身份，加入房间/);
+  assert.match(html, /使用此昵称加入房间/);
   assert.match(html, /已有仙友码/);
   assert.match(html, /旧仙友/);
   assert.doesNotMatch(html, /private-invite-token/);
+  assert.doesNotMatch(html, /id="entry-room"/);
+  assert.match(html, /邀请已带好房间信息/);
+});
+
+test('first-time number joins put the room field before the separate player nickname',()=>{
+  const html=renderToStaticMarkup(createElement(EntryDialog,{
+    intent:{type:'join'},knownAccounts:[],onClose:noop,onAuthenticated:noop,
+  }));
+  assert.ok(html.indexOf('id="entry-room"')<html.indexOf('id="entry-identity"'));
+  assert.match(html,/房间号（朋友发给你的号码）/);
+  assert.match(html,/玩家昵称（大家怎么称呼你）/);
+  assert.match(html,/小陈、阿辉/);
+  assert.doesNotMatch(html,/尊号|请留取经尊号/);
 });
