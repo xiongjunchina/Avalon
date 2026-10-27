@@ -4317,6 +4317,48 @@ dialog.table-modal-backdrop::backdrop { background: #081b2d55; }
    ========================================================================== */
 
 /* 1. Voice Controls & Bottom Social Dock */
+.voice-controls-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  max-width: 100%;
+}
+.voice-options-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  max-width: 240px;
+  min-width: 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.4;
+}
+.voice-options-row .voice-wake-toggle,
+.voice-options-row .voice-recovery-action {
+  width: auto;
+  min-height: 26px;
+  margin: 0;
+  padding: 3px 8px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgba(26, 14, 18, 0.85);
+  color: var(--accent);
+  font: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.voice-options-row .voice-wake-toggle[aria-pressed="true"] {
+  color: #bcf4f2;
+  border-color: #58c7d9;
+  background: #153e48;
+}
+.voice-options-row .voice-wake-toggle:disabled { opacity: 0.55; cursor: not-allowed; }
+.voice-recovery-note, .voice-wake-notice { overflow-wrap: anywhere; text-align: center; }
+.voice-recovery-note { color: var(--accent); }
 .voice-controls-cluster {
   display: inline-flex !important;
   align-items: center !important;
@@ -4468,12 +4510,13 @@ dialog.table-modal-backdrop::backdrop { background: #081b2d55; }
 .voice-connecting-box {
   display: inline-flex !important;
   align-items: center !important;
-  gap: 6px !important;
-  padding: 0 8px !important;
+  gap: 4px !important;
+  padding: 0 4px !important;
   height: 32px !important;
   color: #ffd54f !important;
   font-size: 12px !important;
   font-weight: 600 !important;
+  white-space: nowrap;
 }
 
 .voice-error-cluster {
@@ -4668,17 +4711,26 @@ dialog.table-modal-backdrop::backdrop { background: #081b2d55; }
 }
 
 .waiting-voice-capsule {
-  display: flex !important;
+  display: contents !important;
   align-items: center !important;
   justify-content: center !important;
-  height: 32px !important;
+  height: auto !important;
   min-height: 32px !important;
-  max-height: 32px !important;
+  max-height: none !important;
   width: 100% !important;
   min-width: 0 !important;
   margin: 0 !important;
   padding: 0 !important;
   box-sizing: border-box !important;
+}
+.waiting-voice-capsule .voice-controls-block { display: contents; }
+.waiting-voice-capsule .voice-controls-block > :first-child { justify-self: center; }
+.waiting-voice-capsule .voice-options-row {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  max-width: 100%;
+  border-top: 1px solid rgba(229, 185, 100, 0.22);
+  padding-top: 4px;
 }
 
 .waiting-offline-badge {

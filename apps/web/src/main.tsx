@@ -48,6 +48,8 @@ import { LobbyHome } from './LobbyHome';
 import { EntryDialog, type EntryIntent, type KnownAccount } from './EntryDialog';
 import { SoundProvider, SoundButton, useSound, useGameSound, useNavigationSound } from './SoundSettings';
 import { VoiceControls } from './VoiceControls';
+import {VoiceSession} from './voice-session';
+import {useVoiceWakeLock} from './use-voice-wake-lock';
 import { SeatMicBadge } from './SeatMicBadge';
 import { FriendsModal, RoomInvitationToast, DirectChatToast } from './FriendsModal';
 import { voiceManager, type VoiceState } from './agora-voice';
@@ -137,7 +139,11 @@ function App() {
 
   // Agora Voice & Friends State
   const [voiceState, setVoiceState] = useState<VoiceState>(() => voiceManager.getState());
-  const voiceRequestRef = useRef(0);
+  const voiceSessionRef=useRef<VoiceSession|null>(null);
+  if(!voiceSessionRef.current)voiceSessionRef.current=new VoiceSession(voiceManager,
+    roomId=>api<VoiceTokenResponse>(`/rooms/${roomId}/voice-token`),
+    err=>setError('无法恢复语音：'+(err instanceof Error?err.message:'请检查网络或麦克风权限')));
+  const voiceWakeLock=useVoiceWakeLock(voiceState.status!=='disconnected');
   const [friendsModalOpen, setFriendsModalOpen] = useState(false);
   const [pendingInvitation, setPendingInvitation] = useState<{
     fromUser: User;
@@ -244,32 +250,28 @@ function App() {
   // Clean up voice when leaving room or when room settings disable voice
   useEffect(() => {
     if (!roomId || !user || (room && !room.settings.voiceChatEnabled)) {
-      voiceRequestRef.current++;
-      void voiceManager.leave();
+      void voiceSessionRef.current!.leave();
     }
     return () => {
-      voiceRequestRef.current++;
-      void voiceManager.leave();
+      void voiceSessionRef.current!.leave();
     };
   }, [roomId, user?.id, room?.settings.voiceChatEnabled]);
 
+  useEffect(()=>{
+    const resume=()=>{if(document.visibilityState==='visible')void voiceSessionRef.current!.resume();};
+    document.addEventListener('visibilitychange',resume);
+    window.addEventListener('pageshow',resume);
+    window.addEventListener('online',resume);
+    return()=>{document.removeEventListener('visibilitychange',resume);window.removeEventListener('pageshow',resume);window.removeEventListener('online',resume);};
+  },[]);
+
   const handleJoinVoice = async () => {
     if (!roomId || !room?.settings.voiceChatEnabled) return;
-    const request = ++voiceRequestRef.current;
-    try {
-      const tokenData = await api<VoiceTokenResponse>(`/rooms/${roomId}/voice-token`);
-      if (request !== voiceRequestRef.current) return;
-      await voiceManager.join(tokenData);
-    } catch (err) {
-      if (request !== voiceRequestRef.current) return;
-      console.warn('Failed to join voice:', err);
-      setError('无法开启语音：' + (err instanceof Error ? err.message : '请检查网络或麦克风权限'));
-    }
+    await voiceSessionRef.current!.start(roomId);
   };
 
   const handleLeaveVoice = async () => {
-    voiceRequestRef.current++;
-    await voiceManager.leave();
+    await voiceSessionRef.current!.leave();
   };
 
   const handleToggleMute = () => {
@@ -281,7 +283,7 @@ function App() {
   };
 
   const handleReconnectVoice = () => {
-    void handleJoinVoice();
+    void voiceSessionRef.current!.resume(true);
   };
 
   const handleJoinByCode = async (code: string) => {
@@ -1251,6 +1253,7 @@ function App() {
                 <div className="game-floating-voice-hud" aria-label="实时语音控制">
                   <VoiceControls
                     voiceState={voiceState}
+                    wakeLock={voiceWakeLock}
                     onJoin={handleJoinVoice}
                     onLeave={handleLeaveVoice}
                     onToggleMute={handleToggleMute}
@@ -1468,6 +1471,7 @@ function App() {
                   <div className="waiting-voice-capsule">
                     <VoiceControls
                       voiceState={voiceState}
+                      wakeLock={voiceWakeLock}
                       onJoin={handleJoinVoice}
                       onLeave={handleLeaveVoice}
                       onToggleMute={handleToggleMute}

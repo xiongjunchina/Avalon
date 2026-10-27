@@ -31,6 +31,9 @@ export interface VoiceState {
   micOpenUids: Set<number>;
   channel?: string;
   uid?: number;
+  recoveryNeeded?: boolean;
+  recovering?: boolean;
+  recoveryMessage?: string;
 }
 
 export class AgoraVoiceManager {
@@ -50,6 +53,14 @@ export class AgoraVoiceManager {
   private duckingCallback?: (ducking: boolean) => void;
   private connectionAbort?: AbortController;
   private joinTask: Promise<void> | null = null;
+  private rtc: IAgoraRTC | null = null;
+  private sdkCleanup?: () => void;
+  private trackCleanup?: () => void;
+  private recoveryNeeded = false;
+  private recovering = false;
+  private recoveryMessage?: string;
+  private recoveryTask: Promise<'ready'|'interaction'|'reconnect'> | null = null;
+  private recoveryVersion = 0;
 
   constructor(
     private readonly loadRTC: () => Promise<IAgoraRTC> = getAgoraRTC,
@@ -67,6 +78,9 @@ export class AgoraVoiceManager {
       micOpenUids: new Set(this.micOpenUids),
       channel: this.channel,
       uid: this.uid,
+      recoveryNeeded: this.recoveryNeeded,
+      recovering: this.recovering,
+      recoveryMessage: this.recoveryMessage,
     };
   }
 
@@ -87,6 +101,118 @@ export class AgoraVoiceManager {
     for (const listener of this.listeners) {
       listener(state);
     }
+  }
+
+  private needsRecovery(message: string) {
+    this.recoveryVersion++;
+    this.recoveryNeeded = true;
+    this.recoveryMessage = message;
+    this.notify();
+  }
+
+  private watchMicrophone(track: IMicrophoneAudioTrack) {
+    this.trackCleanup?.();
+    const ended = () => {
+      if(this.localAudioTrack!==track)return;
+      if(this.uid)this.micOpenUids.delete(this.uid);
+      if(!this.muted&&!this.deafened)this.needsRecovery('麦克风已被系统中断，请点击恢复语音');
+      else this.notify();
+    };
+    track.on?.('track-ended',ended);
+    const media=track.getMediaStreamTrack?.();
+    const interrupted=()=>{
+      if(this.localAudioTrack===track&&!this.muted&&!this.deafened)this.needsRecovery('麦克风被系统暂停，请点击恢复语音');
+    };
+    media?.addEventListener('ended',ended);
+    media?.addEventListener('mute',interrupted);
+    this.trackCleanup=()=>{track.off?.('track-ended',ended);media?.removeEventListener('ended',ended);media?.removeEventListener('mute',interrupted);};
+  }
+
+  /** Recover media in the existing channel; reconnect only when the channel really ended. */
+  recover(userGesture = false): Promise<'ready'|'interaction'|'reconnect'> {
+    if(this.recoveryTask)return this.recoveryTask;
+    if(this.status==='disconnected')return Promise.resolve('reconnect');
+    if(this.status==='connecting')return Promise.resolve('ready');
+    const client=this.client,attempt=this.connectionAbort,rtc=this.rtc;
+    if(!client||!attempt||attempt.signal.aborted||client.connectionState==='DISCONNECTED')return Promise.resolve('reconnect');
+    if(client.connectionState==='RECONNECTING')return Promise.resolve(userGesture?'reconnect':'ready');
+    let expired=false;
+    const active=()=>!expired&&this.client===client&&this.connectionAbort===attempt&&!attempt.signal.aborted;
+    const version=this.recoveryVersion;
+    let contextError=false;
+    // Keep this synchronous so a click can satisfy the browser's user-gesture requirement.
+    try{if(!this.deafened)rtc?.resumeAudioContext?.();}catch{contextError=true;}
+    this.recovering=true;this.notify();
+    let timer:ReturnType<typeof setTimeout>|undefined;
+    let abortRecovery:()=>void;
+    const cancelled=new Promise<'ready'>(resolve=>{abortRecovery=()=>resolve('ready');attempt.signal.addEventListener('abort',abortRecovery,{once:true});});
+    const operation=(async():Promise<'ready'|'interaction'>=>{
+      let replacement:IMicrophoneAudioTrack|undefined;
+      try{
+        if(contextError)throw Error('AUDIO_CONTEXT_BLOCKED');
+        if(!this.deafened){
+          for(const remote of client.remoteUsers){
+            if(!active())return 'ready';
+            if(remote.hasAudio&&!remote.audioTrack){await client.subscribe(remote,'audio');if(!active())return 'ready';}
+            remote.audioTrack?.play();
+          }
+        }
+        const original=this.localAudioTrack;
+        const media=original?.getMediaStreamTrack?.();
+        if(!this.muted&&!this.deafened&&(!original||media?.readyState==='ended'||(userGesture&&media?.muted))){
+          this.trackCleanup?.();this.trackCleanup=undefined;
+          if(original){
+            try{await client.unpublish(original);}finally{
+              if(this.localAudioTrack===original){this.localAudioTrack=null;original.stop();original.close();}
+            }
+            if(!active())return 'ready';
+          }
+          replacement=await rtc!.createMicrophoneAudioTrack({AEC:true,ANS:true,AGC:true});
+          if(!active()){replacement.stop();replacement.close();return 'ready';}
+          this.localAudioTrack=replacement;this.watchMicrophone(replacement);
+          await replacement.setMuted(this.muted||this.deafened);
+          if(!active())return 'ready';
+          await client.publish([replacement]);
+          if(!active())return 'ready';
+          // A user can mute while permission acquisition or publication is still pending.
+          await replacement.setMuted(this.muted||this.deafened);
+          if(!active())return 'ready';
+        }
+        if(!active())return 'ready';
+        const currentMedia=this.localAudioTrack?.getMediaStreamTrack?.();
+        if(!this.muted&&!this.deafened&&currentMedia?.muted){
+          this.needsRecovery('麦克风仍被系统暂停，请点击恢复语音');return 'interaction';
+        }
+        if(this.recoveryVersion!==version)return 'interaction';
+        this.recoveryNeeded=false;this.recoveryMessage=undefined;
+        if(this.uid&&this.localAudioTrack&&!this.muted&&!this.deafened)this.micOpenUids.add(this.uid);
+        return 'ready';
+      }catch{
+        if(replacement&&this.localAudioTrack===replacement){
+          this.trackCleanup?.();this.trackCleanup=undefined;this.localAudioTrack=null;
+          void client.unpublish(replacement).catch(()=>{});
+          replacement.stop();replacement.close();
+          if(this.uid)this.micOpenUids.delete(this.uid);
+        }
+        if(active())this.needsRecovery('语音播放或麦克风尚未恢复，请点击恢复语音');
+        return 'interaction';
+      }
+    })();
+    const timeout=new Promise<'interaction'>(resolve=>{timer=setTimeout(()=>{
+      if(active()){
+        expired=true;void this.releaseResources();
+        this.status='error';this.error='语音恢复超时，请点击恢复语音';this.notify();
+      }
+      resolve('interaction');
+    },this.connectionTimeoutMs);});
+    const task=Promise.race([operation,cancelled,timeout]).finally(()=>{
+      clearTimeout(timer);
+      attempt.signal.removeEventListener('abort',abortRecovery);
+      if(this.recoveryTask===task)this.recoveryTask=null;
+      if(active()){this.recovering=false;this.notify();}
+    });
+    this.recoveryTask=task;
+    return task;
   }
 
   join(config: VoiceConfig): Promise<void> {
@@ -131,6 +257,7 @@ export class AgoraVoiceManager {
 
       const AgoraRTC = await this.loadRTC();
       if (!current()) return;
+      this.rtc=AgoraRTC;
       if (typeof AgoraRTC.checkSystemRequirements === 'function' && !AgoraRTC.checkSystemRequirements()) {
         const msg = '当前浏览器环境不支持 WebRTC 实时语音，请尝试使用 Chrome、Safari 或内置安全浏览器';
         throw new Error(msg);
@@ -138,6 +265,13 @@ export class AgoraVoiceManager {
       const client = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
       this.client = client;
       const active = () => current() && this.client === client;
+      const autoplay=()=>{if(active()&&!this.deafened)this.needsRecovery('浏览器暂停了语音播放，请点击恢复语音');};
+      const audioState=(state:string)=>{
+        if(active()&&!this.deafened&&['interrupted','suspended','closed'].includes(state))this.needsRecovery('语音被系统暂停，请点击恢复语音');
+      };
+      AgoraRTC.on?.('autoplay-failed',autoplay);
+      AgoraRTC.on?.('audio-context-state-changed',audioState);
+      this.sdkCleanup=()=>{AgoraRTC.off?.('autoplay-failed',autoplay);AgoraRTC.off?.('audio-context-state-changed',audioState);};
       let joined = false;
 
       client.on('user-joined', (user: IAgoraRTCRemoteUser) => {
@@ -173,6 +307,7 @@ export class AgoraVoiceManager {
           }
         } catch (err) {
           console.warn('Failed to subscribe to remote user audio:', err);
+          if(active()&&mediaType==='audio'&&!this.deafened)this.needsRecovery('语音尚未恢复，请点击恢复语音');
         }
         if (!active()) return;
         this.notify();
@@ -297,6 +432,7 @@ export class AgoraVoiceManager {
         });
         if (!active()) { localTrack.stop(); localTrack.close(); return; }
         this.localAudioTrack = localTrack;
+        this.watchMicrophone(localTrack);
         if (this.muted) {
           await localTrack.setMuted(true);
           if (!active()) return;
@@ -366,7 +502,20 @@ export class AgoraVoiceManager {
     const nextMuted = !this.muted;
     this.muted = nextMuted;
 
-    if (this.localAudioTrack) {
+    if(this.recovering){
+      // Avatar mic badges can also toggle mute. Never start a second capture during recovery.
+      const track=this.localAudioTrack;
+      if(track&&track.getMediaStreamTrack?.().readyState!=='ended'){
+        try{await track.setMuted(nextMuted);}catch{if(active())this.needsRecovery('麦克风尚未恢复，请点击恢复语音');}
+      }
+      if(!active())return this.muted;
+      if(this.uid&&this.muted){this.micOpenUids.delete(this.uid);this.speakingUids.delete(this.uid);}
+      this.notify();return this.muted;
+    }
+
+    if(this.localAudioTrack?.getMediaStreamTrack?.().readyState==='ended'){
+      await this.recover(true);
+    }else if (this.localAudioTrack) {
       try {
         await this.localAudioTrack.setMuted(nextMuted);
       } catch (err) {
@@ -384,11 +533,15 @@ export class AgoraVoiceManager {
         });
         if (!active()) { localTrack.stop(); localTrack.close(); return this.muted; }
         this.localAudioTrack = localTrack;
+        this.watchMicrophone(localTrack);
         await client.publish([localTrack]);
       } catch (err) {
         if (!active()) return this.muted;
         console.warn('Microphone permission denied:', err);
         this.muted = true;
+        const failed=this.localAudioTrack;
+        this.trackCleanup?.();this.trackCleanup=undefined;this.localAudioTrack=null;
+        if(failed){void client.unpublish(failed).catch(()=>{});failed.stop();failed.close();}
       }
     }
 
@@ -397,8 +550,10 @@ export class AgoraVoiceManager {
       if (this.muted) {
         this.micOpenUids.delete(this.uid);
         this.speakingUids.delete(this.uid);
-      } else {
+      } else if(this.localAudioTrack&&this.localAudioTrack.getMediaStreamTrack?.().readyState!=='ended') {
         this.micOpenUids.add(this.uid);
+      } else {
+        this.micOpenUids.delete(this.uid);
       }
     }
     this.notify();
@@ -444,6 +599,7 @@ export class AgoraVoiceManager {
     this.connectionAbort?.abort();
     this.connectionAbort = undefined;
     this.joinTask = null;
+    this.recoveryTask=null;
     const cleanup = this.releaseResources();
     this.status = 'disconnected';
     this.channel = undefined;
@@ -456,8 +612,13 @@ export class AgoraVoiceManager {
   private async releaseResources(): Promise<void> {
     // Detach before awaiting: an old leave must never clear a newer client/track.
     const client = this.client, track = this.localAudioTrack;
+    this.sdkCleanup?.();this.sdkCleanup=undefined;
+    this.trackCleanup?.();this.trackCleanup=undefined;
     this.client = null;
     this.localAudioTrack = null;
+    this.rtc=null;
+    this.recoveryNeeded=false;this.recovering=false;this.recoveryMessage=undefined;
+    this.recoveryTask=null;
     for (const timer of this.speakerTimeouts.values()) {
       clearTimeout(timer);
     }
