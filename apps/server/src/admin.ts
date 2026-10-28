@@ -31,7 +31,7 @@ export class AdminService {
       const [uRes, uTodayRes, rRes, gRes, gTodayRes, sRes] = await Promise.all([
         client.query<{ count: string }>('SELECT count(*) FROM users'),
         client.query<{ count: string }>('SELECT count(*) FROM users WHERE created_at >= date_trunc(\'day\', now())'),
-        client.query<{ count: string }>('SELECT count(*) FROM rooms WHERE phase IN (\'waiting\', \'playing\')'),
+        client.query<{ count: string }>("SELECT count(*) FROM rooms WHERE phase<>'closed'"),
         client.query<{ count: string }>('SELECT count(*) FROM games'),
         client.query<{ count: string }>('SELECT count(*) FROM games WHERE created_at >= date_trunc(\'day\', now())'),
         client.query<{ value: boolean }>('SELECT value FROM system_settings WHERE key = \'free_access_mode\''),
@@ -357,7 +357,7 @@ export class AdminService {
                (SELECT count(*) FROM room_members rm WHERE rm.room_id = r.id) as member_count
         FROM rooms r
         JOIN users u ON u.id = r.host_id
-        WHERE r.phase IN ('waiting', 'playing')
+        WHERE r.phase<>'closed'
         ORDER BY r.created_at DESC
       `);
 

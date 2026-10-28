@@ -12,6 +12,7 @@ export const errors: Record<string, string> = {
   USER_IN_ACTIVE_GAME: '玩家正在对局中，请结束本局后改号。', MANAGES_DEDICATED_ROOMS: '该玩家管理专属房，请先转移房主管理权。',
   NOT_READY: '需要人数到齐且所有人准备后，房主才能开局。',
   GAME_IN_PROGRESS: '本局已开始，人数、设置与席位已锁定。请先完成本局，或请房主结束游戏。',
+  GAME_FINISHED: '本局已结束，请房主返回等待区；如无法返回，可由管理员结束本次房间后重新开桌。',
   WRONG_PHASE: '当前已进入其他步骤，请查看最新对局进度。', GAME_ENDED: '本局已经结束。',
   NOT_CAPTAIN: '此操作需要当前队长完成。', NOT_ASSASSIN: '只有刺客能提交刺杀目标。',
   INVALID_TEAM: '请选择正确数量且不重复的任务成员。', INVALID_TARGET: '请选择有效的刺杀目标。',

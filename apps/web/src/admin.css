@@ -785,6 +785,8 @@
 .admin-viewport .special-card > strong { font-size: 14px; }
 .admin-viewport .special-card p { margin: 6px 0; color: #cbd5e1; }
 .admin-viewport .special-card small { display: block; margin-top: 6px; font: inherit; color: #94a3b8; }
+.admin-viewport .special-room-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.admin-viewport .special-room-actions .admin-action-btn { margin-right: 0 !important; }
 .admin-viewport .special-editor {
   width: min(100%, 540px);
   max-height: calc(100dvh - 28px);

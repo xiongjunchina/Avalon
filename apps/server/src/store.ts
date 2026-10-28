@@ -318,6 +318,7 @@ export class PostgresStore {
       const members = await this.members(c,r.id);
       if (current) return this.view(c,r,members,user.id);
       if (key !== r.invite && r.password_hash && !await verifySecret(password ?? '',r.password_hash)) throw new DomainError(password ? 'ROOM_PASSWORD_INVALID' : 'ROOM_PASSWORD_REQUIRED',403);
+      if (r.phase === 'finished') throw new DomainError('GAME_FINISHED',409);
       if (r.phase !== 'waiting') throw new DomainError('GAME_IN_PROGRESS',409);
       if (!r.accepting_new_members) throw new DomainError('JOIN_DISABLED',403);
       if (members.length >= r.settings.playerCount) throw new DomainError('ROOM_FULL',409);

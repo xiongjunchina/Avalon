@@ -13,7 +13,7 @@ export function adminOverviewScreen(data: AdminOverview): ScreenModel {
   return { title: '管理总览', rows: [
     ...navigation,
     { id: 'stats:users', text: `用户 ${data.totalUsers} · 今日新增 ${data.todayNewUsers}` },
-    { id: 'stats:rooms', text: `活跃房间 ${data.activeRoomsCount} · 在线 ${data.onlineConnections}` },
+    { id: 'stats:rooms', text: `未关闭房间 ${data.activeRoomsCount} · 在线 ${data.onlineConnections}` },
     { id: 'stats:games', text: `对局 ${data.totalGames} · 今日 ${data.todayGames}` },
     { id: 'stats:mode', text: data.freeAccessMode ? '当前全员免费' : '当前商业模式' },
   ] };
@@ -43,9 +43,9 @@ export function adminUserScreen(user: AdminUserSummary): ScreenModel {
 }
 
 export function adminRoomsScreen(rooms: AdminRoomSummary[]): ScreenModel {
-  return { title: '活跃房间', rows: [
+  return { title: '未关闭房间', rows: [
     ...navigation,
-    ...rooms.map(room => ({ id: `room:${room.id}`, text: `${room.code} · ${room.hostNickname} · ${room.memberCount}/${room.playerCount} · ${room.phase}${room.voiceChatEnabled ? ' · 语音开' : ''}` })),
+    ...rooms.map(room => ({ id: `room:${room.id}`, text: `${room.code} · ${room.hostNickname} · ${room.memberCount}/${room.playerCount} · ${{waiting:'等待入席',playing:'对局进行中',finished:'已结束 · 待续局',closed:'已关闭'}[room.phase] ?? room.phase}${room.voiceChatEnabled ? ' · 语音开' : ''}` })),
   ] };
 }
 

@@ -4,10 +4,22 @@ import { Modal } from './Modal';
 import { PasswordChoice } from './RoomAccess';
 import { SettingsFields } from './PresetsPanel';
 import { errors } from './api';
+import { adminRoomPhaseLabel, closeDedicatedRoomSession } from './admin-room-state';
 
 export type AdminApi = <T>(path:string,body?:unknown,method?:string)=>Promise<T>;
 const message=(e:unknown)=>e instanceof Error?errors[e.message]??e.message:'操作失败，请重试。';
-export function SpecialAdmin({request,refreshToken=0}:{request:AdminApi;refreshToken?:number}) {
+export function DedicatedRoomCard({room:r,busy,onEdit,onEnd}:{room:DedicatedRoom;busy:boolean;onEdit:()=>void;onEnd:()=>void}) {
+  return <article className="special-card">
+    <strong>{r.code} · {r.name}</strong><p>房主：{r.managerName} #{r.managerCode} · {r.settings.playerCount}人 · {r.hasPassword?'有密码':'无密码'} · {r.activeRoomId?adminRoomPhaseLabel(r.activePhase):'待开桌'}</p>
+    <div className="special-room-actions">
+      <button type="button" className="admin-action-btn" disabled={!!r.activeRoomId||busy} onClick={onEdit}>修改配置与密码</button>
+      {r.activeRoomId&&<button type="button" className="admin-action-btn danger" disabled={busy} onClick={onEnd}>结束本次房间</button>}
+    </div>
+    {r.activeRoomId&&<small>{r.activePhase==='finished'?'本局已结束，房主可返回等待区续局；也可结束本次房间后重新开桌。':'本次房间关闭后可编辑配置；等待区改密可由房主直接操作。'}</small>}
+  </article>;
+}
+
+export function SpecialAdmin({request,refreshToken=0,onRoomsChanged}:{request:AdminApi;refreshToken?:number;onRoomsChanged?:()=>Promise<void>|void}) {
   const [rooms,setRooms]=useState<DedicatedRoom[]>([]),[codes,setCodes]=useState<PlayerCodeReservation[]>([]),[error,setError]=useState(''),[notice,setNotice]=useState(''),[busy,setBusy]=useState(false);
   const [allocations,setAllocations]=useState<PlayerCodeAllocation[]>([]),[nextCursor,setNextCursor]=useState<string|null>(null);
   const [editing,setEditing]=useState<DedicatedRoom|null|undefined>(),[code,setCode]=useState(''),[name,setName]=useState(''),[managerCode,setManagerCode]=useState(''),[settings,setSettings]=useState<Settings>({...defaultSettings}),[password,setPassword]=useState<string|null|undefined>();
@@ -19,11 +31,9 @@ export function SpecialAdmin({request,refreshToken=0}:{request:AdminApi;refreshT
   return <div className="special-admin">
     <section className="admin-panel"><div className="admin-panel-title"><h3 className="admin-panel-title">专属房管理</h3><button type="button" className="admin-primary-btn" onClick={()=>edit(null)}>新建专属房</button></div>
       <p className="hint">专属房长期保留房号与默认配置。只指定房主管理者，朋友无需提前登记。</p>
-      <div className="special-list">{rooms.map(r=><article className="special-card" key={r.id}>
-        <strong>{r.code} · {r.name}</strong><p>房主：{r.managerName} #{r.managerCode} · {r.settings.playerCount}人 · {r.hasPassword?'有密码':'无密码'} · {r.activeRoomId?'已开桌':'待开桌'}</p>
-        <button type="button" className="admin-action-btn" disabled={!!r.activeRoomId||busy} onClick={()=>edit(r)}>修改配置与密码</button>
-        {r.activeRoomId&&<small>本次房间关闭后可编辑配置；等待区改密可由房主直接操作。</small>}
-      </article>)}{!rooms.length&&<p>尚无专属房，可在此创建。</p>}</div>
+      <div className="special-list">{rooms.map(r=><DedicatedRoomCard key={r.id} room={r} busy={busy} onEdit={()=>edit(r)} onEnd={()=>void run(async()=>{
+        if(await closeDedicatedRoomSession(r,request,prompt=>window.confirm(prompt))){setNotice(`房间【${r.code}】本次开桌已结束，专属配置已保留。`);await onRoomsChanged?.();}
+      })}/>)}{!rooms.length&&<p>尚无专属房，可在此创建。</p>}</div>
     </section>
     <section className="admin-panel"><h3 className="admin-panel-title">仙友靓号管理</h3><p className="hint">预留号不会随机分配；分配后仍在此显示持有玩家和分配记录。分配号码请在“仙友用户”中点击“改仙友码”。</p>
       <form className="special-form" onSubmit={e=>{e.preventDefault();void run(async()=>{await request('/player-codes',{code:reserve,note});setReserve('');setNote('');setNotice('号码已预留。');});}}>

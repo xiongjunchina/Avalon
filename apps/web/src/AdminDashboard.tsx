@@ -12,6 +12,7 @@ import { ReplayView } from './AccountPanel';
 import { AdminRoleAssignmentAudit } from './AdminRoleAssignmentAudit';
 import './admin.css';
 import { SpecialAdmin, PlayerCodeEditor } from './SpecialAdmin';
+import { adminRoomPhaseLabel } from './admin-room-state';
 
 interface AdminDashboardProps {
   onBackToGame: () => void;
@@ -313,6 +314,8 @@ export function AdminDashboard({ onBackToGame }: AdminDashboardProps) {
       await adminApi(`/rooms/${room.id}/kill`, {});
       alert(`房间【${room.code}】已强制解散！`);
       void loadRooms();
+      void loadOverview();
+      setSpecialRefresh(v=>v+1);
     } catch (err: any) {
       alert(err.message);
     }
@@ -496,7 +499,7 @@ export function AdminDashboard({ onBackToGame }: AdminDashboardProps) {
 
       {/* Main Container */}
       <main className="admin-main-container">
-        {activeTab==='special'&&<SpecialAdmin request={adminApi} refreshToken={specialRefresh}/>}
+        {activeTab==='special'&&<SpecialAdmin request={adminApi} refreshToken={specialRefresh} onRoomsChanged={async()=>{await Promise.all([loadRooms(),loadOverview()]);}}/>}
         {codeUser&&<PlayerCodeEditor user={codeUser} request={adminApi} onClose={()=>setCodeUser(null)} onSaved={()=>void loadUsers(userSearchQuery)}/>}
         {/* ================= Tab 1: Overview ================= */}
         {activeTab === 'overview' && (
@@ -534,7 +537,7 @@ export function AdminDashboard({ onBackToGame }: AdminDashboardProps) {
                 <span className="admin-metric-value">{overview?.todayNewUsers ?? '…'}</span>
               </div>
               <div className="admin-metric-card">
-                <span className="admin-metric-label">⚡ 实时活跃房间</span>
+                <span className="admin-metric-label">⚡ 未关闭房间</span>
                 <span className="admin-metric-value">{overview?.activeRoomsCount ?? '…'}</span>
               </div>
               <div className="admin-metric-card">
@@ -562,7 +565,7 @@ export function AdminDashboard({ onBackToGame }: AdminDashboardProps) {
                   🔍 查询与管理仙友
                 </button>
                 <button type="button" className="admin-action-btn" onClick={() => setActiveTab('rooms')}>
-                  🏛️ 巡查活跃法坛房间
+                  🏛️ 巡查未关闭法坛房间
                 </button>
                 <button type="button" className="admin-action-btn" onClick={() => setActiveTab('codes')}>
                   🎟️ 批量生成 VIP 兑换码
@@ -933,7 +936,7 @@ export function AdminDashboard({ onBackToGame }: AdminDashboardProps) {
                   className={`admin-tool-btn ${roomSubTab === 'active' ? 'admin-primary-btn' : ''}`}
                   onClick={() => setRoomSubTab('active')}
                 >
-                  ⚡ 实时活跃房间 ({activeRooms.length})
+                  ⚡ 未关闭房间 ({activeRooms.length})
                 </button>
                 <button
                   type="button"
@@ -948,7 +951,7 @@ export function AdminDashboard({ onBackToGame }: AdminDashboardProps) {
             {roomSubTab === 'active' ? (
               activeRooms.length === 0 ? (
                 <div style={{ textAlign: 'center', color: '#94a3b8', padding: '36px' }}>
-                  当前没有正在进行或等待中的法坛房间
+                  当前没有未关闭的法坛房间
                 </div>
               ) : (
                 <div className="admin-room-grid">
@@ -957,7 +960,7 @@ export function AdminDashboard({ onBackToGame }: AdminDashboardProps) {
                       <div className="admin-room-head">
                         <span className="admin-room-code">房间 #{r.code}</span>
                         <span className={r.phase === 'playing' ? 'badge-vip' : 'badge-free'}>
-                          {r.phase === 'playing' ? '⚔️ 激战中' : '⏳ 等待入席'}
+                          {adminRoomPhaseLabel(r.phase)}
                         </span>
                       </div>
                       <div style={{ fontSize: '13px', color: '#cbd5e1', display: 'flex', flexDirection: 'column', gap: '4px' }}>
