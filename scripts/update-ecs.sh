@@ -102,8 +102,17 @@ else
   fail 'APP_ORIGIN 必须是 https://公网IPv4 或 https://完整域名，不带路径或端口。'
 fi
 
+# Keep the optional, locally approved Mafia ingress overlay on future releases.
+mafia_overlay=deploy/runtime/compose.mafia.yaml
+if [[ -f "$mafia_overlay" ]]; then
+  sha256sum --check deploy/runtime/mafia-caddy-source.sha256 >/dev/null || fail '共享入口的 Caddy 基线已变化，请先同步 Mafia 路由配置。'
+fi
 dc() {
-  base_dc -f "$override" "$@"
+  if [[ -f "$mafia_overlay" ]]; then
+    base_dc -f "$override" -f "$mafia_overlay" "$@"
+  else
+    base_dc -f "$override" "$@"
+  fi
 }
 
 dc config --quiet

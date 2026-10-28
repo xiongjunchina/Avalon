@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {createHash} from 'node:crypto';
 import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, copyFileSync, writeFileSync, readFileSync, rmSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -21,6 +22,13 @@ if (tool === 'git') {
   if (args[0] === 'rev-parse') console.log(args.includes('--short') ? 'abc1234' : args.includes('FETCH_HEAD') ? process.env.MOCK_REMOTE : fs.readFileSync(process.env.MOCK_HEAD_FILE, 'utf8'));
   if (args[0] === 'merge' || args[0] === 'pull') fs.writeFileSync(process.env.MOCK_HEAD_FILE, process.env.MOCK_REMOTE);
 }
+if (tool === 'sha256sum') {
+  const record = 'deploy/runtime/mafia-caddy-source.sha256';
+  if (!fs.existsSync(record)) process.exit(1);
+  const expected = fs.readFileSync(record,'utf8').split(' ')[0];
+  const actual = require('node:crypto').createHash('sha256').update(fs.readFileSync('deploy/Caddyfile')).digest('hex');
+  process.exit(expected === actual ? 0 : 1);
+}
 if (tool === 'flock' && process.env.MOCK_FAIL === 'lock') process.exit(1);
 if (tool === 'docker') {
   if (args.includes('--environment')) {
@@ -39,12 +47,12 @@ if (tool === 'docker') {
 const oldRevision = '1'.repeat(40);
 const newRevision = '2'.repeat(40);
 
-function run(t, { origin = 'https://47.112.7.117', failure = '', quote = '', automatic = false, branch = 'main', head = oldRevision, remote = newRevision, deployed } = {}) {
+function run(t, { origin = 'https://47.112.7.117', failure = '', quote = '', automatic = false, branch = 'main', head = oldRevision, remote = newRevision, deployed, ingress } = {}) {
   const dir = mkdtempSync(join(tmpdir(), 'avalon-ecs-update-'));
   t.after(() => rmSync(dir, { recursive: true, force: true }));
   mkdirSync(join(dir, 'deploy'));
   mkdirSync(join(dir, 'bin'));
-  for (const tool of ['git', 'docker', 'flock']) {
+  for (const tool of ['git', 'docker', 'flock', 'sha256sum']) {
     writeFileSync(join(dir, 'bin', tool), fakeTool, { mode: 0o700 });
   }
   const envFile = join(dir, 'deploy/.env.ecs');
@@ -56,6 +64,12 @@ function run(t, { origin = 'https://47.112.7.117', failure = '', quote = '', aut
   if (deployed) {
     mkdirSync(join(dir, 'deploy/runtime'));
     writeFileSync(stateFile, `${deployed}\n`, { mode: 0o600 });
+  }
+  if (ingress) {
+    mkdirSync(join(dir,'deploy/runtime'),{recursive:true});
+    writeFileSync(join(dir,'deploy/runtime/compose.mafia.yaml'),'services: {}');
+    writeFileSync(join(dir,'deploy/Caddyfile'),'original gateway');
+    if (ingress !== 'missing') writeFileSync(join(dir,'deploy/runtime/mafia-caddy-source.sha256'),createHash('sha256').update(ingress === 'changed' ? 'older gateway' : 'original gateway').digest('hex')+'  deploy/Caddyfile\n');
   }
   const log = join(dir, 'commands.jsonl');
   function execute(overrides = {}) {
@@ -257,4 +271,17 @@ test('scheduled updates with a real Git remote retry failed releases and reject 
   assert.notEqual(diverged.result.status,0);
   assert.ok(!diverged.commands.some(c => c.tool === 'docker'));
   assert.equal(readFileSync(stateFile,'utf8').trim(),second);
+});
+
+
+test('approved shared ingress is preserved through every deployment Compose operation', t => {
+  const {result,commands}=run(t,{ingress:'valid'});
+  assert.equal(result.status,0,result.stderr);
+  for(const command of commands.filter(c=>c.tool==='docker'&&!(c.args.includes('config')&&!c.args.includes('--quiet'))))assert.ok(command.args.includes('deploy/runtime/compose.mafia.yaml'));
+});
+for(const ingress of ['changed','missing'])test(`shared ingress stops before building when its Caddy baseline is ${ingress}`,t=>{
+  const {result,commands,envFile,original}=run(t,{ingress});
+  assert.notEqual(result.status,0);assert.match(result.stderr,/Caddy/);
+  assert.ok(!commands.some(c=>c.tool==='docker'&&(c.args.includes('build')||c.args.includes('up'))));
+  assert.equal(readFileSync(envFile,'utf8'),original);
 });
