@@ -281,6 +281,7 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
     const fields=[['captainMode','队长分配',settings.captainMode==='seat_order'?'按座位循环':'开局打乱一次，整局循环'],['rejectionScope','流局计数',settings.rejectionScope==='game'?'全局累计，5 次判负':'单次任务累计，5 次判负']];
     for(const [id,label,value] of fields){txt('field:'+id,label!,y,13);y+=25;button(prefix+id,value!,y,{skin:'input'});y+=52;}
     for(const [id,label] of [['anonymousTeamVote','匿名组队投票'],['ladyEnabled','照妖宝镜'],['earlyAssassinationEnabled','提前刺杀'],['guardianPerksEnabled','护法天机（建议7-12人）'],['autoRevealRoleEnabled','倒计时后亮明真身'],['treasuresEnabled','专属法宝（8-12人专属）']] as const){button(prefix+id,label,y,{skin:'setting',selected:settings[id]});y+=50;}
+    if(settings.treasuresEnabled && settings.playerCount >= 8)para('settings-treasure-rule',settings.guardianPerksEnabled?'新局同时开启护法天机时，蓝方法宝禁用，仅红方法宝生效。':'新局未开启护法天机时，双方按角色保留专属法宝。',12);
     y+=36;
   }
   function scoreCard(id:string,name:string,score:Score|undefined,px:number,py:number,pw:number,image:string,team:'blue'|'red') {

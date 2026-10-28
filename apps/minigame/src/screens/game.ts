@@ -4,6 +4,7 @@ import { formatRoleName } from '../../../web/src/roles.js';
 import type { ScreenModel } from '../ui/widgets.js';
 import { roleDescriptions } from '../../../web/src/role-descriptions.js';
 import { getRoleGalleryItem, WUYUE_MISSIONS } from '../../../web/src/roles.js';
+import { GUARDIAN_TREASURE_DISABLED_REASON } from '../../../web/src/treasure-access.js';
 
 export interface GameUiState {
   privateRoleVisible: boolean;
@@ -212,8 +213,10 @@ function gameOverlayScreen(room: RoomView, user: User, ui: GameUiState, base: Sc
       ...(ui.warning ? [{ id: 'error', text: ui.warning }] : [])];
   } else if (ui.overlay === 'treasures') {
     title = '专属法宝与神兵';
-    rows = [...base.rows.filter(row => row.id.startsWith('treasure:') || ['earlyAttempt', 'earlySkip', 'assassinate'].includes(row.id)),
-      ...game.players.filter(player => player.id !== user.id).map(player => ({ id: 'player:' + player.id, text: name(player.id) + (ui.targetId === player.id ? ' · 已选目标' : '') }))];
+    rows = self?.treasures?.disabledReason === 'guardian_perks'
+      ? [{ id: 'treasure-disabled', text: GUARDIAN_TREASURE_DISABLED_REASON }]
+      : [...base.rows.filter(row => row.id.startsWith('treasure:') || ['earlyAttempt', 'earlySkip', 'assassinate'].includes(row.id)),
+        ...game.players.filter(player => player.id !== user.id).map(player => ({ id: 'player:' + player.id, text: name(player.id) + (ui.targetId === player.id ? ' · 已选目标' : '') }))];
     if (!rows.length) rows.push({ id: 'empty', text: '本局未开启专属法宝或当前尚未解锁。' });
   } else if (ui.overlay === 'more') {
     title = '法坛工具';

@@ -1,6 +1,7 @@
 export const errors: Record<string, string> = {
   NOT_MINION: '同心铃仅限女妖精使用。',
   TREASURES_DISABLED: '本局未启用专属法宝。', ALREADY_USED: '此法宝本局已使用。',
+  BLUE_TREASURES_DISABLED: '已开启护法天机，蓝方法宝本局禁用；红方法宝保留。',
   HEART_BELL_TWO_FAILURES: '本轮需两张失败牌才会失败，不可使用同心铃。',
   HEART_BELL_UNAVAILABLE: '传音条件已变化：双方须同车、已相认且都未出牌，请重新选择。',
   DEAL_PENDING: '正在发牌倒计时，请稍候，身份尚未开放查看。',

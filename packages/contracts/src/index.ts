@@ -304,6 +304,8 @@ export interface HeartBellMessage {
 }
 export interface SelfTreasures {
   enabled: boolean;
+  // Private capability reason; room-wide treasure mode can still be enabled for the other team.
+  disabledReason?: 'guardian_perks';
   heartBell?: {
     used: boolean;
     available: boolean;

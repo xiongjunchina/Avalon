@@ -3,6 +3,7 @@ import type { Command, GameView, Player, Team } from '@avalon/contracts';
 import { Modal } from './Modal';
 import { PlayerToken } from './PlayerToken';
 import { HeartBellControls, HeartBellMessageCard } from './HeartBell';
+import { GUARDIAN_TREASURE_DISABLED_REASON } from './treasure-access';
 
 interface TreasureModalProps {
   open: boolean;
@@ -33,7 +34,8 @@ export function TreasureModal({
   if (!open) return null;
 
   const is8Plus = players.length >= 8;
-  const isTreasureModeActive = Boolean(treasuresEnabled && is8Plus);
+  const guardianRestricted = self.treasures?.disabledReason === 'guardian_perks';
+  const isTreasureModeActive = Boolean(treasuresEnabled && is8Plus && self.treasures?.enabled && !guardianRestricted);
   const nameOf = (id: string) => {
     const p = players.find(x => x.id === id);
     return p ? `${String(p.seat).padStart(2, '0')}号 · ${p.nickname}` : '未知仙友';
@@ -41,6 +43,7 @@ export function TreasureModal({
 
   const handleSend = (action: Pick<Command, 'type' | 'payload'>) => {
     if (!send || disabled) return;
+    if (action.type === 'useTreasure' && !isTreasureModeActive) return;
     send(action);
   };
 
@@ -72,7 +75,9 @@ export function TreasureModal({
               <span className="treasure-icon-large">🏮</span>
               <h4>仙家法宝 · 隐而不出</h4>
               <p className="hint">
-                当前房间未开启【8-12人专属法宝模式】。本局依照经典阿瓦隆规则进行，唯有红孩儿可在终局刺杀阶段祭出火尖枪。
+                {guardianRestricted ? GUARDIAN_TREASURE_DISABLED_REASON : players.length < 8
+                  ? '专属法宝需至少 8 人且房间开启法宝模式。红孩儿仍可使用刺客神兵。'
+                  : '当前房间未开启【8-12人专属法宝模式】。唯有红孩儿可在终局刺杀阶段祭出火尖枪。'}
               </p>
             </div>
           )}

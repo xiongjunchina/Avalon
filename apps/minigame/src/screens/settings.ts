@@ -13,6 +13,7 @@ export function settingsScreen(settings: Settings): ScreenModel {
     { id: 'voiceChatEnabled', text: `网页端语音：${settings.voiceChatEnabled ? '开' : '关'}（小游戏暂不提供）` },
     { id: 'autoRevealRoleEnabled', text: `自动亮身份：${settings.autoRevealRoleEnabled ? '开' : '关'}` },
     { id: 'treasuresEnabled', text: `8–12人法宝：${settings.treasuresEnabled ? '开' : '关'}（仅8人以上生效）` },
+    ...(settings.treasuresEnabled && settings.playerCount >= 8 ? [{ id: 'treasureRule', text: settings.guardianPerksEnabled ? '新局法宝：护法天机已开，蓝方禁用、红方保留' : '新局法宝：护法天机未开，双方按角色保留' }] : []),
     { id: 'apply', text: '应用设置并返回' },
   ] };
 }

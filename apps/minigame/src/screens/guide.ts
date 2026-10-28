@@ -25,6 +25,7 @@ export function guideScreen(roleId?: string, section: 'rules'|'roles'|'config' =
     { id: 'guide:assassin', text: '三次成功后由红孩儿刺杀孙悟空' },
     { id: 'guide:lady', text: '照妖宝镜与提前刺杀由房主开局前设置' },
     { id: 'guide:treasure', text: '8–12人法宝需房主开启，具体可用时机以本局提示为准' },
+    { id: 'guide:treasureBalance', text: '新局同时开启护法天机时蓝方法宝禁用，红方法宝保留；未开天机则双方保留' },
     { id: 'guide:treasureBlue', text: '九环锡杖、观音镜查验；紧箍佛印向圣僧自证' },
     { id: 'guide:treasureRed', text: '人种袋禁选队员，芭蕉扇干预任务' },
     ...WUYUE_MISSIONS.map(mission => ({ id: `mission:${mission.num}`, text: `第${mission.num}轮 · ${mission.mountain} · ${mission.title}` })),

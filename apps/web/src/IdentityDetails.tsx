@@ -6,7 +6,7 @@ import { PlayerToken } from './PlayerToken';
 import { getRoleGalleryItem } from './roles';
 import { RoleViewerModal } from './RoleViewerModal';
 import { TreasureModal } from './TreasureModal';
-import { treasureAccess } from './treasure-access';
+import { GUARDIAN_TREASURE_DISABLED_REASON, treasureAccess } from './treasure-access';
 import { roleDescriptions } from './GuidePanel';
 
 /** Only the server-projected, private self view is accepted. Never infer other roles. */
@@ -47,12 +47,14 @@ export function IdentityDetails({
     : '没有其他初始身份线索，请从发言与取经战况中判断。';
 
   const is8Plus = players.length >= 8;
-  const isTreasureModeActive = Boolean(treasuresEnabled && is8Plus);
+  const isTreasureModeActive = Boolean(treasuresEnabled && is8Plus && self.treasures?.enabled);
   const access = treasureAccess({ self, players }, treasuresEnabled);
   const canClickTreasure = access.canOpen;
 
   let treasureSub = '';
-  if (!isTreasureModeActive) {
+  if (self.treasures?.disabledReason === 'guardian_perks') {
+    treasureSub = GUARDIAN_TREASURE_DISABLED_REASON;
+  } else if (!isTreasureModeActive) {
     if (self.role === 'assassin') {
       if (game?.phase === 'assassination') {
         treasureSub = '🔥 终局刺杀 · 点击祭出火尖枪！';
@@ -107,7 +109,7 @@ export function IdentityDetails({
       treasureSub = self.treasures?.heartBell?.used ? '同心铃（已传音）' : self.treasures?.heartBell?.available ? '同心铃（可向同车同伙传音）' : '同心铃（等待传音时机）';
     }
   }
-  if (self.treasures?.incomingHeartBell) treasureSub = '同心铃私密传音 · 点击回看';
+  if (isTreasureModeActive && self.treasures?.incomingHeartBell) treasureSub = '同心铃私密传音 · 点击回看';
 
   return (
     <>

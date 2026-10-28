@@ -3,7 +3,7 @@ export { roleWeight, ROLE_ASSIGNMENT_VERSION, ROLE_WEIGHT_VERSION } from './role
 export type { RoleProtectionOptions } from './role-assignment.js';
 export { randomBigIntBelow } from './random.js';
 import type { Command, GameResult, GameView, LoyalGuardian, FemaleDemon, Player, Role, RoundView, Settings, Team, PrivateInspection, EarlyWindow, TeamBallot, GuardianClue, SelfTreasures, HeartBellAdvice, RoleAssignmentAudit } from '@avalon/contracts';
-export const RULESET_VERSION = 'standard-no-lancelot-v5';
+export const RULESET_VERSION = 'standard-no-lancelot-v6';
 export const GUANYIN_WINDOW_MS = 5_000;
 export const LOYAL_GUARDIAN_POOL: readonly LoyalGuardian[] = ['bailong', 'zhubajie', 'shawujing', 'jingang'];
 const LEGACY_LOYAL_GUARDIAN_POOL: readonly LoyalGuardian[] = ['zhubajie', 'shawujing', 'bailong', 'jingang'];
@@ -58,6 +58,17 @@ export const ROLE_CONFIG: Record<number, Role[]> = {
   12: ['merlin','percival','guinevere','loyal','loyal','loyal','loyal','morgana','assassin','mordred','minion','oberon'],
 };
 export const teamOf = (role: Role): Team => ['merlin','percival','guinevere','loyal'].includes(role) ? 'blue' : 'red';
+/** New deals separate guardian clues from blue treasures; saved v1–v5 games retain their original rules. */
+export function treasuresEnabledFor(
+  settings: Pick<Settings, 'treasuresEnabled' | 'guardianPerksEnabled'>,
+  playerCount: number,
+  role: Role,
+  rulesetVersion = RULESET_VERSION
+): boolean {
+  const balanceRule = Number(rulesetVersion.match(/-v(\d+)$/)?.[1]) >= 6;
+  return Boolean(settings.treasuresEnabled && playerCount >= 8 &&
+    !(balanceRule && settings.guardianPerksEnabled && teamOf(role) === 'blue'));
+}
 export class RuleError extends Error {}
 function requireRule(condition: unknown, code: string): asserts condition { if (!condition) throw new RuleError(code); }
 export interface GameState {
@@ -190,7 +201,7 @@ export const failuresRequiredFor = (playerCount: number, mission: number): numbe
 export const failuresRequired = (g: GameState) => failuresRequiredFor(g.players.length, g.mission);
 function heartBellTargets(g: GameState, userId: string): string[] {
   const round = g.rounds.at(-1);
-  if (!g.settings.treasuresEnabled || g.players.length < 8 || g.roles[userId] !== 'minion' ||
+  if (!treasuresEnabledFor(g.settings, g.players.length, g.roles[userId], g.rulesetVersion) || g.roles[userId] !== 'minion' ||
       g.treasuresState?.heartBell?.used || g.phase !== 'mission' || g.result || failuresRequired(g) !== 1 ||
       !round?.team.includes(userId) || userId in g.missionVotes) return [];
   return round.team.filter(id => id !== userId && g.roles[id] && teamOf(g.roles[id]) === 'red' &&
@@ -300,7 +311,7 @@ export function transition(state: GameState, userId: string, action: Pick<Comman
           } else {
             delete g.bananaFanNotice;
             const hasUnusedGuanyin = Boolean(
-              g.settings.treasuresEnabled &&
+              treasuresEnabledFor(g.settings, g.players.length, 'guinevere', g.rulesetVersion) &&
               g.players.length >= 9 &&
               g.players.some(p => g.roles[p.id] === 'guinevere') &&
               !g.treasuresState?.guanyinMirror?.used
@@ -375,6 +386,7 @@ export function transition(state: GameState, userId: string, action: Pick<Comman
     }
     case 'useTreasure': {
       requireRule(g.settings.treasuresEnabled && g.players.length >= 8, 'TREASURES_DISABLED');
+      requireRule(treasuresEnabledFor(g.settings, g.players.length, g.roles[userId], g.rulesetVersion), 'BLUE_TREASURES_DISABLED');
       if (!g.treasuresState) g.treasuresState = {};
       const payload = action.payload as Extract<Command, { type: 'useTreasure' }>['payload'];
       switch (payload.action) {
@@ -467,7 +479,8 @@ export function projectGame(g: GameState, userId?: string): GameView {
     ? g.players.filter(p => teamOf(g.roles[p.id]) === 'red' && g.roles[p.id] !== 'mordred').map(p => p.id)
     : role && teamOf(role) === 'red' && role !== 'oberon'
       ? g.players.filter(p => p.id !== userId && teamOf(g.roles[p.id]) === 'red' && g.roles[p.id] !== 'oberon').map(p => p.id) : [];
-  const treasuresEnabled = Boolean(g.settings.treasuresEnabled && g.players.length >= 8);
+  const treasureModeActive = Boolean(g.settings.treasuresEnabled && g.players.length >= 8);
+  const treasuresEnabled = Boolean(role && treasuresEnabledFor(g.settings, g.players.length, role, g.rulesetVersion));
   const completedMissions = g.rounds.filter(r => r.result).length;
   const failedMissions = g.rounds.filter(r => r.result && !r.result.passed).length;
   const currentRound = g.rounds.at(-1);
@@ -502,6 +515,7 @@ export function projectGame(g: GameState, userId?: string): GameView {
       canDecideEarly: role === 'assassin' && canUseEarlyAssassination(g),
       treasures: {
         enabled: treasuresEnabled,
+        ...(treasureModeActive && !treasuresEnabled ? { disabledReason: 'guardian_perks' as const } : {}),
         ...(role === 'minion' && treasuresEnabled ? {
           heartBell: { used: Boolean(bell?.used), available: bellTargets.length > 0, targetIds: bellTargets,
             ...(bell && bellMessage && bell.senderId === userId ? { sent: { ...bellMessage, targetId: bell.targetId } } : {}) },

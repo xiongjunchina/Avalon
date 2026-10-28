@@ -1,5 +1,6 @@
 import type { GameView } from '@avalon/contracts';
 import { ROLE_CONFIG } from '@avalon/game-core';
+import { GUARDIAN_TREASURE_DISABLED_REASON } from './treasure-access';
 
 export function identityKnowledge(self: NonNullable<GameView['self']>, count: number) {
   const candidates = self.merlinCandidates.length ? self.merlinCandidates
@@ -21,8 +22,9 @@ export function identityKnowledge(self: NonNullable<GameView['self']>, count: nu
 }
 
 export function identityTreasure(self: NonNullable<GameView['self']>, count: number, treasuresEnabled: boolean, game?: GameView) {
+  if (self.treasures?.disabledReason === 'guardian_perks') return { enabled: false, description: GUARDIAN_TREASURE_DISABLED_REASON };
   const is8Plus = count >= 8;
-  const isTreasureModeActive = Boolean(treasuresEnabled && is8Plus);
+  const isTreasureModeActive = Boolean(treasuresEnabled && is8Plus && self.treasures?.enabled);
   const canClickTreasure = isTreasureModeActive || self.role === 'assassin';
 
   let treasureSub = '';
