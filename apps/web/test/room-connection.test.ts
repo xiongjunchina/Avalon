@@ -83,6 +83,81 @@ test('old receipts cannot clear a newer command; reconnect resends the same comm
   b.message({type:'snapshot',room:{...room,version:2}});assert.equal(f.state.versions.at(-1),3);
 });
 
+test('confirmed commands wait for their own successful receipt, not snapshots or older receipts',async t=>{
+  const f=setup();t.after(()=>f.transport.stop());f.transport.start();await flush();
+  const socket=f.sockets[0];socket.open();socket.message({type:'snapshot',room});
+  const first=action();f.transport.send(first);socket.message({type:'commandResult',commandId:first.commandId,ok:true});
+  const second=action(2);let settled=false;
+  const saved=f.transport.sendConfirmed(second).then(()=>{settled=true;});
+  await flush();assert.equal(settled,false);assert.equal(f.state.busy,true);
+  socket.message({type:'snapshot',room:{...room,version:3}});
+  socket.message({type:'commandResult',commandId:first.commandId,ok:true});
+  await flush();assert.equal(settled,false);assert.equal(f.state.busy,true);
+  socket.message({type:'commandResult',commandId:second.commandId,ok:true});
+  await saved;assert.equal(settled,true);assert.equal(f.state.busy,false);
+  assert.deepEqual(socket.sent,[first,second]);
+});
+
+test('confirmed failures reject with the server code and allow a fresh command',async t=>{
+  const f=setup();t.after(()=>f.transport.stop());f.transport.start();await flush();const socket=f.sockets[0];socket.open();
+  const command=action(),saved=f.transport.sendConfirmed(command);
+  const rejected=assert.rejects(saved,{message:'VERSION_CONFLICT'});
+  socket.message({type:'commandResult',commandId:command.commandId,ok:false,error:'VERSION_CONFLICT'});
+  await rejected;assert.equal(f.state.busy,false);assert.deepEqual(f.state.errors,['VERSION_CONFLICT']);
+  const retry=action(2),retried=f.transport.sendConfirmed(retry);
+  socket.message({type:'commandResult',commandId:retry.commandId,ok:true});await retried;
+});
+
+test('confirmed commands reject disconnected or busy sends without replacing an existing command',async t=>{
+  const f=setup();t.after(()=>f.transport.stop());
+  await assert.rejects(f.transport.sendConfirmed(action()),{message:'NETWORK'});
+  f.transport.start();await flush();const socket=f.sockets[0];
+  await assert.rejects(f.transport.sendConfirmed(action()),{message:'NETWORK'});assert.deepEqual(socket.sent,[]);
+  socket.open();const existing=action();assert.equal(f.transport.send(existing),true);
+  await assert.rejects(f.transport.sendConfirmed(action()),{message:'COMMAND_PENDING'});
+  assert.deepEqual(socket.sent,[existing]);assert.equal(f.state.busy,true);
+  socket.message({type:'commandResult',commandId:existing.commandId,ok:true});
+});
+
+test('confirmed commands keep waiting through reconnect and replay the original command unchanged',async t=>{
+  const f=setup();t.after(()=>f.transport.stop());f.transport.start();await flush();const first=f.sockets[0];first.open();first.message({type:'snapshot',room});
+  const command=action();let settled=false;
+  const saved=f.transport.sendConfirmed(command).then(()=>{settled=true;});
+  first.close(1006);await flush();assert.equal(settled,false);
+  f.transport.resume();await flush();const second=f.sockets[1];second.open();second.message({type:'snapshot',room:{...room,version:3}});
+  assert.deepEqual(second.sent,[command]);assert.equal(settled,false);
+  first.message({type:'commandResult',commandId:command.commandId,ok:true});await flush();assert.equal(settled,false);
+  second.message({type:'commandResult',commandId:command.commandId,ok:true});await saved;
+  assert.equal(f.state.busy,false);
+});
+
+test('stopping or terminating a room rejects confirmed commands instead of leaving a saving state',async t=>{
+  for(const [message,code] of [
+    [null,'CONNECTION_STOPPED'],
+    [{type:'roomClosed'},'ROOM_CLOSED'],
+    [{type:'left'},'FORBIDDEN'],
+    [{type:'error',error:'UNAUTHENTICATED'},'UNAUTHENTICATED'],
+  ] as const){
+    const f=setup();t.after(()=>f.transport.stop());f.transport.start();await flush();const socket=f.sockets[0];socket.open();
+    const saved=f.transport.sendConfirmed(action()),rejected=assert.rejects(saved,{message:code});
+    if(message)socket.message(message);else f.transport.stop();
+    await rejected;assert.equal(f.state.busy,false);
+    await assert.rejects(f.transport.sendConfirmed(action()),{message:'CONNECTION_STOPPED'});
+  }
+});
+
+test('takeover by message or close rejects a confirmed command and does not replay it on manual reconnect',async t=>{
+  for(const takeoverMessage of [true,false]){
+    const f=setup();t.after(()=>f.transport.stop());f.transport.start();await flush();const socket=f.sockets[0];socket.open();
+    const saved=f.transport.sendConfirmed(action()),rejected=assert.rejects(saved,{message:'CONNECTION_REPLACED'});
+    if(takeoverMessage)socket.message({type:'takenOver'});else socket.close(4001);
+    await rejected;assert.equal(f.state.busy,false);
+    await assert.rejects(f.transport.sendConfirmed(action()),{message:'CONNECTION_REPLACED'});
+    f.transport.reconnect();await flush();const reconnected=f.sockets[1];reconnected.open();reconnected.message({type:'snapshot',room});
+    assert.deepEqual(reconnected.sent,[]);
+  }
+});
+
 test('taken-over page never auto-reconnects; manual reconnect is explicit; terminal errors stop retries',async t=>{
   const f=setup();t.after(()=>f.transport.stop());f.transport.start();await flush();f.sockets[0].open();
   f.sockets[0].message({type:'takenOver'});f.sockets[0].close(4001);await flush();f.transport.resume();await flush();assert.equal(f.sockets.length,1);

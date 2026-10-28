@@ -21,6 +21,8 @@ export const errors: Record<string, string> = {
   UNAUTHENTICATED: '登录已失效，请刷新页面重新进入。', ROOM_NOT_FOUND: '没有找到房间，请检查房间码或邀请链接。',
   ROOM_FULL: '房间已满，请联系房主。', ALREADY_IN_ROOM: '你已在另一个房间，请先回到该房间退出。',
   FORBIDDEN: '你没有进行此操作的权限。', VERSION_CONFLICT: '房间刚刚更新，已同步最新状态，请重新操作。',
+  COMMAND_PENDING: '上一项操作正在确认，请稍候重试。', CONNECTION_STOPPED: '房间连接已结束，请重新进入。',
+  CONNECTION_REPLACED: '其他页面已接管此账号，请在当前页面重连后重试。',
   SEATS_OCCUPIED: '目标人数中有座位已被占用，不能缩减。', INVALID_INPUT: '输入格式不正确，请检查后重试。',
   ROOM_CLOSED: '房间已关闭，请重新创建或加入其他房间。', JOIN_DISABLED: '房主已关闭新成员加入，请联系房主。',
   USER_NOT_FOUND: '未找到该玩家，请核对6位仙友码或昵称。',

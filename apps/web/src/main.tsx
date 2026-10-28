@@ -1701,16 +1701,32 @@ function App() {
           {/* Role Preference Matching Modal */}
           {room && (
             <RolePreferenceModal
+              key={room.id}
               open={rolePrefModalOpen}
               onClose={() => setRolePrefModalOpen(false)}
               currentPreferences={room.selfRolePreferences ?? []}
               playerCount={room.settings.playerCount}
-              disabled={disabled || room.phase !== 'waiting'}
+              disabled={disabled || room.phase !== 'waiting' || !room.settings.rolePreferenceEnabled}
+              disabledReason={room.phase !== 'waiting' ? '本局已开始，不能再修改心仪角色。'
+                : !room.settings.rolePreferenceEnabled ? '房主已关闭心仪选角。'
+                : connection !== '已连接' ? '连接恢复后可保存，当前志愿会保留。'
+                : '上一项操作正在确认，请稍候保存。'}
               onSave={async prefs => {
-                await command({
-                  type: 'setRolePreferences',
-                  payload: { preferences: prefs },
-                });
+                try {
+                  const transport = transportRef.current;
+                  if (!transport) throw new Error('NETWORK');
+                  setError('');
+                  await transport.sendConfirmed({
+                    type: 'setRolePreferences',
+                    payload: { preferences: prefs },
+                    commandId: crypto.randomUUID(),
+                    expectedVersion: room.version,
+                  });
+                } catch (err) {
+                  throw new Error(err instanceof Error && err.message === 'VERSION_CONFLICT'
+                    ? '房间刚刚更新，志愿已保留，请再次点击保存。'
+                    : describe(err));
+                }
               }}
             />
           )}

@@ -411,7 +411,7 @@ test('treasures: Oberon bananaFan arms and blows away passed proposal without in
   assert.ok(g.bananaFanNotice && g.bananaFanNotice.includes('芭蕉神扇'));
 });
 
-test('treasures: Guanyin 4-second decision window - skip retains treasure, pick inspects alignment, used mirror bypasses window', () => {
+test('treasures: Guanyin 5-second decision window - skip retains treasure, pick inspects alignment, used mirror bypasses window', () => {
   // 9-player roles: merlin, percival, guinevere, loyal x3, morgana, assassin, mordred
   const roles = ['merlin', 'percival', 'guinevere', 'loyal', 'loyal', 'loyal', 'morgana', 'assassin', 'mordred'];
   const players = makePlayers(9);
@@ -432,14 +432,15 @@ test('treasures: Guanyin 4-second decision window - skip retains treasure, pick 
   const team1 = [players[0].id, players[3].id, players[8].id];
   g = transition(g, cap1, { type: 'proposeTeam', payload: { playerIds: team1, direction: 'clockwise' } }, players.map(x => x.id));
   g = transition(g, cap1, { type: 'startTeamVote', payload: {} }, players.map(x => x.id));
+  const voteTime = Date.parse('2026-10-28T12:00:00Z');
   for (const p of players) {
-    g = transition(g, p.id, { type: 'teamVote', payload: { approve: true } }, players.map(x => x.id));
+    g = transition(g, p.id, { type: 'teamVote', payload: { approve: true } }, players.map(x => x.id), { hostId: players[0].id, now: voteTime });
   }
 
   // Vote passed! Because treasures are enabled and Guanyin exists and mirror is unused:
   // Phase MUST be guanyin_window, not mission!
   assert.equal(g.phase, 'guanyin_window');
-  assert.ok(g.guanyinEndsAt);
+  assert.equal(g.guanyinEndsAt, '2026-10-28T12:00:05.000Z');
 
   // Guanyin view: available is true
   const guanyinView1 = projectGame(g, guanyinId);

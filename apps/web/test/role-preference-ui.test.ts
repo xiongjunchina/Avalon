@@ -23,6 +23,7 @@ test('RolePreferenceModal: renders available roles according to player count and
   assert.match(html6, /第一志愿/);
   assert.match(html6, /第二志愿/);
   assert.match(html6, /第三志愿/);
+  assert.match(html6, /确认出战偏好 \(2\/3\)/);
 
   // Selected roles appear in slot section
   assert.match(html6, /孙悟空/);
@@ -48,6 +49,19 @@ test('RolePreferenceModal: renders available roles according to player count and
   );
   assert.match(html8, /黄眉老怪/);
   assert.ok(!html8.includes('牛魔王')); // Oberon is in 7 or 10, not 8
+});
+
+test('locked role preferences explain the restriction and still allow closing the dialog', () => {
+  const html = renderToStaticMarkup(createElement(RolePreferenceModal, {
+    open: true, onClose: () => {}, currentPreferences: ['merlin'], playerCount: 6,
+    disabled: true, disabledReason: '本局已开始，不能再修改心仪角色。', onSave: async () => {},
+  }));
+  assert.match(html, /role="status">本局已开始，不能再修改心仪角色。/);
+  assert.match(html, /class="role-pref-submit-btn" disabled=""/);
+  assert.match(html, /class="role-pref-cancel-btn">取消/);
+  assert.equal(renderToStaticMarkup(createElement(RolePreferenceModal, {
+    open: false, onClose: () => {}, currentPreferences: [], playerCount: 6, onSave: async () => {},
+  })), '');
 });
 
 test('settingsText: displays 心仪选角 when rolePreferenceEnabled is true', () => {

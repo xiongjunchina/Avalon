@@ -6,35 +6,32 @@ import { RolePortrait } from './RolePortrait';
 import { roleMottos, roleNames, roleTitles } from './roles';
 import { Modal } from './Modal';
 
-export function RolePreferenceModal({
-  open,
-  onClose,
-  currentPreferences,
-  playerCount,
-  disabled = false,
-  onSave,
-}: {
+type RolePreferenceProps = {
   open: boolean;
   onClose: () => void;
   currentPreferences: Role[];
   playerCount: number;
   disabled?: boolean;
+  disabledReason?: string;
   onSave: (preferences: Role[]) => Promise<void>;
-}) {
-  const [selected, setSelected] = useState<Role[]>([]);
+};
+
+export function RolePreferenceModal(props: RolePreferenceProps) {
+  // A new editing session starts when opened. Room snapshots must not reset its draft.
+  return props.open ? <RolePreferenceForm {...props} /> : null;
+}
+
+function RolePreferenceForm({ onClose, currentPreferences, playerCount, disabled = false, disabledReason, onSave }: RolePreferenceProps) {
+  const validRoles = Array.from(new Set(ROLE_CONFIG[playerCount] ?? []));
+  const [selected, setSelected] = useState<Role[]>(() => currentPreferences.filter(role => validRoles.includes(role)).slice(0, 3));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (open) {
-      setSelected(currentPreferences.slice(0, 3));
-      setError(null);
-    }
-  }, [open, currentPreferences]);
+    const available = ROLE_CONFIG[playerCount] ?? [];
+    setSelected(draft => draft.filter(role => available.includes(role)));
+  }, [playerCount]);
 
-  if (!open) return null;
-
-  const validRoles = Array.from(new Set(ROLE_CONFIG[playerCount] ?? []));
   const blueRoles = validRoles.filter(r => roleTeam(r) === 'blue');
   const redRoles = validRoles.filter(r => roleTeam(r) === 'red');
 
@@ -83,7 +80,7 @@ export function RolePreferenceModal({
   const slotTags = ['① 志愿', '② 志愿', '③ 志愿'];
 
   return (
-    <Modal label="心仪选角" scene="library" onClose={onClose}>
+    <Modal label="心仪选角" scene="library" onClose={() => { if (!saving) onClose(); }}>
       <div className="table-modal-sheet role-pref-sheet">
         {/* Header */}
         <div className="table-modal-head role-pref-head">
@@ -116,7 +113,7 @@ export function RolePreferenceModal({
                 type="button"
                 className="role-pref-clear-btn"
                 onClick={handleClear}
-                disabled={saving}
+                disabled={disabled || saving}
                 title="清空已选志愿"
               >
                 清空重选
@@ -156,6 +153,7 @@ export function RolePreferenceModal({
         </div>
 
         {error && <div className="role-pref-error-banner" role="alert">{error}</div>}
+        {disabled && !saving && disabledReason && <div className="role-pref-error-banner" role="status">{disabledReason}</div>}
 
         {/* Scrollable Role Catalog */}
         <div className="role-pref-catalog-section">
@@ -174,7 +172,7 @@ export function RolePreferenceModal({
                     type="button"
                     className={`role-choice-card team-blue ${isSelected ? 'is-selected' : ''}`}
                     onClick={() => handleToggleRole(role)}
-                    disabled={saving}
+                    disabled={disabled || saving}
                   >
                     {isSelected && (
                       <span className="choice-badge">
@@ -212,7 +210,7 @@ export function RolePreferenceModal({
                     type="button"
                     className={`role-choice-card team-red ${isSelected ? 'is-selected' : ''}`}
                     onClick={() => handleToggleRole(role)}
-                    disabled={saving}
+                    disabled={disabled || saving}
                   >
                     {isSelected && (
                       <span className="choice-badge">
@@ -261,7 +259,7 @@ export function RolePreferenceModal({
             type="button"
             className="role-pref-submit-btn"
             onClick={handleConfirm}
-            disabled={saving}
+            disabled={disabled || saving}
           >
             {saving
               ? '保存中…'

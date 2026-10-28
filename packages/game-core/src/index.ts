@@ -4,6 +4,7 @@ export type { RoleProtectionOptions } from './role-assignment.js';
 export { randomBigIntBelow } from './random.js';
 import type { Command, GameResult, GameView, LoyalGuardian, FemaleDemon, Player, Role, RoundView, Settings, Team, PrivateInspection, EarlyWindow, TeamBallot, GuardianClue, SelfTreasures, HeartBellAdvice, RoleAssignmentAudit } from '@avalon/contracts';
 export const RULESET_VERSION = 'standard-no-lancelot-v5';
+export const GUANYIN_WINDOW_MS = 5_000;
 export const LOYAL_GUARDIAN_POOL: readonly LoyalGuardian[] = ['bailong', 'zhubajie', 'shawujing', 'jingang'];
 const LEGACY_LOYAL_GUARDIAN_POOL: readonly LoyalGuardian[] = ['zhubajie', 'shawujing', 'bailong', 'jingang'];
 export function assignLoyalGuardians(gameId: string, players: Player[], roles: Record<string, Role>, rulesetVersion = RULESET_VERSION): Record<string, LoyalGuardian> {
@@ -306,7 +307,7 @@ export function transition(state: GameState, userId: string, action: Pick<Comman
             );
             if (hasUnusedGuanyin) {
               g.phase = 'guanyin_window';
-              g.guanyinEndsAt = new Date(context.now + 4000).toISOString();
+              g.guanyinEndsAt = new Date(context.now + GUANYIN_WINDOW_MS).toISOString();
             } else {
               g.phase = 'mission';
             }

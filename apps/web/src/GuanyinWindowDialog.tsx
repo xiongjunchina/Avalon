@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Command, GameView, Player } from '@avalon/contracts';
+import { GUANYIN_WINDOW_MS } from '@avalon/game-core';
 import { Modal } from './Modal';
 import { CloudFlourish, PlayerAvatar } from './Heraldry';
 
@@ -36,7 +37,7 @@ export function GuanyinWindowDialog({
       remaining:
         deadline && serverTime
           ? Math.max(0, Date.parse(deadline) - Date.parse(serverTime))
-          : 4000,
+          : GUANYIN_WINDOW_MS,
     }),
     [deadline, serverTime]
   );
@@ -180,7 +181,7 @@ export function GuanyinWindowDialog({
             <div className="guanyin-progress-track">
               <div
                 className="guanyin-progress-bar"
-                style={{ width: `${Math.min(100, Math.max(0, (seconds / 4) * 100))}%` }}
+                style={{ width: `${Math.min(100, Math.max(0, (seconds * 1000 / GUANYIN_WINDOW_MS) * 100))}%` }}
               />
             </div>
 
