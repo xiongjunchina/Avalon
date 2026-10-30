@@ -7,6 +7,8 @@ import { getRoleGalleryItem, WUYUE_MISSIONS } from '../../../web/src/roles.js';
 import { GUARDIAN_TREASURE_DISABLED_REASON } from '../../../web/src/treasure-access.js';
 
 export interface GameUiState {
+  heartBellReadKey?:string;
+  guanyinResultReadKey?:string;
   privateRoleVisible: boolean;
   ballotVisible: boolean;
   selectedIds?: string[];
@@ -37,11 +39,19 @@ export function syncGameUi(ui: GameUiState, room: RoomView, allowAutoReveal = tr
     ui.direction = 'clockwise';
     ui.snapshotKey = key;
     ui.voteChoice = undefined; ui.missionChoice = undefined; ui.warning = undefined; ui.overlayReturn = undefined; ui.historyExpanded = false;
-    ui.overlay = ui.privateRoleVisible ? 'identity' : game.phase === 'team_vote' && game.self ? 'vote' : undefined;
+    if(allowAutoReveal&&game.phase==='guanyin_window'&&game.self?.treasures?.guanyinMirror?.available)ui.privateRoleVisible=true;
+    ui.overlay = game.phase==='guanyin_window'&&ui.privateRoleVisible?'treasures':ui.privateRoleVisible ? 'identity' : game.phase === 'team_vote' && game.self ? 'vote' : undefined;
   }
   const completed = game.rounds.filter(round => round.result).length;
   if (ui.completedCount !== undefined && completed > ui.completedCount && !game.result) { ui.overlay = 'report'; ui.reportMission = game.rounds.filter(round => round.result).at(-1)?.mission; }
   ui.completedCount = completed;
+  const bell=game.self?.treasures?.incomingHeartBell;
+  const bellKey=bell?`${game.id}:${bell.roundNumber}:${bell.mission}:${bell.advice}`:undefined;
+  const mirror=game.self?.treasures?.guanyinMirror?.result;
+  const mirrorKey=mirror?`${game.id}:${mirror.targetId}:${mirror.alignment}`:undefined;
+  if(allowAutoReveal&&((bellKey&&ui.heartBellReadKey!==bellKey)||(mirrorKey&&ui.guanyinResultReadKey!==mirrorKey))){
+    ui.privateRoleVisible=true;ui.overlay='treasures';ui.heartBellReadKey=bellKey;ui.guanyinResultReadKey=mirrorKey;
+  }
   const submitted = game.phase === 'discussion' ? game.rounds.at(-1) : undefined;
   const draft = game.draftTeam ?? (submitted ? { playerIds: submitted.team, direction: submitted.direction } : undefined);
   const draftKey = draft ? JSON.stringify(draft) : '';
@@ -89,6 +99,9 @@ export function gameScreen(room: RoomView, user: User, ui: GameUiState, now = Da
     if (treasure.guanyinMirror) rows.push({ id: 'treasure:guanyinMirror', text: treasure.guanyinMirror.result
       ? `观音镜查验：${playerLabel(treasure.guanyinMirror.result.targetId)}心性${treasure.guanyinMirror.result.alignment === 'evil' ? '妖魔' : '纯良'}`
       : treasure.guanyinMirror.available ? '观音镜：选一名出征队员查验' : `观音镜：${treasure.guanyinMirror.used ? '已使用' : '发车后可用'}` });
+    if(treasure.guanyinMirror?.available&&game.phase==='guanyin_window')rows.push({id:'treasure:guanyinSkip',text:'跳过本次查验'});
+    if(treasure.heartBell?.available)rows.push({id:'treasure:heartProtect',text:'同心铃 · 建议所选同伙护经'},{id:'treasure:heartSabotage',text:'同心铃 · 建议所选同伙作祟'});
+    for(const [key,msg] of [['sent',treasure.heartBell?.sent],['incoming',treasure.incomingHeartBell]] as const)if(msg)rows.push({id:'treasure:bell-'+key,text:`同心铃 · 第${msg.mission}难 · ${msg.advice==='protect'?'建议护经':'建议作祟'} · ${msg.active?'仅私密建议，不改变出牌':'已过出牌时机，仅供回看'}`});
     if (treasure.humanBag) rows.push({ id: 'treasure:humanBag', text: treasure.humanBag.targetId
       ? `人种袋已禁选：${playerLabel(treasure.humanBag.targetId)}`
       : treasure.humanBag.available ? '人种袋：选一名非队长仙友禁选' : `人种袋：${treasure.humanBag.used ? '已使用' : '第三轮提名前可用'}` });
@@ -163,7 +176,7 @@ export function handleGameOverlay(ui: GameUiState, room: RoomView, id: string): 
   if (id === 'voteHistory') { ui.historyExpanded=!ui.historyExpanded; return true; }
   if (id === 'role') { ui.overlay = 'identity'; ui.privateRoleVisible = true; return true; }
   const overlays: Record<string, GameUiState['overlay']> = { openVote: 'vote', openMission: 'mission', history: 'history', treasures: 'treasures', more: 'more' };
-  if (overlays[id]) { if(id==='treasures'&&ui.overlay==='identity')ui.overlayReturn='identity';else ui.overlayReturn=undefined; if(id==='history')ui.reportMission=undefined; ui.overlay = overlays[id]; ui.ballotVisible = id === 'openVote'; if (id !== 'treasures') ui.privateRoleVisible = false; return true; }
+  if (overlays[id]) { if(id==='treasures'&&ui.overlay==='identity')ui.overlayReturn='identity';else ui.overlayReturn=undefined; if(id==='history')ui.reportMission=undefined; ui.overlay = overlays[id]; ui.ballotVisible = id === 'openVote'; ui.privateRoleVisible = id === 'treasures'; return true; }
   if (id.startsWith('mission:')) { ui.reportMission = Number(id.slice(8)); ui.overlay = room.game?.rounds.some(r=>r.mission===ui.reportMission&&r.result)?'report':'history'; return true; }
   if (id.startsWith('vote-choice:') && room.game?.phase === 'team_vote' && room.game.self && !room.game.self.teamVoted) {
     ui.voteChoice = id.endsWith('approve') ? true : id.endsWith('reject') ? false : 'abstain'; return true;
@@ -269,6 +282,8 @@ export function gameAction(room: RoomView, user: User, action: string, ui: Parti
       command = { type: 'useTreasure', payload: { action: 'tinStaff', targetId: targetId! } };
     if (action === 'treasure:guanyinMirror' && treasures.guanyinMirror?.available && validTarget && round?.team.includes(targetId!))
       command = { type: 'useTreasure', payload: { action: 'guanyinMirror', targetId: targetId! } };
+    if(action==='treasure:guanyinSkip'&&treasures.guanyinMirror?.available&&game.phase==='guanyin_window')command={type:'useTreasure',payload:{action:'guanyinMirror',skip:true}};
+    if(['treasure:heartProtect','treasure:heartSabotage'].includes(action)&&treasures.heartBell?.available&&validTarget&&treasures.heartBell.targetIds.includes(targetId!))command={type:'useTreasure',payload:{action:'heartBell',targetId:targetId!,advice:action==='treasure:heartProtect'?'protect':'sabotage'}};
     if (action === 'treasure:humanBag' && treasures.humanBag?.available && validTarget && targetId !== game.captainId)
       command = { type: 'useTreasure', payload: { action: 'humanBag', targetId: targetId! } };
     if (action === 'treasure:jinguSeal' && treasures.jinguSeal?.available)

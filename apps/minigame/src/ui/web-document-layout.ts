@@ -1,3 +1,4 @@
+import {BUILTIN_AVATARS} from '../../../web/src/avatar-catalog.js';
 import type { GameView, Player, Role, Score } from '@avalon/contracts';
 import { assignFemaleDemons, assignLoyalGuardians, failuresRequiredFor, ROLE_CONFIG, teamOf } from '@avalon/game-core';
 import { defaultRoleArtPrefix, ALL_GALLERY_ROLES, formatRoleName, getRoleGalleryItem, roleMottos, roleNames, roleTitles, WUYUE_MISSIONS } from '../../../web/src/roles.js';
@@ -40,7 +41,13 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
     y+=headerH+6;bodyStart=y;
   };
   const game=doc.game;
-  if(doc.kind==='identity'&&doc.self&&game) {
+  if(doc.kind==='preferences'&&doc.settings){
+    modalHeader('心仪选角 · 偏好匹配','志愿提高机会 · 不保证命中');
+    if(doc.preferencesDisabled)para('pref-disabled','本局已开始或房主已关闭心仪选角，暂不可修改。');
+    for(let i=0;i<3;i++){const role=doc.preferences?.[i];button(role?'pref:'+role:'noop',`第${i+1}志愿 · ${role?formatRoleName(role):'未选择'}`,y,{disabled:doc.preferencesDisabled,skin:'gold-button'});y+=50;}
+    for(const team of ['blue','red'] as const){heading('pref-team:'+team,team==='blue'?'取经正果 · 蓝方':'群妖乱道 · 红方');const roles=[...new Set(ROLE_CONFIG[doc.settings.playerCount]??[])].filter(r=>getRoleGalleryItem(r).team===team);for(const [i,role] of roles.entries()){const item=getRoleGalleryItem(role);add('button','pref:'+role,item.name,x+(i%2)*(w+8)/2,y+Math.floor(i/2)*90,(w-8)/2,82,{skin:'identity-card',image:'roles/'+item.artPrefix+'-160.webp',team,selected:doc.preferences?.includes(role),disabled:doc.preferencesDisabled,detail:item.title,badge:doc.preferences?.includes(role)?'第'+(doc.preferences.indexOf(role)+1)+'志愿':''});}y+=Math.ceil(roles.length/2)*90+8;}
+    rowButtons([{id:'prefClear',text:'清空志愿',disabled:doc.preferencesDisabled},{id:'prefSave',text:'保存志愿',primary:true,disabled:doc.preferencesDisabled}],y);y+=52;bodyEnd=y;
+  } else if(doc.kind==='identity'&&doc.self&&game) {
     const self=doc.self,item=getRoleGalleryItem(self.role,self.loyalGuardian,self.femaleDemon), knowledge=identityKnowledge(self,game.players.length);
     modalHeader('真身法相底牌');
     const bx=x+2,bw=w-4;
@@ -119,7 +126,7 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
         const draft=doc.profileDraft;add('portrait','profile-avatar',draft?.nickname??user.nickname,x,y,80,80,{skin:'avatar',image:draft?.avatarUrl??draft?.wechatAvatarUrl??'emblems/'+(draft?.avatar??user.avatar??'leaf')+'.png'});
         button('uploadAvatar','上传自定义头像',y,{skin:'button'},x+92,w-92,36);button('profile:wechat','选择仙友人物头像',y+42,{skin:'button'},x+92,w-92,36);y+=92;
         button('profile:nickname','尊号：'+(draft?.nickname??user.nickname),y,{skin:'input'});y+=50;
-        const avatars=['leaf','moon','sun','mountain','wave','star'];avatars.forEach((a,i)=>add('button','profile:avatar:'+a,a,x+i*(w+6)/6,y,(w-30)/6,44,{skin:'avatar-choice',image:'emblems/'+a+'.png',selected:a===(draft?.avatar??user.avatar??'leaf')}));y+=54;
+        BUILTIN_AVATARS.forEach((a,i)=>add('button','profile:builtin:'+i,a.name,x+(i%6)*(w+6)/6,y+Math.floor(i/6)*54,(w-30)/6,44,{skin:'avatar-choice',image:a.src,selected:a.src===draft?.avatarUrl}));y+=108;
         button('profile:save','保存资料',y,{primary:true,skin:'gold-button'});y+=52;
       }
       button('sound','▶ 声音设置',y,{skin:'profile-toggle',fontSize:15},x,w,67);y+=85;
@@ -197,7 +204,7 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
     } else if(doc.kind==='settings') {
       if(doc.activeTab==='setup'&&doc.settings){
         y=12;button('cancelSettings','❮',y,{skin:'pill'},16,38,38);button('sound','♫',y,{skin:'pill'},v.width-94,32,32);button('guide','规则',y,{skin:'pill'},v.width-56,40,32);add('label','setup-title','🏛 开启常规房',62,y,v.width-162,40,{skin:'text',fontSize:22,fontFace:'display',tone:'gold',align:'center'});y=74;
-        button('noop','🏛 线下常规房\n同桌聚会 · 面杀无语音',y,{skin:'setup-mode',selected:true},16,(v.width-42)/2,52);button('noop','🎙️ 远端语音房\n本轮暂不提供',y,{skin:'setup-mode',disabled:true},26+(v.width-42)/2,(v.width-42)/2,52);y=143;
+        button('noop','🏛 线下常规房\n同桌或远程 · 自选语音',y,{skin:'setup-mode',selected:true},16,(v.width-42)/2,52);button('noop','🎙️ 微信原生语音\n入房后在声音设置加入',y,{skin:'setup-mode',disabled:true},26+(v.width-42)/2,(v.width-42)/2,52);y=143;
         panel('setup-count-frame',y,120,'profile',53,v.width-106);
         for(let count=5;count<=12;count++)button('count:'+count,String(count),y+10+Math.floor((count-5)/4)*56,{skin:'count',selected:doc.settings.playerCount===count,fontSize:18},70+(count-5)%4*(v.width-140)/4,(v.width-160)/4,48);y+=135;
         for(const team of ['blue','red'] as const){
@@ -232,6 +239,7 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
         if(!g.settings.anonymousTeamVote&&r.vote?.ballots){for(const [id,ballot] of Object.entries(r.vote.ballots))para('public-ballot:'+r.number+':'+id,name(id)+' · '+(ballot==='abstain'?'旁观':ballot?'准行':'封驳'),12);}
         for(const row of model.rows.filter(row=>row.id===`replay:mission:${r.number}`||row.id.startsWith(`replay:inspection:${r.number}:`)||row.id.startsWith(`replay:early:${r.number}:`)))para(row.id,row.text);
       }
+      for(const row of model.rows.filter(r=>r.id.startsWith('audit:')))para(row.id,row.text,12);
       for(const row of model.rows.filter(r=>r.id==='favorite')){button(row.id,row.text,y,{skin:'gold-button'});y+=52;}
       button(model.web?.backId??'back','返回记录',y);y+=52;
     }
@@ -280,7 +288,7 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
     for(let count=5;count<=12;count++)button(prefix+'count:'+count,String(count),y,{skin:'count',selected:settings.playerCount===count},x+(count-5)*w/8,w/8-4,44);y+=58;
     const fields=[['captainMode','队长分配',settings.captainMode==='seat_order'?'按座位循环':'开局打乱一次，整局循环'],['rejectionScope','流局计数',settings.rejectionScope==='game'?'全局累计，5 次判负':'单次任务累计，5 次判负']];
     for(const [id,label,value] of fields){txt('field:'+id,label!,y,13);y+=25;button(prefix+id,value!,y,{skin:'input'});y+=52;}
-    for(const [id,label] of [['anonymousTeamVote','匿名组队投票'],['ladyEnabled','照妖宝镜'],['earlyAssassinationEnabled','提前刺杀'],['guardianPerksEnabled','护法天机（建议7-12人）'],['autoRevealRoleEnabled','倒计时后亮明真身'],['treasuresEnabled','专属法宝（8-12人专属）']] as const){button(prefix+id,label,y,{skin:'setting',selected:settings[id]});y+=50;}
+    for(const [id,label] of [['anonymousTeamVote','匿名组队投票'],['ladyEnabled','照妖宝镜'],['earlyAssassinationEnabled','提前刺杀'],['guardianPerksEnabled','护法天机（建议7-12人）'],['rolePreferenceEnabled','心仪选角 · 偏好匹配'],['autoRevealRoleEnabled','倒计时后亮明真身'],['treasuresEnabled','专属法宝（8-12人专属）']] as const){button(prefix+id,label,y,{skin:'setting',selected:settings[id]});y+=50;}
     if(settings.treasuresEnabled && settings.playerCount >= 8)para('settings-treasure-rule',settings.guardianPerksEnabled?'新局同时开启护法天机时，蓝方法宝禁用，仅红方法宝生效。':'新局未开启护法天机时，双方按角色保留专属法宝。',12);
     y+=36;
   }

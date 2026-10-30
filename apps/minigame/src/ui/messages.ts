@@ -1,6 +1,9 @@
 import { errors } from '../../../web/src/api.js';
 
 const miniGameErrors: Record<string, string> = {
+  WECHAT_VOICE_LIMIT: '微信原生语音每房最多10人，11～12人牌局不能加入原生语音。',
+  WECHAT_VOICE_IDENTITY: '原生语音需使用当前微信绑定的游戏账号；请退出并重新微信登录，不要切换仙友码账号。',
+  WECHAT_VOICE_SESSION: '未取得微信语音签名所需的会话，请重新加入语音。',
   WECHAT_LOGIN_FAILED: '微信身份验证未完成，请重新登录或先体验单人演练。',
   WECHAT_LOGIN_TIMEOUT: '微信身份验证超时，请检查网络后重新登录。',
   WECHAT_LOGIN_CANCELLED: '已取消微信身份验证，可重新登录或体验单人演练。',

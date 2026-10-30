@@ -1,3 +1,4 @@
+import type { NativeVoiceRuntime } from './native-voice.js';
 export interface WxRequestOptions {
   url: string;
   method?: string;
@@ -31,7 +32,7 @@ export interface WxAvatarCanvas {
   toTempFilePathSync(options: { fileType: 'jpg'; quality: number }): string;
 }
 
-export interface WxRuntime {
+export interface WxRuntime extends NativeVoiceRuntime {
   createCanvas(): HTMLCanvasElement;
   loadFont?(path: string): string | null;
   createOffscreenCanvas?(options: { type: '2d'; width: number; height: number }): WxAvatarCanvas;

@@ -1,3 +1,7 @@
+import {invitationUrl} from './net/urls.js';
+import {RolePreferenceDraft} from './screens/role-preferences.js';
+import type {Role} from '@avalon/contracts';
+import {commandId} from './screens/lobby.js';
 import { attachTouchNavigation } from './ui/touch.js';
 import { defaultSettings, defaultAnonymousTeamVote, type RoomView, type Settings, type User, type DedicatedRoom } from '@avalon/contracts';
 import { WechatPlatform, type WxRuntime } from './platform/wechat.js';
@@ -25,6 +29,8 @@ import { createArtwork } from './ui/assets.js';
 import { describeMiniGameError } from './ui/messages.js';
 import { MiniGameSound } from './platform/sound.js';
 import { installWebFonts } from './platform/fonts.js';
+import { NativeVoice, type VoiceTicket } from './platform/native-voice.js';
+import { MINI_GAME_VOICE_ENABLED } from './features.js';
 import { KnownAccounts } from './net/known-accounts.js';
 
 declare const wx: WxRuntime;
@@ -36,6 +42,7 @@ const platform = new WechatPlatform(wx);
 const canvas = drawShell(platform);
 const artwork = createArtwork(wx, () => render(), baseUrl);
 const api = new MiniGameApi(platform, baseUrl);
+const nativeVoice = new NativeVoice(wx, async roomId => api.request<VoiceTicket>(`/rooms/${roomId}/wechat-voice-ticket`, { code: await platform.login() }), () => render(), MINI_GAME_VOICE_ENABLED);
 const knownAccounts = new KnownAccounts(platform);
 const sound = new MiniGameSound(platform, baseUrl, text => { notice = text; render(); });
 const invites = new InviteInbox();
@@ -75,7 +82,8 @@ let roleIndex = 0;
 let nickname = '';
 let switchCode = '';
 let authMode: 'create' | 'switch' = 'create';
-let auxiliary: 'dedicated' | 'roomTools' | 'practiceSeats' | 'sound' | 'switchAccount' | 'join' | undefined;
+const rolePreferenceDraft=new RolePreferenceDraft();
+let auxiliary: 'preferences' | 'dedicated' | 'roomTools' | 'practiceSeats' | 'sound' | 'switchAccount' | 'join' | undefined;
 let joinKey = '';
 let dedicatedRooms: DedicatedRoom[] = [];
 let creationAccess: {dedicatedRoomId?:string;password?:string|null} = {};
@@ -105,6 +113,7 @@ function model(): ScreenModel {
     title: '大家都在等你', rows: [{ id: 'guide:ready', text: '其他玩家均已准备，只差你一位。' }, { id: 'ready', text: '我已准备' }, { id: 'readyLater', text: '稍后准备' }],
     web: { page: 'sheet', sheet: 'ready', background: 'pavilion', backId: 'readyLater',document:{kind:'tools',modal:true},underlay:lobbyScreen(room,user) },
   });
+  if(auxiliary==='preferences'&&room)return feedback(rolePreferenceDraft.model(room));
   if (auxiliary === 'join') return feedback({ title: '加入朋友的房间', rows: [
     { id: 'input:join', text: joinKey || '输入房间号或邀请链接' },
     { id: 'guide:join', text: '请向朋友索取房间号或邀请链接。每次打开此页均为空，不会填入历史邀请。' },
@@ -115,7 +124,7 @@ function model(): ScreenModel {
   if (auxiliary === 'sound') return feedback({ title: '声音设置', rows: [
     { id: 'sound:music', text: '背景音乐：' + (sound.preferences.music ? '开' : '关') },
     { id: 'sound:effects', text: '游戏音效：' + (sound.preferences.effects ? '开' : '关') },
-    { id: 'guide:sound', text: '沿用网页端原曲与音效。实时语音本轮不提供。' },
+    ...nativeVoice.rows(),
   ], web: { page: 'sheet', background: 'library', backId: 'auxiliaryClose',document:{kind:'tools',modal:true} } });
   if (auxiliary === 'practiceSeats' && practice) return feedback({ title: '选择演练视角', rows: practice.perspectives().map(player => ({ id: 'practiceSeat:' + player.id, text: `${player.seat}号 · ${player.nickname} · ${formatRoleName(player.role)}` })), web: { page: 'sheet', background: 'sword', backId: 'auxiliaryClose',document:{kind:'tools',modal:true},underlay:gameScreen(practice.view(),practice.user,{privateRoleVisible:false,ballotVisible:false}) } });
   if (auxiliary === 'roomTools' && room && user) return feedback({ ...lobbyScreen(room, user), title: '房间工具', web: { page: 'sheet', backId: 'auxiliaryClose', background: 'pavilion',document:{kind:'tools',modal:true},underlay:lobbyScreen(room,user) } });
@@ -163,6 +172,7 @@ function navigate(next: typeof view) { view = next; auxiliary = undefined; scrol
 
 function connect(next: RoomView) {
   connection?.stop();
+  nativeVoice.syncRoom(next.id, next.settings.playerCount);
   room = next;
   playerPanel?.setChatRoom(next.id,next.code);
   syncGameUi(gameUi, next, !suspended, user?.id);
@@ -170,6 +180,7 @@ function connect(next: RoomView) {
   connection = new MiniGameRoomConnection({ api, platform, roomId: next.id, baseUrl, handlers: {
     snapshot: snapshot => {
       const changedGame = snapshot.game?.id !== room?.game?.id;
+      nativeVoice.syncRoom(snapshot.id, snapshot.settings.playerCount);
       room = snapshot;
       sound.update(snapshot.game, connectionStatus === '已连接');
       lobby?.setRoom(snapshot);
@@ -182,7 +193,7 @@ function connect(next: RoomView) {
       }
       render();
     },
-    status: value => { connectionStatus = value; if (value !== '已连接') hideSensitiveView(gameUi); render(); },
+    status: value => { if (value !== '已连接') void nativeVoice.leave(); connectionStatus = value; if (value !== '已连接') hideSensitiveView(gameUi); render(); },
     busy: value => { commandBusy = value; render(); },
     error: value => { error = describeMiniGameError(new Error(value)); render(); },
     message: message => {
@@ -192,7 +203,7 @@ function connect(next: RoomView) {
       if (message.type === 'roomInvitation') { invites.receive(message.roomCode, message.fromUser.nickname); render(); }
       if (message.type === 'systemAnnouncement') { announcement = message.enabled ? message.text : ''; render(); }
     },
-    ended: () => { connection = undefined; room = undefined; navigate('entry'); },
+    ended: () => { nativeVoice.syncRoom(undefined, 0); connection = undefined; room = undefined; navigate('entry'); },
   } });
   lobby?.setConnection(connection);
   navigate(next.game ? 'game' : 'lobby');
@@ -217,6 +228,12 @@ async function run(action: () => Promise<void>) {
 async function select(id: string) {
   if(id==='noop')return;
   if (busy || commandBusy) return;
+  if(id==='rolePreferences'&&room){rolePreferenceDraft.open(room);auxiliary='preferences';scroll=0;render();return;}
+  if(auxiliary==='preferences'&&room){
+    if(id.startsWith('pref:'))return run(async()=>{rolePreferenceDraft.toggle(id.slice(5) as Role,room!);});
+    if(id==='prefClear'){rolePreferenceDraft.selected=[];render();return;}
+    if(id==='prefSave')return run(async()=>{if(!connection||room!.phase!=='waiting'||!room!.settings.rolePreferenceEnabled)throw Error('当前无法保存心仪志愿');rolePreferenceDraft.sync(room!);await connection.sendConfirmed({type:'setRolePreferences',payload:{preferences:rolePreferenceDraft.selected},commandId:commandId(),expectedVersion:room!.version});auxiliary=undefined;notice='心仪志愿已保存';});
+  }
   if (id === 'readyLater') { reminderDismissed = room?.id ?? ''; render(); return; }
   if (id === 'leave' && view === 'game' && ['finished', 'aborted'].includes(room?.game?.phase ?? '')) { lobby?.leave(); return; }
   if (id === 'leave' && view === 'game') id = room?.hostId === user?.id ? 'endGame' : 'requestAbort';
@@ -230,10 +247,12 @@ async function select(id: string) {
   if (id === 'copyCode' && user?.playerCode && wx.setClipboardData) { wx.setClipboardData({ data: user.playerCode, success: () => { notice = '仙友码已复制'; render(); }, fail: () => { error = '复制失败，请重试'; render(); } }); return; }
   sound.activate(); sound.effect('tap'); platform.vibrate('light');
   if(id==='share'&&room){if(wx.shareAppMessage)wx.shareAppMessage({title:`来嘻游 · 真假猴王房间 ${room.code} 一起论剑`,query:`invite=${encodeURIComponent(room.inviteKey??room.code)}`});else{notice=`请告知好友房间号 ${room.code}`;render();}return;}
-  if (id === 'copyRoom' && room && wx.setClipboardData) { wx.setClipboardData({ data: baseUrl + '/?invite=' + encodeURIComponent(room.inviteKey??room.code), success: () => { notice = '房间邀请链接已复制'; render(); }, fail: () => { error = '复制失败，请重试'; render(); } }); return; }
+  if (id === 'copyRoom' && room && wx.setClipboardData) { wx.setClipboardData({ data: invitationUrl(baseUrl,room.inviteKey??room.code), success: () => { notice = '房间邀请链接已复制'; render(); }, fail: () => { error = '复制失败，请重试'; render(); } }); return; }
+  if (id === 'mode:voice') { notice = MINI_GAME_VOICE_ENABLED ? '创建或加入房间后，点顶部声音按钮加入微信语音；最多10人，与网页语音独立。' : '当前版本不支持实时语音；网页语音能力保持可用。'; render(); return; }
+  if (id.startsWith('voice:')) return run(async () => { if(id==='voice:join') await nativeVoice.join(); else if(id==='voice:leave') await nativeVoice.leave(); else if(id==='voice:microphone') await nativeVoice.toggleMicrophone(); else if(id==='voice:speaker') await nativeVoice.toggleSpeaker(); });
   if (id === 'sound') { auxiliary = 'sound'; scroll = 0; render(); return; }
   if (id.startsWith('sound:')) { const key = id.slice(6) as 'music' | 'effects'; sound.configure(key, !sound.preferences[key]); render(); return; }
-  if (id.startsWith('known:')) return run(async () => { const account=knownAccounts.list().find(a=>a.playerCode===id.slice(6));if (!api.session.get()) await api.login(); user = await api.switchAccount(id.slice(6),account?.id); knownAccounts.remember(user); lobby = new LobbyController(api, user); playerPanel = new PlayerPanel(extras, user, () => chooseAvatar(wx)); const existing = await lobby.resume(); if (existing) connect(existing); else navigate('entry'); });
+  if (id.startsWith('known:')) return run(async () => { await nativeVoice.leave(); const account=knownAccounts.list().find(a=>a.playerCode===id.slice(6));if (!api.session.get()) await api.login(); user = await api.switchAccount(id.slice(6),account?.id); knownAccounts.remember(user); lobby = new LobbyController(api, user); playerPanel = new PlayerPanel(extras, user, () => chooseAvatar(wx)); const existing = await lobby.resume(); if (existing) connect(existing); else navigate('entry'); });
   if (id === 'notice' || id === 'error') { notice = ''; error = ''; render(); return; }
   if (id === 'announcement') { announcement = ''; render(); return; }
   if (id === 'auxiliaryClose') { auxiliary = undefined; scroll = 0; render(); return; }
@@ -277,7 +296,7 @@ async function select(id: string) {
     if (id === 'rematch') { practice = new PracticeSession(practice.settings, user?.nickname ?? '我', practice); syncGameUi(gameUi, practice.view()); render(); return; }
     const command = gameAction(practice.view(), practice.user, id, gameUi);
     if (command) { try { practice.act(command); if (command.type === 'useTreasure') gameUi.targetId = undefined; syncGameUi(gameUi, practice.view()); } catch (cause) { error = cause instanceof Error ? cause.message : '练习操作失败'; } render(); }
-    else if (['treasure:tinStaff', 'treasure:guanyinMirror', 'treasure:humanBag', 'treasure:jinguSeal', 'treasure:bananaFan'].includes(id)) { error = '当前法宝不可用，或所选目标不符合条件'; render(); }
+    else if (['treasure:heartProtect','treasure:heartSabotage','treasure:guanyinSkip','treasure:tinStaff', 'treasure:guanyinMirror', 'treasure:humanBag', 'treasure:jinguSeal', 'treasure:bananaFan'].includes(id)) { error = '当前法宝不可用，或所选目标不符合条件'; render(); }
     return;
   }
   if (view === 'player' && playerPanel) return run(async () => {
@@ -315,11 +334,11 @@ async function select(id: string) {
     if (id.startsWith('auth:')) { authMode = id === 'auth:switch' ? 'switch' : 'create'; render(); return; }
     if (id === 'input:nickname' || id === 'input:switch') return run(async () => { const text = await askText(wx, id === 'input:nickname' ? nickname : switchCode, id === 'input:nickname' ? 20 : 6); if (text !== undefined) { if (id === 'input:nickname') nickname = text; else switchCode = text.replace(/\D/g, '').slice(0, 6); } });
     if (id === 'practice') { practice = new PracticeSession(editableSettings, user?.nickname ?? '我'); syncGameUi(gameUi, practice.view()); navigate('practice'); return; }
-    if (id === 'login') return run(async () => { if (authMode === 'switch' && !/^\d{6}$/.test(switchCode)) throw new Error('INVALID_PLAYER_CODE'); const result = await api.login(nickname || undefined); user = authMode === 'switch' ? await api.switchAccount(switchCode) : result.user; knownAccounts.remember(user); auxiliary = undefined; lobby = new LobbyController(api, user); playerPanel = new PlayerPanel(extras, user, () => chooseAvatar(wx)); const existing = await lobby.resume(); if (existing) connect(existing); else if (invites.code) { connect(await joinWithPassword(invites.code)); invites.take(); } else render(); });
+    if (id === 'login') return run(async () => { await nativeVoice.leave(); if (authMode === 'switch' && !/^\d{6}$/.test(switchCode)) throw new Error('INVALID_PLAYER_CODE'); const result = await api.login(nickname || undefined); user = authMode === 'switch' ? await api.switchAccount(switchCode) : result.user; knownAccounts.remember(user); auxiliary = undefined; lobby = new LobbyController(api, user); playerPanel = new PlayerPanel(extras, user, () => chooseAvatar(wx)); const existing = await lobby.resume(); if (existing) connect(existing); else if (invites.code) { connect(await joinWithPassword(invites.code)); invites.take(); } else render(); });
     if (id === 'create' && lobby) { creationAccess={};selectedDedicated=undefined;setupIntent = 'room'; navigate('settings'); return; }
     if (id === 'join' && lobby) { joinKey = ''; auxiliary = 'join'; scroll = 0; render(); return; }
     if (id === 'switch') { authMode = 'switch'; switchCode = ''; auxiliary = 'switchAccount'; scroll = 0; render(); return; }
-    if (id === 'logout') return run(async () => { connection?.stop(); connection = undefined; room = undefined; user = undefined; lobby = undefined; playerPanel = undefined; await api.logout(); render(); });
+    if (id === 'logout') return run(async () => { nativeVoice.syncRoom(undefined,0); await nativeVoice.leave(); connection?.stop(); connection = undefined; room = undefined; user = undefined; lobby = undefined; playerPanel = undefined; await api.logout(); render(); });
     if (id === 'admin') return run(async () => { const key = await askText(wx, '', 256); if (!key) return; await adminPanel.open(key); navigate('admin'); });
     if ((id === 'account' || id === 'friends') && playerPanel) return run(async () => { previousView = 'entry'; await playerPanel!.open(id); navigate('player'); });
   }
@@ -368,7 +387,7 @@ async function select(id: string) {
       render(); return;
     }
     const command = gameAction(room, user, id, gameUi);
-    if (!command && ['treasure:tinStaff', 'treasure:guanyinMirror', 'treasure:humanBag', 'treasure:jinguSeal', 'treasure:bananaFan'].includes(id)) {
+    if (!command && ['treasure:heartProtect','treasure:heartSabotage','treasure:guanyinSkip','treasure:tinStaff', 'treasure:guanyinMirror', 'treasure:humanBag', 'treasure:jinguSeal', 'treasure:bananaFan'].includes(id)) {
       error = '当前法宝不可用，或所选目标不符合条件'; render(); return;
     }
     if (command && (['endGame', 'voteAbort', 'assassinate'].includes(command.type) || id === 'earlyAttempt')) {
@@ -396,7 +415,7 @@ attachTouchNavigation(wx, {
   scrollBy(delta) { scroll = Math.max(0, scroll + delta); scheduleRender(); },
   tap(x,y) { const row=hitTest(rows,x,y); if(row) void select(row.id); },
 });
-platform.onHide(() => { suspended = true; sound.foreground(false); cancelTextInput(); hideSensitiveView(gameUi); pendingConfirm = undefined; adminPanel.onHide(); if (view === 'admin') view = 'entry'; render(); });
+platform.onHide(() => { void nativeVoice.leave(); suspended = true; sound.foreground(false); cancelTextInput(); hideSensitiveView(gameUi); pendingConfirm = undefined; adminPanel.onHide(); if (view === 'admin') view = 'entry'; render(); });
 platform.onShow(options => { suspended = false; sound.foreground(true); hideSensitiveView(gameUi); invites.receive(options?.query?.invite); connection?.resume(); render(); });
 render();
 if (typeof wx.request === 'function') void extras.announcement().then(result => {

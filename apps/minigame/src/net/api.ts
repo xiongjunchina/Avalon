@@ -1,3 +1,4 @@
+import {applicationUrl} from './urls.js';
 import type { User } from '@avalon/contracts';
 import type { WechatPlatform } from '../platform/wechat.js';
 import { MiniGameSession } from './session.js';
@@ -32,7 +33,7 @@ export class MiniGameApi {
       };
       const timer = setTimeout(() => finish(() => reject(new Error('NETWORK_TIMEOUT'))), this.options.timeoutMs ?? 10_000);
       this.platform.request({
-        url: `${this.baseUrl.replace(/\/$/, '')}/api${path}`,
+        url: applicationUrl(this.baseUrl,`api${path}`),
         method,
         header: {
           ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),

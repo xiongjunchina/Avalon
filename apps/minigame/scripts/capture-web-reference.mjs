@@ -19,6 +19,7 @@ try {
   const height = width === 320 ? 568 : width === 390 ? 844 : 932;
   for (const scene of (process.env.PARITY_SCENES?.split(',') ?? ['guest', 'entry', 'setup', 'lobby', 'game'])) {
     const page = await browser.newPage({ viewport: { width, height }, reducedMotion: 'reduce' });
+    page.on('pageerror',e=>console.error('Web render error:',e.message));
     page.setDefaultTimeout(10000);page.setDefaultNavigationTimeout(15000);
     await page.addInitScript(() => { const interval = window.setInterval; window.setInterval = (fn, delay, ...args) => interval(fn, delay === 3800 ? 3600000 : delay, ...args); });
     await page.route('https://fonts.googleapis.com/**', route => route.fulfill({contentType:'text/css',body:fontCss}));
@@ -29,6 +30,7 @@ try {
       const url = new URL(route.request().url());
       let status = 200, body = {};
       if (url.pathname === '/api/system/announcement') body = { announcement: { enabled: false, text: '' }, freeAccessMode: true };
+      else if (url.pathname === '/api/me/dedicated-rooms') body={rooms:[]};
       else if (url.pathname === '/api/me') { if (scene === 'guest') { status = 401; body = { error: 'UNAUTHENTICATED' }; } else body = { user, roomId: activeRoom ? room.id : null }; }
       else if (url.pathname === '/api/friends') body = {friends:playerData.friends};
       else if (url.pathname === '/api/me/stats') body=playerData.stats;

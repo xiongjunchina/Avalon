@@ -12,6 +12,7 @@ test('builds an importable project without server or admin secrets', async t => 
   const outDir = await mkdtemp(join(tmpdir(), 'avalon-minigame-'));
   t.after(() => rm(outDir, { recursive: true, force: true }));
   await buildMiniGame({ outDir, appId: 'wx1111111111111111' });
+  for(const dir of ['scenes','avatars','roles'])for(const name of await readdir('apps/minigame/assets/compatible/'+dir)){if(!name.endsWith('.jpg'))continue;assert.deepEqual(await readFile(join(outDir,'art',dir,name)),await readFile('apps/minigame/assets/compatible/'+dir+'/'+name),'packaged compatible asset '+name);}
   const entries = await readdir(outDir);
   for (const name of ['game.js', 'game.json', 'project.config.json', 'art']) assert.ok(entries.includes(name), name);
   const config = JSON.parse(await readFile(join(outDir, 'project.config.json'), 'utf8'));
@@ -22,7 +23,7 @@ test('builds an importable project without server or admin secrets', async t => 
   assert.ok(art.includes('fonts'));
   assert.ok(art.includes('scenes'));
   assert.equal(art.includes('moonlit.png'), false, 'unused legacy artwork must not consume font package budget');
-  assert.ok((await readdir(join(outDir, 'art', 'roles'))).includes('merlin-160.webp'));
+  assert.ok((await readdir(join(outDir, 'art', 'roles'))).includes('merlin-160.jpg'));
 });
 
 test('default build uses the registered Mini Game AppID rather than tourist mode', async t => {
@@ -30,6 +31,8 @@ test('default build uses the registered Mini Game AppID rather than tourist mode
   t.after(() => rm(outDir, { recursive: true, force: true }));
   const result = await buildMiniGame({ outDir });
   assert.equal(result.apiBaseUrl, 'https://game.ccnepower.com/avalon');
+  assert.equal(result.voiceEnabled, false);
+  assert.equal(JSON.parse(await readFile(join(outDir,'game.json'),'utf8')).permission?.['scope.record'], undefined);
   const bundle = await readFile(join(outDir, 'bundle.js'), 'utf8');
   assert.match(bundle, /https:\/\/game\.ccnepower\.com\/avalon/);
   assert.doesNotMatch(bundle, /avalon\.ccnepower\.com:8443|\/mafia\/api/);
@@ -45,6 +48,8 @@ test('build embeds the configured HTTPS API origin only', async t => {
   await buildMiniGame({ outDir, appId: 'wx1111111111111111', apiBaseUrl: 'https://avalon.example:8443' });
   assert.match(await readFile(join(outDir, 'bundle.js'), 'utf8'), /https:\/\/avalon\.example:8443/);
   await assert.rejects(buildMiniGame({ outDir, appId: 'wx1111111111111111', apiBaseUrl: 'http://avalon.example' }), /INVALID_API_ORIGIN/);
+  await buildMiniGame({outDir,apiBaseUrl:'https://game.ccnepower.com/avalon/'});
+  assert.ok((await readFile(join(outDir,'bundle.js'),'utf8')).includes('https://game.ccnepower.com/avalon'));
   await assert.rejects(buildMiniGame({ outDir, appId: 'touristappid' }), /INVALID_MINIGAME_APP_ID/);
 });
 

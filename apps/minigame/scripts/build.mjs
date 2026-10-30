@@ -20,6 +20,7 @@ export async function buildMiniGame({
   outDir = join(repoRoot, 'dist', 'minigame'),
   appId = process.env.WECHAT_MINIGAME_APP_ID,
   apiBaseUrl = process.env.WECHAT_MINIGAME_API_BASE_URL || DEFAULT_API_BASE_URL,
+  voiceEnabled = process.env.WECHAT_MINIGAME_VOICE_ENABLED === 'true',
   maxBytes = 4 * 1024 * 1024,
 } = {}) {
   const serviceUrl = normalizeServiceUrl(apiBaseUrl);
@@ -33,11 +34,14 @@ export async function buildMiniGame({
     platform: 'neutral',
     format: 'cjs',
     target: 'es2020',
-    define: { __MINIGAME_API_BASE_URL__: JSON.stringify(serviceUrl), __APP_BASE_PATH__: JSON.stringify(new URL(serviceUrl).pathname.replace(/\/?$/, '/')) },
+    define: { __MINIGAME_API_BASE_URL__: JSON.stringify(serviceUrl), __APP_BASE_PATH__: JSON.stringify(new URL(serviceUrl).pathname.replace(/\/?$/, '/')), __MINIGAME_VOICE_ENABLED__: JSON.stringify(voiceEnabled) },
     minify: true,
     outfile: join(outDir, 'bundle.js'),
   });
-  for (const name of ['game.js', 'game.json']) await copyFile(join(minigameRoot, name), join(outDir, name));
+  await copyFile(join(minigameRoot, 'game.js'), join(outDir, 'game.js'));
+  const gameConfig = JSON.parse(await readFile(join(minigameRoot, 'game.json'), 'utf8'));
+  if (!voiceEnabled) delete gameConfig.permission?.['scope.record'];
+  await writeFile(join(outDir, 'game.json'), JSON.stringify(gameConfig, null, 2));
   project.appid = selectedAppId;
   await writeFile(join(outDir, 'project.config.json'), JSON.stringify(project, null, 2));
   await mkdir(join(outDir, 'art'), { recursive: true });
@@ -45,22 +49,23 @@ export async function buildMiniGame({
   await mkdir(join(outDir, 'art', 'emblems'), { recursive: true });
   for (const name of await readdir(join(minigameRoot, 'assets/emblems'))) if (name.endsWith('.png'))
     await copyFile(join(minigameRoot, 'assets/emblems', name), join(outDir, 'art/emblems', name));
-  for (const name of ['gate', 'sword', 'pavilion', 'library', 'mirror', 'dawn'])
-    await copyFile(join(repoRoot, 'apps/web/public/art/scenes', name + '.webp'), join(outDir, 'art/scenes', name + '.webp'));
   // Remove only the two named legacy build outputs, including on incremental rebuilds.
   await rm(join(outDir, 'art/moonlit.png'), { force: true });
   await rm(join(outDir, 'art/gate.webp'), { force: true });
   await mkdir(join(outDir, 'art/fonts'), { recursive: true });
   for (const name of await readdir(join(minigameRoot, 'assets/fonts')))
     if (name.endsWith('.ttf') || name.endsWith('-OFL.txt')) await copyFile(join(minigameRoot, 'assets/fonts', name), join(outDir, 'art/fonts', name));
-  const rolesRoot = join(repoRoot, 'apps', 'web', 'public', 'art', 'roles');
-  await mkdir(join(outDir, 'art', 'roles'), { recursive: true });
-  for (const name of await readdir(rolesRoot)) {
-    if (name.endsWith('-160.webp')) await copyFile(join(rolesRoot, name), join(outDir, 'art', 'roles', name));
+  for(const folder of ['scenes','roles','avatars']){
+    const target=join(outDir,'art',folder);await mkdir(target,{recursive:true});
+    for(const name of await readdir(join(minigameRoot,'assets/compatible',folder))){
+      if(!name.endsWith('.jpg'))continue;
+      await copyFile(join(minigameRoot,'assets/compatible',folder,name),join(target,name));
+      await rm(join(target,name.replace(/\.jpg$/,'.webp')),{force:true});
+    }
   }
   const size = await bytesIn(outDir);
   if (size > maxBytes) throw new Error(`PACKAGE_TOO_LARGE: ${size} > ${maxBytes}`);
-  return { outDir, size, appId: selectedAppId, apiBaseUrl: serviceUrl };
+  return { outDir, size, appId: selectedAppId, apiBaseUrl: serviceUrl, voiceEnabled };
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

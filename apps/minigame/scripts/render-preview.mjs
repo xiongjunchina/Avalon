@@ -25,6 +25,7 @@ const assets = {};
 for (const scene of ['gate', 'pavilion', 'sword', 'library', 'mirror', 'dawn']) assets['scenes/' + scene + '.webp'] = 'data:image/webp;base64,' + (await readFile(join(root, 'apps/web/public/art/scenes', scene + '.webp'))).toString('base64');
 for (const name of await readdir(join(root, 'apps/web/public/art/roles'))) if (name.endsWith('.webp')) assets[(name.endsWith('-640.webp')?'/art/roles/':'roles/') + name] = 'data:image/webp;base64,' + (await readFile(join(root, 'apps/web/public/art/roles', name))).toString('base64');
 for (const name of await readdir(join(root, 'apps/minigame/assets/emblems'))) if (name.endsWith('.png')) assets['emblems/' + name] = 'data:image/png;base64,' + (await readFile(join(root, 'apps/minigame/assets/emblems', name))).toString('base64');
+for(const name of await readdir(join(root,'apps/web/public/art/avatars'))){const data='data:image/webp;base64,'+(await readFile(join(root,'apps/web/public/art/avatars',name))).toString('base64');assets['/art/avatars/'+name+'?v=artifact1']=data;assets['avatars/'+name]=data;const i=Number(/wx-(\d+)/.exec(name)?.[1])-1;const legacy=['leaf','moon','sun','mountain','wave','star'][i];if(legacy)assets['emblems/'+legacy+'.png']=data;}
 const fonts = Object.fromEntries(await Promise.all(['calligraphy','display','sans'].map(async name => [name,'data:font/ttf;base64,'+(await readFile(join(root,'apps/minigame/assets/fonts',name+'.ttf'))).toString('base64')])));
 const out = join(root, 'dist/minigame-preview');
 await mkdir(out, { recursive: true });

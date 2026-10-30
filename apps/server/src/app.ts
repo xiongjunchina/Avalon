@@ -13,6 +13,7 @@ import { generateVoiceToken, uuidToRtcUid } from './agora.js';
 import { FriendsService } from './friends.js';
 import { AdminService } from './admin.js';
 import { loginWithWechatCode } from './wechat-auth.js';
+import { issueWechatVoiceTicket } from './wechat-voice.js';
 import { MiniGameTickets, bearerToken, requestOriginAllowed } from './minigame-session.js';
 
 export async function buildApp(options: { store: PostgresStore; origin?: string; secure?: boolean; trustProxy?: boolean; heartbeatMs?: number; maintenanceMs?: number }) {
@@ -188,6 +189,21 @@ export async function buildApp(options: { store: PostgresStore; origin?: string;
     const room=await store.updateRoomPassword(user.id,id,password,expectedVersion);publish(id);return {room};
   });
   app.get<{Params:{id:string}}>('/api/rooms/:id',async(req,reply)=>store.roomFor((await authenticate(req,reply)).id,z.string().uuid().parse(req.params.id)));
+
+  app.post<{Params:{id:string}}>('/api/rooms/:id/wechat-voice-ticket',{config:{rateLimit:{max:10,timeWindow:'1 minute'}}},async(req,reply)=>{
+    const user=await authenticate(req,reply);
+    if(!bearerToken(req.headers.authorization)) throw new DomainError('UNAUTHENTICATED',401);
+    const id=z.string().uuid().parse(req.params.id);
+    const {code}=z.object({code:z.string().trim().min(1).max(512)}).strict().parse(req.body);
+    reply.header('Cache-Control','no-store');
+    return issueWechatVoiceTicket(user.id,id,code,{
+      appId:process.env.WECHAT_MINIGAME_APP_ID??'',appSecret:process.env.WECHAT_MINIGAME_APP_SECRET??'',
+    },async(userId,roomId)=>{
+      const {room}=await store.roomFor(userId,roomId);
+      const row=(await store.pool.query<{wechat_openid:string|null}>('SELECT wechat_openid FROM users WHERE id=$1',[userId])).rows[0];
+      return {openid:row?.wechat_openid,playerCount:room.settings.playerCount};
+    });
+  });
 
   app.get<{Params:{id:string}}>('/api/rooms/:id/voice-token',async(req,reply)=>{
     const user=await authenticate(req,reply);
