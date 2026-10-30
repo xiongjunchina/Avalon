@@ -12,7 +12,7 @@ test('builds an importable project without server or admin secrets', async t => 
   const outDir = await mkdtemp(join(tmpdir(), 'avalon-minigame-'));
   t.after(() => rm(outDir, { recursive: true, force: true }));
   await buildMiniGame({ outDir, appId: 'wx1111111111111111' });
-  for(const dir of ['scenes','avatars'])for(const name of await readdir('apps/web/public/art/'+dir)){if(!name.endsWith('.webp'))continue;assert.deepEqual(await readFile(join(outDir,'art',dir,name)),await readFile('apps/web/public/art/'+dir+'/'+name),'original web asset '+name);}
+  for(const dir of ['scenes','avatars','roles'])for(const name of await readdir('apps/minigame/assets/compatible/'+dir)){if(!name.endsWith('.jpg'))continue;assert.deepEqual(await readFile(join(outDir,'art',dir,name)),await readFile('apps/minigame/assets/compatible/'+dir+'/'+name),'packaged compatible asset '+name);}
   const entries = await readdir(outDir);
   for (const name of ['game.js', 'game.json', 'project.config.json', 'art']) assert.ok(entries.includes(name), name);
   const config = JSON.parse(await readFile(join(outDir, 'project.config.json'), 'utf8'));
@@ -23,7 +23,7 @@ test('builds an importable project without server or admin secrets', async t => 
   assert.ok(art.includes('fonts'));
   assert.ok(art.includes('scenes'));
   assert.equal(art.includes('moonlit.png'), false, 'unused legacy artwork must not consume font package budget');
-  assert.ok((await readdir(join(outDir, 'art', 'roles'))).includes('merlin-160.webp'));
+  assert.ok((await readdir(join(outDir, 'art', 'roles'))).includes('merlin-160.jpg'));
 });
 
 test('default build uses the registered Mini Game AppID rather than tourist mode', async t => {

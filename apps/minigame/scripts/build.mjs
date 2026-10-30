@@ -47,21 +47,20 @@ export async function buildMiniGame({
   await mkdir(join(outDir, 'art', 'emblems'), { recursive: true });
   for (const name of await readdir(join(minigameRoot, 'assets/emblems'))) if (name.endsWith('.png'))
     await copyFile(join(minigameRoot, 'assets/emblems', name), join(outDir, 'art/emblems', name));
-  for (const name of ['gate', 'sword', 'pavilion', 'library', 'mirror', 'dawn'])
-    await copyFile(join(repoRoot, 'apps/web/public/art/scenes', name + '.webp'), join(outDir, 'art/scenes', name + '.webp'));
   // Remove only the two named legacy build outputs, including on incremental rebuilds.
   await rm(join(outDir, 'art/moonlit.png'), { force: true });
   await rm(join(outDir, 'art/gate.webp'), { force: true });
   await mkdir(join(outDir, 'art/fonts'), { recursive: true });
   for (const name of await readdir(join(minigameRoot, 'assets/fonts')))
     if (name.endsWith('.ttf') || name.endsWith('-OFL.txt')) await copyFile(join(minigameRoot, 'assets/fonts', name), join(outDir, 'art/fonts', name));
-  const rolesRoot = join(repoRoot, 'apps', 'web', 'public', 'art', 'roles');
-  await mkdir(join(outDir, 'art', 'roles'), { recursive: true });
-  for (const name of await readdir(rolesRoot)) {
-    if (name.endsWith('-160.webp')) await copyFile(join(rolesRoot, name), join(outDir, 'art', 'roles', name));
+  for(const folder of ['scenes','roles','avatars']){
+    const target=join(outDir,'art',folder);await mkdir(target,{recursive:true});
+    for(const name of await readdir(join(minigameRoot,'assets/compatible',folder))){
+      if(!name.endsWith('.jpg'))continue;
+      await copyFile(join(minigameRoot,'assets/compatible',folder,name),join(target,name));
+      await rm(join(target,name.replace(/\.jpg$/,'.webp')),{force:true});
+    }
   }
-  await mkdir(join(outDir,'art','avatars'),{recursive:true});
-  for(const name of await readdir(join(repoRoot,'apps/web/public/art/avatars')))if(name.endsWith('.webp'))await copyFile(join(repoRoot,'apps/web/public/art/avatars',name),join(outDir,'art','avatars',name));
   const size = await bytesIn(outDir);
   if (size > maxBytes) throw new Error(`PACKAGE_TOO_LARGE: ${size} > ${maxBytes}`);
   return { outDir, size, appId: selectedAppId };

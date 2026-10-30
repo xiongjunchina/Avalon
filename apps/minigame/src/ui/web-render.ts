@@ -235,7 +235,7 @@ function drawDocumentNode(ctx:CanvasRenderingContext2D,n:WebNode,model:ScreenMod
   if(n.skin==='waiting-option'){fill(ctx,n,'#15334caa',8,'#d4a35988');write(n.text,cx,n.y+14,n.width-8,12,'center',sans,'400','#ede2cb');write(n.detail??'',cx,n.y+32,n.width-8,10,'center',sans,'600','#ffd875');return;}
   if(n.skin==='waiting-primary'){fill(ctx,n,gradient(ctx,n,n.selected?['#294c59','#17323c']:['#258298','#155366']),16,'#dec895');write(n.text,cx,cy,n.width-12,13,'center',display,'600','#fff1ce');return;}
   if(n.skin==='token'||n.skin==='avatar'||n.skin==='avatar-choice') {
-    if(n.skin==='avatar-choice'){box('button');art(ctx,artwork,n.text,n.x+8,n.y+8,n.width-16,n.height-16);return;}
+    if(n.skin==='avatar-choice'){box('button');image(n.image,n.x+4,n.y+4,n.width-8,n.height-8,true);return;}
     const party=n.detail?.startsWith('出征'),diameter=n.skin==='avatar'?Math.min(n.width,n.height):party?36:Math.min(38,n.width-10),px=cx-diameter/2,py=party?n.y+26:n.y+1;
     if(party){const frame=artwork?.get('emblems/'+(n.detail?.includes('|我')?'ruyi-self':'ruyi')+'.png');if(frame)ctx.drawImage(frame as CanvasImageSource,n.x,n.y,n.width,n.height);else box('tip');}
     circle(ctx,cx,py+diameter/2,diameter/2+2,n.skin==='avatar'?'#122b34':'#2b0c0a',party&&n.detail?.includes('|我')?'#00d2ff':'#d0be8d');
