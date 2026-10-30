@@ -18,7 +18,7 @@ async function bytesIn(dir) {
 export async function buildMiniGame({
   outDir = join(repoRoot, 'dist', 'minigame'),
   appId = process.env.WECHAT_MINIGAME_APP_ID,
-  apiBaseUrl = process.env.WECHAT_MINIGAME_API_BASE_URL || 'https://avalon.ccnepower.com:8443',
+  apiBaseUrl = process.env.WECHAT_MINIGAME_API_BASE_URL || 'https://game.ccnepower.com',
   maxBytes = 4 * 1024 * 1024,
 } = {}) {
   let url;

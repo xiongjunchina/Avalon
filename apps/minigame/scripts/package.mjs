@@ -29,7 +29,7 @@ async function record(dir, prefix = '') {
 }
 await record(project);
 const manifest = { version, revision: git(['rev-parse', 'HEAD']), sourceDirty: Boolean(git(['status', '--porcelain'])),
-  appId: result.appId, apiOrigin: process.env.WECHAT_MINIGAME_API_BASE_URL || 'https://avalon.ccnepower.com:8443',
+  appId: result.appId, apiOrigin: process.env.WECHAT_MINIGAME_API_BASE_URL || 'https://game.ccnepower.com',
   voiceEnabled: true, voiceProvider: 'wechat-native', voiceMaxPlayers: 10, bytes: result.size, files };
 await writeFile(join(releaseRoot, 'release.json'), JSON.stringify(manifest, null, 2));
 await writeFile(join(releaseRoot, 'README.txt'), `微信开发者工具选择小游戏，导入本目录下 project 文件夹。\n版本 ${version}\nAppID ${result.appId}\n服务地址 ${manifest.apiOrigin}\n真实登录、同房对局及上传回执需在发布前另行验收。本命令不会上传或发布。\n`);
