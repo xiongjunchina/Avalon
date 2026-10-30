@@ -252,9 +252,11 @@ test('scheduled updates with a real Git remote retry failed releases and reject 
     assert.ok(!`${result.stdout}${result.stderr}`.includes('private-test-value'));
     return {result,commands};
   }
-  // A fetched update also replaces the running script; the full release must finish.
+  // An application update also replaces the running script; the full release must finish.
   writeFileSync(join(source,'scripts/update-ecs.sh'),`${readFileSync(script,'utf8')}\n# Updated script in the remote commit.\n`);
-  const second = commit(source,'update deployment script');
+  mkdirSync(join(source,'apps/server/src'),{recursive:true});
+  writeFileSync(join(source,'apps/server/src/release-proof.ts'),'export const release = 2;\n');
+  const second = commit(source,'update application and deployment script');
   git(source,'push','origin','main');
   const failed = check('up');
   assert.notEqual(failed.result.status,0);
@@ -267,6 +269,14 @@ test('scheduled updates with a real Git remote retry failed releases and reject 
   const unchanged = check();
   assert.equal(unchanged.result.status,0,unchanged.result.stderr);
   assert.ok(!unchanged.commands.some(c => c.tool === 'docker'));
+  writeFileSync(join(source,'scripts/update-ecs.sh'),`${readFileSync(script,'utf8')}\n# Deployment-only revision.\n`);
+  const third = commit(source,'update deployment tooling only');
+  git(source,'push','origin','main');
+  const toolingOnly = check();
+  assert.equal(toolingOnly.result.status,0,toolingOnly.result.stderr);
+  assert.equal(git(checkout,'rev-parse','HEAD'),third);
+  assert.ok(!toolingOnly.commands.some(c => c.tool === 'docker'));
+  assert.equal(readFileSync(stateFile,'utf8').trim(),second);
   writeFileSync(join(checkout,'local-change.txt'),'local commit\n');
   commit(checkout,'local-only change');
   const diverged = check();
@@ -289,7 +299,7 @@ for(const ingress of ['changed','missing'])test(`shared ingress stops before bui
 });
 
 test('portal-only changes skip Avalon images and preserve the actual deployed revision', t => {
-  const {result,commands,stateFile}=run(t,{automatic:true,deployed:oldRevision,changed:'deploy/portal/games.json\ndeploy/portal/assets/portal.css'});
+  const {result,commands,stateFile}=run(t,{automatic:true,deployed:oldRevision,changed:'deploy/portal/games.json\ndeploy/portal/assets/portal.css\nscripts/deploy/portal-runtime.test.py\nscripts/update-ecs.sh\nscripts/deploy/update-ecs.test.mjs'});
   assert.equal(result.status,0,result.stderr);
   assert.equal(readFileSync(stateFile,'utf8').trim(),oldRevision);
   assert.ok(!commands.some(c=>c.tool==='docker'));

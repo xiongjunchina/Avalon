@@ -79,10 +79,10 @@ if "$automatic" && [[ -n "$deployed_revision" ]]; then
   portal_only=true
   [[ -n "$changed_files" ]] || portal_only=false
   while IFS= read -r changed; do
-    case "$changed" in deploy/portal/*|docs/game-portal.md) ;; *) portal_only=false ;; esac
+    case "$changed" in deploy/portal/*|docs/game-portal.md|scripts/deploy/portal*.test.*|scripts/update-ecs.sh|scripts/deploy/update-ecs.test.mjs) ;; *) portal_only=false ;; esac
   done <<< "$changed_files"
   if "$portal_only"; then
-    printf '仅公共入口配置发生变化，Avalon 无需重新部署；保留实际部署版本记录。\n'
+    printf '仅公共入口或发布脚本发生变化，Avalon 无需重新部署；保留实际部署版本记录。\n'
     exit 0
   fi
 fi
