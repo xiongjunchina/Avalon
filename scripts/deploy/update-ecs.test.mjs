@@ -18,6 +18,7 @@ if (tool === 'git') {
   if (args[0] === process.env.MOCK_FAIL) process.exit(1);
   if (args[0] === 'status' && process.env.MOCK_FAIL === 'dirty') console.log(' M apps/server/src/index.ts');
   if (args[0] === 'pull' && process.env.MOCK_FAIL === 'pull') process.exit(1);
+  if (args[0] === 'diff') console.log(process.env.MOCK_CHANGED || '');
   if (args[0] === 'symbolic-ref') console.log(process.env.MOCK_BRANCH);
   if (args[0] === 'rev-parse') console.log(args.includes('--short') ? 'abc1234' : args.includes('FETCH_HEAD') ? process.env.MOCK_REMOTE : fs.readFileSync(process.env.MOCK_HEAD_FILE, 'utf8'));
   if (args[0] === 'merge' || args[0] === 'pull') fs.writeFileSync(process.env.MOCK_HEAD_FILE, process.env.MOCK_REMOTE);
@@ -29,6 +30,7 @@ if (tool === 'sha256sum') {
   const actual = require('node:crypto').createHash('sha256').update(fs.readFileSync('deploy/Caddyfile')).digest('hex');
   process.exit(expected === actual ? 0 : 1);
 }
+if (tool === 'curl') { if (process.env.MOCK_FAIL === 'health') process.exit(1); console.log('{\"status\":\"ok\"}'); }
 if (tool === 'flock' && process.env.MOCK_FAIL === 'lock') process.exit(1);
 if (tool === 'docker') {
   if (args.includes('--environment')) {
@@ -47,16 +49,16 @@ if (tool === 'docker') {
 const oldRevision = '1'.repeat(40);
 const newRevision = '2'.repeat(40);
 
-function run(t, { origin = 'https://47.112.7.117', failure = '', quote = '', automatic = false, branch = 'main', head = oldRevision, remote = newRevision, deployed, ingress } = {}) {
+function run(t, { origin = 'https://47.112.7.117', failure = '', quote = '', automatic = false, branch = 'main', head = oldRevision, remote = newRevision, deployed, ingress, portal = false, changed = '' } = {}) {
   const dir = mkdtempSync(join(tmpdir(), 'avalon-ecs-update-'));
   t.after(() => rmSync(dir, { recursive: true, force: true }));
   mkdirSync(join(dir, 'deploy'));
   mkdirSync(join(dir, 'bin'));
-  for (const tool of ['git', 'docker', 'flock', 'sha256sum']) {
+  for (const tool of ['git', 'docker', 'flock', 'sha256sum', 'curl']) {
     writeFileSync(join(dir, 'bin', tool), fakeTool, { mode: 0o700 });
   }
   const envFile = join(dir, 'deploy/.env.ecs');
-  const original = `PROJECT=avalon-ecs\nAPP_ORIGIN=${origin}\nPUBLIC_IP=47.112.7.117\nPOSTGRES_PASSWORD=private-test-value\nIMAGE_TAG=previous\nIMAGE_TAG=duplicate\n`;
+  const original = `PROJECT=avalon-ecs\nAPP_ORIGIN=${origin}\nPUBLIC_IP=47.112.7.117\nPOSTGRES_PASSWORD=private-test-value\nIMAGE_TAG=previous\nIMAGE_TAG=duplicate\n${portal ? 'PUBLIC_INGRESS_MODE=portal\nAPP_BASE_PATH=/avalon/\n' : ''}`;
   writeFileSync(envFile, original, { mode: 0o600 });
   const headFile = join(dir, 'head');
   writeFileSync(headFile, head);
@@ -76,7 +78,7 @@ function run(t, { origin = 'https://47.112.7.117', failure = '', quote = '', aut
     writeFileSync(log, '');
     const result = spawnSync('bash', [script, ...(automatic ? ['--if-changed'] : [])], {
       encoding: 'utf8',
-      env: { ...process.env, AVALON_DIR: dir, MOCK_LOG: log, MOCK_FAIL: failure, MOCK_QUOTE: quote, MOCK_BRANCH: branch, MOCK_HEAD_FILE: headFile, MOCK_REMOTE: remote, PATH: `${join(dir, 'bin')}:${process.env.PATH}`, ...overrides },
+      env: { ...process.env, AVALON_DIR: dir, MOCK_LOG: log, MOCK_FAIL: failure, MOCK_QUOTE: quote, MOCK_BRANCH: branch, MOCK_HEAD_FILE: headFile, MOCK_REMOTE: remote, MOCK_CHANGED: changed, PATH: `${join(dir, 'bin')}:${process.env.PATH}`, ...overrides },
     });
     const commands = readFileSync(log, 'utf8').trim().split('\n').filter(Boolean).map(JSON.parse);
     assert.ok(!`${result.stdout}${result.stderr}`.includes('private-test-value'), 'private config must not appear in output');
@@ -284,4 +286,32 @@ for(const ingress of ['changed','missing'])test(`shared ingress stops before bui
   assert.notEqual(result.status,0);assert.match(result.stderr,/Caddy/);
   assert.ok(!commands.some(c=>c.tool==='docker'&&(c.args.includes('build')||c.args.includes('up'))));
   assert.equal(readFileSync(envFile,'utf8'),original);
+});
+
+test('portal-only changes skip Avalon images and preserve the actual deployed revision', t => {
+  const {result,commands,stateFile}=run(t,{automatic:true,deployed:oldRevision,changed:'deploy/portal/games.json\ndeploy/portal/assets/portal.css'});
+  assert.equal(result.status,0,result.stderr);
+  assert.equal(readFileSync(stateFile,'utf8').trim(),oldRevision);
+  assert.ok(!commands.some(c=>c.tool==='docker'));
+});
+
+test('portal mode deploys only Avalon services and bypasses the retired shared overlay', t => {
+  const {result,commands}=run(t,{portal:true,ingress:'changed',origin:'https://game.ccnepower.com'});
+  assert.equal(result.status,0,result.stderr);
+  const up=commands.find(c=>c.tool==='docker'&&c.args.includes('up'));
+  assert.deepEqual(up.args.slice(-2),['server','gateway']);
+  assert.ok(up.args.includes('--no-deps'));
+  assert.ok(up.args.includes('deploy/compose.portal.yaml'));
+  assert.ok(!up.args.includes('deploy/runtime/compose.mafia.yaml'));
+  assert.ok(commands.some(c=>c.tool==='curl'&&c.args.includes('https://game.ccnepower.com/avalon/api/health')));
+});
+
+test('portal mode restores the previous private configuration after failed public health', t => {
+  const {result,commands,envFile,original}=run(t,{portal:true,failure:'health'});
+  assert.notEqual(result.status,0);
+  assert.equal(readFileSync(envFile,'utf8'),original);
+  const up=commands.filter(c=>c.tool==='docker'&&c.args.includes('up'));
+  assert.equal(up.length,2);
+  assert.ok(up[1].args.includes('--no-build'));
+  assert.deepEqual(up[1].args.slice(-2),['server','gateway']);
 });

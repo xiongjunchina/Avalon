@@ -1,6 +1,9 @@
 ARG NODE_IMAGE=node:24-alpine@sha256:d32cdf619f63fe0471182d08996dd516c6275bb5fd31ae06e55a570bd9e1ad43
 ARG CADDY_IMAGE=caddy:2-alpine@sha256:6aeddd44c3078b0f9a35206472a11420648a79c184603ef95957d0a20044cb2b
+ARG APP_BASE_PATH=/
 FROM ${NODE_IMAGE} AS build
+ARG APP_BASE_PATH
+ENV APP_BASE_PATH=${APP_BASE_PATH}
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY apps/server/package.json ./apps/server/package.json
@@ -29,5 +32,10 @@ EXPOSE 3001
 CMD ["node", "apps/server/src/index.js"]
 
 FROM ${CADDY_IMAGE} AS gateway
+ARG APP_BASE_PATH
+ENV APP_BASE_PATH=${APP_BASE_PATH}
 COPY --from=build /app/apps/web/dist /srv
 COPY deploy/Caddyfile /etc/caddy/Caddyfile
+COPY --chmod=755 deploy/gateway-entrypoint.sh /usr/bin/avalon-gateway
+ENTRYPOINT ["/usr/bin/avalon-gateway"]
+CMD ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]

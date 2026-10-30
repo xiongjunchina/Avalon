@@ -1,3 +1,4 @@
+import { deployment } from './deployment';
 import { QuestMedallion } from './QuestMedallion';
 import React, { useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -92,7 +93,7 @@ function App() {
   const [page, setPage] = useState<'table' | 'account' | 'guide' | 'admin'>(() => {
     if (typeof window !== 'undefined') {
       const search = new URLSearchParams(window.location.search);
-      if (search.has('admin') || search.get('page') === 'admin' || window.location.hash.includes('admin') || window.location.pathname.startsWith('/admin')) {
+      if (search.has('admin') || search.get('page') === 'admin' || window.location.hash.includes('admin') || deployment.isAdmin(window.location.pathname)) {
         return 'admin';
       }
     }
@@ -207,7 +208,7 @@ function App() {
   // Check admin url parameter and load system status
   useEffect(() => {
     const search = new URLSearchParams(window.location.search);
-    if (search.has('admin') || search.get('page') === 'admin' || window.location.hash.includes('admin') || window.location.pathname.startsWith('/admin')) {
+    if (search.has('admin') || search.get('page') === 'admin' || window.location.hash.includes('admin') || deployment.isAdmin(window.location.pathname)) {
       setPage('admin');
     }
     let active = true;
@@ -395,7 +396,7 @@ function App() {
       fetchRoom: () => api(`/rooms/${roomId}`),
       socket: () =>
         new WebSocket(
-          `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/api/rooms/${roomId}/socket`
+          deployment.socket(location.origin, roomId)
         ),
       handlers: {
         snapshot: snap => {
@@ -735,7 +736,7 @@ function App() {
       return;
     }
     void run(async () => {
-      const link = `${location.origin}/?invite=${encodeURIComponent(invite)}`;
+      const link = deployment.invite(location.origin, invite);
       try {
         await navigator.clipboard.writeText(link);
         setNotice(`已复制房间 ${room?.code} 邀请链接，快发给朋友入座吧！`);

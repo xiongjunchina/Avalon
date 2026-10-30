@@ -1,3 +1,4 @@
+import { assetUrl } from './deployment';
 import { useId, useState } from 'react';
 import type { Avatar, Role, Team } from '@avalon/contracts';
 import { BUILTIN_AVATARS, builtinAvatarFor } from './avatar-catalog';
@@ -129,7 +130,7 @@ export function PlayerAvatar({
     return (
       <img
         className={`player-avatar-img ${className}`.trim()}
-        src={src}
+        src={assetUrl(src)}
         onError={() => setFailedSrc(src)}
         alt=""
         loading="lazy"

@@ -1,3 +1,4 @@
+import { assetUrl } from './deployment';
 import { useState } from 'react';
 import type { FemaleDemon, LoyalGuardian, Role } from '@avalon/contracts';
 import { Emblem, roleTeam } from './Heraldry';
@@ -30,8 +31,8 @@ export function RolePortrait({
       <Emblem kind={role} />
       {failedRole !== artKey && (
         <img
-          src={`/art/roles/${artKey}-160.webp?v=audit1`}
-          srcSet={`/art/roles/${artKey}-160.webp?v=audit1 160w, /art/roles/${artKey}-640.webp?v=audit1 640w`}
+          src={assetUrl(`/art/roles/${artKey}-160.webp?v=audit1`)}
+          srcSet={`${assetUrl(`/art/roles/${artKey}-160.webp?v=audit1`)} 160w, ${assetUrl(`/art/roles/${artKey}-640.webp?v=audit1`)} 640w`}
           sizes={
             size === 'mini'
               ? '48px'

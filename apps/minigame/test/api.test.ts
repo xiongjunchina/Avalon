@@ -17,13 +17,15 @@ test('wx.login creates and stores a bearer session used by refresh', async () =>
         ? { user: { id: 'u1' }, token: 'session-token' } : { user: { id: 'u1' } } });
     },
   } as unknown as WechatPlatform;
-  const api = new MiniGameApi(platform, 'https://avalon.example:8443');
+  const api = new MiniGameApi(platform, 'https://game.example/avalon/');
   const login = await api.login();
   assert.equal(login.user.id, 'u1');
   assert.deepEqual(calls[0].data, { code: 'wechat-code' });
+  assert.equal(calls[0].url, 'https://game.example/avalon/api/sessions/minigame');
   assert.equal(stored.get('avalon_minigame_session'), 'session-token');
   await api.request('/sessions/refresh', {}, 'POST');
   assert.equal(calls[1].header?.Authorization, 'Bearer session-token');
+  assert.equal(calls[1].url, 'https://game.example/avalon/api/sessions/refresh');
 });
 
 test('request rejects after timeout when wx never responds', async () => {

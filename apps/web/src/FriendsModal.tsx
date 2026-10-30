@@ -1,3 +1,4 @@
+import { deployment } from './deployment';
 import React, { useEffect, useRef, useState } from 'react';
 import type { DirectMessage, FriendSummary, RoomView, User } from '@avalon/contracts';
 import { api, describe } from './api';
@@ -317,7 +318,7 @@ export function FriendsModal({
   const incomingRequests = friends.filter(f => f.status === 'pending' && !f.isSender);
   const outgoingRequests = friends.filter(f => f.status === 'pending' && f.isSender);
 
-  const roomUrl = typeof window !== 'undefined' && currentRoom ? `${window.location.origin}/?invite=${currentRoom.code}` : '';
+  const roomUrl = typeof window !== 'undefined' && currentRoom ? deployment.invite(window.location.origin, currentRoom.inviteKey ?? currentRoom.code) : '';
 
   if (!open) return null;
 

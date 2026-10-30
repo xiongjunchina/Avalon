@@ -12,7 +12,8 @@ test('failed images do not restart a request on every redraw',()=>{
 });
 test('large role art keeps a packaged preview while the remote image is unavailable',()=>{
  const images:WxImage[]=[];const runtime={createImage:()=>{const image={width:160,height:160,src:'',onload:null,onerror:null} as WxImage;images.push(image);return image;}} as WxRuntime;
- const art=createArtwork(runtime,()=>{},'https://example.com');art.get('/art/roles/merlin-640.webp');
+ const art=createArtwork(runtime,()=>{},'https://example.com/avalon');art.get('/art/roles/merlin-640.webp');
+ assert.ok(images.some(i=>i.src==='https://example.com/avalon/art/roles/merlin-640.webp'));
  const local=images.find(i=>i.src==='art/roles/merlin-160.webp');assert.ok(local);local.onload?.();
  assert.equal(art.get('/art/roles/merlin-640.webp'),local);
 });

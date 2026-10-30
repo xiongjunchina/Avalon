@@ -28,7 +28,11 @@ test('builds an importable project without server or admin secrets', async t => 
 test('default build uses the registered Mini Game AppID rather than tourist mode', async t => {
   const outDir = await mkdtemp(join(tmpdir(), 'avalon-minigame-appid-'));
   t.after(() => rm(outDir, { recursive: true, force: true }));
-  await buildMiniGame({ outDir });
+  const result = await buildMiniGame({ outDir });
+  assert.equal(result.apiBaseUrl, 'https://game.ccnepower.com/avalon');
+  const bundle = await readFile(join(outDir, 'bundle.js'), 'utf8');
+  assert.match(bundle, /https:\/\/game\.ccnepower\.com\/avalon/);
+  assert.doesNotMatch(bundle, /avalon\.ccnepower\.com:8443|\/mafia\/api/);
   const config = JSON.parse(await readFile(join(outDir, 'project.config.json'), 'utf8'));
   assert.equal(config.appid, 'wxdb4e422c14adab3f');
   assert.equal(config.compileType, 'game');
@@ -42,6 +46,16 @@ test('build embeds the configured HTTPS API origin only', async t => {
   assert.match(await readFile(join(outDir, 'bundle.js'), 'utf8'), /https:\/\/avalon\.example:8443/);
   await assert.rejects(buildMiniGame({ outDir, appId: 'wx1111111111111111', apiBaseUrl: 'http://avalon.example' }), /INVALID_API_ORIGIN/);
   await assert.rejects(buildMiniGame({ outDir, appId: 'touristappid' }), /INVALID_MINIGAME_APP_ID/);
+});
+
+test('build preserves and normalizes a game prefix without admitting query, traversal or credentials', async t => {
+  const outDir = await mkdtemp(join(tmpdir(), 'avalon-minigame-prefix-'));
+  t.after(() => rm(outDir, { recursive: true, force: true }));
+  const result = await buildMiniGame({ outDir, apiBaseUrl:'https://game.example/avalon/' });
+  assert.equal(result.apiBaseUrl,'https://game.example/avalon');
+  assert.match(await readFile(join(outDir,'bundle.js'),'utf8'),/https:\/\/game\.example\/avalon/);
+  for (const apiBaseUrl of ['https://game.example/avalon?x=1','https://user:secret@game.example/avalon','https://game.example/avalon/../mafia','https://game.example/%2e%2e/mafia'])
+    await assert.rejects(buildMiniGame({outDir,apiBaseUrl}),/INVALID_API_ORIGIN/);
 });
 
 test('rejects a package that exceeds its declared limit', async t => {

@@ -73,7 +73,7 @@ export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout 
       const footer = Math.max(portraitY + diameter + 74, v.height - v.bottom - 12 - (141 + actionH));
       add('panel', 'mode-frame', '', 35, footer + 2, w - 70, 40);
       add('tab', 'mode:offline', '🏛️ 线下常规房', 39, footer + 6, (w - 84) / 2, 32, { selected: true });
-      add('tab', 'mode:voice', '🎙️ 远端语音房', w / 2 + 3, footer + 6, (w - 84) / 2, 32, { disabled: true });
+      add('tab', 'mode:voice', '实时语音暂不提供', w / 2 + 3, footer + 6, (w - 84) / 2, 32, { disabled: true });
       add('button', 'create', '开常规房', pad, footer + 54, (full - 8) / 2, actionH, { primary: true, image: 'emblems/mountain.png' });
       add('button', 'join', '加入房间', pad + (full + 8) / 2, footer + 54, (full - 8) / 2, actionH, { image: 'emblems/crown.png' });
       add('button', 'practice', '🐒 幻境单人试玩 ›', w / 2 - 67.5, footer + 62 + actionH, 135, 32);
@@ -90,7 +90,7 @@ export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout 
       add('tab', 'auth:switch', '仙友归位', w / 2 + 4, y + 50, (full - 36) / 2, 40, { selected: web.authMode === 'switch' });
       add('label', 'auth-help', web.authMode === 'switch' ? '输入6位仙友码，找回原账号和功果簿' : '微信验证身份，取名踏入取经大道', pad + 16, y + 105, full - 32, 42, { muted: true });
       add('input', web.authMode === 'switch' ? 'input:switch' : 'input:nickname', web.authMode === 'switch' ? web.switchCode || '6位专属仙友码' : web.nickname || '你的尊号（昵称）', pad + 16, y + 158, full - 32, 48);
-      add('label', 'auth-note', '仙友码永久关联个人战绩与复盘', pad + 16, y + 218, full - 32, 28, { muted: true });
+      add('label', 'auth-note', '当前版本不含实时语音 · 支持文字传音', pad + 16, y + 218, full - 32, 28, { muted: true });
       add('button', 'login', web.authMode === 'switch' ? '确认仙友码并归位' : '踏入取经大道', pad + 16, y + 258, full - 32, 48, { primary: true });
       add('button', 'practice', '幻境单人试玩', pad, y + panelHeight + 18, (full - 10) / 2, 44);
       add('button', 'guide', '嘻游识妖谱', w / 2 + 5, y + panelHeight + 18, (full - 10) / 2, 44);

@@ -22,6 +22,7 @@ services:
       target: server
       args:
         NODE_IMAGE: ${NODE_IMAGE:-node:24-alpine@sha256:d32cdf619f63fe0471182d08996dd516c6275bb5fd31ae06e55a570bd9e1ad43}
+        APP_BASE_PATH: ${APP_BASE_PATH:-/}
         CADDY_IMAGE: ${CADDY_IMAGE:-caddy:2-alpine@sha256:6aeddd44c3078b0f9a35206472a11420648a79c184603ef95957d0a20044cb2b}
     environment:
       DATABASE_URL: postgresql://avalon:${POSTGRES_PASSWORD}@postgres:5432/avalon
@@ -52,11 +53,14 @@ services:
       target: gateway
       args:
         NODE_IMAGE: ${NODE_IMAGE:-node:24-alpine@sha256:d32cdf619f63fe0471182d08996dd516c6275bb5fd31ae06e55a570bd9e1ad43}
+        APP_BASE_PATH: ${APP_BASE_PATH:-/}
         CADDY_IMAGE: ${CADDY_IMAGE:-caddy:2-alpine@sha256:6aeddd44c3078b0f9a35206472a11420648a79c184603ef95957d0a20044cb2b}
     environment:
       APP_ORIGIN: ${APP_ORIGIN}
       SITE_ADDRESS: ${APP_ORIGIN}
+      APP_BASE_PATH: ${APP_BASE_PATH:-/}
       CLIENT_IP_SOURCE: "{remote_host}"
+      CLIENT_PROTO_SOURCE: "{scheme}"
       TLS_DIRECTIVE: ${TLS_DIRECTIVE:-}
       HTTPS_GLOBAL_OPTIONS: auto_https disable_redirects
       LOCAL_SNI: default_sni 127.0.0.1

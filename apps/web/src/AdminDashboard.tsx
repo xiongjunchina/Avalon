@@ -1,3 +1,4 @@
+import { deployment } from './deployment';
 import { useEffect, useState } from 'react';
 import type {
   AdminGameSummary,
@@ -65,7 +66,7 @@ export function AdminDashboard({ onBackToGame }: AdminDashboardProps) {
 
   // API Helper
   const adminApi = async <T,>(path: string, body?: unknown, method = body === undefined ? 'GET' : 'POST'): Promise<T> => {
-    const res = await fetch(`/api/admin${path}`, {
+    const res = await fetch(deployment.path(`api/admin${path}`), {
       method,
       headers: {
         'x-admin-key': adminKey,
@@ -97,7 +98,7 @@ export function AdminDashboard({ onBackToGame }: AdminDashboardProps) {
     setBusy(true);
     setLoginError('');
     try {
-      const res = await fetch('/api/admin/verify', {
+      const res = await fetch(deployment.path('api/admin/verify'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

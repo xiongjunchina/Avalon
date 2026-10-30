@@ -4,4 +4,4 @@ export interface MiniGameBuildOptions {
   apiBaseUrl?: string;
   maxBytes?: number;
 }
-export function buildMiniGame(options?: MiniGameBuildOptions): Promise<{ outDir: string; size: number; appId: string }>;
+export function buildMiniGame(options?: MiniGameBuildOptions): Promise<{ outDir: string; size: number; appId: string; apiBaseUrl: string }>;

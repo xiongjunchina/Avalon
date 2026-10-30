@@ -1,3 +1,4 @@
+import { assetUrl } from './deployment';
 import { useEffect } from 'react';
 import type { RoleGalleryItem } from './roles';
 import { Emblem } from './Heraldry';
@@ -78,7 +79,7 @@ export function RoleViewerModal({
 
           <div className="role-viewer-image-frame">
             <img
-              src={`/art/roles/${item.artPrefix}-640.webp?v=audit1`}
+              src={assetUrl(`/art/roles/${item.artPrefix}-640.webp?v=audit1`)}
               alt={item.fullName}
               className="role-viewer-img"
               width={640}

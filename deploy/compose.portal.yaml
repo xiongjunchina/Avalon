@@ -1,0 +1,19 @@
+# The game-portal project owns public ports and TLS in this mode.
+services:
+  gateway:
+    ports: !override []
+    environment:
+      SITE_ADDRESS: "http://:8080"
+      HTTPS_GLOBAL_OPTIONS: "auto_https off"
+      TLS_DIRECTIVE: ""
+      LOCAL_SNI: ""
+      CLIENT_PROTO_SOURCE: "{http.request.header.X-Forwarded-Proto}"
+      CLIENT_IP_SOURCE: "{http.request.header.X-Forwarded-For}"
+    networks:
+      default: {}
+      portal_avalon:
+        aliases: [avalon-ingress]
+networks:
+  portal_avalon:
+    external: true
+    name: game-avalon-ingress

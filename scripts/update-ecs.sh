@@ -10,9 +10,16 @@ fail() {
 
 env_tmp=''
 state_tmp=''
+published=false
 cleanup() {
   local status=$?
   trap - EXIT
+  if (( status != 0 )) && "$published"; then
+    printf '更新失败，恢复上一版 Avalon 配置和镜像……\n' >&2
+    cp -p deploy/runtime/.env.ecs.before-update "$env_file"
+    unset IMAGE_TAG
+    dc up -d --no-deps --no-build --wait --wait-timeout 180 server gateway || printf '自动回退失败，请检查 Avalon 容器。\n' >&2
+  fi
   if [[ -n "$env_tmp" ]]; then rm -f -- "$env_tmp" || true; fi
   if [[ -n "$state_tmp" ]]; then rm -f -- "$state_tmp" || true; fi
   if (( status != 0 )); then
@@ -67,6 +74,18 @@ else
   git pull --ipv4 --ff-only
 fi
 revision="$(git rev-parse HEAD)"
+if "$automatic" && [[ -n "$deployed_revision" ]]; then
+  changed_files="$(git diff --name-only "$deployed_revision" "$revision")"
+  portal_only=true
+  [[ -n "$changed_files" ]] || portal_only=false
+  while IFS= read -r changed; do
+    case "$changed" in deploy/portal/*|docs/game-portal.md) ;; *) portal_only=false ;; esac
+  done <<< "$changed_files"
+  if "$portal_only"; then
+    printf '仅公共入口配置发生变化，Avalon 无需重新部署；保留实际部署版本记录。\n'
+    exit 0
+  fi
+fi
 IMAGE_TAG="$(git rev-parse --short HEAD)"
 export IMAGE_TAG
 
@@ -103,12 +122,19 @@ else
 fi
 
 # Keep the optional, locally approved Mafia ingress overlay on future releases.
+env_value() { awk -F= -v key="$1" '$1==key {value=substr($0,index($0,"=")+1)} END {print value}' "$env_file"; }
+portal_mode=false
 mafia_overlay=deploy/runtime/compose.mafia.yaml
-if [[ -f "$mafia_overlay" ]]; then
+if [[ "$(env_value PUBLIC_INGRESS_MODE)" == portal ]]; then
+  [[ "$(env_value APP_BASE_PATH)" == /avalon/ ]] || fail '公共入口模式要求 APP_BASE_PATH=/avalon/。'
+  portal_mode=true
+  override=deploy/compose.portal.yaml
+  mode='独立公共入口'
+elif [[ -f "$mafia_overlay" ]]; then
   sha256sum --check deploy/runtime/mafia-caddy-source.sha256 >/dev/null || fail '共享入口的 Caddy 基线已变化，请先同步 Mafia 路由配置。'
 fi
 dc() {
-  if [[ -f "$mafia_overlay" ]]; then
+  if ! "$portal_mode" && [[ -f "$mafia_overlay" ]]; then
     base_dc -f "$override" -f "$mafia_overlay" "$@"
   else
     base_dc -f "$override" "$@"
@@ -130,11 +156,19 @@ chmod 600 "$env_tmp"
 mv -f -- "$env_tmp" "$env_file"
 env_tmp=''
 
-dc up -d --wait --wait-timeout 180
+published=true
+if "$portal_mode"; then
+  dc up -d --no-deps --wait --wait-timeout 180 server gateway
+  curl -fsS --connect-timeout 5 --max-time 15 "$app_origin/avalon/api/health" > deploy/runtime/avalon-health.json
+  python3 -c 'import json; assert json.load(open("deploy/runtime/avalon-health.json"))["status"] == "ok"'
+else
+  dc up -d --wait --wait-timeout 180
+fi
 dc ps
 state_tmp="$(mktemp "${state_file}.tmp.XXXXXX")"
 printf '%s\n' "$revision" > "$state_tmp"
 chmod 600 "$state_tmp"
 mv -f -- "$state_tmp" "$state_file"
 state_tmp=''
+published=false
 printf '\n容器更新及健康等待已完成：%s\n访问地址：%s\n' "$IMAGE_TAG" "$app_origin"

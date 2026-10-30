@@ -1,3 +1,4 @@
+import { assetUrl } from './deployment';
 import { useLayoutEffect, useRef, useState } from 'react';
 import { usePageSound } from './audio-interactions';
 import type { FemaleDemon, LoyalGuardian, Role } from '@avalon/contracts';
@@ -207,7 +208,7 @@ export function GuideRoles() {
                           aria-label={`${g.fullName}法相立绘`}
                         >
                           <span className="sub-figure-avatar">
-                            <img src={`/art/roles/${g.artPrefix}-160.webp?v=audit1`} alt={g.name} />
+                            <img src={assetUrl(`/art/roles/${g.artPrefix}-160.webp?v=audit1`)} alt={g.name} />
                           </span>
                           <span className="sub-figure-title">{g.title}</span>
                           <strong className="sub-figure-name">{g.name}</strong>
@@ -232,7 +233,7 @@ export function GuideRoles() {
                           aria-label={`${d.fullName}法相立绘`}
                         >
                           <span className="sub-figure-avatar">
-                            <img src={`/art/roles/${d.artPrefix}-160.webp?v=audit1`} alt={d.name} />
+                            <img src={assetUrl(`/art/roles/${d.artPrefix}-160.webp?v=audit1`)} alt={d.name} />
                           </span>
                           <span className="sub-figure-title">{d.title}</span>
                           <strong className="sub-figure-name">{d.name}</strong>

@@ -2,6 +2,7 @@ import { build } from 'esbuild';
 import { copyFile, mkdir, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { DEFAULT_API_BASE_URL, normalizeServiceUrl } from './service-url.mjs';
 
 const minigameRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const repoRoot = resolve(minigameRoot, '../..');
@@ -18,13 +19,10 @@ async function bytesIn(dir) {
 export async function buildMiniGame({
   outDir = join(repoRoot, 'dist', 'minigame'),
   appId = process.env.WECHAT_MINIGAME_APP_ID,
-  apiBaseUrl = process.env.WECHAT_MINIGAME_API_BASE_URL || 'https://avalon.ccnepower.com:8443',
+  apiBaseUrl = process.env.WECHAT_MINIGAME_API_BASE_URL || DEFAULT_API_BASE_URL,
   maxBytes = 4 * 1024 * 1024,
 } = {}) {
-  let url;
-  try { url = new URL(apiBaseUrl); } catch { throw new Error('INVALID_API_ORIGIN'); }
-  if (url.protocol !== 'https:' || !url.hostname || url.pathname !== '/' || url.search || url.hash || url.username || url.password)
-    throw new Error('INVALID_API_ORIGIN');
+  const serviceUrl = normalizeServiceUrl(apiBaseUrl);
   const project = JSON.parse(await readFile(join(minigameRoot, 'project.config.json'), 'utf8'));
   const selectedAppId = appId || project.appid;
   if (!/^wx[0-9a-f]{16}$/.test(selectedAppId)) throw new Error('INVALID_MINIGAME_APP_ID');
@@ -35,7 +33,7 @@ export async function buildMiniGame({
     platform: 'neutral',
     format: 'cjs',
     target: 'es2020',
-    define: { __MINIGAME_API_BASE_URL__: JSON.stringify(url.origin) },
+    define: { __MINIGAME_API_BASE_URL__: JSON.stringify(serviceUrl), __APP_BASE_PATH__: JSON.stringify(new URL(serviceUrl).pathname.replace(/\/?$/, '/')) },
     minify: true,
     outfile: join(outDir, 'bundle.js'),
   });
@@ -62,7 +60,7 @@ export async function buildMiniGame({
   }
   const size = await bytesIn(outDir);
   if (size > maxBytes) throw new Error(`PACKAGE_TOO_LARGE: ${size} > ${maxBytes}`);
-  return { outDir, size, appId: selectedAppId };
+  return { outDir, size, appId: selectedAppId, apiBaseUrl: serviceUrl };
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

@@ -1,3 +1,4 @@
+import { deployment } from './deployment';
 export const errors: Record<string, string> = {
   NOT_MINION: '同心铃仅限女妖精使用。',
   TREASURES_DISABLED: '本局未启用专属法宝。', ALREADY_USED: '此法宝本局已使用。',
@@ -43,7 +44,7 @@ export const errors: Record<string, string> = {
 export async function api<T>(path: string, body?: unknown, method = body === undefined ? 'GET' : 'POST'): Promise<T> {
   const controller=new AbortController(); const timer=setTimeout(()=>controller.abort(),10000);
   try {
-    const response = await fetch(`/api${path}`, { method,
+    const response = await fetch(deployment.path(`api${path}`), { method,
       headers: { ...(body === undefined ? {} : { 'Content-Type': 'application/json' }), ...(method === 'GET' ? {} : { 'X-Avalon-Request': '1' }) },
       body: body === undefined ? undefined : JSON.stringify(body), credentials: 'same-origin', signal:controller.signal });
     const data = await response.json(); if (!response.ok) throw new Error(data.error ?? 'NETWORK'); return data;

@@ -1,3 +1,4 @@
+import { assetUrl } from './deployment';
 import { ACCENT_PRIORITIES, effectFile, type EffectCue, type MusicScene, type SoundPreferences } from './audio-events';
 import { BACKGROUND_MUSIC, type BackgroundMusic } from './audio-catalog';
 
@@ -53,7 +54,7 @@ export class SoundEngine {
   }
   private async load(path: string) {
     if (!this.buffers.has(path)) {
-      const request = fetch(path).then(r => {
+      const request = fetch(assetUrl(path)).then(r => {
         if (!r.ok) throw Error('Audio unavailable'); return r.arrayBuffer();
       }).then(bytes => this.context!.decodeAudioData(bytes)).catch(error => { this.buffers.delete(path); throw error; });
       this.buffers.set(path, request);

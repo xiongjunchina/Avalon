@@ -1,0 +1,26 @@
+[
+  {
+    "id": "avalon",
+    "name": "嘻游 · 真假猴王",
+    "label": "AVALON",
+    "description": "踏上取经路，在发言、组队与投票之间，找出藏在仙友中的群妖。",
+    "players": "5–12 人",
+    "status": "好友同玩",
+    "path": "/avalon/",
+    "upstream": "avalon-ingress:8080",
+    "network": "game-avalon-ingress",
+    "healthPath": "/avalon/api/health"
+  },
+  {
+    "id": "mafia",
+    "name": "暗局",
+    "label": "MAFIA",
+    "description": "夜幕降临，各自藏好身份。白天用推理与辩论，揭开暗局的真相。",
+    "players": "6–12 人",
+    "status": "试玩中",
+    "path": "/mafia/",
+    "upstream": "mafia-ingress:8080",
+    "network": "mafia-ingress",
+    "healthPath": "/mafia/api/health"
+  }
+]

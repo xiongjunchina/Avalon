@@ -1,3 +1,4 @@
+import { assetUrl } from './deployment';
 import { BattleHistory } from './BattleRound';
 import { Modal } from './Modal';
 import { useEffect, useRef, useState } from 'react';
@@ -167,7 +168,7 @@ function ProfileEditor({user,onUser,onClose}:{user:User;onUser:(u:User)=>void;on
         <div className="profile-avatar-options">
           {BUILTIN_AVATARS.map(item=><label className="profile-avatar-option" key={item.src}>
             <input type="radio" className="sr-only" name="profile-preset-avatar" value={item.src} checked={selectedPreset?.src===item.src} onChange={()=>selectPreset(item.src)}/>
-            <span className="profile-avatar-option-card"><img src={item.src} alt="" loading="lazy" decoding="async"/><span>{item.name}</span></span>
+            <span className="profile-avatar-option-card"><img src={assetUrl(item.src)} alt="" loading="lazy" decoding="async"/><span>{item.name}</span></span>
           </label>)}
         </div>
       </fieldset>
