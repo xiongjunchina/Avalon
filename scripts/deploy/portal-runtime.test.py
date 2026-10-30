@@ -13,6 +13,7 @@ spec.loader.exec_module(runtime)
 original_portal_up = runtime.portal_up
 original_compose = runtime.compose
 original_get_url = runtime.get_url
+original_identities = runtime.identities
 
 
 class MigrationTests(unittest.TestCase):
@@ -183,6 +184,17 @@ class MigrationTests(unittest.TestCase):
             original_compose(['up', 'server'], self.repo / 'deploy/.env.ecs', [self.repo / 'deploy/compose.yaml'])
         self.assertNotIn('IMAGE_TAG', runtime.run.call_args.kwargs['env'])
         self.assertNotIn('POSTGRES_PASSWORD', runtime.run.call_args.kwargs['env'])
+
+    def test_mount_order_is_ignored_but_container_recreation_is_detected(self):
+        item = {'Name':'/game', 'Id':'original', 'State':{'StartedAt':'unchanged'}, 'RestartCount':0,
+                'Mounts':[{'Name':'certificates','Destination':'/data','Source':'/vol/data'},
+                          {'Name':'configuration','Destination':'/config','Source':'/vol/config'}]}
+        reordered = dict(item, Mounts=list(reversed(item['Mounts'])))
+        recreated = dict(reordered, Id='replacement')
+        with patch.object(runtime, 'output', side_effect=[json.dumps([x]) for x in (item,reordered,recreated)]):
+            before = original_identities(['game'])
+            self.assertEqual(before, original_identities(['game']))
+            self.assertNotEqual(before, original_identities(['game']))
 
 
 if __name__ == '__main__':

@@ -104,7 +104,7 @@ def identities(names):
     return {item['Name']: {'id': item['Id'], 'started': item['State']['StartedAt'],
             'restarts': item['RestartCount'], 'mounts': [
                 {'name': mount.get('Name'), 'destination': mount['Destination'], 'source': mount['Source']}
-                for mount in item['Mounts']]}
+            for mount in sorted(item['Mounts'], key=lambda value: value['Destination'])]}
             for item in data}
 
 
