@@ -134,12 +134,16 @@ def backup_database(container, path):
 
 
 def get_url(path):
-    return output(['curl', '-fsS', '--connect-timeout', '5', '--max-time', '15', ORIGIN + path])
+    # This script runs on ECS. Preserve HTTPS/SNI and certificate validation while
+    # testing the actual local ingress, independently of upstream ICP filtering.
+    return output(['curl', '-fsS', '--noproxy', '*', '--resolve',
+                   'game.ccnepower.com:443:127.0.0.1', '--connect-timeout', '5',
+                   '--max-time', '15', ORIGIN + path])
 
 
 def verify_release(release):
     if '游戏大厅' not in get_url('/'):
-        raise RuntimeError('Public game hall verification failed')
+        raise RuntimeError('Local HTTPS game hall verification failed')
     if '/avalon/assets/' not in get_url('/avalon/'):
         raise RuntimeError('Avalon frontend prefix verification failed')
     for game in json.loads((release / 'games.json').read_text()):
@@ -191,9 +195,9 @@ def public_env(repo, root, avalon_env):
     atomic_text(root / '.env', ''.join(key + '=' + value + '\n' for key, value in values.items()))
 
 
-def migrate(repo, mafia, root, public_ready):
-    if not public_ready:
-        raise RuntimeError('Verify HTTPS from outside ECS first, then use --public-ready')
+def migrate(repo, mafia, root, public_ready, local_verify=False):
+    if not public_ready and not local_verify:
+        raise RuntimeError('Verify HTTPS from outside ECS and use --public-ready, or explicitly use --local-verify while public access is pending')
     if (root / 'state.json').exists():
         raise RuntimeError('Portal is already installed; use release instead')
     env_file = repo / 'deploy/.env.ecs'
@@ -203,9 +207,11 @@ def migrate(repo, mafia, root, public_ready):
         mafia_env.get('PROJECT') != 'mafia-deploy-ecs' or mafia_env.get('APP_ORIGIN') != ORIGIN or
         mafia_env.get('APP_BASE_PATH') != '/mafia/'):
         raise RuntimeError('Unexpected origin or Mafia path')
-    # Local health alone is insufficient; the caller must also verify the external network.
+    # Local deployment verification and external public acceptance are separate.
     for path in ('/api/health', '/mafia/api/health'):
-        json.loads(get_url(path))
+        health = json.loads(get_url(path))
+        if not (health.get('status') == 'ok' or health.get('ok') is True):
+            raise RuntimeError('Existing game health failed: ' + path)
     with contextlib.ExitStack() as stack:
         for path in (repo / 'deploy/runtime/update-ecs.lock', mafia / 'deploy/runtime/update-app.lock', root / 'update.lock'):
             stack.enter_context(lock(path))
@@ -256,10 +262,14 @@ def migrate(repo, mafia, root, public_ready):
             atomic_text(stage / 'protected.after.json', json.dumps(after, indent=2))
             if before != after:
                 raise RuntimeError('A protected database or Mafia container changed; inspect saved evidence')
-            state = {'current': release.name, 'previous': None, 'revision': revision, 'migrationBackup': str(stage)}
+            state = {'current': release.name, 'previous': None, 'revision': revision, 'migrationBackup': str(stage),
+                     'healthVerification': 'ecs-loopback-https',
+                     'publicVerification': 'confirmed-before-migration' if public_ready else 'pending'}
             atomic_text(root / 'state.json', json.dumps(state, indent=2) + '\n')
             atomic_text(marker, revision + '\n')
             print('Migration verified. Existing databases and Mafia containers unchanged. Evidence: ' + str(stage))
+            if not public_ready:
+                print('Local HTTPS verified with the real domain and certificate. Public acceptance remains pending ICP release.')
         except BaseException:
             if cutover:
                 print('Migration failed; restoring the previous Avalon images and public entry.')
@@ -315,13 +325,15 @@ def main():
     signal.signal(signal.SIGHUP, interrupted)
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('action', choices=['migrate', 'release', 'rollback'])
-    parser.add_argument('--public-ready', action='store_true', help='External HTTPS access was verified before migration')
+    verification = parser.add_mutually_exclusive_group()
+    verification.add_argument('--public-ready', action='store_true', help='External HTTPS access was verified before migration')
+    verification.add_argument('--local-verify', action='store_true', help='Deploy and verify strict HTTPS on ECS; record public acceptance as pending')
     parser.add_argument('--avalon-dir', type=Path, default=Path('/opt/avalon'))
     parser.add_argument('--mafia-dir', type=Path, default=Path('/opt/mafia'))
     parser.add_argument('--portal-dir', type=Path, default=Path('/opt/game-portal'))
     args = parser.parse_args()
     if args.action == 'migrate':
-        migrate(args.avalon_dir.resolve(), args.mafia_dir.resolve(), args.portal_dir.resolve(), args.public_ready)
+        migrate(args.avalon_dir.resolve(), args.mafia_dir.resolve(), args.portal_dir.resolve(), args.public_ready, args.local_verify)
     else:
         release_portal(args.avalon_dir.resolve(), args.portal_dir.resolve(), args.action == 'rollback', args.mafia_dir.resolve())
 

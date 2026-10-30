@@ -304,6 +304,10 @@ test('portal mode deploys only Avalon services and bypasses the retired shared o
   assert.ok(up.args.includes('deploy/compose.portal.yaml'));
   assert.ok(!up.args.includes('deploy/runtime/compose.mafia.yaml'));
   assert.ok(commands.some(c=>c.tool==='curl'&&c.args.includes('https://game.ccnepower.com/avalon/api/health')));
+  const health=commands.find(c=>c.tool==='curl');
+  assert.ok(health.args.includes('game.ccnepower.com:443:127.0.0.1'));
+  assert.ok(health.args.includes('--noproxy'));
+  assert.ok(!health.args.includes('-k')&&!health.args.includes('--insecure'));
 });
 
 test('portal mode restores the previous private configuration after failed public health', t => {

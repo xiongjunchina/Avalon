@@ -12,6 +12,7 @@ runtime = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(runtime)
 original_portal_up = runtime.portal_up
 original_compose = runtime.compose
+original_get_url = runtime.get_url
 
 
 class MigrationTests(unittest.TestCase):
@@ -79,6 +80,31 @@ class MigrationTests(unittest.TestCase):
     def test_requires_external_public_verification(self):
         with self.assertRaisesRegex(RuntimeError, 'outside ECS'):
             runtime.migrate(self.repo, self.mafia, self.portal, False)
+        self.assertEqual(self.calls, [])
+
+    def test_local_migration_records_public_acceptance_pending(self):
+        runtime.migrate(self.repo, self.mafia, self.portal, False, local_verify=True)
+        state = json.loads((self.portal / 'state.json').read_text())
+        self.assertEqual(state['publicVerification'], 'pending')
+        self.assertEqual(state['healthVerification'], 'ecs-loopback-https')
+        self.assert_timers_restored()
+
+    def test_loopback_preserves_https_hostname_and_certificate_validation(self):
+        with patch.object(runtime, 'output', return_value='{"status":"ok"}') as request:
+            original_get_url('/avalon/api/health')
+        command = request.call_args.args[0]
+        self.assertIn('--resolve', command)
+        self.assertIn('game.ccnepower.com:443:127.0.0.1', command)
+        self.assertIn('--noproxy', command)
+        self.assertEqual(command[-1], runtime.ORIGIN + '/avalon/api/health')
+        self.assertNotIn('-k', command)
+        self.assertNotIn('--insecure', command)
+
+    def test_unhealthy_existing_game_prevents_mutations(self):
+        runtime.get_url.side_effect = lambda path: '{"status":"error"}'
+        with self.assertRaisesRegex(RuntimeError, 'Existing game health failed'):
+            self.migrate()
+        self.assertEqual(self.composes, [])
         self.assertEqual(self.calls, [])
 
     def test_success_preserves_secrets_volumes_and_other_game_services(self):

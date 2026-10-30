@@ -159,7 +159,7 @@ env_tmp=''
 published=true
 if "$portal_mode"; then
   dc up -d --no-deps --wait --wait-timeout 180 server gateway
-  curl -fsS --connect-timeout 5 --max-time 15 "$app_origin/avalon/api/health" > deploy/runtime/avalon-health.json
+  curl -fsS --noproxy '*' --resolve "${app_origin#https://}:443:127.0.0.1" --connect-timeout 5 --max-time 15 "$app_origin/avalon/api/health" > deploy/runtime/avalon-health.json
   python3 -c 'import json; assert json.load(open("deploy/runtime/avalon-health.json"))["status"] == "ok"'
 else
   dc up -d --wait --wait-timeout 180

@@ -37,7 +37,7 @@ npm run package:minigame -- --version=0.2.0
 
 ## 第一次 ECS 迁移
 
-迁移前必须从 ECS 外部验证正式域名证书及两个旧健康接口。ECS 自身访问正常不证明阿里云已在公网放行。若仍有备案 403 或 TLS 重置，先保留工作分支，不合入 `main` 或修改生产入口。
+迁移支持两种验收范围。公网已放行时，先从 ECS 外部验证正式域名证书及两个旧健康接口，使用 `--public-ready`。等待 ICP 同步时，可按用户授权先完成合并和 ECS 迁移，使用 `--local-verify`；脚本在 ECS 本机通过 `curl --resolve game.ccnepower.com:443:127.0.0.1 --noproxy '*'` 验证实际入口，保留 HTTPS、SNI 和证书链校验，不使用 `-k`。本机通过不代表公网放行，部署记录会明确标记公网验收 `pending`。
 
 1. 在工作分支完成源码、检查与微信候选包。保留所有已部署镜像和旧配置。
 2. 发布者记录两个定时器原状态并暂停，然后将已验证的提交合入 `main`。暂停前确认两个更新服务未在执行；不要在进行中对局期间切换。
@@ -47,9 +47,11 @@ npm run package:minigame -- --version=0.2.0
 ```sh
 cd /opt/avalon
 python3 deploy/portal/runtime.py migrate --public-ready
+# ICP 同步期间提前部署时，改用以下命令（二选一）：
+python3 deploy/portal/runtime.py migrate --local-verify
 ```
 
-`--public-ready` 表示发布者已完成前述外部 HTTPS 检查，并非跳过证书验证。脚本依次执行双库 `pg_dump -Fc` 和目录校验、私有配置备份、入口生成与 Caddy 校验、Avalon 镜像构建、再次确认无进行中对局、端口切换及 HTTPS 健康检查。只重建 Avalon 应用和内部网关，不启动或重建数据库、Mafia 应用及 Mafia 内部网关。
+`--public-ready` 表示发布者已完成前述外部 HTTPS 检查；`--local-verify` 表示公网验收待办，二者都不跳过证书验证。脚本依次执行双库 `pg_dump -Fc` 和目录校验、私有配置备份、入口生成与 Caddy 校验、Avalon 镜像构建、再次确认无进行中对局、端口切换及本机域名 HTTPS 健康检查。只重建 Avalon 应用和内部网关，不启动或重建数据库、Mafia 应用及 Mafia 内部网关。
 
 5. 检查 `/opt/game-portal/state.json`、备份目录中的保护容器前后记录及两个网页入口。使用专用测试账号验证邀请、刷新、管理入口、断线重连和网页语音，不删除现有用户或战绩。
 6. 恢复发布者在第 2 步暂停前处于 active 的定时器。迁移脚本会恢复其**调用时**的状态；外层提前暂停的任务需要外层恢复。确认下一次定时检查和服务结果正常。
@@ -65,6 +67,8 @@ systemctl show avalon-auto-update.service mafia-auto-update.service -p Result -p
 ## 后续独立发布
 
 Avalon 仍使用 `/root/update-avalon.sh` 或原有定时任务；门户模式只更新 Avalon `server gateway`。新增的公共入口专用提交不重建 Avalon，并保留实际部署提交记录。Mafia 继续使用原发布流程，旧 Avalon 健康接口保持兼容。
+
+门户模式下 Avalon 日常发布也通过回环地址校验正式域名 HTTPS，避免上游备案拦截被误判为应用故障而反复回退。公网放行后的外部访问、微信域名校验及真机联调仍须单独完成；提前部署不会自动完成这些验收。
 
 公共入口发布与回滚：
 
