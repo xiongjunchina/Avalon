@@ -22,25 +22,30 @@ export { settingsScreen } from './apps/minigame/src/screens/settings.ts';
 export { defaultSettings } from './packages/contracts/src/index.ts';
 `, resolveDir: root }, bundle: true, format: 'iife', globalName: 'AvalonPreview', write: false });
 const assets = {};
-for (const scene of ['gate', 'pavilion', 'sword', 'library', 'mirror', 'dawn']) assets['scenes/' + scene + '.webp'] = 'data:image/webp;base64,' + (await readFile(join(root, 'apps/web/public/art/scenes', scene + '.webp'))).toString('base64');
-for (const name of await readdir(join(root, 'apps/web/public/art/roles'))) if (name.endsWith('.webp')) assets[(name.endsWith('-640.webp')?'/art/roles/':'roles/') + name] = 'data:image/webp;base64,' + (await readFile(join(root, 'apps/web/public/art/roles', name))).toString('base64');
-for (const name of await readdir(join(root, 'apps/minigame/assets/emblems'))) if (name.endsWith('.png')) assets['emblems/' + name] = 'data:image/png;base64,' + (await readFile(join(root, 'apps/minigame/assets/emblems', name))).toString('base64');
-for(const name of await readdir(join(root,'apps/web/public/art/avatars'))){const data='data:image/webp;base64,'+(await readFile(join(root,'apps/web/public/art/avatars',name))).toString('base64');assets['/art/avatars/'+name+'?v=artifact1']=data;assets['avatars/'+name]=data;const i=Number(/wx-(\d+)/.exec(name)?.[1])-1;const legacy=['leaf','moon','sun','mountain','wave','star'][i];if(legacy)assets['emblems/'+legacy+'.png']=data;}
-const fonts = Object.fromEntries(await Promise.all(['calligraphy','display','sans'].map(async name => [name,'data:font/ttf;base64,'+(await readFile(join(root,'apps/minigame/assets/fonts',name+'.ttf'))).toString('base64')])));
-const out = join(root, 'dist/minigame-preview');
+const packageRoot=join(root,'dist/minigame');
+for(const folder of ['scenes','roles','avatars'])for(const name of await readdir(join(packageRoot,'art',folder))){
+ if(!name.endsWith('.jpg'))continue;
+ const logical=folder+'/'+name.replace(/\.jpg$/,'.webp'),data='data:image/jpeg;base64,'+(await readFile(join(packageRoot,'art',folder,name))).toString('base64');assets[logical]=data;
+ if(folder==='avatars'){assets['/art/'+logical+'?v=artifact1']=data;const i=Number(/wx-(\d+)/.exec(name)?.[1])-1,legacy=['leaf','moon','sun','mountain','wave','star'][i];if(legacy)assets['emblems/'+legacy+'.png']=data;}
+}
+for(const name of await readdir(join(packageRoot,'hd-art')))if(name.endsWith('.jpg')){const data='data:image/jpeg;base64,'+(await readFile(join(packageRoot,'hd-art',name))).toString('base64');assets['/art/roles/'+name.replace('.jpg','.webp')]=data;assets['roles/'+name.replace('-640.jpg','-160.webp')]=data;}
+for(const name of await readdir(join(packageRoot,'art/emblems')))if(name.endsWith('.png')&&!assets['emblems/'+name])assets['emblems/'+name]='data:image/png;base64,'+(await readFile(join(packageRoot,'art/emblems',name))).toString('base64');
+const fonts = Object.fromEntries(await Promise.all(['calligraphy','display','sans'].map(async name => [name,'data:font/ttf;base64,'+(await readFile(join(packageRoot,'art/fonts',name+'.ttf'))).toString('base64')])));
+const dpr=Number(process.env.PARITY_DPR??1);
+const out = join(root, dpr===1?'dist/minigame-preview':'dist/minigame-preview-dpr'+dpr);
 await mkdir(out, { recursive: true });
 const browser = await chromium.launch({ headless: true, ...(process.env.MINIGAME_CHROMIUM_PATH ? { executablePath: process.env.MINIGAME_CHROMIUM_PATH } : {}) });
 try {
   for (const width of (process.env.PARITY_WIDTH?[Number(process.env.PARITY_WIDTH)]:[320,390,430])) {
     const height = width === 320 ? 568 : width === 390 ? 844 : 932;
-    const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: 1 });
+    const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: dpr });
     await page.setContent('<style>body{margin:0;background:#0a1024}</style><canvas id="preview"></canvas>');
     await page.evaluate(async fonts => { for (const [name,source] of Object.entries(fonts)) { const family = {calligraphy:'Ma Shan Zheng',display:'ZCOOL XiaoWei',sans:'Noto Sans SC'}[name]; const font=new FontFace(family, 'url('+source+')'); document.fonts.add(await font.load()); } }, fonts);
     await page.addScriptTag({ content: result.outputFiles[0].text });
     for (const scene of (process.env.PARITY_SCENES?.split(',')??['entry','setup','game','identity','vote','vote-submitted','mission','report','result','account','profile','history','favorites','presets','friends','friends-list','friends-add','guide','guide-role'])) {
-      const layout = await page.evaluate(async ({ width, height, scene, assets }) => {
+      const layout = await page.evaluate(async ({ width, height, scene, assets, dpr }) => {
         const app = globalThis.AvalonPreview;
-        const canvas = document.getElementById('preview'); canvas.width = width; canvas.height = height;
+        const canvas = document.getElementById('preview'); canvas.width = width*dpr; canvas.height = height*dpr;canvas.style.width=width+'px';canvas.style.height=height+'px';canvas.getContext('2d').scale(dpr,dpr);
         const cache = new Map(); await Promise.all(Object.entries(assets).map(async ([name, url]) => { const img = new Image(); img.src = url; await img.decode(); cache.set(name, img); }));
         const { user, room: parityRoom } = app.parityFixture(scene);
         const room = { id: 'r', code: '123456', hostId: 'u', settings: app.defaultSettings, acceptingNewMembers: true,
@@ -57,13 +62,13 @@ try {
         if(scene==='setup')model={...app.settingsScreen(app.defaultSettings),rows:[{id:'createRoom',text:'创建房间'},{id:'startPractice',text:'演练'}],web:{page:'setup',settings:app.defaultSettings,document:{kind:'settings',activeTab:'setup',settings:app.defaultSettings}}};
         if(['account','profile','history','favorites','presets','friends','friends-list','friends-add','replay'].includes(scene)){
           const d=app.parityPlayerData(), api={statistics:async()=>d.stats,history:async()=>({games:[d.summary],nextCursor:null}),presets:async()=>({presets:d.presets}),friends:async()=>({friends:d.friends}),replay:async()=>d.replay};
-          const panel=new app.PlayerPanel(api,user);await panel.open(scene.startsWith('friends')?'friends':scene==='profile'?'account':scene==='favorites'||scene==='replay'?'history':scene);
+          const panel=new app.PlayerPanel(api,user);await panel.open(scene.startsWith('friends')?'friends':scene==='profile'?'account':scene==='favorites'||scene==='replay'?'history':scene,scene.startsWith('friends')?{roomId:parityRoom.id}:{});if(scene.startsWith('friends'))panel.setRoomCode(parityRoom.code);
           if(scene==='profile')await panel.handle('profileToggle',async()=>undefined);
           if(scene==='favorites')await panel.handle('page:favorites',async()=>undefined);
           if(scene==='friends-list')await panel.handle('friendTab:friends',async()=>undefined);
           if(scene==='friends-add')await panel.handle('friendTab:add',async()=>undefined);
           if(scene==='replay')await panel.openReplay(d.replay.id,'page:history');
-          model=panel.model();
+          model=panel.model();if(scene.startsWith('friends'))model.web.underlay=app.lobbyScreen({...parityRoom,game:undefined,phase:'waiting'},user,'已连接');
         }
         if (scene === 'guide') model = app.guideScreen();
         if (scene === 'guide-role') model = app.guideScreen(undefined,'roles');
@@ -73,7 +78,7 @@ try {
         if(scene==='mission'||scene==='result')model.scroll=app.layoutWebScreen(model,{width,height,top:0,bottom:0}).maxScroll;
         app.renderScreen(model, canvas, { width, height, top: 0, bottom: 0 }, { get: name => cache.get(name) });
         return app.layoutWebScreen(model,{width,height,top:0,bottom:0});
-      }, { width, height, scene, assets });
+      }, { width, height, scene, assets, dpr });
       await writeFile(join(out, `${scene}-${width}.json`), JSON.stringify(layout,null,2));
       await page.screenshot({ path: join(out, `${scene}-${width}.png`) });
     }

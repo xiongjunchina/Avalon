@@ -11,6 +11,16 @@ const server=createServer(async(req,res)=>{try{const p=resolve(dir,'.'+new URL(r
 const browser=await chromium.launch({headless:true,...(process.env.MINIGAME_CHROMIUM_PATH?{executablePath:process.env.MINIGAME_CHROMIUM_PATH}:{})});
 try{const names=[];for(const d of ['scenes','roles','avatars'])for(const n of await readdir(join(dir,'art',d)))if(n.endsWith('.jpg'))names.push(d+'/'+n.replace(/\.jpg$/,'.webp'));
 const page=await browser.newPage();await page.goto(`http://127.0.0.1:${server.address().port}/game.json`);await page.addScriptTag({content:js.outputFiles[0].text});
-const result=await page.evaluate(async names=>{const requests=[];const art=Art.createArtwork({createImage:()=>{const i=new Image();requests.push(i);return i;}},()=>{},'https://unavailable.invalid/avalon');names.forEach(n=>art.get(n));await Promise.all(requests.map(i=>new Promise(r=>{i.addEventListener('load',r);i.addEventListener('error',r);})));return names.map(n=>({name:n,loaded:!!art.get(n)?.width}));},names);
-await writeFile(join(dir,'../packaged-art-verification.json'),JSON.stringify(result,null,2));if(result.some(r=>!r.loaded))throw Error(JSON.stringify(result.filter(r=>!r.loaded)));console.log(`Loaded ${result.length}/${result.length} packaged images through production Artwork loader; no backend required.`);
+const result=await page.evaluate(async names=>{
+ const requests=[];let packageLoads=0;
+ const art=Art.createArtwork({createImage:()=>{const i=new Image();requests.push(i);return i;},loadSubpackage:({success})=>{packageLoads++;setTimeout(success,20);}},()=>{},'https://unavailable.invalid/avalon');
+ const expected=names.map(name=>({name,minWidth:name.startsWith('roles/')?640:1}));
+ const deadline=Date.now()+8000;
+ let results=[];
+ do{results=expected.map(({name,minWidth})=>{const i=art.get(name);return {name,width:i?.width??0,height:i?.height??0,src:i?.src??'',loaded:(i?.width??0)>=minWidth};});if(results.every(r=>r.loaded))break;await new Promise(r=>setTimeout(r,20));}while(Date.now()<deadline);
+ if(packageLoads!==1)throw Error('unexpected subpackage loads '+packageLoads);
+ if(requests.some(i=>i.src.startsWith('https:')))throw Error('local artwork requested backend');
+ return results;
+},names);
+await writeFile(join(dir,'../packaged-art-verification.json'),JSON.stringify(result,null,2));if(result.some(r=>!r.loaded))throw Error(JSON.stringify(result.filter(r=>!r.loaded)));console.log(`Loaded ${result.length}/${result.length} packaged images including all 640px portraits through production Artwork loader; no backend required.`);
 }finally{await browser.close();server.close();}

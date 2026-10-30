@@ -45,7 +45,7 @@ try {
     await page.routeWebSocket('**/api/rooms/**/socket', socket => socket.send(JSON.stringify({ type: 'snapshot', room: snapshot })));
     await page.goto('http://127.0.0.1:6017', { waitUntil: 'networkidle' });
     if (scene === 'setup') await page.getByRole('button', { name: '开常规房', exact: true }).click();
-    await page.locator(scene === 'guest' ? '.guest-login-card' : scene === 'setup' ? '.mp-setup-screen' : activeRoom ? '.quest-circles-row' : '.mp-medallion-stage').waitFor();
+    await page.locator(scene === 'guest' ? '.guest-login-card' : scene === 'setup' ? '.mp-setup-screen' : activeRoom ? '.room-table-screen' : '.mp-medallion-stage').waitFor();
     if(['identity','art','treasures'].includes(scene)) {
       await page.getByRole('button',{name:'私下查看我的身份',exact:true}).click();
       if(scene==='art')await page.locator('.identity-card').click();
@@ -54,16 +54,16 @@ try {
     if(scene==='battle')await page.getByRole('button',{name:'取经录',exact:true}).click();
     if(['account','history','favorites','presets','replay','profile'].includes(scene)){
       await page.getByRole('button',{name:'📜 功果簿',exact:true}).click();
-      if(scene==='profile')await page.locator('.profile-editor summary').click();
+      if(scene==='profile')await page.getByRole('button',{name:'修改昵称与头像',exact:true}).click();
       if(['history','favorites','presets','replay'].includes(scene))await page.getByRole('button',{name:scene==='presets'?'常用设置':scene==='favorites'?'我的收藏':'历史对局',exact:true}).click();
-      if(scene==='replay')await page.getByRole('button',{name:'复盘',exact:true}).first().click();
+      if(scene==='replay')await page.getByRole('button',{name:/查看复盘/}).first().click();
     }
     if(['friends','friends-list','friends-add','direct'].includes(scene)){
       await page.getByRole('button',{name:/👥 仙友/}).click();
       if(scene!=='friends')await page.getByRole('button',{name:scene==='friends-add'?/添加仙友/:/我的仙友/}).click();
     }
     if(scene==='guide'||scene==='guide-role'){
-      await page.getByRole('button',{name:'📖 识妖谱',exact:true}).click();
+      await page.getByRole('button',{name:'玩法与角色',exact:true}).click();
       if(scene==='guide-role')await page.getByRole('button',{name:'角色介绍',exact:true}).click();
     }
     await page.evaluate(async()=>{await document.fonts.ready;await Promise.race([Promise.all([...document.images].map(i=>i.decode().catch(()=>{}))),new Promise(resolve=>setTimeout(resolve,8000))]);if(document.activeElement instanceof HTMLElement)document.activeElement.blur();});

@@ -63,9 +63,14 @@ export async function buildMiniGame({
       await rm(join(target,name.replace(/\.jpg$/,'.webp')),{force:true});
     }
   }
-  const size = await bytesIn(outDir);
+  const existingHd=await stat(join(outDir,'hd-art')).catch(()=>undefined);
+  const size = await bytesIn(outDir)-(existingHd?await bytesIn(join(outDir,'hd-art')):0);
   if (size > maxBytes) throw new Error(`PACKAGE_TOO_LARGE: ${size} > ${maxBytes}`);
-  return { outDir, size, appId: selectedAppId, apiBaseUrl: serviceUrl, voiceEnabled };
+  const hdRoot=join(outDir,'hd-art');await mkdir(hdRoot,{recursive:true});
+  await writeFile(join(hdRoot,'game.js'),'// Local high-resolution artwork package.\n');
+  for(const name of await readdir(join(minigameRoot,'assets/hd-art')))if(name.endsWith('.jpg'))await copyFile(join(minigameRoot,'assets/hd-art',name),join(hdRoot,name));
+  const hdSize=await bytesIn(hdRoot);if(hdSize>4*1024*1024)throw Error('HD_PACKAGE_TOO_LARGE');
+  return { outDir, size:size+hdSize, appId: selectedAppId, apiBaseUrl:serviceUrl, voiceEnabled };
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

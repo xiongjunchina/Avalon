@@ -9,5 +9,11 @@
     "scope.record": {
       "desc": "用于同一游戏房间内玩家实时语音交流，仅在主动加入语音后使用"
     }
-  }
+  },
+  "subpackages": [
+    {
+      "name": "hd-art",
+      "root": "hd-art/"
+    }
+  ]
 }

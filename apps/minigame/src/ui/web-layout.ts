@@ -179,14 +179,14 @@ export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout 
     const ended=Boolean(game?.result);
     if(ended&&game){
       const role=game.revealedRoles?.[web.user?.id??''];const ownTeam=role?teamOf(role):web.ownTeam;
-      const headline=game.result!.winner===null?'本局中断':game.result!.winner===ownTeam?'本局胜利！':'本局惜败';
+      const headline=game.result!.winner===null?'本局不计胜负':game.result!.winner===ownTeam?'本局胜利！':'本局失败';
       const guardian=game.revealedRoles?assignLoyalGuardians(game.id,game.players,game.revealedRoles,game.rulesetVersion):{};
       const demons=game.revealedRoles?assignFemaleDemons(game.id,game.players,game.revealedRoles):{};
       nodes.splice(nodes.findIndex(n=>n.id==='ribbon'),1);
-      add('label','result-hero',headline,10,ribbonY-2,w-20,279,{skin:'result-hero',team:game.result!.winner??undefined,
+      add('label','result-hero',headline,10,ribbonY-2,w-20,120,{skin:'result-hero',team:game.result!.winner??undefined,
         detail:JSON.stringify({won:game.result!.winner===ownTeam,self:role?formatRoleName(role,guardian[web.user?.id??''],demons[web.user?.id??'']):'',reason:reasons[game.result!.reason]??game.result!.reason,teams:['blue','red'].map(team=>({team,players:game.players.filter(p=>game.revealedRoles?.[p.id]&&teamOf(game.revealedRoles[p.id]!)===team).map(p=>p.seat+'号 '+p.nickname+' · '+formatRoleName(game.revealedRoles![p.id]!,guardian[p.id],demons[p.id]))}))})});
     }
-    const arenaTop = ended?ribbonY-2+279+8:ribbonY + ribbonH + 4;
+    const arenaTop = ended?ribbonY-2+120+138:ribbonY + ribbonH + 4;
     const flankRows = Math.ceil(count / 2), cellH = 37.5208333333, gap = 14;
     const avatarSize = 40;
     const flankH = flankRows * cellH + (flankRows - 1) * gap;
@@ -216,15 +216,18 @@ export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout 
         }
         add('altar','altar','☯',(10+arenaInset+rightEnd-altarW)/2,arenaTop + (arenaH - altarW)/2,altarW,altarW,{ detail: ended ? '胜负已分' : (game?.draftTeam?.direction === 'counterclockwise' ? '⟲ 逆时针' : '⟳ 顺时针'), count: ended ? undefined : (game?.mission ?? 1) });
     const missionEligible=game?.phase==='mission'&&model.rows.some(row=>row.id==='mission-choice:success');
-    const dockY = arenaTop + arenaH + 4, dockH = ended?215:missionEligible?220.890625+(web.warning?44:0):w < 360 ? 170 : 154.890625;
+    const dockY = arenaTop + arenaH + 4, dockH = ended?68:missionEligible?220.890625+(web.warning?44:0):w < 360 ? 170 : 154.890625;
     add('panel','action-dock','',10,dockY,w-20,dockH);
     const panelX = 20, panelW = w - 40, panelY = dockY + 8, panelH = dockH - 76;
-    add('panel','dock-inner','',panelX,panelY,panelW,panelH);
+    if(!ended)add('panel','dock-inner','',panelX,panelY,panelW,panelH);
     if(game?.result){
-      add('label','result-summary',game.result.winner===null?'本局不计胜负':game.result.winner==='blue'?'蓝方获胜':'红方获胜',panelX+10,panelY+8,panelW-20,24,{skin:'text',fontSize:17,fontFace:'display',tone:'gold'});
-      add('label','result-reason',reasons[game.result.reason]??'',panelX+10,panelY+37,panelW-20,24,{skin:'text',fontSize:12});
-      if(!web.practice)add('button','openReplay','查看完整复盘',panelX+10,panelY+69,(panelW-26)/2,42,{skin:'button'});
-      if(room.hostId===web.user?.id)add('button','rematch','回到仙境等待区，再开一局',web.practice?panelX+10:panelX+16+(panelW-26)/2,panelY+69,web.practice?panelW-20:(panelW-26)/2,42,{skin:'gold-button',primary:true});
+      const ry=ribbonY+126;
+      add('panel','result-actions','',10,ry,w-20,126,{skin:'card'});
+      add('label','result-summary',game.result.winner===null?'本局不计胜负':game.result.winner==='blue'?'蓝方获胜':'红方获胜',22,ry+12,w-44,25,{skin:'text',fontSize:18,fontFace:'display',tone:'gold',align:'left'});
+      add('label','result-reason',reasons[game.result.reason]??'',22,ry+42,w-44,20,{skin:'text',fontSize:13,align:'left'});
+      const replayW=Math.min(112,(w-48)*.38);
+      if(!web.practice)add('button','openReplay','查看完整复盘',22,ry+70,replayW,44,{skin:'pill',fontSize:13});
+      if(room.hostId===web.user?.id)add('button','rematch','回到仙境等待区，再开一局',web.practice?22:30+replayW,ry+70,web.practice?w-44:w-52-replayW,44,{skin:'gold-button',fontSize:13,primary:true});
     } else if(missionEligible&&game){
       add('label','mission-hint','—◇ '+(game.failuresRequired===2?'需至少 2 张失败牌，任务方告失败':'只要出现 1 张失败牌，任务即失败')+' ◇—',panelX+4,panelY+8,panelW-8,22,{skin:'text',fontSize:13,fontFace:'display',tone:'gold',align:'center'});
       const cw=(panelW-28)/2,cardY=panelY+29.890625;
@@ -245,7 +248,7 @@ export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout 
     }
     const utilityY=dockY+dockH-53;
     add('label','dock-divider','',26,utilityY-9,w-52,1);
-    const utility=game ? [...(!ended?[['role','真身'],['treasures','法宝']]:[]),['history','取经录'],['chat','传音'],[web.practice?'practiceSeats':'guide',web.practice?'切换视角':'识妖谱'],...(!ended?[[web.practice?'exitPractice':room.hostId===web.user?.id?'endGame':'requestAbort',web.practice?'结束演练':room.hostId===web.user?.id?'结束':'申请结束']]:[])]
+    const utility=game ? [...(!ended?[['role','真身'],['treasures','法宝']]:[['treasures','法宝']]),['history','取经录'],['chat','传音'],[web.practice?'practiceSeats':'guide',web.practice?'切换视角':'识妖谱'],...(!ended?[[web.practice?'exitPractice':room.hostId===web.user?.id?'endGame':'requestAbort',web.practice?'结束演练':room.hostId===web.user?.id?'结束':'申请结束']]:[])]
       : [['settings','房间设置'],['share','邀请仙友'],['chat','传音'],['friends','仙友']];
     const uw=(w-40-(utility.length-1)*6)/utility.length;
     utility.forEach(([id,title],index)=>add('button',id!,title!,20+index*(uw+6),utilityY,uw,44,{badge:'utility'}));

@@ -4,7 +4,7 @@ import { layoutWebScreen, type WebNode, type WebLayout } from './web-layout.js';
 import type { ScreenModel } from './widgets.js';
 
 // Matches apps/web/src/scenes.css (Scheme A-2).
-const cnSans = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC",system-ui,-apple-system,sans-serif';
+const cnSans = '"Noto Sans SC","PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,-apple-system,sans-serif';
 const cnKaiti = '"STKaiti","Kaiti SC","Ma Shan Zheng",' + cnSans;
 let sans = cnSans;
 let display = '"ZCOOL XiaoWei",' + cnSans;
@@ -153,7 +153,7 @@ function drawDocumentNode(ctx:CanvasRenderingContext2D,n:WebNode,model:ScreenMod
       'treasure-entry':['#112b43b0','#112b43b0'],'submitted':['#123c30dd','#0a241ddd'],
       'faction-blue':['#163354ee','#071d30f5'],'faction-red':['#421221ee','#210810f5'],'cyan-button':['#5ef2ff','#24b8cc'],'toast':['#11273bfa','#0b1929fa'],'warning':['#551812eb','#551812eb'],'captain-banner':['#0b4e64','#16808b'], 'message':['#112a40ed','#112a40ed'],
     };
-    let radius=['dialog-frame'].includes(skin??'')?24:skin==='page-heading'?0:skin==='vote-frame'?18:skin==='pill'||skin==='tabs'?24:skin==='input'?14:skin==='voter-chip'?5:12;
+    let radius=['dialog-frame'].includes(skin??'')?24:skin==='page-heading'?0:skin==='vote-frame'?18:['pill','tabs','button','gold-button','dragon-button'].includes(skin??'')?24:skin==='input'?14:skin==='voter-chip'?5:12;
     const colorsNow=colors[skin??'']??(n.selected?['#27657b','#15404f']:['#3e1614eb','#1c0908f5']);
     ctx.save();if(['dialog-frame','vote-frame','card','gold-button'].includes(skin??''))shadow(ctx,'#00000099',skin==='dialog-frame'?24:12,4);
     fill(ctx,n,gradient(ctx,n,colorsNow),radius,skin==='dialog-frame'?'#e5b964':skin==='vote-frame'?'#e0aa3e':n.selected?'#ffd875':'#d4a35966');ctx.restore();
@@ -176,13 +176,12 @@ function drawDocumentNode(ctx:CanvasRenderingContext2D,n:WebNode,model:ScreenMod
     const info=JSON.parse(n.detail??'{}') as {won?:boolean;self?:string;reason?:string;teams?:{team:string;players:string[]}[]};
     fill(ctx,n,gradient(ctx,n,['#3a1418ed','#1c0908f7']),22,'#e5b964');
     circle(ctx,n.x+40,n.y+36,23,'#e5b96422','#e5b96477');write(info.won?'🏆':'⚖️',n.x+40,n.y+36,42,27);
-    write(info.won?'VICTORY · 你的阵营获胜':'MATCH RESULT · 本局结算',n.x+76,n.y+23,n.width-90,11,'left',sans,'700','#ffd875');
-    write(n.text,n.x+76,n.y+47,n.width-90,23,'left',display,'700','#ffd875');
+    write(info.won?'VICTORY · 你的阵营获胜':'MATCH RESULT · 本局结算',n.x+76,n.y+23,n.width-212,10,'left',sans,'700','#ffd875');
+    write(n.text,n.x+76,n.y+47,n.width-212,Math.min(21,(n.width-212)/5),'left',display,'700','#ffd875');
     fill(ctx,{...n,x:n.x+16,y:n.y+70,width:n.width-32,height:36},'#0d111ddd',9,'#d4a35944');write((n.team==='blue'?'🛡 蓝方获胜':n.team==='red'?'⚔ 红方获胜':'本局不计胜负')+'  '+(info.reason??''),n.x+27,n.y+88,n.width-54,12,'left',sans,'600','#e5decb');
-    let gy=n.y+117;
-    for(const group of info.teams??[]){const rows=Math.ceil(group.players.length/2),gh=30+rows*25;fill(ctx,{...n,x:n.x+16,y:gy,width:n.width-32,height:gh},group.team==='blue'?'#14304b80':'#6a151580',10,group.team==='blue'?'#7dd3fc66':'#ef444466');write(group.team==='blue'?'🛡 蓝方阵营':'⚔ 红方阵营',n.x+27,gy+14,n.width-54,12,'left',display,'600',group.team==='blue'?'#7dd3fc':'#fca5a5');
-      group.players.forEach((name,i)=>{const cw=(n.width-56)/2,px=n.x+24+i%2*(cw+8),py=gy+30+Math.floor(i/2)*25;fill(ctx,{...n,x:px,y:py,width:cw,height:20},'#101522dd',4,group.team==='blue'?'#7dd3fc77':'#fca5a577');write(name,px+5,py+10,cw-10,10.5,'left',sans,'600',group.team==='blue'?'#cdeaff':'#ffd0ca');});gy+=gh+8;
-    }return;
+    fill(ctx,{...n,x:n.x+n.width-126,y:n.y+18,width:110,height:40},'#17314bdd',8,'#7dd3fc88');write('我的底牌',n.x+n.width-71,n.y+29,100,10,'center',sans,'400','#bdd3e0');write(info.self??'',n.x+n.width-71,n.y+45,100,12,'center',display,'500','#cdeaff');
+    return;
+
   }
   if(n.skin==='mission-card'){
     const success=n.tone==='green';ctx.save();if(n.selected)shadow(ctx,success?'#34d399':'#f87171',12,0);fill(ctx,n,gradient(ctx,n,success?['#123b31','#08231e']:['#4d1715','#270b0a']),12,n.selected?'#ffd875':success?'#34d399aa':'#f87171aa');ctx.restore();
@@ -235,12 +234,12 @@ function drawDocumentNode(ctx:CanvasRenderingContext2D,n:WebNode,model:ScreenMod
   if(n.skin==='waiting-option'){fill(ctx,n,'#15334caa',8,'#d4a35988');write(n.text,cx,n.y+14,n.width-8,12,'center',sans,'400','#ede2cb');write(n.detail??'',cx,n.y+32,n.width-8,10,'center',sans,'600','#ffd875');return;}
   if(n.skin==='waiting-primary'){fill(ctx,n,gradient(ctx,n,n.selected?['#294c59','#17323c']:['#258298','#155366']),16,'#dec895');write(n.text,cx,cy,n.width-12,13,'center',display,'600','#fff1ce');return;}
   if(n.skin==='token'||n.skin==='avatar'||n.skin==='avatar-choice') {
-    if(n.skin==='avatar-choice'){box('button');image(n.image,n.x+4,n.y+4,n.width-8,n.height-8,true);return;}
-    const party=n.detail?.startsWith('出征'),diameter=n.skin==='avatar'?Math.min(n.width,n.height):party?36:Math.min(38,n.width-10),px=cx-diameter/2,py=party?n.y+26:n.y+1;
+    if(n.skin==='avatar-choice'){fill(ctx,n,n.selected?'#124b53':'#26100edb',12,n.selected?'#79f2ff':'#d4a35966');const d=Math.min(52,n.width-8);image(n.image,cx-d/2,n.y+6,d,d,true);write(n.text,cx,n.y+n.height-13,n.width-6,12,'center',sans,'500');return;}
+    const party=n.detail?.startsWith('出征'),diameter=n.skin==='avatar'?Math.min(n.width,n.height):party?36:Math.min(38,n.width-10),px=cx-diameter/2,py=party?n.y+14:n.y+1;
     if(party){const frame=artwork?.get('emblems/'+(n.detail?.includes('|我')?'ruyi-self':'ruyi')+'.png');if(frame)ctx.drawImage(frame as CanvasImageSource,n.x,n.y,n.width,n.height);else box('tip');}
     circle(ctx,cx,py+diameter/2,diameter/2+2,n.skin==='avatar'?'#122b34':'#2b0c0a',party&&n.detail?.includes('|我')?'#00d2ff':'#d0be8d');
-    if(n.image?.startsWith('emblems/')){art(ctx,artwork,n.image.slice(8,-4),px+diameter*.28,py+diameter*.28,diameter*.44,diameter*.44);}else image(n.image,px,py,diameter,diameter,true);
-    if(n.skin!=='avatar'){const caption=party?n.text+(n.detail?.includes('|我')?'（你）':''):String(n.count)+'号 '+n.text;if(!party)fill(ctx,{...n,x:cx-n.width/2,y:py+diameter+5,width:n.width,height:16},'#2b0c0a',8,'#d4a35977');write(caption,cx,party?n.y+81:py+diameter+13,n.width-4,10.5,'center',sans,'600','#f1dba7');if(party)write('⚔️ 出征',cx,n.y+105,n.width-8,10,'center',sans,'400','#7dd3fc');}
+    image(n.image,px,py,diameter,diameter,true);
+    if(n.skin!=='avatar'){const caption=party?n.text+(n.detail?.includes('|我')?'（你）':''):String(n.count)+'号 '+n.text;if(!party)fill(ctx,{...n,x:cx-n.width/2,y:py+diameter+5,width:n.width,height:16},'#2b0c0a',8,'#d4a35977');write(caption,cx,party?n.y+60:py+diameter+13,n.width-4,10.5,'center',sans,'600','#f1dba7');if(party)write('⚔️ 出征',cx,n.y+78,n.width-8,10,'center',sans,'400','#7dd3fc');}
     return;
   }
   if(n.skin==='art-image') {image(n.image,n.x,n.y,n.width,n.height);return;}
@@ -261,7 +260,7 @@ function drawDocumentNode(ctx:CanvasRenderingContext2D,n:WebNode,model:ScreenMod
     const [rate,record,footer]=n.detail?.split('|')??[];write((rate??'—')+' 胜率',cx,py+d+45,n.width-10,20,'center',display,'400','#f1deba');write(record??'',cx,py+d+72,n.width-10,12,'center',sans,'400','#eddcc4');write(footer??'',cx,n.y+n.height-14,n.width-8,10.5,'center',sans,'400','#eddcc4');return;
   }
   if(n.skin==='gallery-card'){fill(ctx,n,gradient(ctx,n,n.team==='blue'?['#204b79','#13325e']:['#641b25','#310d18']),14,n.team==='blue'?'#488eff':'#d63249');image(n.image,n.x+8,n.y+8,n.width-16,n.height-77);write(n.text,cx,n.y+n.height-49,n.width-12,16,'center',display,'700');write(n.detail??'',cx,n.y+n.height-22,n.width-12,11,'center',sans,'400');return;}
-  if(n.skin==='friend-card'){box('profile');circle(ctx,n.x+34,cy,23,'#122d43');if(n.image?.startsWith('emblems/'))art(ctx,artwork,n.image.slice(8,-4),n.x+19,cy-15,30,30);else image(n.image,n.x+11,cy-23,46,46,true);write(n.text,n.x+70,n.y+25,n.width-88,16,'left',display,'700');write(n.detail??'',n.x+70,n.y+52,n.width-88,11,'left',sans,'400','#b7cbd9');return;}
+  if(n.skin==='friend-card'){box('card');circle(ctx,n.x+34,cy,23,'#122d43');image(n.image,n.x+11,cy-23,46,46,true);write(n.text+' #'+(n.badge??''),n.x+65,n.y+25,n.width-160,13,'left',display,'700');write(n.detail??'',n.x+70,n.y+52,n.width-88,11,'left',sans,'400','#b7cbd9');return;}
   if(n.skin==='message'){box(n.selected?'captain-banner':'message');write(n.detail??'',n.x+10,n.y+13,n.width-20,10,'left',sans,'400','#d4a359');(n.lines??[n.text]).forEach((line,i)=>write(line,n.x+10,n.y+34+i*20,n.width-20,13,'left',sans));return;}
   if(n.kind==='panel'){box();return;}
   if(n.kind==='button'||n.kind==='tab'||n.kind==='choice'){
@@ -271,7 +270,7 @@ function drawDocumentNode(ctx:CanvasRenderingContext2D,n:WebNode,model:ScreenMod
     else if(n.skin==='account-tab'){write(n.text,cx,cy,n.width-8,13,'center',sans,n.selected?'700':'500',n.selected?'#e5fbff':'#eddcc4');}
     else if(n.skin==='accordion'){write(n.text,n.x+12,cy,n.width-30,12,'left',display,'700','#ffd875');if(n.detail)write(n.detail,n.x+n.width-8,n.y+n.height-12,n.width-20,10,'right',sans,'400','#d4a359');}
     else {
-      const gold=n.skin==='gold-button'||n.skin==='cyan-button',input=n.skin==='input',lines=n.lines??wrapText(n.text,n.width-20,t=>Array.from(t).length*(n.fontSize??13));
+      const gold=n.skin==='gold-button'||n.skin==='cyan-button',input=n.skin==='input';ctx.font=(n.weight??'500')+' '+(n.fontSize??13)+'px '+family;const lines=n.lines??wrapText(n.text,n.width-16,t=>ctx.measureText(t).width);
       if(n.skin==='dragon-button'){art(ctx,artwork,'cloud-left',n.x+8,cy-7,24,14);art(ctx,artwork,'cloud-right',n.x+n.width-32,cy-7,24,14);}
       lines.forEach((line,i)=>write(line,input?n.x+12:cx,cy+(i-(lines.length-1)/2)*(n.fontSize??13)*1.4,n.width-(input?24:16),n.fontSize??13,input?'left':'center',family,n.weight??(gold?'500':'500'),gold?'#1e0908':color));
     }
@@ -280,7 +279,7 @@ function drawDocumentNode(ctx:CanvasRenderingContext2D,n:WebNode,model:ScreenMod
   box();write(n.text,cx,cy,n.width-12);
 }
 
-function drawNode(ctx: CanvasRenderingContext2D, n: WebNode, model: ScreenModel, artwork?: Artwork) {
+function drawNode(ctx: CanvasRenderingContext2D, n: WebNode, model: ScreenModel, viewportWidth:number, artwork?: Artwork) {
   if(n.skin){drawDocumentNode(ctx,n,model,artwork);return;}
   const cx = n.x + n.width / 2, cy = n.y + n.height / 2;
   if (n.kind === 'metric') {
@@ -387,7 +386,7 @@ function drawNode(ctx: CanvasRenderingContext2D, n: WebNode, model: ScreenModel,
         text(ctx, n.detail, cx, statusY + 8, cardW - 8, 10, webTheme.accent, 'center', sans, '600');
       }
     } else {
-      const diameter = clamp(38, n.height, 44), left = n.x < (ctx.canvas ? ctx.canvas.width / 2 : 150);
+      const diameter = clamp(38, n.height, 44), left = n.x < viewportWidth / 2;
       const avatarX = left ? n.x : n.x + n.width - diameter;
       const avatarY = n.y + (n.height - diameter) / 2;
       const labelX = left ? avatarX + diameter + 5 : n.x;
@@ -564,7 +563,7 @@ export function renderWebScreen(model: ScreenModel, canvas: HTMLCanvasElement, v
     if (node.y + node.height < (node.clipTop ?? v.top) - 24 || node.y > (node.clipBottom ?? v.height-v.bottom) + 24) continue;
     ctx.save();
     if (!node.fixed) { ctx.beginPath(); ctx.rect(0, node.clipTop ?? layout.contentTop, v.width, (node.clipBottom ?? layout.contentBottom) - (node.clipTop ?? layout.contentTop)); ctx.clip(); }
-    drawNode(ctx, node, model, artwork); ctx.restore();
+    drawNode(ctx, node, model, v.width, artwork); ctx.restore();
   }
   if (layout.maxScroll > 0) {
     const height = layout.contentBottom - layout.contentTop, thumb = Math.max(24, height * height / (height + layout.maxScroll));

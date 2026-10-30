@@ -9,3 +9,9 @@ for folder in ['scenes','roles','avatars']:
         if folder=='roles' and not src.name.endswith('-160.webp'):
             continue
         Image.open(src).convert('RGB').save(dest/(src.stem+'.jpg'),'JPEG',quality=85,optimize=True)
+
+# Large portraits ship in a separate local resource package at their original resolution.
+hd=root/'apps/minigame/assets/hd-art'
+hd.mkdir(parents=True,exist_ok=True)
+for src in (root/'apps/web/public/art/roles').glob('*-640.webp'):
+    Image.open(src).convert('RGB').save(hd/(src.stem+'.jpg'),'JPEG',quality=92,optimize=True)

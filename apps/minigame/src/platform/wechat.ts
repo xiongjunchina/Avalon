@@ -37,6 +37,7 @@ export interface WxRuntime extends NativeVoiceRuntime {
   loadFont?(path: string): string | null;
   createOffscreenCanvas?(options: { type: '2d'; width: number; height: number }): WxAvatarCanvas;
   createImage?(): WxImage;
+  loadSubpackage?(options:{name:string;success():void;fail(error:unknown):void;complete?():void}):unknown;
   chooseImage?(options: { count: number; sizeType: string[]; sourceType: string[];
     success(result: { tempFilePaths: string[]; tempFiles?: { size: number }[] }): void; fail(error: unknown): void }): void;
   getFileSystemManager?(): { readFileSync(path: string, encoding: 'base64'): string | ArrayBuffer };

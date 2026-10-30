@@ -20,7 +20,7 @@ import { ALL_GALLERY_ROLES, formatRoleName } from '../../web/src/roles.js';
 import { AdminApi } from './screens/admin/auth.js';
 import { AdminPanel } from './screens/admin/panel.js';
 import { PlayerExtras } from './screens/player-extras.js';
-import { PlayerPanel } from './screens/player-panel.js';
+import { PlayerPanel, playerPanelScroll } from './screens/player-panel.js';
 import { PracticeSession } from './screens/practice.js';
 import { guideScreen } from './screens/guide.js';
 import { InviteInbox } from './screens/invites.js';
@@ -130,7 +130,7 @@ function model(): ScreenModel {
   if (auxiliary === 'roomTools' && room && user) return feedback({ ...lobbyScreen(room, user), title: '房间工具', web: { page: 'sheet', backId: 'auxiliaryClose', background: 'pavilion',document:{kind:'tools',modal:true},underlay:lobbyScreen(room,user) } });
   if (view === 'admin') result = adminPanel.model();
   else if (view === 'guide') result = guideScreen(guideRoleId,guideSection,guideArt);
-  else if (view === 'player' && playerPanel) {result = playerPanel.model();if(result.web?.document?.modal&&room&&user)result.web.underlay=room.game?gameScreen(room,user,{privateRoleVisible:false,ballotVisible:false}):lobbyScreen(room,user);}
+  else if (view === 'player' && playerPanel) {result = playerPanel.model();if(result.web?.document?.modal&&!result.web.underlay&&room&&user)result.web.underlay=room.game?gameScreen(room,user,{privateRoleVisible:false,ballotVisible:false}):lobbyScreen(room,user);}
   else if (view === 'practice' && practice) {
     const local = practice.view();
     result = gameScreen(local, practice.user, gameUi);
@@ -300,9 +300,9 @@ async function select(id: string) {
     return;
   }
   if (view === 'player' && playerPanel) return run(async () => {
-    const title = playerPanel!.model().title;
+    const before = playerPanel!.model();
     const outcome = await playerPanel!.handle(id, async (label, maxLength) => { status = label; render(); return askText(wx, '', maxLength ?? 200); });
-    if (title !== playerPanel!.model().title) scroll = 0;
+    scroll = playerPanelScroll(before,playerPanel!.model(),scroll);
     user = playerPanel!.user;
     const applied = playerPanel!.takeAppliedSettings();
     if (applied && room?.hostId === user.id) lobby?.updateSettings(applied);
@@ -321,6 +321,7 @@ async function select(id: string) {
   });
   if (view === 'guide') {
     if (id === 'back') { guideRoleId=undefined;guideArt=false;navigate(guideReturn); }
+    else if(id==='guide:directory'||id.startsWith('guide-jump:')){const target=id==='guide:directory'?'guide-directory':id.slice('guide-jump:'.length);const layout=layoutWebScreen({...model(),scroll:0},viewport),node=layout.nodes.find(n=>n.id===target);if(node)scroll=Math.max(0,node.y-viewport.top-76);render();}
     else if (id==='guideArt'){guideArt=true;scroll=0;render();}
     else if(id==='guideArtClose'){guideArt=false;guideRoleId=undefined;scroll=0;render();}
     else if(id==='guide:rules'||id==='guide:config'){guideSection=id==='guide:rules'?'rules':'config';guideRoleId=undefined;scroll=0;render();}

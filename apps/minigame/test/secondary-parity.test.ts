@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { parityFixture, parityPlayerData } from '../scripts/parity-fixture.js';
 import { gameScreen, handleGameOverlay, syncGameUi, gameAction, type GameUiState } from '../src/screens/game.js';
 import { layoutWebScreen } from '../src/ui/web-layout.js';
-import { PlayerPanel } from '../src/screens/player-panel.js';
+import { PlayerPanel, playerPanelScroll } from '../src/screens/player-panel.js';
 import { PlayerExtras } from '../src/screens/player-extras.js';
 
 const state=():GameUiState=>({privateRoleVisible:false,ballotVisible:false});
@@ -49,7 +49,7 @@ test('guide keeps a reachable fixed return control after scrolling either tab',(
  for(const width of [320,390,430])for(const tab of ['rules','roles'] as const){const v={width,height:568,top:24,bottom:34},m=guideScreen(undefined,tab);m.scroll=layoutWebScreen(m,v).maxScroll;const back=layoutWebScreen(m,v).nodes.find(n=>n.id==='back');assert.ok(back);assert.ok(back.y>=v.top&&back.y+back.height<=v.height-v.bottom);assert.equal(back.fixed,true);}
 });
 test('room preset save shows the current room snapshot rather than ineffective editable controls',async()=>{
- const data=parityPlayerData(),p=new PlayerPanel({presets:async()=>({presets:data.presets})} as any,parityFixture().user);await p.open('presets',{roomId:'r',settings:parityFixture().room.settings,canApplyPreset:true});const nodes=layoutWebScreen(p.model(),{width:390,height:844,top:0,bottom:0}).nodes;
+ const data=parityPlayerData(),p=new PlayerPanel({presets:async()=>({presets:data.presets})} as any,parityFixture().user);await p.open('presets',{roomId:'r',settings:parityFixture().room.settings,canApplyPreset:true});await p.handle('preset:new',async()=>undefined);const nodes=layoutWebScreen(p.model(),{width:390,height:844,top:0,bottom:0}).nodes;
  assert.ok(nodes.some(n=>n.id==='preset-room-summary'));assert.equal(nodes.some(n=>n.id==='preset:count:12'),false);
 });
 test('profile edits and chat quick phrases do not write until explicit save/send; failed send retains draft',async()=>{
@@ -87,4 +87,36 @@ test('incoming friend can be accepted directly and deletion remains explicitly c
  await p.open('friends');await p.handle('friendTab:friends',async()=>undefined);const incoming=data.friends[1]!.id,accepted=data.friends[0]!.id;
  assert.ok(layoutWebScreen(p.model(),{width:390,height:844,top:0,bottom:0}).nodes.some(n=>n.id==='acceptFriend:'+incoming));
  await p.handle('acceptFriend:'+incoming,async()=>undefined);assert.deepEqual(writes,['accept:'+incoming]);await p.handle('removeFriend:'+accepted,async()=>undefined);assert.equal(writes.length,1);await p.handle('confirm:yes',async()=>undefined);assert.equal(writes[1],'remove:'+accepted);
+});
+
+test('account editor opens as a modal with an always reachable save action',async()=>{
+ const p=new PlayerPanel({statistics:async()=>parityPlayerData().stats} as any,parityFixture().user);
+ await p.open('account');await p.handle('profileToggle',async()=>undefined);
+ assert.equal(p.model().web?.document?.modal,true);
+ for(const width of [320,390,430]){const v={width,height:568,top:24,bottom:34},m=p.model(),first=layoutWebScreen(m,v);m.scroll=first.maxScroll;
+ for(const l of [first,layoutWebScreen(m,v)]){const save=l.nodes.find(n=>n.id==='profile:save')!;assert.ok(save.fixed);assert.ok(save.y>=v.top&&save.y+save.height<=v.height-v.bottom);}}
+ await p.handle('profileToggle',async()=>undefined);assert.equal(p.model().web?.document?.modal,false);
+});
+
+test('preset list opens editor explicitly, cancel does not save, save closes on success',async()=>{
+ let writes=0;const p=new PlayerPanel({presets:async()=>({presets:parityPlayerData().presets}),savePreset:async()=>{writes++;}} as any,parityFixture().user);
+ await p.open('presets');assert.equal(p.model().web?.document?.modal,false);
+ await p.handle('preset:new',async()=>undefined);assert.equal(p.model().web?.document?.modal,true);
+ await p.handle('preset:cancel',async()=>undefined);assert.equal(writes,0);assert.equal(p.model().web?.document?.modal,false);
+ await p.handle('apply:preset-1',async()=>undefined);assert.equal(p.model().web?.document?.modal,true);
+ await p.handle('preset:save',async()=>undefined);assert.equal(writes,1);assert.equal(p.model().web?.document?.modal,false);
+});
+
+test('seat artwork uses CSS coordinates at every physical pixel density',()=>{
+ const {room,user}=parityFixture(),m=gameScreen(room,user,state()),v={width:390,height:844,top:0,bottom:0};
+ const draws=(dpr:number)=>{const arcs:any[]=[];const canvas:any={width:390*dpr,height:844*dpr};const noop=()=>{},gradient={addColorStop:noop};const ctx=new Proxy({canvas,arc:(...args:any[])=>arcs.push(args),measureText:(s:string)=>({width:s.length*12}),createLinearGradient:()=>gradient,createRadialGradient:()=>gradient},{get:(o,k)=>k in o?(o as any)[k]:noop});canvas.getContext=()=>ctx;renderScreen(m,canvas,v);return arcs;};
+ assert.deepEqual(draws(3),draws(1));
+});
+
+test('editing a preset from a scrolled list starts at the name and resets on return',async()=>{
+ const p=new PlayerPanel({presets:async()=>({presets:parityPlayerData().presets})} as any,parityFixture().user);
+ await p.open('presets');const list=p.model();await p.handle('apply:preset-1',async()=>undefined);const editor=p.model();
+ assert.equal(playerPanelScroll(list,editor,2000),0);assert.equal(playerPanelScroll(editor,editor,200),200);
+ await p.handle('preset:cancel',async()=>undefined);assert.equal(playerPanelScroll(editor,p.model(),700),0);
+ assert.equal(editor.web?.underlay?.web?.document?.kind,'presets');assert.equal(editor.web?.underlay?.web?.document?.modal,false);
 });

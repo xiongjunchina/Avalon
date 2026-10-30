@@ -106,7 +106,10 @@ test('incremental builds remove only obsolete artwork and keep the new font budg
   await writeFile(join(outDir,'art/moonlit.png'),new Uint8Array(2_080_000));
   await writeFile(join(outDir,'art/gate.webp'),new Uint8Array(130_000));
   const result=await buildMiniGame({outDir});
-  assert.ok(result.size<4*1024*1024);
+  assert.ok(result.size<8*1024*1024);
+  const game=JSON.parse(await readFile(join(outDir,'game.json'),'utf8'));
+  assert.ok(game.subpackages.some((p:any)=>p.name==='hd-art'));
+  assert.deepEqual(await readFile(join(outDir,'hd-art/merlin-640.jpg')),await readFile('apps/minigame/assets/hd-art/merlin-640.jpg'));
   assert.equal((await readdir(join(outDir,'art'))).includes('moonlit.png'),false);
   assert.ok((await readFile(join(outDir,'art/fonts/calligraphy.ttf'))).length>0);
 });

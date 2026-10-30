@@ -9,6 +9,7 @@ export interface WebDocument {
   game?: GameView;
   self?: NonNullable<GameView['self']>;
   user?: User;
+  expanded?:string[];
   voteChoice?: boolean | 'abstain';
   submitted?: boolean;
   historyExpanded?: boolean;
@@ -20,6 +21,7 @@ export interface WebDocument {
   presets?: SettingPreset[];
   settings?: Settings;
   presetName?: string;
+  presetEditing?:boolean;
   canApplyPreset?: boolean;
   roomPreset?:boolean;
   profileEditing?: boolean;
