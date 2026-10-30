@@ -1,3 +1,4 @@
+import {applicationUrl} from '../../net/urls.js';
 import { networkCode } from '../../net/api.js';
 import type { AdminGameSummary, AdminOverview, AdminRoomSummary, AdminUserSummary, RedemptionCodeItem, Replay } from '@avalon/contracts';
 import type { WechatPlatform } from '../../platform/wechat.js';
@@ -14,7 +15,7 @@ export class AdminApi {
       let finished = false;
       const finish = (action: () => void) => { if (finished) return; finished = true; clearTimeout(timer); action(); };
       const timer = setTimeout(() => finish(() => reject(new Error('NETWORK_TIMEOUT'))), this.timeoutMs);
-      this.platform.request({ url: `${this.baseUrl}/api/admin${path}`, method,
+      this.platform.request({ url: applicationUrl(this.baseUrl,`api/admin${path}`), method,
         header: { ...(body === undefined ? {} : { 'Content-Type': 'application/json' }), ...(key ? { 'x-admin-key': key } : {}), ...(this.bearer?.() ? { Authorization: `Bearer ${this.bearer()}` } : {}) },
         ...(body === undefined ? {} : { data: body }),
         success: response => {

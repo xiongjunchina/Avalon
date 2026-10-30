@@ -1,3 +1,4 @@
+import {applicationUrl} from '../net/urls.js';
 import {builtinAvatarFor} from '../../../web/src/avatar-catalog.js';
 import type {Avatar} from '@avalon/contracts';
 import type { WxImage, WxRuntime } from '../platform/wechat.js';
@@ -23,7 +24,7 @@ export function createArtwork(runtime: WxRuntime, redraw: () => void, baseUrl = 
     cache.set(name, entry);
     image.onload = () => { entry.ready = true; redraw(); };
     image.onerror = () => { entry.retryAt = Date.now() + 30_000; };
-    image.src = name.startsWith('data:') || name.startsWith('https:') ? name : name.startsWith('/art/') ? baseUrl + name : `art/${name}`;
+    image.src = name.startsWith('data:') || name.startsWith('https:') ? name : name.startsWith('/art/') ? applicationUrl(baseUrl,name) : `art/${name}`;
     return preview;
   } };
   return artwork;

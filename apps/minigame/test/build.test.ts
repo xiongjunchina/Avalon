@@ -42,6 +42,8 @@ test('build embeds the configured HTTPS API origin only', async t => {
   await buildMiniGame({ outDir, appId: 'wx1111111111111111', apiBaseUrl: 'https://avalon.example:8443' });
   assert.match(await readFile(join(outDir, 'bundle.js'), 'utf8'), /https:\/\/avalon\.example:8443/);
   await assert.rejects(buildMiniGame({ outDir, appId: 'wx1111111111111111', apiBaseUrl: 'http://avalon.example' }), /INVALID_API_ORIGIN/);
+  await buildMiniGame({outDir,apiBaseUrl:'https://game.ccnepower.com/avalon/'});
+  assert.ok((await readFile(join(outDir,'bundle.js'),'utf8')).includes('https://game.ccnepower.com/avalon'));
   await assert.rejects(buildMiniGame({ outDir, appId: 'touristappid' }), /INVALID_MINIGAME_APP_ID/);
 });
 

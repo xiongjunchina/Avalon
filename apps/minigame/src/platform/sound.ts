@@ -1,3 +1,4 @@
+import {applicationUrl} from '../net/urls.js';
 import { AudioEventTracker, effectFile, parseSoundPreferences, SOUND_STORAGE_KEY, type EffectCue, type SoundPreferences } from '../../../web/src/audio-events.js';
 import { BACKGROUND_MUSIC } from '../../../web/src/audio-catalog.js';
 import type { GameView } from '@avalon/contracts';
@@ -25,7 +26,7 @@ export class MiniGameSound {
     this.active = true;
     if (!this.visible || !this.preferences.music || this.music || !this.platform.runtime.createInnerAudioContext) return;
     this.music = this.platform.runtime.createInnerAudioContext();
-    this.music.src = this.origin + BACKGROUND_MUSIC.file; this.music.loop = true; this.music.volume = .26;
+    this.music.src = applicationUrl(this.origin,BACKGROUND_MUSIC.file); this.music.loop = true; this.music.volume = .26;
     this.music.onError?.(() => this.report('音乐暂时无法加载，可在声音设置中重试。'));
     this.music.play();
   }
@@ -33,7 +34,7 @@ export class MiniGameSound {
     if (!this.active || !this.visible || !this.preferences.effects || !this.platform.runtime.createInnerAudioContext) return;
     while (this.effects.length >= 3) { const oldest = this.effects.shift(); oldest?.stop(); oldest?.destroy(); }
     const audio = this.platform.runtime.createInnerAudioContext();
-    audio.src = this.origin + effectFile(cue); audio.volume = .55;
+    audio.src = applicationUrl(this.origin,effectFile(cue)); audio.volume = .55;
     const cleanup = () => { this.effects = this.effects.filter(item => item !== audio); audio.destroy(); };
     audio.onEnded?.(cleanup); audio.onError?.(cleanup); this.effects.push(audio); audio.play();
   }

@@ -26,9 +26,9 @@ const pause = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 test('reconnect replays the same unacknowledged command and ignores stale snapshots', async () => {
   const sockets: FakeSocket[] = [];
   const snapshots: number[] = [];
-  const platform = { socket: () => { const socket = new FakeSocket(); sockets.push(socket); return socket; } } as unknown as WechatPlatform;
+  const platform = { socket: (url:string) => { assert.ok(url.startsWith('wss://avalon.example:8443/avalon/api/rooms/room-1/socket?ticket='));const socket = new FakeSocket(); sockets.push(socket); return socket; } } as unknown as WechatPlatform;
   const api = { request: async (path: string) => path.includes('socket-ticket') ? { ticket: 'ticket' } : { room: room(2) } } as unknown as MiniGameApi;
-  const connection = new MiniGameRoomConnection({ api, platform, roomId: 'room-1', baseUrl: 'https://avalon.example:8443', retryDelay: 0, ackTimeout: 15,
+  const connection = new MiniGameRoomConnection({ api, platform, roomId: 'room-1', baseUrl: 'https://avalon.example:8443/avalon/', retryDelay: 0, ackTimeout: 15,
     handlers: { snapshot: value => snapshots.push(value.version) } });
   connection.start();
   await pause(5);

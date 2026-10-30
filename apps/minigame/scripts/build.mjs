@@ -18,12 +18,12 @@ async function bytesIn(dir) {
 export async function buildMiniGame({
   outDir = join(repoRoot, 'dist', 'minigame'),
   appId = process.env.WECHAT_MINIGAME_APP_ID,
-  apiBaseUrl = process.env.WECHAT_MINIGAME_API_BASE_URL || 'https://game.ccnepower.com',
+  apiBaseUrl = process.env.WECHAT_MINIGAME_API_BASE_URL || 'https://game.ccnepower.com/avalon',
   maxBytes = 4 * 1024 * 1024,
 } = {}) {
   let url;
   try { url = new URL(apiBaseUrl); } catch { throw new Error('INVALID_API_ORIGIN'); }
-  if (url.protocol !== 'https:' || !url.hostname || url.pathname !== '/' || url.search || url.hash || url.username || url.password)
+  if (url.protocol !== 'https:' || !url.hostname || url.search || url.hash || url.username || url.password)
     throw new Error('INVALID_API_ORIGIN');
   const project = JSON.parse(await readFile(join(minigameRoot, 'project.config.json'), 'utf8'));
   const selectedAppId = appId || project.appid;
@@ -35,7 +35,7 @@ export async function buildMiniGame({
     platform: 'neutral',
     format: 'cjs',
     target: 'es2020',
-    define: { __MINIGAME_API_BASE_URL__: JSON.stringify(url.origin) },
+    define: { __MINIGAME_API_BASE_URL__: JSON.stringify(url.origin + url.pathname.replace(/\/+$/, '')) },
     minify: true,
     outfile: join(outDir, 'bundle.js'),
   });

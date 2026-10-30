@@ -1,3 +1,4 @@
+import {applicationUrl} from './urls.js';
 import type { Command, RoomView, ServerMessage } from '@avalon/contracts';
 import type { WechatPlatform, WxSocketTask } from '../platform/wechat.js';
 import type { MiniGameApi } from './api.js';
@@ -104,7 +105,7 @@ export class MiniGameRoomConnection {
       const { ticket } = await this.options.api.request<{ ticket: string }>('/minigame/socket-ticket', { roomId: this.options.roomId });
       if (!current()) return;
       const base = this.options.baseUrl.replace(/^https:/, 'wss:').replace(/^http:/, 'ws:').replace(/\/$/, '');
-      const socket = this.options.platform.socket(`${base}/api/rooms/${this.options.roomId}/socket?ticket=${encodeURIComponent(ticket)}`);
+      const socket = this.options.platform.socket(applicationUrl(base,`api/rooms/${this.options.roomId}/socket?ticket=${encodeURIComponent(ticket)}`));
       this.socket = socket;
       socket.onOpen(() => {
         if (!current()) return;
