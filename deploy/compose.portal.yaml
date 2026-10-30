@@ -1,5 +1,9 @@
 # The game-portal project owns public ports and TLS in this mode.
 services:
+  server:
+    environment:
+      COOKIE_SECURE: "true"
+      WECHAT_MINIGAME_APP_ID: ${WECHAT_MINIGAME_APP_ID:-wxdb4e422c14adab3f}
   gateway:
     ports: !override []
     environment:
