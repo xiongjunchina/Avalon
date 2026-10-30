@@ -60,3 +60,9 @@ test('takeover and room closure stop further commands', async () => {
   sockets[0].emit({ type: 'roomClosed' });
   assert.deepEqual(ended, ['closed']);
 });
+test('confirmed commands wait for receipt, reject conflict, and reject on shutdown',async()=>{
+ const socket=new FakeSocket();const platform={socket:()=>socket} as unknown as WechatPlatform;const api={request:async(path:string)=>path.includes('socket-ticket')?{ticket:'t'}:{room:room(1)}} as unknown as MiniGameApi;
+ const c=new MiniGameRoomConnection({platform,api,roomId:'room-1',baseUrl:'https://example.com',handlers:{snapshot:()=>{}}});c.start();await pause(0);socket.open();
+ const command={type:'setRolePreferences',payload:{preferences:[]},commandId:'a',expectedVersion:1} as Command;let done=false;const p=c.sendConfirmed(command).then(()=>{done=true;});await pause(0);assert.equal(done,false);socket.emit({type:'commandResult',commandId:'a',ok:true});await p;
+ const failed=c.sendConfirmed({...command,commandId:'b'});socket.emit({type:'commandResult',commandId:'b',ok:false,error:'VERSION_CONFLICT'});await assert.rejects(failed,/VERSION_CONFLICT/);const stopped=c.sendConfirmed({...command,commandId:'c'});c.stop();await assert.rejects(stopped,/未确认/);
+});

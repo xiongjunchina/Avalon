@@ -1,11 +1,14 @@
 import type { AdminGameSummary, AdminOverview, AdminRoomSummary, AdminUserSummary, RedemptionCodeItem, Replay, SystemAnnouncement } from '@avalon/contracts';
 import type { ScreenModel } from '../../ui/widgets.js';
+import {formatRoleName} from '../../../../web/src/roles.js';
+import type {Role} from '@avalon/contracts';
 import { replayScreen } from '../replay.js';
 
 const navigation = [
   { id: 'page:overview', text: '总览' }, { id: 'page:users', text: '用户' },
   { id: 'page:rooms', text: '房间' }, { id: 'page:games', text: '对局记录' },
   { id: 'page:codes', text: '兑换码' }, { id: 'page:settings', text: '运营设置' },
+  {id:'page:special',text:'专属房与靓号'},
   { id: 'back', text: '返回游戏' },
 ];
 
@@ -33,6 +36,7 @@ export function adminUserScreen(user: AdminUserSummary): ScreenModel {
   return { title: user.nickname, subtitle: `仙友码 ${user.playerCode} · ${user.gamesCount} 局`, rows: [
     { id: 'stats:user:status', text: `状态：${user.isBanned ? `已封禁 ${user.bannedReason || ''}` : '正常'} · ${user.isVip ? `VIP 至 ${user.vipUntil || '有效'}` : '非 VIP'}` },
     { id: 'stats:user:created', text: `注册时间：${user.createdAt}` },
+    {id:`playerCode:${user.id}`,text:'改仙友码'},
     { id: `ban:${user.id}`, text: user.isBanned ? '解除封禁' : '封禁用户' },
     { id: `vip:${user.id}`, text: '赠送 VIP 天数' },
     { id: `friends:${user.id}`, text: `查看仙友（${user.friendsCount}）` },
@@ -58,7 +62,17 @@ export function adminGamesScreen(games: AdminGameSummary[], hasMore = false): Sc
 }
 
 export function adminReplayScreen(replay: Replay): ScreenModel {
-  return replayScreen(replay, 'page:games');
+  const model=replayScreen(replay, 'page:games');
+  const audit=replay.roleAssignmentAudit;
+  if(replay.endedAt&&replay.result&&audit){
+    model.rows.push({id:'audit:meta',text:`发牌依据 · 算法 ${audit.algorithmVersion} · 权重 ${audit.weightVersion} · 保护退让 ${audit.protectionLevel}`},{id:'audit:order',text:'角色区间顺序：'+(audit.roleOrder??[]).map(role=>formatRoleName(role)).join(' → ')},{id:'audit:note',text:'权重是相对抽取机会，并非命中概率；完整分配还需满足本局角色数量与保护约束。'});
+    for(const id of audit.playerOrder){const e=audit.players[id];if(!e)continue;const p=replay.players.find(p=>p.id===id),d=audit.draws.find(d=>d.userId===id);model.rows.push({id:'audit:player:'+id,text:`${p?p.seat+'号 '+p.nickname:'未知玩家'} · 最终：${formatRoleName(e.assignedRole)}
+心仪志愿：${e.preferences.map(role=>formatRoleName(role)).join(' / ')||'未设置'}
+最近角色：${e.recentRoles.map(role=>formatRoleName(role)).join(' → ')||'无历史记录'}
+保护条件：${[e.protections.visionGuaranteed&&'视野角色保护',e.protections.blueGuaranteed&&'蓝方保护',e.protections.bossCooldown&&'特殊角色冷却'].filter(Boolean).join('、')||'无'}
+相对权重：${Object.entries(e.weights).map(([r,n])=>formatRoleName(r as Role)+' '+n).join(' / ')}${d?'\n随机票值 '+d.ticket+' / 区间总权重 '+d.totalWeight:''}`});}
+  }
+  return model;
 }
 
 export function adminCodesScreen(codes: RedemptionCodeItem[]): ScreenModel {

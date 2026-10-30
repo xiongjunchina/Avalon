@@ -1,3 +1,6 @@
+import {RolePreferenceDraft} from './screens/role-preferences.js';
+import type {Role} from '@avalon/contracts';
+import {commandId} from './screens/lobby.js';
 import { attachTouchNavigation } from './ui/touch.js';
 import { defaultSettings, defaultAnonymousTeamVote, type RoomView, type Settings, type User, type DedicatedRoom } from '@avalon/contracts';
 import { WechatPlatform, type WxRuntime } from './platform/wechat.js';
@@ -77,7 +80,8 @@ let roleIndex = 0;
 let nickname = '';
 let switchCode = '';
 let authMode: 'create' | 'switch' = 'create';
-let auxiliary: 'dedicated' | 'roomTools' | 'practiceSeats' | 'sound' | 'switchAccount' | 'join' | undefined;
+const rolePreferenceDraft=new RolePreferenceDraft();
+let auxiliary: 'preferences' | 'dedicated' | 'roomTools' | 'practiceSeats' | 'sound' | 'switchAccount' | 'join' | undefined;
 let joinKey = '';
 let dedicatedRooms: DedicatedRoom[] = [];
 let creationAccess: {dedicatedRoomId?:string;password?:string|null} = {};
@@ -107,6 +111,7 @@ function model(): ScreenModel {
     title: '大家都在等你', rows: [{ id: 'guide:ready', text: '其他玩家均已准备，只差你一位。' }, { id: 'ready', text: '我已准备' }, { id: 'readyLater', text: '稍后准备' }],
     web: { page: 'sheet', sheet: 'ready', background: 'pavilion', backId: 'readyLater',document:{kind:'tools',modal:true},underlay:lobbyScreen(room,user) },
   });
+  if(auxiliary==='preferences'&&room)return feedback(rolePreferenceDraft.model(room));
   if (auxiliary === 'join') return feedback({ title: '加入朋友的房间', rows: [
     { id: 'input:join', text: joinKey || '输入房间号或邀请链接' },
     { id: 'guide:join', text: '请向朋友索取房间号或邀请链接。每次打开此页均为空，不会填入历史邀请。' },
@@ -221,6 +226,12 @@ async function run(action: () => Promise<void>) {
 async function select(id: string) {
   if(id==='noop')return;
   if (busy || commandBusy) return;
+  if(id==='rolePreferences'&&room){rolePreferenceDraft.open(room);auxiliary='preferences';scroll=0;render();return;}
+  if(auxiliary==='preferences'&&room){
+    if(id.startsWith('pref:'))return run(async()=>{rolePreferenceDraft.toggle(id.slice(5) as Role,room!);});
+    if(id==='prefClear'){rolePreferenceDraft.selected=[];render();return;}
+    if(id==='prefSave')return run(async()=>{if(!connection||room!.phase!=='waiting'||!room!.settings.rolePreferenceEnabled)throw Error('当前无法保存心仪志愿');rolePreferenceDraft.sync(room!);await connection.sendConfirmed({type:'setRolePreferences',payload:{preferences:rolePreferenceDraft.selected},commandId:commandId(),expectedVersion:room!.version});auxiliary=undefined;notice='心仪志愿已保存';});
+  }
   if (id === 'readyLater') { reminderDismissed = room?.id ?? ''; render(); return; }
   if (id === 'leave' && view === 'game' && ['finished', 'aborted'].includes(room?.game?.phase ?? '')) { lobby?.leave(); return; }
   if (id === 'leave' && view === 'game') id = room?.hostId === user?.id ? 'endGame' : 'requestAbort';
@@ -283,7 +294,7 @@ async function select(id: string) {
     if (id === 'rematch') { practice = new PracticeSession(practice.settings, user?.nickname ?? '我', practice); syncGameUi(gameUi, practice.view()); render(); return; }
     const command = gameAction(practice.view(), practice.user, id, gameUi);
     if (command) { try { practice.act(command); if (command.type === 'useTreasure') gameUi.targetId = undefined; syncGameUi(gameUi, practice.view()); } catch (cause) { error = cause instanceof Error ? cause.message : '练习操作失败'; } render(); }
-    else if (['treasure:tinStaff', 'treasure:guanyinMirror', 'treasure:humanBag', 'treasure:jinguSeal', 'treasure:bananaFan'].includes(id)) { error = '当前法宝不可用，或所选目标不符合条件'; render(); }
+    else if (['treasure:heartProtect','treasure:heartSabotage','treasure:guanyinSkip','treasure:tinStaff', 'treasure:guanyinMirror', 'treasure:humanBag', 'treasure:jinguSeal', 'treasure:bananaFan'].includes(id)) { error = '当前法宝不可用，或所选目标不符合条件'; render(); }
     return;
   }
   if (view === 'player' && playerPanel) return run(async () => {
@@ -374,7 +385,7 @@ async function select(id: string) {
       render(); return;
     }
     const command = gameAction(room, user, id, gameUi);
-    if (!command && ['treasure:tinStaff', 'treasure:guanyinMirror', 'treasure:humanBag', 'treasure:jinguSeal', 'treasure:bananaFan'].includes(id)) {
+    if (!command && ['treasure:heartProtect','treasure:heartSabotage','treasure:guanyinSkip','treasure:tinStaff', 'treasure:guanyinMirror', 'treasure:humanBag', 'treasure:jinguSeal', 'treasure:bananaFan'].includes(id)) {
       error = '当前法宝不可用，或所选目标不符合条件'; render(); return;
     }
     if (command && (['endGame', 'voteAbort', 'assassinate'].includes(command.type) || id === 'earlyAttempt')) {

@@ -1,9 +1,10 @@
+import {SpecialPanel} from './special.js';
 import type { AdminGameSummary, AdminOverview, AdminRoomSummary, AdminUserSummary, RedemptionCodeItem, Replay, SystemAnnouncement } from '@avalon/contracts';
 import type { ScreenModel } from '../../ui/widgets.js';
 import { AdminApi } from './auth.js';
 import { adminCodesScreen, adminGamesScreen, adminOverviewScreen, adminReplayScreen, adminRoomsScreen, adminSettingsScreen, adminUserScreen, adminUsersScreen } from './views.js';
 
-type Page = 'overview' | 'users' | 'rooms' | 'games' | 'codes' | 'settings' | 'user' | 'replay' | 'friends';
+type Page = 'special' | 'overview' | 'users' | 'rooms' | 'games' | 'codes' | 'settings' | 'user' | 'replay' | 'friends';
 type Input = (label: string, maxLength?: number) => Promise<string | undefined>;
 type Settings = { freeAccessMode: boolean; adRewardHours: number; announcement: SystemAnnouncement };
 
@@ -25,13 +26,15 @@ export class AdminPanel {
   private feedback = '';
   private loadEpoch = 0;
   private codeDraft={count:'10',days:'30',note:''};
-  constructor(readonly api: AdminApi, private readonly copy?: (text: string) => Promise<void>) {}
+  private special:SpecialPanel;
+  constructor(readonly api: AdminApi, private readonly copy?: (text: string) => Promise<void>) {this.special=new SpecialPanel(api,(label,action)=>{this.pending={label,action};});}
 
   async open(key: string) {
     try { await this.api.verify(key); await this.load('overview'); }
     catch (error) { this.onHide(); throw error; }
   }
   onHide() {
+    this.special.clear();
     this.loadEpoch++;
     this.api.onHide(); this.pending = undefined; this.page = 'overview'; this.overviewData = undefined;
     this.usersData = []; this.userTotal = 0; this.roomsData = []; this.gamesData = []; this.moreGames = false;
@@ -47,6 +50,7 @@ export class AdminPanel {
   }
   private pageModel(): ScreenModel {
     if (this.pending) return { title: '确认管理操作', rows: [{ id: 'notice', text: this.pending.label }, { id: 'confirm:yes', text: '确认执行' }, { id: 'confirm:no', text: '取消' }] };
+    if(this.page==='special')return this.special.model();
     if (this.page === 'user' && this.user) return adminUserScreen(this.user);
     if (this.page === 'replay' && this.replayData) return adminReplayScreen(this.replayData);
     if (this.page === 'friends') return { title: '用户仙友', rows: [...this.friendNames.map((name, index) => ({ id: `friend:${index}`, text: name })), { id: 'page:users', text: '返回用户列表' }] };
@@ -63,6 +67,7 @@ export class AdminPanel {
     const epoch = ++this.loadEpoch;
     this.page = page;
     this.feedback = '';
+    if(page==='special'){await this.special.load();return;}
     if (page === 'overview') { const data = await this.api.overview(); if (epoch === this.loadEpoch) this.overviewData = data; }
     else if (page === 'users') { const result = await this.api.users(this.query, 0); if (epoch === this.loadEpoch) { this.usersData = result.users; this.userTotal = result.total; } }
     else if (page === 'rooms') { const result = await this.api.rooms(); if (epoch === this.loadEpoch) this.roomsData = result.rooms; }
@@ -90,6 +95,8 @@ export class AdminPanel {
       return;
     }
     if (id.startsWith('page:')) { await this.load(id.slice(5) as Page); return; }
+    if(id.startsWith('playerCode:')&&this.user){await this.special.editPlayerCode(this.user,input);return;}
+    if(this.page==='special'){await this.special.handle(id,input);return;}
     if (id === 'search') { this.query = await input('搜索用户', 40) ?? ''; await this.load('users'); return; }
     if (id.startsWith('user:')) { this.user = this.usersData.find(user => user.id === id.slice(5)); if (this.user) this.page = 'user'; return; }
     if (id.startsWith('ban:') && this.user) {

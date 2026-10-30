@@ -3,24 +3,24 @@
     "file": "calligraphy.ttf",
     "family": "Ma Shan Zheng",
     "source": "https://fonts.gstatic.com/s/mashanzheng/v18/NaPecZTRCLxvwo41b4gvzkXaRMQ.ttf",
-    "sha256": "658853c80f60669542a7f5f88ba3c4eded133d715215a2866b04537653825bdd",
-    "glyphs": 1023,
-    "bytes": 706488
+    "sha256": "020ec62edb768902837dbd88cda218cc43a3149f45163bed137ac5a1b7daeb98",
+    "glyphs": 1118,
+    "bytes": 776656
   },
   {
     "file": "display.ttf",
     "family": "ZCOOL XiaoWei",
     "source": "https://fonts.gstatic.com/s/zcoolxiaowei/v15/i7dMIFFrTRywPpUVX9_RJyM1YFI.ttf",
-    "sha256": "300fac18cdd14545434817dfa8168934a99efe60c204142013de8a4c5257c2fc",
-    "glyphs": 1023,
-    "bytes": 719604
+    "sha256": "427e46bd3683d04dda65b160e796981edb9f5d69b3b67eebf32160306b67a30c",
+    "glyphs": 1118,
+    "bytes": 791816
   },
   {
     "file": "sans.ttf",
     "family": "Noto Sans SC",
     "source": "https://fonts.gstatic.com/s/notosanssc/v41/k3kCo84MPvpLmixcA63oeAL7Iqp5IZJF9bmaG9_FnYw.ttf",
-    "sha256": "a27ebdceec65810e7702cc563840ec57c6d5e9f91a21365e0e84037e81455c46",
-    "glyphs": 1023,
-    "bytes": 269712
+    "sha256": "318d4fa88db3be91de527b4d60bc985ea06af84f271fda4f40fa78cd2a022a5c",
+    "glyphs": 1118,
+    "bytes": 294924
   }
 ]

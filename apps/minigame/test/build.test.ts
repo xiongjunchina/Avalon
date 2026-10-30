@@ -12,6 +12,7 @@ test('builds an importable project without server or admin secrets', async t => 
   const outDir = await mkdtemp(join(tmpdir(), 'avalon-minigame-'));
   t.after(() => rm(outDir, { recursive: true, force: true }));
   await buildMiniGame({ outDir, appId: 'wx1111111111111111' });
+  for(const dir of ['scenes','avatars'])for(const name of await readdir('apps/web/public/art/'+dir)){if(!name.endsWith('.webp'))continue;assert.deepEqual(await readFile(join(outDir,'art',dir,name)),await readFile('apps/web/public/art/'+dir+'/'+name),'original web asset '+name);}
   const entries = await readdir(outDir);
   for (const name of ['game.js', 'game.json', 'project.config.json', 'art']) assert.ok(entries.includes(name), name);
   const config = JSON.parse(await readFile(join(outDir, 'project.config.json'), 'utf8'));

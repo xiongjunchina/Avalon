@@ -60,6 +60,8 @@ export async function buildMiniGame({
   for (const name of await readdir(rolesRoot)) {
     if (name.endsWith('-160.webp')) await copyFile(join(rolesRoot, name), join(outDir, 'art', 'roles', name));
   }
+  await mkdir(join(outDir,'art','avatars'),{recursive:true});
+  for(const name of await readdir(join(repoRoot,'apps/web/public/art/avatars')))if(name.endsWith('.webp'))await copyFile(join(repoRoot,'apps/web/public/art/avatars',name),join(outDir,'art','avatars',name));
   const size = await bytesIn(outDir);
   if (size > maxBytes) throw new Error(`PACKAGE_TOO_LARGE: ${size} > ${maxBytes}`);
   return { outDir, size, appId: selectedAppId };

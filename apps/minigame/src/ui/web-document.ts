@@ -1,8 +1,10 @@
-import type { Avatar, DirectMessage, FriendSummary, GameSummary, GameView, Replay, RoomChatMessage, Settings, SettingPreset, Statistics, User } from '@avalon/contracts';
+import type { Role, Avatar, DirectMessage, FriendSummary, GameSummary, GameView, Replay, RoomChatMessage, Settings, SettingPreset, Statistics, User } from '@avalon/contracts';
 import type { RoleGalleryItem } from '../../../web/src/roles.js';
 
 export interface WebDocument {
-  kind: 'identity' | 'vote' | 'treasures' | 'report' | 'history' | 'art' | 'confirm' | 'tools' | 'account' | 'presets' | 'friends' | 'chat' | 'guide' | 'guide-role' | 'admin' | 'replay' | 'settings';
+  kind: 'preferences' | 'identity' | 'vote' | 'treasures' | 'report' | 'history' | 'art' | 'confirm' | 'tools' | 'account' | 'presets' | 'friends' | 'chat' | 'guide' | 'guide-role' | 'admin' | 'replay' | 'settings';
+  preferences?:Role[];
+  preferencesDisabled?:boolean;
   modal?: boolean;
   game?: GameView;
   self?: NonNullable<GameView['self']>;

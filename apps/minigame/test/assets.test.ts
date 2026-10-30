@@ -16,3 +16,4 @@ test('large role art keeps a packaged preview while the remote image is unavaila
  const local=images.find(i=>i.src==='art/roles/merlin-160.webp');assert.ok(local);local.onload?.();
  assert.equal(art.get('/art/roles/merlin-640.webp'),local);
 });
+test('built-in web avatars use packaged originals without a network request',()=>{const images:WxImage[]=[];const runtime={createImage:()=>{const i={width:160,height:160,src:'',onload:null,onerror:null} as WxImage;images.push(i);return i;}} as WxRuntime;const a=createArtwork(runtime,()=>{},'https://example.com');a.get('emblems/leaf.png');a.get('/art/avatars/wx-12.webp?v=artifact1');assert.deepEqual(images.map(i=>i.src),['art/avatars/wx-1.webp','art/avatars/wx-12.webp']);});

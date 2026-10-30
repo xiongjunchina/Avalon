@@ -33,9 +33,17 @@ export class MiniGameRoomConnection {
     ackTimeout?: number;
   }) {}
 
+  private confirmation?: { resolve():void; reject(error:Error):void };
+  sendConfirmed(command:Command):Promise<void> {
+    return new Promise((resolve,reject)=>{
+      if(!this.send(command)){reject(Error('连接恢复后可保存，当前志愿会保留'));return;}
+      this.confirmation={resolve,reject};
+    });
+  }
   start() { void this.connect(); }
   resume() { if (!this.stopped && !this.takenOver && !this.open) void this.connect(); }
   stop() {
+    this.confirmation?.reject(Error('连接已结束，操作未确认'));this.confirmation=undefined;
     this.stopped = true;
     this.generation++;
     clearTimeout(this.retryTimer);
@@ -112,12 +120,15 @@ export class MiniGameRoomConnection {
         if (message.type === 'snapshot') this.acceptSnapshot(message.room);
         else if (message.type === 'commandResult' && this.pending?.commandId === message.commandId) {
           const leaving = this.pending.type === 'leaveRoom';
+          const confirmation=this.confirmation;this.confirmation=undefined;
+          if(message.ok)confirmation?.resolve();else confirmation?.reject(Error(message.error??'NETWORK'));
           this.pending = undefined;
           clearTimeout(this.ackTimer);
           this.options.handlers.busy?.(false);
           if (!message.ok) this.options.handlers.error?.(message.error ?? 'NETWORK');
           else if (leaving) this.terminal('left');
         } else if (message.type === 'takenOver') {
+          this.confirmation?.reject(Error('其他设备已接管'));this.confirmation=undefined;
           this.takenOver = true;
           clearTimeout(this.ackTimer);
           this.options.handlers.busy?.(false);

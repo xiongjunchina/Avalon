@@ -1,5 +1,6 @@
 import { defaultSettings, defaultAnonymousTeamVote } from '@avalon/contracts';
 import { toggleSetting } from './settings.js';
+import {BUILTIN_AVATARS} from '../../../web/src/avatar-catalog.js';
 import type { Avatar, DirectMessage, FriendSummary, GameSummary, Replay, RoomChatMessage, ServerMessage, SettingPreset, Settings, Statistics, User } from '@avalon/contracts';
 import type { ScreenModel } from '../ui/widgets.js';
 import { guideScreen } from './guide.js';
@@ -168,6 +169,7 @@ export class PlayerPanel {
     if(id==='friend:add'){if(!this.friendQuery.trim())return;await this.api.requestFriend(this.friendQuery.trim());this.feedback='仙友申请已发送';this.friendQuery='';this.friends=(await this.api.friends()).friends;return;}
     if(id==='profileToggle'){this.profileEditing=!this.profileEditing;if(!this.profileDraft)this.profileDraft={nickname:this.user.nickname,avatar:this.user.avatar??'leaf',avatarUrl:this.user.avatarUrl,wechatAvatarUrl:this.user.wechatAvatarUrl};return;}
     if(id==='profile:nickname'){const text=await input('尊号',20);if(text!==undefined&&this.profileDraft)this.profileDraft.nickname=text;return;}
+    if(id.startsWith('profile:builtin:')&&this.profileDraft){const item=BUILTIN_AVATARS[Number(id.slice(16))];if(item){this.profileDraft.avatarUrl=item.src;this.profileDraft.wechatAvatarUrl=null;}return;}
     if(id.startsWith('profile:avatar:')&&this.profileDraft){const avatar=id.slice(15) as Avatar;if(avatarOrder.includes(avatar)){this.profileDraft.avatar=avatar;this.profileDraft.avatarUrl=null;this.profileDraft.wechatAvatarUrl=null;}return;}
     if(id==='profile:wechat'&&this.profileDraft){const idx=Number(/wx-(\d+)/.exec(this.profileDraft.wechatAvatarUrl??'')?.[1]??0)%12+1;this.profileDraft.wechatAvatarUrl='/art/avatars/wx-'+idx+'.webp?v=artifact1';this.profileDraft.avatarUrl=null;return;}
     if(id==='profile:save'&&this.profileDraft){if(!this.profileDraft.nickname.trim())throw new Error('请填写尊号');this.user=(await this.api.updateProfile(this.profileDraft)).user;this.profileDraft=undefined;this.profileEditing=false;this.feedback='资料已保存';return;}

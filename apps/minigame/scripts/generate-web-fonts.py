@@ -7,7 +7,7 @@ import urllib.request, urllib.parse, re, json, hashlib, io
 from fontTools import subset
 from fontTools.ttLib import TTFont
 root = Path(__file__).resolve().parents[3]
-sources = ['apps/minigame/src/ui/web-layout.ts', 'apps/minigame/src/screens/game.ts', 'apps/web/src/roles.ts', 'apps/minigame/src/ui/web-document-layout.ts', 'apps/web/src/identity-presentation.ts', 'apps/web/src/role-descriptions.ts', 'apps/minigame/src/screens/guide.ts', 'apps/web/src/game-presentation.ts', 'apps/minigame/src/ui/web-guide-rules.ts']
+sources = [str(p.relative_to(root)) for p in (root/'apps/minigame/src').rglob('*.ts')] + ['apps/web/src/roles.ts','apps/web/src/identity-presentation.ts','apps/web/src/role-descriptions.ts','apps/web/src/game-presentation.ts']
 chars = ''.join(sorted(set(''.join((root / x).read_text(encoding='utf-8') for x in sources))))
 chars = ''.join(c for c in chars if '\u3400' <= c <= '\u9fff' or 32 <= ord(c) < 127)
 out = root / 'apps/minigame/assets/fonts'

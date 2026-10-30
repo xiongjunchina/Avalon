@@ -36,6 +36,7 @@ export class AdminApi {
     this.key = key;
   }
   private guard() { if (!this.key) throw new Error('ADMIN_UNAUTHORIZED'); }
+  special<T>(path:string,body?:unknown,method?:string):Promise<T>{this.guard();return this.request<T>(path,body,method);}
   overview(): Promise<AdminOverview> { this.guard(); return this.request('/overview'); }
   settings(): Promise<Record<string, unknown>> { this.guard(); return this.request('/settings'); }
   updateSetting(key: string, value: unknown) { this.guard(); return this.request<{ ok: boolean }>('/settings', { key, value }); }
