@@ -4,7 +4,7 @@
 
 ## 基准与实施
 
-保留原生小游戏，网页基准为本轮读取的 main `e386f5e`，主要参考 `apps/web/src/player-flow.css`、`scenes.css` 及对应 React 页面。没有修改服务器或启动 Docker/ngrok；只使用本地无界面 Vite/Chromium 生成对比样本。
+保留原生小游戏，起始网页基准为 main `e386f5e`；收尾已合并远端最新 `113b32b`（门户、部署路径与语音构建开关），保留其改动，主要参考 `apps/web/src/player-flow.css`、`scenes.css` 及对应 React 页面。没有修改服务器或启动 Docker/ngrok；只使用本地无界面 Vite/Chromium 生成对比样本。
 
 - 17 张角色图由网页 640×640 原图生成 quality=92 JPEG，置于 `hd-art` 微信分包。主包保留 160px 预览；加载成功后自动升级为高清图，无需业务服务器提供图片。失败保留预览并限制重试频率，兼容 API 抛异常。原图本身只有 640px，未用插值冒充更高分辨率。
 - 场景背景、12 张头像继续使用网页对应的本地兼容素材。修正人物头像被当作小图标缩小绘制的问题。
@@ -17,8 +17,8 @@
 ## 验证证据与边界
 
 - `npm run typecheck` 通过。
-- `npm run test:minigame`：141/141 通过，包含分包失败回退、加载升级、弹窗保存、预设取消、滚动切换及 DPR 1/3 坐标一致性回归。
-- `npm run build:minigame`：本轮最后构建 5,719,992 bytes（包含高清分包）。
+- `npm run test:minigame`：143/143 通过，包含分包失败回退、加载升级、弹窗保存、预设取消、滚动切换及 DPR 1/3 坐标一致性回归。
+- `npm run build:minigame`：合并远端前构建 5,719,992 bytes（包含高清分包）。
 - `node apps/minigame/scripts/verify-packaged-art.mjs`：实际构建资源 35/35 加载；其中全部 17 张角色图最终宽度至少 640px；业务后端设为不可用域名。此测试模拟微信分包成功回调，不能代替手机分包下载验收。
 - 本地截图覆盖 21 个同数据场景：entry、setup、lobby、game、identity、vote、mission、report、result、account、profile、history、favorites、presets、friends、friends-list、friends-add、guide、guide-role、replay、art。另生成首页、牌局、身份、大图 DPR 3 样本。
 - 对比文件位于 `dist/web-parity-review/*-comparison.png`。6 项首页/牌局几何自动断言误差小于 0.03px；这只证明这些测量点，不代表整页视觉完全一致。截图明确标注本地渲染、非真机。
@@ -36,3 +36,5 @@
 ## 后续检查方式
 
 设置本机 Playwright 模块与 Chromium 路径后运行 `capture-web-reference.mjs`、`render-preview.mjs`、`compare-web.mjs`。`PARITY_SCENES` 选择同状态场景，`PARITY_WIDTH` 选择宽度，`PARITY_DPR=3` 生成物理三倍像素截图。后台接口由独立浏览器测试夹具拦截，不修改实际游戏数据。
+
+远端合并后再次通过 typecheck 和 143 项小游戏测试。远端新增默认关闭实时语音的构建开关已保留，界面不得宣传当前关闭的能力。
