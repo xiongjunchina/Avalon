@@ -73,7 +73,7 @@ export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout 
       const footer = Math.max(portraitY + diameter + 74, v.height - v.bottom - 12 - (141 + actionH));
       add('panel', 'mode-frame', '', 35, footer + 2, w - 70, 40);
       add('tab', 'mode:offline', '🏛️ 线下常规房', 39, footer + 6, (w - 84) / 2, 32, { selected: true });
-      add('tab', 'mode:voice', '🎙️ 远端语音房', w / 2 + 3, footer + 6, (w - 84) / 2, 32, { disabled: true });
+      add('tab', 'mode:voice', '🎙️ 微信语音说明', w / 2 + 3, footer + 6, (w - 84) / 2, 32);
       add('button', 'create', '开常规房', pad, footer + 54, (full - 8) / 2, actionH, { primary: true, image: 'emblems/mountain.png' });
       add('button', 'join', '加入房间', pad + (full + 8) / 2, footer + 54, (full - 8) / 2, actionH, { image: 'emblems/crown.png' });
       add('button', 'practice', '🐒 幻境单人试玩 ›', w / 2 - 67.5, footer + 62 + actionH, 135, 32);
@@ -147,7 +147,7 @@ export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout 
       }
       y+=64;
       add('panel','waiting-tools','',10,y,w-20,34,{skin:'tabs'});
-      add('label','waiting-mode','🏛 线下常规房 · 无语音',18,y,w*.47,34,{skin:'text',fontSize:11,lineHeight:34});
+      add('label','waiting-mode','🎙️ 微信语音：顶部声音设置',18,y,w*.47,34,{skin:'text',fontSize:11,lineHeight:34});
       add('button','chat','💬 传音',w*.52,y+3,64,28,{skin:'pill',fontSize:11});
       add('button','friends','👥 仙友',w-90,y+3,72,28,{skin:'pill',fontSize:11});y+=44;
       const canStart=host&&room.members.length===count&&room.members.every(m=>m.ready);

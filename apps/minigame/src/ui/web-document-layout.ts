@@ -197,7 +197,7 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
     } else if(doc.kind==='settings') {
       if(doc.activeTab==='setup'&&doc.settings){
         y=12;button('cancelSettings','❮',y,{skin:'pill'},16,38,38);button('sound','♫',y,{skin:'pill'},v.width-94,32,32);button('guide','规则',y,{skin:'pill'},v.width-56,40,32);add('label','setup-title','🏛 开启常规房',62,y,v.width-162,40,{skin:'text',fontSize:22,fontFace:'display',tone:'gold',align:'center'});y=74;
-        button('noop','🏛 线下常规房\n同桌聚会 · 面杀无语音',y,{skin:'setup-mode',selected:true},16,(v.width-42)/2,52);button('noop','🎙️ 远端语音房\n本轮暂不提供',y,{skin:'setup-mode',disabled:true},26+(v.width-42)/2,(v.width-42)/2,52);y=143;
+        button('noop','🏛 线下常规房\n同桌或远程 · 自选语音',y,{skin:'setup-mode',selected:true},16,(v.width-42)/2,52);button('noop','🎙️ 微信原生语音\n入房后在声音设置加入',y,{skin:'setup-mode',disabled:true},26+(v.width-42)/2,(v.width-42)/2,52);y=143;
         panel('setup-count-frame',y,120,'profile',53,v.width-106);
         for(let count=5;count<=12;count++)button('count:'+count,String(count),y+10+Math.floor((count-5)/4)*56,{skin:'count',selected:doc.settings.playerCount===count,fontSize:18},70+(count-5)%4*(v.width-140)/4,(v.width-160)/4,48);y+=135;
         for(const team of ['blue','red'] as const){

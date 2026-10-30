@@ -37,3 +37,8 @@ test('never trusts a client-supplied OpenID when logging in', async () => {
   assert.deepEqual(seen, { openid: 'trusted-openid', nickname: '玩家' });
   assert.equal(result.token, 'session-token');
 });
+test('normal login never forwards WeChat session_key into the account login callback',async()=>{
+ const fetcher=(async()=>new Response(JSON.stringify({openid:'trusted',session_key:'never-export'}))) as typeof fetch;
+ const result=await loginWithWechatCode({code:'code'},config,async identity=>identity,fetcher);
+ assert.deepEqual(result,{openid:'trusted'});
+});
