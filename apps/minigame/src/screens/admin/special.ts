@@ -35,7 +35,7 @@ export class SpecialPanel {
   if(id==='special:reserveCode'||id==='special:reserveNote'){const key=id==='special:reserveCode'?'code':'note',value=await input(key==='code'?'六位仙友码':'备注（可留空）',key==='code'?6:80);if(valid()&&value!==undefined)this.reserveDraft[key]=value;return;}
   if(id==='special:reserve'){const {code,note}=this.reserveDraft;if(!/^[1-9]\d{5}$/.test(code))throw Error('请填写六位数字仙友码');await this.api.special('/player-codes',{code,note});if(valid()){this.reserveDraft={code:'',note:''};this.notice='号码已预留。';await this.load();}return;}
   if(id.startsWith('special:release:')){const code=id.slice(16);this.confirm('解除号码 '+code+' 的预留？',async()=>{await this.api.special('/player-codes/'+encodeURIComponent(code),undefined,'DELETE');await this.load();});return;}
-  if(id==='special:more'&&this.history.nextCursor){const h=await this.api.special<PlayerCodeHistoryPage>('/player-codes/history?cursor='+encodeURIComponent(this.history.nextCursor));if(valid())this.history={history:[...this.history.history,...h.history],nextCursor:h.nextCursor};}
+  if(id==='special:more'&&this.history.nextCursor){const h=await this.api.special<PlayerCodeHistoryPage>('/player-codes/history?cursor='+encodeURIComponent(this.history.nextCursor));if(valid())this.history={history:[...this.history.history,...h.history.filter(item=>!this.history.history.some(old=>old.id===item.id))],nextCursor:h.nextCursor};}
  }
  async editPlayerCode(user:AdminUserSummary,_input:Input,underlay?:ScreenModel){
   const epoch=this.epoch,draft:NonNullable<WebDocument['playerCodeEditor']>={user:{...user},code:user.playerCode,currentCode:user.playerCode,check:{code:user.playerCode,status:'current'},history:[],expanded:false,notice:''};this.codeEditor=draft;this.codeUnderlay=underlay;

@@ -1,3 +1,4 @@
+import {GUANYIN_WINDOW_MS} from '@avalon/game-core';
 import type { Command, GameView, RoomView, User } from '@avalon/contracts';
 import { commandId } from './lobby.js';
 import { formatRoleName } from '../../../web/src/roles.js';
@@ -7,6 +8,8 @@ import { getRoleGalleryItem, WUYUE_MISSIONS } from '../../../web/src/roles.js';
 import { GUARDIAN_TREASURE_DISABLED_REASON } from '../../../web/src/treasure-access.js';
 
 export interface GameUiState {
+  noticeKind?:'mirror'|'bell'|'jingu';
+  jinguReadKey?:string;
   heartBellReadKey?:string;
   guanyinResultReadKey?:string;
   privateRoleVisible: boolean;
@@ -17,7 +20,7 @@ export interface GameUiState {
   treasureTargetsExpanded?:boolean;
   snapshotKey?: string;
   draftKey?: string;
-  overlay?: 'identity' | 'vote' | 'mission' | 'history' | 'report' | 'treasures' | 'result' | 'more' | 'art';
+  overlay?: 'guanyin-window' | 'private-notice' | 'identity' | 'vote' | 'mission' | 'history' | 'report' | 'treasures' | 'result' | 'more' | 'art';
   overlayReturn?: 'identity'|'treasures';
   earlyHistoryExpanded?: boolean;
   voteChoice?: boolean | 'abstain';
@@ -31,6 +34,10 @@ export function syncGameUi(ui: GameUiState, room: RoomView, allowAutoReveal = tr
   const game = room.game;
   if (!game) { ui.snapshotKey = undefined; ui.draftKey = undefined; ui.selectedIds = []; ui.targetId = undefined; return; }
   const key = `${game.id}:${game.mission}:${game.captainId}:${game.phase}`;
+  const keepNotice=allowAutoReveal&&ui.overlay==='private-notice'&&ui.privateRoleVisible&&ui.snapshotKey?.startsWith(game.id+':')&&Boolean(
+    ui.noticeKind==='mirror'?game.self?.role==='guinevere'&&game.self.treasures?.guanyinMirror?.result:
+    ui.noticeKind==='bell'?game.self?.treasures?.incomingHeartBell:
+    ui.noticeKind==='jingu'&&game.self?.role==='percival'&&game.self.treasures?.jinguAllyId);
   const changed = ui.snapshotKey !== key;
   if (changed) {
     ui.privateRoleVisible = Boolean(allowAutoReveal && room.settings.autoRevealRoleEnabled && game.phase === 'role_reveal' && game.self);
@@ -41,17 +48,21 @@ export function syncGameUi(ui: GameUiState, room: RoomView, allowAutoReveal = tr
     ui.snapshotKey = key;
     ui.voteChoice = undefined; ui.missionChoice = undefined; ui.warning = undefined; ui.overlayReturn = undefined; ui.earlyHistoryExpanded = false;
     if(allowAutoReveal&&game.phase==='guanyin_window'&&game.self?.treasures?.guanyinMirror?.available)ui.privateRoleVisible=true;
-    ui.overlay = game.phase==='guanyin_window'&&ui.privateRoleVisible?'treasures':ui.privateRoleVisible ? 'identity' : game.phase === 'team_vote' && game.self ? 'vote' : undefined;
+    ui.overlay = allowAutoReveal&&game.phase==='guanyin_window'?'guanyin-window':ui.privateRoleVisible ? 'identity' : game.phase === 'team_vote' && game.self ? 'vote' : undefined;
   }
   const completed = game.rounds.filter(round => round.result).length;
   if (ui.completedCount !== undefined && completed > ui.completedCount && !game.result) { ui.overlay = 'report'; ui.reportMission = game.rounds.filter(round => round.result).at(-1)?.mission; }
   ui.completedCount = completed;
+  if(keepNotice){ui.overlay='private-notice';ui.privateRoleVisible=true;}
   const bell=game.self?.treasures?.incomingHeartBell;
   const bellKey=bell?`${game.id}:${bell.roundNumber}:${bell.mission}:${bell.advice}`:undefined;
-  const mirror=game.self?.treasures?.guanyinMirror?.result;
+  const mirror=game.self?.role==='guinevere'&&game.self.treasures?.enabled?game.self.treasures.guanyinMirror?.result:undefined;
   const mirrorKey=mirror?`${game.id}:${mirror.targetId}:${mirror.alignment}`:undefined;
-  if(allowAutoReveal&&((bellKey&&ui.heartBellReadKey!==bellKey)||(mirrorKey&&ui.guanyinResultReadKey!==mirrorKey))){
-    ui.privateRoleVisible=true;ui.overlay='treasures';ui.heartBellReadKey=bellKey;ui.guanyinResultReadKey=mirrorKey;
+  const jinguKey=game.self?.role==='percival'&&game.self.treasures?.jinguAllyId?`${game.id}:${game.self.treasures.jinguAllyId}`:undefined;
+  if(allowAutoReveal&&ui.overlay!=='private-notice'){
+    const notice=mirrorKey&&ui.guanyinResultReadKey!==mirrorKey?'mirror':bellKey&&ui.heartBellReadKey!==bellKey?'bell':jinguKey&&ui.jinguReadKey!==jinguKey?'jingu':undefined;
+    if(notice){ui.privateRoleVisible=true;ui.overlay='private-notice';ui.noticeKind=notice;ui.overlayReturn=undefined;
+      if(notice==='mirror')ui.guanyinResultReadKey=mirrorKey;else if(notice==='bell')ui.heartBellReadKey=bellKey;else ui.jinguReadKey=jinguKey;}
   }
   const submitted = game.phase === 'discussion' ? game.rounds.at(-1) : undefined;
   const draft = game.draftTeam ?? (submitted ? { playerIds: submitted.team, direction: submitted.direction } : undefined);
@@ -168,13 +179,15 @@ export function gameScreen(room: RoomView, user: User, ui: GameUiState, now = Da
     web: { page: 'table', room: { ...room, game: { ...game, self: undefined } }, user, selectedIds: ui.selectedIds, targetId: ui.targetId, missionChoice: ui.missionChoice, ownTeam:self?.team, warning:ui.warning } };
   if (game.phase === 'dealing') return { title: '即将发牌', rows: ordered.filter(row => ['dealCountdown', 'status'].includes(row.id)),
     web: { page: 'sheet', sheet: 'dealing', background: 'sword', backId: 'noop' } };
-  return ui.overlay && ui.overlay!=='result' ? gameOverlayScreen(room, user, ui, base) : base;
+  return ui.overlay && ui.overlay!=='result' ? gameOverlayScreen(room, user, ui, base, now) : base;
 }
 
 export function handleGameOverlay(ui: GameUiState, room: RoomView, id: string): boolean {
   if(id==='treasureTargets'&&ui.overlay==='treasures'){ui.treasureTargetsExpanded=!ui.treasureTargetsExpanded;return true;}
   if(id.startsWith('player:'))ui.treasureTargetsExpanded=false;
+  if(id==='overlayClose'&&ui.overlay==='private-notice'){ui.overlay=undefined;ui.noticeKind=undefined;ui.privateRoleVisible=false;syncGameUi(ui,room,true);return true;}
   if (id === 'overlayClose') { ui.overlay = ui.overlayReturn; ui.overlayReturn = undefined; ui.privateRoleVisible = ui.overlay === 'identity' || ui.overlay === 'treasures'; ui.ballotVisible = false; ui.warning = undefined; return true; }
+  if(id==='treasures'&&room.game?.self?.role==='guinevere'){if(room.game.self.treasures?.guanyinMirror?.result){ui.overlay='private-notice';ui.noticeKind='mirror';ui.privateRoleVisible=true;return true;}if(room.game.phase==='guanyin_window'){ui.overlay='guanyin-window';ui.privateRoleVisible=true;return true;}}
   if (id === 'identityArt' && ui.privateRoleVisible && room.game?.self) { ui.overlayReturn='identity'; ui.overlay='art'; return true; }
   if (id === 'earlyHistory') { ui.earlyHistoryExpanded=!ui.earlyHistoryExpanded; return true; }
   if (id === 'role') { ui.overlay = 'identity'; ui.privateRoleVisible = true; return true; }
@@ -192,12 +205,14 @@ export function handleGameOverlay(ui: GameUiState, room: RoomView, id: string): 
   return false;
 }
 
-function gameOverlayScreen(room: RoomView, user: User, ui: GameUiState, base: ScreenModel): ScreenModel {
+function gameOverlayScreen(room: RoomView, user: User, ui: GameUiState, base: ScreenModel, now=Date.now()): ScreenModel {
   const game = room.game!, self = game.self;
   const name = (id: string) => { const player = game.players.find(item => item.id === id); return player ? `${player.seat}号 ${player.nickname}` : '未知成员'; };
   const round = game.rounds.at(-1);
   let title = '', rows: ScreenModel['rows'] = [], portrait: string | undefined;
-  if (ui.overlay === 'identity' && self && ui.privateRoleVisible) {
+  if(ui.overlay==='guanyin-window'){title='慈航照妖镜';}
+  else if(ui.overlay==='private-notice'){title=ui.noticeKind==='mirror'?'慈航照妖镜':ui.noticeKind==='bell'?'同心铃 · 私密传音':'金箍显圣 · 护法归位';}
+  else if (ui.overlay === 'identity' && self && ui.privateRoleVisible) {
     title = '我的身份法相';
     portrait = (self.loyalGuardian ? self.loyalGuardian + '-loyal' : self.femaleDemon ? 'minion-' + self.femaleDemon : self.role) + '-160.webp';
     const description = roleDescriptions[self.role];
@@ -260,14 +275,15 @@ function gameOverlayScreen(room: RoomView, user: User, ui: GameUiState, base: Sc
   const kind = ui.overlay === 'more' ? 'tools' : ui.overlay === 'mission' ? 'history' : ui.overlay === 'result' ? 'history' : ui.overlay!;
   const underlay = ui.overlayReturn === 'identity' && ui.overlay !== 'identity'
     ? gameOverlayScreen(room,user,{...ui,overlay:'identity',overlayReturn:undefined,privateRoleVisible:true},base) : base;
-  return { title, rows, portrait, web: { page:'sheet',sheet:ui.overlay,targetId:ui.targetId,background:ui.overlay==='identity'?'mirror':game.phase==='finished'?'dawn':'sword',backId:'overlayClose',underlay,
-    document: {kind,modal:true,treasureTargetsExpanded:ui.treasureTargetsExpanded,game:{...game,self:undefined},...(ui.privateRoleVisible && ['identity','treasures','art'].includes(ui.overlay??'')?{self}:{}),user,
+  return { title, rows, portrait, web: { page:'sheet',sheet:ui.overlay,targetId:ui.targetId,background:ui.overlay==='guanyin-window'?'mirror':ui.overlay==='private-notice'?(ui.noticeKind==='jingu'?'dawn':'mirror'):ui.overlay==='identity'?'mirror':game.phase==='finished'?'dawn':'sword',backId:'overlayClose',underlay,
+    document: {kind,remainingSeconds:game.guanyinEndsAt?Math.max(0,Math.ceil((Date.parse(game.guanyinEndsAt)-now)/1000)):GUANYIN_WINDOW_MS/1000,noticeKind:ui.noticeKind,modal:true,treasureTargetsExpanded:ui.treasureTargetsExpanded,game:{...game,self:undefined},...(ui.privateRoleVisible && ['identity','treasures','art','private-notice','guanyin-window'].includes(ui.overlay??'')?{self}:{}),user,
       roleItem:ui.overlay==='art'&&self?getRoleGalleryItem(self.role,self.loyalGuardian,self.femaleDemon):undefined,
       voteChoice:ui.voteChoice,submitted:self?.teamVoted,earlyHistoryExpanded:ui.earlyHistoryExpanded,reportMission:ui.reportMission} } };
 
 }
 
 export function gameAction(room: RoomView, user: User, action: string, ui: Partial<GameUiState> = {}): Command | undefined {
+  if(action.startsWith('treasure:guanyinPick:'))return room.game?.phase==='guanyin_window'&&room.game.self?.role==='guinevere'?gameAction(room,user,'treasure:guanyinMirror',{...ui,targetId:action.slice('treasure:guanyinPick:'.length)}):undefined;
   if (action === 'submitVote') return ui.voteChoice === undefined ? undefined : gameAction(room, user, ui.voteChoice === 'abstain' ? 'abstain' : ui.voteChoice ? 'approve' : 'reject', ui);
   if (action === 'submitMission') return ui.missionChoice === undefined ? undefined : gameAction(room, user, ui.missionChoice ? 'missionSuccess' : 'missionFail', ui);
   const game = room.game;

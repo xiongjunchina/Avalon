@@ -14,6 +14,7 @@ export { renderScreen } from './apps/minigame/src/ui/widgets.ts';
 export { entryScreen } from './apps/minigame/src/screens/entry.ts';
 export { lobbyScreen } from './apps/minigame/src/screens/lobby.ts';
 export { guideScreen } from './apps/minigame/src/screens/guide.ts';
+export { abortConfirmation } from './apps/minigame/src/screens/abort-confirm.ts';
 export { gameScreen } from './apps/minigame/src/screens/game.ts';
 export { AdminPanel } from './apps/minigame/src/screens/admin/panel.ts';
 export { adminOverviewScreen } from './apps/minigame/src/screens/admin/views.ts';
@@ -47,7 +48,7 @@ try {
     await page.evaluate(async fonts => { for (const [name,source] of Object.entries(fonts)) { const family = {calligraphy:'Ma Shan Zheng',display:'ZCOOL XiaoWei',sans:'Noto Sans SC',sans500:'Noto Sans SC',sans600:'Noto Sans SC',sans700:'Noto Sans SC',homeInterface:'Home Interface'}[name]; const font=new FontFace(family, 'url('+source+')',{weight:/sans[567]00/.test(name)?name.slice(4):'400'}); document.fonts.add(await font.load()); } }, fonts);
     await page.addScriptTag({ content: result.outputFiles[0].text });
     for (const captureScene of (process.env.PARITY_SCENES?.split(',')??['entry','setup','game','identity','vote','vote-submitted','mission','report','result','account','profile','history','favorites','presets','friends','friends-list','friends-add','guide','guide-role'])) {
-      const scene=captureScene.startsWith('treasures-')?'treasures':({'report-public':'report','preset-editor':'presets','profile-vip':'profile','history-expanded':'history','replay-expanded':'replay','admin-special-editor':'admin-special','admin-code-editor':'admin-users','admin-friends':'admin-users'})[captureScene]??captureScene.replace('-populated','');
+      const scene=captureScene.startsWith('mirror-window')?'guanyin-window':captureScene.startsWith('notice-')?'private-notice':captureScene.startsWith('treasures-')?'treasures':({'report-public':'report','preset-editor':'presets','profile-vip':'profile','history-expanded':'history','replay-expanded':'replay','admin-special-editor':'admin-special','admin-code-editor':'admin-users','admin-friends':'admin-users'})[captureScene]??captureScene.replace('-populated','');
       const layout = await page.evaluate(async ({ width, height, scene, assets, dpr,playerCount,captureScene,bottomCapture }) => {
         const app = globalThis.AvalonPreview;
         const canvas = document.getElementById('preview'); canvas.width = width*dpr; canvas.height = height*dpr;canvas.style.width=width+'px';canvas.style.height=height+'px';canvas.getContext('2d').scale(dpr,dpr);
@@ -60,9 +61,9 @@ try {
         if (scene === 'setup') model = { ...app.settingsScreen(app.defaultSettings), web: { page: 'setup', settings: app.defaultSettings } };
         if (scene === 'entry') model = { ...app.entryScreen(user),web:{...app.entryScreen(user).web,friendRequests:1}, scene: 'entry' };
         if (scene === 'lobby') model = { ...app.lobbyScreen({...parityRoom,game:undefined,phase:'waiting'}, user, '已连接'), scene: 'game' };
-        if (['game','identity','vote','vote-submitted','mission','mission-submitted','report','result','art','treasures','battle'].includes(scene)) {
-          const overlay=['identity','art','treasures'].includes(scene)?scene:scene.startsWith('vote')?'vote':scene==='report'?'report':scene==='battle'?'history':undefined;
-          model=app.gameScreen(parityRoom,user,{privateRoleVisible:['identity','art','treasures'].includes(scene),ballotVisible:false,overlay,reportMission:scene==='report'?1:undefined,overlayReturn:['art','treasures'].includes(scene)?'identity':undefined});
+        if (['guanyin-window','private-notice','game','identity','vote','vote-submitted','mission','mission-submitted','report','result','art','treasures','battle'].includes(scene)) {
+          const overlay=scene==='guanyin-window'?'guanyin-window':scene==='private-notice'?'private-notice':['identity','art','treasures'].includes(scene)?scene:scene.startsWith('vote')?'vote':scene==='report'?'report':scene==='battle'?'history':undefined;
+          model=app.gameScreen(parityRoom,user,{noticeKind:captureScene.slice(7),privateRoleVisible:['guanyin-window','private-notice','identity','art','treasures'].includes(scene),ballotVisible:false,overlay,reportMission:scene==='report'?1:undefined,overlayReturn:['art','treasures'].includes(scene)?'identity':undefined},scene==='guanyin-window'?10000:Date.now());
         }
         if(scene==='setup')model={...app.settingsScreen(app.defaultSettings),rows:[{id:'chooseDedicated',text:'普通房 · 随机房号'},{id:'creationPassword',text:'入房密码：不设置'},{id:'createRoom',text:'创建房间'},{id:'startPractice',text:'演练'}],web:{page:'setup',settings:app.defaultSettings,document:{kind:'settings',activeTab:'setup',settings:app.defaultSettings}}};
         if(['account','profile','history','favorites','presets','friends','friends-list','friends-add','replay','direct'].includes(scene)){
@@ -80,6 +81,7 @@ try {
           if(captureScene==='replay-expanded'){await panel.handle('details:metadata',async()=>undefined);await panel.handle('details:identities',async()=>undefined);}
           model=panel.model();if(scene.startsWith('friends'))model.web.underlay=app.lobbyScreen({...parityRoom,game:undefined,phase:'waiting'},user,'已连接');
         }
+        if(scene==='abort-confirm')model=app.abortConfirmation(parityRoom,user,app.gameScreen(parityRoom,user,{privateRoleVisible:false,ballotVisible:false}));
         if(scene==='preferences')model={title:'心仪选角',rows:[],web:{page:'sheet',backId:'auxiliaryClose',background:'library',document:{kind:'preferences',modal:true,settings:parityRoom.settings,preferences:[]},underlay:app.lobbyScreen({...parityRoom,game:undefined,phase:'waiting'},user,'已连接')}};
         if(scene==='sound')model={title:'声音设置',rows:[],web:{page:'sheet',backId:'auxiliaryClose',background:'library',document:{kind:'sound',modal:true,soundPreferences:{music:false,effects:false}},underlay:app.entryScreen(user)}};
         if (scene === 'guide') model = app.guideScreen();

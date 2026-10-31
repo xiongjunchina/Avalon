@@ -12,7 +12,13 @@ export function wrapText(text: string, width: number, measure = textWidth): stri
   for (const paragraph of text.split('\n')) {
     let line = '';
     for (const char of Array.from(paragraph)) {
-      if (line && measure(line + char) > width) { lines.push(line); line = ''; }
+      if (line && measure(line + char) > width) {
+        const chars=Array.from(line);
+        // Match CSS line breaking: opening brackets cannot end a line and
+        // closing punctuation must stay with its preceding character.
+        const carry=chars.length>1&&(/[（《「『【“‘]$/.test(line)||/^[，。！？；：、）》」』】”’]/.test(char))?chars.pop()!:'';
+        lines.push(chars.join('')); line=carry;
+      }
       line += char;
     }
     lines.push(line);

@@ -1,3 +1,5 @@
+import {ServerClock} from './net/server-clock.js';
+import {abortConfirmation} from './screens/abort-confirm.js';
 import {RoomBubbles} from './screens/room-bubbles.js';
 import {configureDocumentMetrics,setBackdropCanvasFactory} from './ui/web-render.js';
 import {invitationUrl} from './net/urls.js';
@@ -77,7 +79,7 @@ let connectionStatus = '';
 let error = '';
 let notice = '';
 let announcement = '';
-let pendingConfirm: { label: string; execute: () => void; underlay?:ScreenModel } | undefined;
+let pendingConfirm: { label: string; execute: () => void; cancelExecute?:()=>void; screen?:ScreenModel; underlay?:ScreenModel } | undefined;
 let rows: HitRegion[] = [];
 let scroll = 0;
 let countdownTimer: ReturnType<typeof setTimeout> | undefined;
@@ -103,6 +105,7 @@ let guideReturn: 'entry' | 'lobby' | 'game' | 'practice' | 'settings' = 'entry';
 let freeAccess = true;
 let setupIntent: 'room' | 'practice' = 'room';
 let editableSettings: Settings = { ...defaultSettings, captainMode: 'random_order', anonymousTeamVote: true, earlyAssassinationEnabled: true };
+const serverClock=new ServerClock();
 const gameUi: GameUiState = { privateRoleVisible: false, ballotVisible: false, selectedIds: [], direction: 'clockwise' };
 
 function feedback(result: ScreenModel): ScreenModel {
@@ -118,6 +121,7 @@ function feedback(result: ScreenModel): ScreenModel {
 const settingsChoice = new SettingsChoice();
 const roomBubbles = new RoomBubbles();
 function model(): ScreenModel {
+  if(pendingConfirm?.screen)return feedback(pendingConfirm.screen);
   if (pendingConfirm) return feedback({ title: '确认操作',
     rows: [{ id: 'notice', text: pendingConfirm.label }, { id: 'confirm:yes', text: '确认执行' }, { id: 'confirm:no', text: '取消' }], web: { page: 'sheet', background:'sword',backId:'confirm:no',document:{kind:'confirm',modal:true},underlay:pendingConfirm.underlay } });
   let result: ScreenModel;
@@ -158,7 +162,7 @@ function model(): ScreenModel {
     if (!room && setupIntent==='room')result.rows.unshift({id:'chooseDedicated',text:selectedDedicated?selectedDedicated.code+' · '+selectedDedicated.name:'普通房 · 选择专属房'},{id:'creationPassword',text:creationAccess.password===null?'入房密码：不设置':typeof creationAccess.password==='string'?'入房密码：已设置':selectedDedicated?'入房密码：沿用已保存设置':'入房密码：不设置'});
     if (!room || setupIntent === 'practice') result.rows = result.rows.filter(row => row.id !== 'apply').concat([...(setupIntent === 'room' ? [{ id: 'createRoom', text: '敕令开坛 · 创建房间' }] : []), { id: 'startPractice', text: '幻化分身试玩此板子' }]);
   }
-  else if (room?.game && view === 'game' && user) result = gameScreen(room, user, gameUi);
+  else if (room?.game && view === 'game' && user) result = gameScreen(room, user, gameUi,serverClock.now());
   else if (room && user && view === 'lobby') result = lobbyScreen(room, user, connectionStatus);
   else {result = entryScreen(user, error,!guestHomeVisible);if(!user&&guestHomeVisible)result.web={page:'home',guestHome:true};}
   if (result.web?.page === 'home') Object.assign(result.web, { roleIndex, nickname, switchCode, authMode, authIntent, freeAccess, friendRequests:playerPanel?.incomingFriendRequests??0, knownAccounts: knownAccounts.list() });
@@ -187,7 +191,7 @@ function render() {
   scroll = layout ? Math.max(0, Math.min(scroll, layout.maxScroll)) : clampScroll(current.rows, viewport, scroll, current.scene);
   rows = renderScreen({ ...current, scroll }, canvas, viewport, artwork, layout);
   // Static duel artwork needs no idle animation timer.
-  if (!suspended && view === 'game' && room?.game?.phase === 'dealing') countdownTimer = setTimeout(render, 1_000);
+  if (!suspended && view === 'game' && ['dealing','guanyin_window'].includes(room?.game?.phase??'')) countdownTimer = setTimeout(render, 1_000);
 }
 function refreshHomeFriends(){const panel=playerPanel;if(panel)void panel.refreshFriends().then(()=>{if(playerPanel===panel)render();}).catch(()=>{});}
 function navigate(next: typeof view) { settingsChoice.close();view = next;if(next==='entry')refreshHomeFriends(); auxiliary = undefined; scroll = 0; error = ''; notice = ''; pendingConfirm = undefined; render(); }
@@ -196,7 +200,7 @@ function connect(next: RoomView) {
   roomBubbles.sync(next.id);
   connection?.stop();
   nativeVoice.syncRoom(next.id, next.settings.playerCount);
-  room = next;
+  room = next;serverClock.accept(next.serverTime);
   playerPanel?.setChatRoom(next.id,next.code);
   syncGameUi(gameUi, next, !suspended, user?.id);
   lobby?.setRoom(next);
@@ -204,7 +208,7 @@ function connect(next: RoomView) {
     snapshot: snapshot => {
       const changedGame = snapshot.game?.id !== room?.game?.id;
       nativeVoice.syncRoom(snapshot.id, snapshot.settings.playerCount);
-      room = snapshot;
+      room = snapshot;serverClock.accept(snapshot.serverTime);
       sound.update(snapshot.game, connectionStatus === '已连接');
       lobby?.setRoom(snapshot);
       if (changedGame) hideSensitiveView(gameUi);
@@ -303,6 +307,7 @@ async function select(id: string) {
     const pending = pendingConfirm;
     pendingConfirm = undefined;
     if (id === 'confirm:yes') pending.execute();
+    else if(id==='confirm:no')pending.cancelExecute?.();
     render(); return;
   }
   if (id === 'invitation') {
@@ -431,8 +436,9 @@ async function select(id: string) {
     if (!command && ['treasure:heartProtect','treasure:heartSabotage','treasure:guanyinSkip','treasure:tinStaff', 'treasure:guanyinMirror', 'treasure:humanBag', 'treasure:jinguSeal', 'treasure:bananaFan'].includes(id)) {
       error = '当前法宝不可用，或所选目标不符合条件'; render(); return;
     }
-    if (command && (['endGame', 'voteAbort', 'assassinate'].includes(command.type) || id === 'earlyAttempt')) {
-      pendingConfirm = { underlay:model(),label: command.type === 'endGame' ? '结束游戏并关闭房间？' : command.type === 'assassinate' ? '确认刺杀所选目标？提交后不可撤回。' : id === 'earlyAttempt' ? '确认启用提前刺杀？刺错将立即判负。' : '确认处理结束申请？',
+    if (command && (['endGame','requestAbort','assassinate'].includes(command.type) || command.type==='voteAbort'&&command.payload.approve || id === 'earlyAttempt')) {
+      const abort=['endGame','requestAbort','voteAbort'].includes(command.type);
+      pendingConfirm = { screen:abort?abortConfirmation(room,user,model()):undefined,cancelExecute:abort&&room.game?.abortPoll?()=>{if(room&&user){const decline=gameAction(room,user,'rejectAbort',gameUi);if(decline)connection?.send(decline);}}:undefined,underlay:model(),label: command.type === 'endGame' ? '结束游戏并关闭房间？' : command.type === 'assassinate' ? '确认刺杀所选目标？提交后不可撤回。' : id === 'earlyAttempt' ? '确认启用提前刺杀？刺错将立即判负。' : '确认处理结束申请？',
         execute: () => { if (room && user) { const fresh = gameAction(room, user, id, gameUi); if (fresh && !connection?.send(fresh)) { error = '正在等待上一操作确认'; } } } };
       render(); return;
     }

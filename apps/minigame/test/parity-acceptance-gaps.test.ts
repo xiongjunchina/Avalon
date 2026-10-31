@@ -5,11 +5,67 @@ import {SpecialPanel} from '../src/screens/admin/special.js';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {parityFixture,parityPlayerData,parityAdminData} from '../scripts/parity-fixture.js';
-import {gameScreen,handleGameOverlay,type GameUiState} from '../src/screens/game.js';
+import {gameScreen,gameAction,handleGameOverlay,syncGameUi,type GameUiState} from '../src/screens/game.js';
 import {layoutWebScreen} from '../src/ui/web-layout.js';
 import {PlayerPanel} from '../src/screens/player-panel.js';
+import {wrapText} from '../src/ui/layout.js';
+import {abortConfirmation} from '../src/screens/abort-confirm.js';
+import {ServerClock} from '../src/net/server-clock.js';
 const viewport={width:390,height:844,top:0,bottom:0};
 const state=():GameUiState=>({privateRoleVisible:false,ballotVisible:false});
+
+test('countdown uses server time even when the phone clock is wrong',()=>{
+ const clock=new ServerClock();clock.accept(new Date(10000).toISOString(),999000);
+ assert.equal(clock.now(1001000),12000);clock.accept('invalid',1001000);assert.equal(clock.now(1002000),13000);
+ const {room,user}=parityFixture('mirror-window',12),ui=state();syncGameUi(ui,room);
+ assert.equal(gameScreen(room,user,ui,clock.now(1001000)).web!.document!.remainingSeconds,3);
+ assert.equal(gameScreen(room,user,ui,clock.now(1020000)).web!.document!.remainingSeconds,0);
+});
+
+test('abort confirmation distinguishes host decisions from a participant request',()=>{
+ const {room,user}=parityFixture('mission');
+ assert.equal(abortConfirmation(room,user).rows.find(r=>r.id==='confirm:yes')?.text,'结束游戏并关闭房间');
+ const guest={...user,id:room.members[1]!.id};
+ assert.equal(abortConfirmation(room,guest).rows.find(r=>r.id==='confirm:yes')?.text,'向房主申请中止');
+ room.game.abortPoll={requestedBy:guest.id,approvals:0,required:1,voted:false};
+ assert.equal(abortConfirmation(room,user).rows.find(r=>r.id==='confirm:yes')?.text,'同意结束');
+ assert.ok(!abortConfirmation(room,guest).rows.some(r=>r.id==='confirm:yes'));
+ for(const width of [320,390,430]){
+  const nodes=layoutWebScreen(abortConfirmation(room,user),{...viewport,width}).nodes;
+  assert.ok(nodes.some(n=>n.id==='confirm:back'));assert.ok(nodes.some(n=>n.id==='confirm:no'&&n.text==='继续游戏'));
+  assert.ok(nodes.filter(n=>n.kind==='button').every(n=>n.x>=0&&n.x+n.width<=width));
+ }
+});
+
+test('Chinese wrapping keeps closing punctuation with the preceding character',()=>{
+ const measure=(s:string)=>Array.from(s).length;
+ assert.deepEqual(wrapText('其他玩家正常继续对局。',10,measure),['其他玩家正常继续对','局。']);
+ assert.deepEqual(wrapText('甲乙（丙丁）',3,measure),['甲乙','（丙','丁）']);
+});
+
+test('mirror window selects a teammate immediately and offers a neutral view to other seats',()=>{
+ const {room,user}=parityFixture('notice-mirror',12);room.game.phase='guanyin_window';room.game.self!.treasures!.guanyinMirror={available:true,used:false};
+ room.game.rounds=[{...parityFixture('mission',12).room.game.rounds[0]!,team:[user.id,room.members[0]!.id]}];room.game.guanyinEndsAt=new Date(20000).toISOString();
+ const ui=state();syncGameUi(ui,room);assert.equal(ui.overlay,'guanyin-window');
+ const model=gameScreen(room,user,ui,10000);assert.equal(model.web!.document!.remainingSeconds,10);
+ const nodes=layoutWebScreen(model,viewport).nodes;assert.ok(nodes.some(n=>n.id==='treasure:guanyinPick:'+room.members[0]!.id));
+ assert.equal(gameAction(room,user,'treasure:guanyinPick:'+room.members[0]!.id,ui)?.type,'useTreasure');
+ assert.equal(gameAction(room,user,'treasure:guanyinPick:'+user.id,ui),undefined);
+ handleGameOverlay(ui,room,'overlayClose');syncGameUi(ui,room);assert.equal(ui.overlay,undefined);
+ handleGameOverlay(ui,room,'treasures');assert.equal(ui.overlay,'guanyin-window');
+ room.game.self!.role='loyal';room.game.self!.treasures=undefined;const observer=state();syncGameUi(observer,room);
+ const neutral=layoutWebScreen(gameScreen(room,user,observer,10000),viewport).nodes;
+ assert.ok(neutral.some(n=>n.id==='mirror-waiting'));assert.ok(!neutral.some(n=>n.id.startsWith('treasure:guanyinPick:')));
+});
+
+test('a private result remains open while the same game advances and can be reopened',()=>{
+ const {room,user}=parityFixture('notice-mirror',12),ui=state();syncGameUi(ui,room);
+ assert.equal(ui.overlay,'private-notice');room.game.phase='discussion';syncGameUi(ui,room);
+ assert.equal(ui.overlay,'private-notice');assert.equal(ui.privateRoleVisible,true);
+ handleGameOverlay(ui,room,'overlayClose');assert.equal(ui.overlay,undefined);
+ handleGameOverlay(ui,room,'treasures');assert.equal(ui.noticeKind,'mirror');assert.equal(ui.overlay,'private-notice');
+ room.game.id='new-game';room.game.self!.treasures=undefined;syncGameUi(ui,room);assert.notEqual(ui.overlay,'private-notice');
+});
 test('per-mission detail filters proposals and its five tabs switch without opening a report',()=>{
  const {room,user}=parityFixture('report');room.game.rounds.push({...room.game.rounds[0]!,number:2,mission:2,result:undefined});
  const ui=state();handleGameOverlay(ui,room,'mission:2');
@@ -102,4 +158,24 @@ test('small-screen vote instructions reserve both lines before the expedition ca
  const rule=nodes.find(n=>n.id==='vote-rule')!,copy=nodes.find(n=>n.id==='guide:vote-rule')!,party=nodes.find(n=>n.id==='vote-team-panel')!;
  assert.equal(copy.lines?.length,2);assert.ok(rule.height>=copy.height+10);assert.ok(party.y>=rule.y+rule.height+10);
  const submit=nodes.find(n=>n.id==='submitVote')!;assert.equal(submit.fontSize,13);
+});
+
+
+test('admin allocation pagination does not duplicate a record repeated at a page boundary',async()=>{
+ const first=parityAdminData().allocations[0]!,second={...first,id:'second-allocation'};
+ const p=new SpecialPanel({authorized:true,special:async(path:string)=>path.includes('history')?path.includes('cursor=')?{history:[first,second],nextCursor:null}:{history:[first],nextCursor:'next'}:path.includes('player-codes')?{codes:[]}:{rooms:[]}} as any,()=>{});
+ await p.load();await p.handle('special:more',async()=>undefined);
+ assert.deepEqual(p.data().history.history.map(h=>h.id),[first.id,second.id]);
+});
+
+
+test('private treasure notices open individually, queue unread results and hide with privacy state',()=>{
+ const {room,user}=parityFixture('mission',12);const t={enabled:true,guanyinMirror:{available:false,used:true,result:{targetId:room.members[1]!.id,alignment:'pure' as const}},incomingHeartBell:{mission:1,roundNumber:1,advice:'protect' as const,active:true},jinguAllyId:room.members[2]!.id};room.game.self!.treasures=t;room.game.self!.role='guinevere';
+ const ui=state();syncGameUi(ui,room,false);assert.equal(ui.privateRoleVisible,false);
+ syncGameUi(ui,room,true);assert.equal(ui.overlay,'private-notice');assert.equal(ui.noticeKind,'mirror');
+ let model=gameScreen(room,user,ui);assert.equal(model.web!.document!.kind,'private-notice');assert.equal(model.web!.document!.self?.treasures?.guanyinMirror?.result?.alignment,'pure');
+ handleGameOverlay(ui,room,'overlayClose');assert.equal(ui.noticeKind,'bell');
+ room.game.self!.role='percival';handleGameOverlay(ui,room,'overlayClose');assert.equal(ui.noticeKind,'jingu');
+ handleGameOverlay(ui,room,'overlayClose');syncGameUi(ui,room,true);assert.equal(ui.overlay,undefined);assert.equal(ui.privateRoleVisible,false);
+ model=gameScreen(room,user,{...ui,overlay:'private-notice',noticeKind:'mirror',privateRoleVisible:false});assert.equal(model.web!.document!.self,undefined);
 });

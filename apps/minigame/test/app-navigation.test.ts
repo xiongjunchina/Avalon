@@ -91,4 +91,11 @@ test('built client logs in, opens a clean join form and creates the selected web
   assert.equal(room.game.phase, 'discussion');
   socketMessage({data:JSON.stringify({type:'roomChat',messageId:'public-chat',fromUserId:user.id,nickname:user.nickname,seat:1,text:'我来带队',timestamp:new Date().toISOString()})});await settle();
   assert.ok(frame.some(item=>item.text==='我来带队'),'public chat must appear over the player seat');
+  await tap('结束');assert.ok(frame.some(item=>item.text==='继续游戏'));
+  assert.equal(commands.filter(command=>command.type==='endGame').length,0);
+  await tap('返回对局');assert.equal(commands.filter(command=>command.type==='endGame').length,0);
+  room.game.abortPoll={requestedBy:room.members[1].id,approvals:0,required:1,voted:false};room.version++;
+  socketMessage({data:JSON.stringify({type:'snapshot',room})});await settle();
+  await tap('结束');await tap('继续游戏');
+  assert.equal(commands.at(-1)?.type,'voteAbort');assert.equal(commands.at(-1)?.payload.approve,false);
 });

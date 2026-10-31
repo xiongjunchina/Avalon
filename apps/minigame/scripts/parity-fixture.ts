@@ -11,6 +11,7 @@ export function parityFixture(scene = 'game',playerCount=6) {
   game.phase = 'proposing'; game.confirmed = members.map(member => member.id);
   game.captainIndex = 0;
   if(scene.startsWith('treasures-')){const role=scene.split('-')[1] as Role,viewer=members.find(m=>game.roles[m.id]===role);if(!viewer)throw Error('Fixture role unavailable: '+role);user={id:viewer.id,nickname:viewer.nickname,playerCode:'123456',avatar:'leaf'};game.mission=3;}
+  if(scene.startsWith('notice-')||scene.startsWith('mirror-window')){const role=scene==='mirror-window'?'guinevere':scene==='mirror-window-observer'?'loyal':scene==='notice-mirror'?'guinevere':scene==='notice-bell'?'minion':'percival',viewer=members.find(m=>game.roles[m.id]===role);if(!viewer)throw Error('Notice fixture requires role '+role);user={id:viewer.id,nickname:viewer.nickname,playerCode:'123456',avatar:'leaf'};}
   if (['vote','vote-submitted','mission','mission-submitted','report','result'].includes(scene)) {
     game.rounds = [{number:1,mission:1,captainId:user.id,team:members.slice(0,MISSION_SIZES[playerCount]![0]).map(p=>p.id),direction:'clockwise'}];
     if(scene.startsWith('vote')) {game.phase='team_vote';game.teamVoteStartedAt='2026-10-22T00:00:00Z';game.teamVotes={};if(scene==='vote-submitted')game.teamVotes[user.id]=true;}
@@ -26,6 +27,8 @@ export function parityFixture(scene = 'game',playerCount=6) {
     if(t.jinguSeal)t.jinguSeal={used:true,available:false};
     if(t.bananaFan)t.bananaFan={used:true,available:false,armed:false};
   }
+  if(scene.startsWith('notice-')){room.settings.treasuresEnabled=true;room.game.self!.treasures={enabled:true,...(scene==='notice-mirror'?{guanyinMirror:{used:true,available:false,result:{targetId:members[1]!.id,alignment:'pure' as const}}}:scene==='notice-bell'?{incomingHeartBell:{mission:1,roundNumber:1,advice:'protect' as const,active:true}}:{jinguAllyId:members.find(m=>game.roles[m.id]==='loyal')!.id})};}
+  if(scene.startsWith('mirror-window')){room.settings.treasuresEnabled=true;room.game.phase='guanyin_window';room.serverTime=new Date(10000).toISOString();room.game.guanyinEndsAt=new Date(15000).toISOString();room.game.rounds=[{number:1,mission:1,captainId:members[0]!.id,team:members.slice(0,4).map(m=>m.id),direction:'clockwise'}];if(scene==='mirror-window')room.game.self!.treasures={enabled:true,guanyinMirror:{used:false,available:true}};}
   if(publicReport){room.settings.anonymousTeamVote=false;room.game.rounds[0]!.vote!.ballots=Object.fromEntries(members.map((m,i)=>[m.id,i<playerCount-2?true:i===playerCount-2?false:'abstain']));}
   return { user, room };
 }

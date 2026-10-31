@@ -10,6 +10,7 @@ const js=await build({entryPoints:[join(root,'apps/minigame/src/ui/assets.ts')],
 const server=createServer(async(req,res)=>{try{const p=resolve(dir,'.'+new URL(req.url,'http://localhost').pathname);if(!p.startsWith(dir+'/')&&!p.startsWith(dir+'\\'))throw Error('path');res.end(await readFile(p));}catch{res.writeHead(404);res.end();}});await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const browser=await chromium.launch({headless:true,...(process.env.MINIGAME_CHROMIUM_PATH?{executablePath:process.env.MINIGAME_CHROMIUM_PATH}:{})});
 try{const names=['home/duel-mobile.jpg'];for(const d of ['scenes','roles','avatars'])for(const n of await readdir(join(dir,'art',d)))if(n.endsWith('.jpg'))names.push(d+'/'+n.replace(/\.jpg$/,'.webp'));
+for(const n of await readdir(join(dir,'art/emblems')))if(n.endsWith('.png'))names.push('symbols/'+n);
 const page=await browser.newPage();await page.goto(`http://127.0.0.1:${server.address().port}/game.json`);await page.addScriptTag({content:js.outputFiles[0].text});
 const result=await page.evaluate(async names=>{
  const requests=[];let packageLoads=0;
