@@ -27,7 +27,7 @@ const art = id => id === 'avalon'
     : '<rect x="31" y="27" width="98" height="98" rx="12"/><path d="M58 76h44M80 54v44"/>';
 
 const illustratedGames = new Set(['avalon', 'mafia']);
-const sceneVersion = 'approved-scene-2';
+const sceneVersion = 'edge-blend-3';
 const entranceOrnament = '<svg class="enter-ornament" viewBox="0 0 300 52" preserveAspectRatio="none" fill="none" stroke="currentColor" aria-hidden="true"><path vector-effect="non-scaling-stroke" d="M15 4H285Q286 9 295 11V41Q286 43 285 48H15Q14 43 5 41V11Q14 9 15 4Z"/><path vector-effect="non-scaling-stroke" d="M12 9q7-5 10 0q-7 0-9 7q-5-5-1-7Zm276 0q-7-5-10 0q7 0 9 7q5-5 1-7ZM12 43q7 5 10 0q-7 0-9-7q-5 5-1 7Zm276 0q-7 5-10 0q7 0 9-7q5 5 1 7Z"/></svg>';
 
 function gameCard(game, index) {

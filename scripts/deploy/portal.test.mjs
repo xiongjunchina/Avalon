@@ -42,8 +42,8 @@ test('portal presents the approved copy with responsive local artwork and direct
     assert.ok(html.includes(`aria-labelledby="game-${game.id}"`));
     assert.ok(html.includes(`id="game-${game.id}"`));
     assert.ok(html.includes(`href="${game.path}"`));
-    assert.ok(html.includes(`media="(max-width:759px)" srcset="/portal-assets/art/${game.id}-mobile.webp?v=approved-scene-2"`));
-    assert.ok(html.includes(`src="/portal-assets/art/${game.id}-desktop.webp?v=approved-scene-2" alt=""`));
+    assert.ok(html.includes(`media="(max-width:759px)" srcset="/portal-assets/art/${game.id}-mobile.webp?v=edge-blend-3"`));
+    assert.ok(html.includes(`src="/portal-assets/art/${game.id}-desktop.webp?v=edge-blend-3" alt=""`));
     assert.ok(html.includes(game.genre));
   }
   assert.doesNotMatch(html, /src="\/(avalon|mafia)\//);

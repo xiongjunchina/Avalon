@@ -1,0 +1,436 @@
+{
+  "imageVersion": "edge-blend-3",
+  "geometryMatchesPrevious": true,
+  "viewports": [
+    {
+      "fixture": {
+        "width": 390,
+        "height": 740
+      },
+      "overflow": false,
+      "main": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 740,
+        "top": 0,
+        "right": 390,
+        "bottom": 740,
+        "left": 0
+      },
+      "copy": {
+        "x": 16,
+        "y": 360.359375,
+        "width": 358,
+        "height": 119.640625,
+        "top": 360.359375,
+        "right": 374,
+        "bottom": 480,
+        "left": 16
+      },
+      "headline": {
+        "x": 16,
+        "y": 360.359375,
+        "width": 358,
+        "height": 89.28125,
+        "top": 360.359375,
+        "right": 374,
+        "bottom": 449.640625,
+        "left": 16
+      },
+      "headlineLines": [
+        360.359375,
+        405
+      ],
+      "actionHeights": [
+        52,
+        52
+      ],
+      "actions": {
+        "x": 16,
+        "y": 562,
+        "width": 358,
+        "height": 52,
+        "top": 562,
+        "right": 374,
+        "bottom": 614,
+        "left": 16
+      },
+      "footer": {
+        "x": 16,
+        "y": 500,
+        "width": 358,
+        "height": 226,
+        "top": 500,
+        "right": 374,
+        "bottom": 726,
+        "left": 16
+      },
+      "sound": {
+        "x": 300,
+        "y": 12,
+        "width": 74,
+        "height": 40,
+        "top": 12,
+        "right": 374,
+        "bottom": 52,
+        "left": 300
+      },
+      "image": {
+        "src": "/avalon/art/home/duel-mobile.webp",
+        "width": 640,
+        "height": 1280,
+        "fit": "cover",
+        "box": {
+          "x": 0,
+          "y": 0,
+          "width": 390,
+          "height": 740,
+          "top": 0,
+          "right": 390,
+          "bottom": 740,
+          "left": 0
+        }
+      },
+      "fonts": [
+        "Home Calligraphy",
+        "Home Interface"
+      ],
+      "text": [
+        {
+          "text": "游客浏览",
+          "overflow": false,
+          "size": "16px",
+          "font": "\"Home Interface\", \"Noto Sans SC\", \"PingFang SC\", sans-serif"
+        },
+        {
+          "text": "静音",
+          "overflow": false,
+          "size": "13px",
+          "font": "\"Home Interface\", \"Noto Sans SC\", \"PingFang SC\", sans-serif"
+        },
+        {
+          "text": "嘻游·真假猴王",
+          "overflow": false,
+          "size": "34.32px",
+          "font": "\"Home Calligraphy\", \"Ma Shan Zheng\", STKaiti, serif"
+        },
+        {
+          "text": "一念佛魔皆幻相，谁是修道取经人",
+          "overflow": false,
+          "size": "12.87px",
+          "font": "\"Home Interface\", \"Noto Sans SC\", \"PingFang SC\", sans-serif"
+        },
+        {
+          "text": "两个悟空，你信哪一个？",
+          "overflow": false,
+          "size": "42.12px",
+          "font": "\"Home Calligraphy\", \"Ma Shan Zheng\", STKaiti, serif"
+        },
+        {
+          "text": "组队、表决、暗中试探，找出取经路上的妖。",
+          "overflow": false,
+          "size": "14.04px",
+          "font": "\"Home Interface\", \"Noto Sans SC\", \"PingFang SC\", sans-serif"
+        },
+        {
+          "text": "🏛️ 线下常规房",
+          "overflow": false,
+          "size": "14.04px",
+          "font": "\"Home Interface\", \"Noto Sans SC\", \"PingFang SC\", sans-serif"
+        },
+        {
+          "text": "🎙️ 远端语音房",
+          "overflow": false,
+          "size": "14.04px",
+          "font": "\"Home Interface\", \"Noto Sans SC\", \"PingFang SC\", sans-serif"
+        },
+        {
+          "text": "开常规房",
+          "overflow": false,
+          "size": "17.55px",
+          "font": "\"Home Interface\", \"Noto Sans SC\", \"PingFang SC\", sans-serif"
+        },
+        {
+          "text": "加入房间",
+          "overflow": false,
+          "size": "17.55px",
+          "font": "\"Home Interface\", \"Noto Sans SC\", \"PingFang SC\", sans-serif"
+        },
+        {
+          "text": "🐒 幻境单人试玩 ›",
+          "overflow": false,
+          "size": "14px",
+          "font": "\"Home Interface\", \"Noto Sans SC\", \"PingFang SC\", sans-serif"
+        },
+        {
+          "text": "玩法与角色",
+          "overflow": false,
+          "size": "12.675px",
+          "font": "\"Home Interface\", \"Noto Sans SC\", \"PingFang SC\", sans-serif"
+        },
+        {
+          "text": "📜 功果簿",
+          "overflow": false,
+          "size": "12.675px",
+          "font": "\"Home Interface\", \"Noto Sans SC\", \"PingFang SC\", sans-serif"
+        },
+        {
+          "text": "登录 / 注册",
+          "overflow": false,
+          "size": "12.675px",
+          "font": "\"Home Interface\", \"Noto Sans SC\", \"PingFang SC\", sans-serif"
+        }
+      ],
+      "resources": [
+        {
+          "path": "/css2",
+          "bytes": 0
+        },
+        {
+          "path": "/avalon/assets/index-B0nCSGIt.js",
+          "bytes": 202355
+        },
+        {
+          "path": "/avalon/assets/index-DAGRD5eo.css",
+          "bytes": 59612
+        },
+        {
+          "path": "/avalon/api/system/announcement",
+          "bytes": 66
+        },
+        {
+          "path": "/avalon/api/me",
+          "bytes": 27
+        },
+        {
+          "path": "/avalon/art/home/duel-mobile.webp",
+          "bytes": 73070
+        },
+        {
+          "path": "/avalon/art/home/fonts/home-interface.woff2",
+          "bytes": 23984
+        },
+        {
+          "path": "/avalon/art/home/fonts/home-calligraphy.woff2",
+          "bytes": 12740
+        }
+      ]
+    },
+    {
+      "fixture": {
+        "width": 1440,
+        "height": 900
+      },
+      "overflow": false,
+      "main": {
+        "x": 80,
+        "y": 0,
+        "width": 1280,
+        "height": 900,
+        "top": 0,
+        "right": 1360,
+        "bottom": 900,
+        "left": 80
+      },
+      "copy": {
+        "x": 352.796875,
+        "y": 224,
+        "width": 734.390625,
+        "height": 93.6875,
+        "top": 224,
+        "right": 1087.1875,
+        "bottom": 317.6875,
+        "left": 352.796875
+      },
+      "headline": {
+        "x": 352.796875,
+        "y": 224,
+        "width": 734.390625,
+        "height": 57.59375,
+        "top": 224,
+        "right": 1087.1875,
+        "bottom": 281.59375,
+        "left": 352.796875
+      },
+      "headlineLines": [
+        228,
+        228
+      ],
+      "actionHeights": [
+        68,
+        68
+      ],
+      "actions": {
+        "x": 420,
+        "y": 670,
+        "width": 600,
+        "height": 68,
+        "top": 670,
+        "right": 1020,
+        "bottom": 738,
+        "left": 420
+      },
+      "footer": {
+        "x": 420,
+        "y": 593,
+        "width": 600,
+        "height": 283,
+        "top": 593,
+        "right": 1020,
+        "bottom": 876,
+        "left": 420
+      },
+      "sound": {
+        "x": 1258,
+        "y": 20,
+        "width": 74,
+        "height": 40,
+        "top": 20,
+        "right": 1332,
+        "bottom": 60,
+        "left": 1258
+      },
+      "image": {
+        "src": "/avalon/art/home/duel-desktop.webp",
+        "width": 1280,
+        "height": 901,
+        "fit": "cover",
+        "box": {
+          "x": 80,
+          "y": 0,
+          "width": 1280,
+          "height": 900,
+          "top": 0,
+          "right": 1360,
+          "bottom": 900,
+          "left": 80
+        }
+      },
+      "fonts": [
+        "Home Calligraphy",
+        "Home Interface"
+      ],
+      "text": [
+        {
+          "text": "游客浏览",
+          "overflow": false,
+          "size": "16px",
+          "font": "\"Home Interface\", \"Noto Sans SC\", \"PingFang SC\", sans-serif"
+        },
+        {
+          "text": "静音",
+          "overflow": false,
+          "size": "13px",
+          "font": "\"Home Interface\", \"Noto Sans SC\", \"PingFang SC\", sans-serif"
+        },
+        {
+          "text": "嘻游·真假猴王",
+          "overflow": false,
+          "size": "56px",
+          "font": "\"Home Calligraphy\", \"Ma Shan Zheng\", STKaiti, serif"
+        },
+        {
+          "text": "一念佛魔皆幻相，谁是修道取经人",
+          "overflow": false,
+          "size": "16px",
+          "font": "\"Home Interface\", \"Noto Sans SC\", \"PingFang SC\", sans-serif"
+        },
+        {
+          "text": "两个悟空，你信哪一个？",
+          "overflow": false,
+          "size": "48px",
+          "font": "\"Home Calligraphy\", \"Ma Shan Zheng\", STKaiti, serif"
+        },
+        {
+          "text": "组队、表决、暗中试探，找出取经路上的妖。",
+          "overflow": false,
+          "size": "18px",
+          "font": "\"Home Interface\", \"Noto Sans SC\", \"PingFang SC\", sans-serif"
+        },
+        {
+          "text": "🏛️ 线下常规房",
+          "overflow": false,
+          "size": "17px",
+          "font": "\"Home Interface\", \"Noto Sans SC\", \"PingFang SC\", sans-serif"
+        },
+        {
+          "text": "🎙️ 远端语音房",
+          "overflow": false,
+          "size": "17px",
+          "font": "\"Home Interface\", \"Noto Sans SC\", \"PingFang SC\", sans-serif"
+        },
+        {
+          "text": "开常规房",
+          "overflow": false,
+          "size": "23px",
+          "font": "\"Home Interface\", \"Noto Sans SC\", \"PingFang SC\", sans-serif"
+        },
+        {
+          "text": "加入房间",
+          "overflow": false,
+          "size": "23px",
+          "font": "\"Home Interface\", \"Noto Sans SC\", \"PingFang SC\", sans-serif"
+        },
+        {
+          "text": "🐒 幻境单人试玩 ›",
+          "overflow": false,
+          "size": "16px",
+          "font": "\"Home Interface\", \"Noto Sans SC\", \"PingFang SC\", sans-serif"
+        },
+        {
+          "text": "玩法与角色",
+          "overflow": false,
+          "size": "16px",
+          "font": "\"Home Interface\", \"Noto Sans SC\", \"PingFang SC\", sans-serif"
+        },
+        {
+          "text": "📜 功果簿",
+          "overflow": false,
+          "size": "16px",
+          "font": "\"Home Interface\", \"Noto Sans SC\", \"PingFang SC\", sans-serif"
+        },
+        {
+          "text": "登录 / 注册",
+          "overflow": false,
+          "size": "16px",
+          "font": "\"Home Interface\", \"Noto Sans SC\", \"PingFang SC\", sans-serif"
+        }
+      ],
+      "resources": [
+        {
+          "path": "/css2",
+          "bytes": 0
+        },
+        {
+          "path": "/avalon/assets/index-DAGRD5eo.css",
+          "bytes": 59612
+        },
+        {
+          "path": "/avalon/assets/index-B0nCSGIt.js",
+          "bytes": 202355
+        },
+        {
+          "path": "/avalon/api/system/announcement",
+          "bytes": 66
+        },
+        {
+          "path": "/avalon/api/me",
+          "bytes": 27
+        },
+        {
+          "path": "/avalon/art/home/duel-desktop.webp",
+          "bytes": 145196
+        },
+        {
+          "path": "/avalon/art/home/fonts/home-interface.woff2",
+          "bytes": 23984
+        },
+        {
+          "path": "/avalon/art/home/fonts/home-calligraphy.woff2",
+          "bytes": 12740
+        }
+      ]
+    }
+  ]
+}

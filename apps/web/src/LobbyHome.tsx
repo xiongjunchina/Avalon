@@ -18,8 +18,8 @@ export function LobbyHero({ freeAccess }: { freeAccess: boolean }) {
     </div>
     <figure className="lobby-duel-art">
       <picture>
-        <source media="(max-width: 899px)" srcSet={assetUrl('/art/home/duel-mobile.webp?v=approved-scene-2')} />
-        <img src={assetUrl('/art/home/duel-desktop.webp?v=approved-scene-2')} width={1280} height={901}
+        <source media="(max-width: 899px)" srcSet={assetUrl('/art/home/duel-mobile.webp?v=edge-blend-3')} />
+        <img src={assetUrl('/art/home/duel-desktop.webp?v=edge-blend-3')} width={1280} height={901}
           alt="孙悟空与六耳猕猴相对而立" loading="eager" fetchPriority="high" decoding="async" />
       </picture>
     </figure>
