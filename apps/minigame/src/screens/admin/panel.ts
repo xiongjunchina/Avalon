@@ -106,6 +106,7 @@ export class AdminPanel {
     if(this.page==='special'){await this.special.handle(id,input);return;}
     if(id==='search:input'){this.query=await input('搜索用户',40)??this.query;return;}
     if(id==='search:submit'){await this.load('users');return;}
+    if(id==='search:clear'){this.query='';await this.load('users');return;}
     if(id.startsWith('userAction:')){const [,action,target]=id.split(':');this.user=this.usersData.find(u=>u.id===target);if(!this.user)return;if(action==='delete'&&this.user.gamesCount>0)return;if(action==='playerCode'){await this.special.editPlayerCode(this.user,input,this.model());return;}this.page='user';await this.handle(action+':'+target,input);return;}
     if (id === 'search') { this.query = await input('搜索用户', 40) ?? ''; await this.load('users'); return; }
     if (id.startsWith('user:')) { this.user = this.usersData.find(user => user.id === id.slice(5)); if (this.user) this.page = 'user'; return; }

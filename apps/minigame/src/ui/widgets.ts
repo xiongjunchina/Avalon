@@ -11,6 +11,7 @@ export interface ScreenModel {
   rows: { id: string; text: string }[];
   scroll?: number;
   horizontalScroll?:number;
+  activeRound?:number;
   scene?: 'entry' | 'standard' | 'game' | 'admin';
   portrait?: string;
 }

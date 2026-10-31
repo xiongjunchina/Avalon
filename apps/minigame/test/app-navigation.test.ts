@@ -95,7 +95,7 @@ test('built client logs in, opens a clean join form and creates the selected web
   assert.ok(frame.some(item => item.text.includes('房号 123456')));
   room = parityFixture().room; room.version = 2;
   socketMessage({data:JSON.stringify({type:'snapshot',room})}); await settle();
-  await tap('1号 · 行者'); await tap('2号 · 仙友1');
+  await tap('1号'); await tap('2号');
   assert.equal(commands.filter(command => command.type === 'updateTeamDraft').length, 2);
   await tap('确认阵容 (2/2)');
   assert.deepEqual(commands.find(command => command.type === 'proposeTeam')?.payload.playerIds, room.game.players.slice(0,2).map((player: any) => player.id));

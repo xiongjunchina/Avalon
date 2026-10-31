@@ -87,7 +87,8 @@ let suspended = false;
 let busy = false;
 let commandBusy = false;
 let roleIndex = 0;
-let horizontalScroll=0;
+let horizontalScroll=0, horizontalContext="";
+let activeRound:number|undefined;
 let setupAccessExpanded=false;
 let nickname = '';
 let switchCode = '';
@@ -178,7 +179,9 @@ function model(): ScreenModel {
     : undefined;
   const portraitRole = privateSelf?.loyalGuardian ? `${privateSelf.loyalGuardian}-loyal`
     : privateSelf?.femaleDemon ? `minion-${privateSelf.femaleDemon}` : privateSelf?.role;
-  return { ...result, scroll, horizontalScroll, scene: view === 'entry' ? 'entry' : view === 'game' || view === 'practice' || view === 'lobby' ? 'game' : view === 'admin' ? 'admin' : 'standard',
+  const nextHorizontalContext=[view,auxiliary,result.web?.document?.kind,result.web?.document?.activeTab,result.web?.document?.replay?.id].join('|');
+  if(nextHorizontalContext!==horizontalContext){horizontalContext=nextHorizontalContext;horizontalScroll=0;activeRound=undefined;}
+  return { ...result, scroll, horizontalScroll, activeRound, scene: view === 'entry' ? 'entry' : view === 'game' || view === 'practice' || view === 'lobby' ? 'game' : view === 'admin' ? 'admin' : 'standard',
     ...(portraitRole ? { portrait: `${portraitRole}-160.webp` } : view === 'guide' && guideRoleId ? { portrait: `${guideRoleId}-160.webp` } : {}) };
 }
 function render() {
@@ -298,7 +301,7 @@ async function select(id: string) {
   if (id === 'practiceSeats' && practice) { auxiliary = 'practiceSeats'; scroll = 0; render(); return; }
   if (id.startsWith('practiceSeat:') && practice) { practice.switchSeat(id.slice(13)); hideSensitiveView(gameUi); gameUi.snapshotKey = undefined; syncGameUi(gameUi, practice.view(), false, practice.user.id); auxiliary = undefined; scroll = 0; render(); return; }
   if ((view === 'game' || view === 'practice' || view === 'lobby' || view === 'settings') && id === 'guide') { guideReturn = view; navigate('guide'); return; }
-  if(id.startsWith('round-jump:')&&['replay','history'].includes(model().web?.document?.kind??'')){const l=layoutWebScreen({...model(),scroll:0},viewport),n=l.nodes.find(n=>n.id==='round:'+id.slice(11));if(n)scroll=Math.min(l.maxScroll,Math.max(0,n.y-l.contentTop-(model().web?.document?.kind==='replay'?136:8)));render();return;}
+  if(id.startsWith('round-jump:')&&['replay','history'].includes(model().web?.document?.kind??'')){const l=layoutWebScreen({...model(),scroll:0},viewport),n=l.nodes.find(n=>n.id==='round:'+id.slice(11));if(n){activeRound=Number(id.slice(11));scroll=Math.min(l.maxScroll,Math.max(0,n.y-l.contentTop-(model().web?.document?.kind==='replay'?136:62)));}render();return;}
   const activeRoom = view === 'practice' ? practice?.view() : view === 'game' ? room : undefined;
   const priorOverlay=gameUi.overlay;
   if (activeRoom && handleGameOverlay(gameUi, activeRoom, id)) { overlayScrolls[priorOverlay??'table']=scroll;scroll=priorOverlay===gameUi.overlay?scroll:overlayScrolls[gameUi.overlay??'table']??0;render();return; }

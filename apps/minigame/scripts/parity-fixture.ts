@@ -3,7 +3,8 @@ import { createGame, projectGame, MISSION_SIZES } from '@avalon/game-core';
 
 // Deterministic, local-only fixture shared by both screenshot renderers.
 export function parityFixture(scene = 'game',playerCount=6) {
-  const publicReport=scene==='report-public',failedReport=scene==='report-failed';if(publicReport||failedReport)scene='report';
+  const publicReport=scene==='report-public'||scene==='battle-public',failedReport=scene==='report-failed';if(publicReport||failedReport||scene==='battle-populated')scene='report';
+  if(['vote-approve','vote-reject','vote-abstain'].includes(scene))scene='vote';if(scene==='mission-selected')scene='mission';
   let user = { id: '11111111-1111-4111-8111-111111111111', nickname: '行者', playerCode: '123456', avatar: 'leaf' as const };
   const members = Array.from({ length: playerCount }, (_, index) => ({ id: index ? '00000000-0000-4000-8000-' + String(index).padStart(12, '0') : user.id, nickname: index ? '仙友' + index : user.nickname, seat: index + 1, ready: true, online: true, ...(index ? {} : { avatar: 'leaf' as const }) }));
   const settings={...defaultSettings,playerCount,...(scene.startsWith('preferences')?{rolePreferenceEnabled:true}:{}),...(scene.startsWith('treasures-')?{treasuresEnabled:true,guardianPerksEnabled:false}:{})};
@@ -19,10 +20,11 @@ export function parityFixture(scene = 'game',playerCount=6) {
     if(scene==='report'||scene==='result') {game.rounds[0]!.result={successes:MISSION_SIZES[playerCount]![0]-(failedReport?1:0),failures:failedReport?1:0,passed:!failedReport};game.phase='proposing';game.mission=2;}
     if(scene==='result') {game.phase='finished';game.result={winner:'blue',reason:'merlin_survived'};}
   }
-  if(scene.startsWith('treasures-')&&scene.endsWith('-available')){
+  if(scene.startsWith('treasures-')&&(scene.endsWith('-available')||scene.endsWith('-selected')||scene.endsWith('-armed'))){
     game.rounds=[1,2].map(mission=>({number:mission,mission,captainId:members[0]!.id,team:members.slice(0,MISSION_SIZES[playerCount]![mission-1]).map(p=>p.id),direction:'clockwise' as const,vote:{approvals:playerCount,rejections:0,abstentions:0,passed:true},result:{successes:MISSION_SIZES[playerCount]![mission-1]!-1,failures:1,passed:false}}));
   }
   const room = { id: '22222222-2222-4222-8222-222222222222', code: '123456', version: 1, hostId: user.id, settings, acceptingNewMembers: true, members, phase: 'playing' as const, serverTime: '2026-10-22T00:00:00Z', game: projectGame(game, user.id) };
+  if(scene.endsWith('-armed')&&room.game.self?.treasures?.bananaFan)room.game.self.treasures.bananaFan.armed=true;
   if(scene.endsWith('-used')&&room.game.self?.treasures){const t=room.game.self.treasures,targetId=members[1]!.id;
     if(t.tinStaff)t.tinStaff={used:true,available:false,result:{targetId,team:'blue'}};
     if(t.guanyinMirror)t.guanyinMirror={used:true,available:false,result:{targetId,alignment:'evil'}};

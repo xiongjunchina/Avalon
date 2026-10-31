@@ -248,3 +248,67 @@ test('admin allocation timestamps move as a readable unit instead of leaving sec
  const stamp='2026/10/22 08:00:00';
  assert.deepEqual(wrapText('分配时间：'+stamp,210,t=>Array.from(t).length*10),['分配时间：',stamp]);
 });
+
+test('live seat geometry follows web viewport heights for six and twelve players',()=>{
+ for(const [width,height,cell,arena6] of [[320,568,38,158],[390,844,42.1875,170.5625],[430,932,46,182]]){
+  for(const count of [6,12]){
+   const {room,user}=parityFixture('game',count);
+   const nodes=layoutWebScreen(gameScreen(room,user,state()),{width,height,top:0,bottom:0}).nodes;
+   const seats=nodes.filter(n=>n.kind==='seat'),arena=nodes.find(n=>n.id==='arena-frame')!;
+   assert.equal(seats[0]!.height,cell);
+   assert.equal(seats[0]!.y-arena.y,15);
+   assert.equal(seats[2]!.y-seats[0]!.y,cell+10);
+   assert.equal(arena.height,arena6+(count===12?3*(cell+10):0));
+  }
+ }
+});
+
+test('narrow admin search wraps cleanup and strategy paragraphs never overlap',async()=>{
+ const data=parityAdminData(),p=new AdminPanel({users:async()=>({users:data.users,total:2}),settings:async()=>({freeAccessMode:true,adRewardHours:24,announcement:{enabled:false,text:''}})} as any);
+ await p.load('users');
+ for(const width of [320,390,430]){
+  const nodes=layoutWebScreen(p.model(),{width,height:844,top:0,bottom:0}).nodes,input=nodes.find(n=>n.id==='search:input')!,search=nodes.find(n=>n.id==='search:submit')!,cleanup=nodes.find(n=>n.id==='cleanup')!;
+  assert.ok(input.width>=52);assert.ok(search.x>=input.x+input.width+7);
+  if(width===320)assert.ok(cleanup.y>=input.y+input.height+8);else assert.ok(cleanup.x>=search.x+search.width+7);
+ }
+ await p.load('settings');
+ for(const width of [320,390,430]){
+  const nodes=layoutWebScreen(p.model(),{width,height:844,top:0,bottom:0}).nodes,title=nodes.find(n=>n.id==='strategy-mode')!,help=nodes.find(n=>n.id==='strategy-mode-help')!,rule=nodes.find(n=>n.id==='strategy-rule')!;
+  assert.ok(help.y>=title.y+title.height+4);assert.ok(rule.y>help.y+help.height);
+ }
+});
+
+test('admin search clear reloads the unfiltered first page',async()=>{
+ const queries:unknown[][]=[],p=new AdminPanel({users:async(...args:unknown[])=>{queries.push(args);return {users:[],total:0};}} as any);
+ await p.load('users');await p.handle('search:input',async()=> '行者');await p.handle('search:submit',async()=>undefined);
+ assert.deepEqual(queries.at(-1),['行者',0]);
+ assert.ok(layoutWebScreen(p.model(),viewport).nodes.some(n=>n.id==='search:clear'));
+ await p.handle('search:clear',async()=>undefined);assert.deepEqual(queries.at(-1),['',0]);
+ assert.ok(!layoutWebScreen(p.model(),viewport).nodes.some(n=>n.id==='search:clear'));
+});
+
+test('long replay navigation remains one scrollable row with reachable final round',async()=>{
+ const {user}=parityFixture('game'),data=parityPlayerData();
+ data.replay.rounds=Array.from({length:12},(_,i)=>({...data.replay.rounds[0]!,number:i+1}));
+ const panel=new PlayerPanel({replay:async()=>data.replay} as any,user);await panel.openReplay(data.replay.id,'page:history');
+ for(const width of [320,390,430]){
+  const model=panel.model(),initial=layoutWebScreen(model,{...viewport,width}),buttons=initial.nodes.filter(n=>n.id.startsWith('round-jump:'));
+  assert.equal(new Set(buttons.map(n=>n.y)).size,1);
+  const max=buttons[0]!.scrollMaxX!;assert.ok(max>0);
+  const end=layoutWebScreen({...model,horizontalScroll:max},{...viewport,width}).nodes.filter(n=>n.id.startsWith('round-jump:')).at(-1)!;
+  assert.ok(end.x>=end.clipLeft!&&end.x+end.width<=end.clipRight!+.01);
+  const result=initial.nodes.find(n=>n.id==='round-result:1')!,privacy=initial.nodes.find(n=>n.id==='round-result-privacy:1')!;
+  assert.ok(privacy.y+privacy.height<=result.y+result.height);
+ }
+});
+
+test('populated battle history keeps public ballots inside its frame and anonymous votes private',()=>{
+ for(const width of [320,390,430])for(const count of [6,12]){
+  const {room,user}=parityFixture('battle-public',count),model=gameScreen(room,user,{...state(),overlay:'history'});
+  const layout=layoutWebScreen({...model,activeRound:1},{...viewport,width}),voters=layout.nodes.filter(n=>n.id.startsWith('public-ballot:')),frame=layout.nodes.find(n=>n.id==='round-vote-frame:1')!;
+  assert.equal(voters.length,count);assert.ok(voters.every(n=>n.x>=frame.x&&n.x+n.width<=frame.x+frame.width&&n.y+n.height<=frame.y+frame.height));
+  const jump=layout.nodes.filter(n=>n.id==='round-jump:1');assert.equal(jump.filter(n=>n.selected).length,1);
+  room.settings.anonymousTeamVote=true;
+  assert.ok(!layoutWebScreen(gameScreen(room,user,{...state(),overlay:'history'}),{...viewport,width}).nodes.some(n=>n.id.startsWith('public-ballot:')));
+ }
+});
