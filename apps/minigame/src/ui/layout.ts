@@ -23,7 +23,7 @@ export function wrapText(text: string, width: number, measure = textWidth): stri
   const lines: string[] = [];
   for (const paragraph of text.split('\n')) {
     let line = '';
-    const units=paragraph.match(/[A-Za-z0-9_]+|[^]/gu)??[];
+    const units=paragraph.match(/\d{4}\/\d{1,2}\/\d{1,2} \d{1,2}:\d{2}(?::\d{2})?|[A-Za-z0-9_]+|[^]/gu)??[];
     for (const unit of units) {
       // CSS keeps an ordinary Latin word together; oversized IDs still break.
       if(unit.length>1&&measure(unit)<=width){

@@ -157,7 +157,7 @@ test('small-screen vote instructions reserve both lines before the expedition ca
  const nodes=layoutWebScreen(model,{width:320,height:568,top:0,bottom:0}).nodes;
  const rule=nodes.find(n=>n.id==='vote-rule')!,copy=nodes.find(n=>n.id==='guide:vote-rule')!,party=nodes.find(n=>n.id==='vote-team-panel')!;
  assert.equal(copy.lines?.length,2);assert.ok(rule.height>=copy.height+10);assert.ok(party.y>=rule.y+rule.height+10);
- const submit=nodes.find(n=>n.id==='submitVote')!;assert.equal(submit.fontSize,13);
+ const submit=nodes.find(n=>n.id==='submitVote')!;assert.equal(submit.fontSize,13);assert.equal(submit.letterSpacing,.5); // The inner .btn-cta-text overrides the button font.
 });
 
 
@@ -231,4 +231,20 @@ test('mixed Chinese copy wraps Latin words intact while oversized identifiers re
  assert.deepEqual(wrapText('在线服务的 WebSocket 端口',12,measure),['在线服务的','WebSocket 端口']);
  const lines=wrapText('编号 ABCDEFGHIJKLMNOP',8,measure);
  assert.ok(lines.every(line=>line.length<=8));assert.equal(lines.join('').replaceAll(' ',''),'编号ABCDEFGHIJKLMNOP');
+});
+
+
+test('failed mission reports retain the web outcome copy and both card totals',()=>{
+ const {room,user}=parityFixture('report-failed');
+ const model=gameScreen(room,user,{...state(),overlay:'report',reportMission:1});
+ const nodes=layoutWebScreen(model,viewport).nodes;
+ assert.equal(nodes.find(n=>n.id==='report-result')?.text,'× 妖魔作祟 · 任务失败');
+ assert.equal(nodes.find(n=>n.id==='report-kicker')?.text,'MISSION FAILED · 妖孽作祟');
+ assert.equal(nodes.find(n=>n.id==='report-success-total')?.count,1);
+ assert.equal(nodes.find(n=>n.id==='report-fail-total')?.count,1);
+});
+
+test('admin allocation timestamps move as a readable unit instead of leaving seconds on their own',()=>{
+ const stamp='2026/10/22 08:00:00';
+ assert.deepEqual(wrapText('分配时间：'+stamp,210,t=>Array.from(t).length*10),['分配时间：',stamp]);
 });

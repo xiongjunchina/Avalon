@@ -27,7 +27,7 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
   const adminFriends=doc.kind==='admin-friends',auth=doc.kind==='auth',sound=doc.kind==='sound',preferences=doc.kind==='preferences';
   const social=doc.kind==='friends'||doc.kind==='chat'&&doc.activeTab==='direct', socialPad=v.width<=380?17:23;
   const modal=!!doc.modal, width=doc.kind==='art'?Math.min(v.width-32,v.width*.92,480):drawer?v.width:adminFriends?Math.min(v.width-40,500):sound?Math.min(v.width-44,420):modal?Math.min(doc.kind==='treasures'?v.width*.92:v.width-20,doc.kind==='guanyin-window'?450:doc.kind==='private-notice'?(doc.noticeKind==='jingu'?380:420):doc.kind==='treasures'?440:doc.kind==='identity'?500:doc.kind==='vote'?520:570):v.width;
-  const ox=(v.width-width)/2, pad=modal?(doc.profileEditing?17:doc.kind==='abort-confirm'?(v.width<=380?17:23):doc.kind==='guanyin-window'?17:doc.kind==='private-notice'?(doc.noticeKind==='bell'?21:doc.noticeKind==='jingu'?23:v.width<=360?15:1+clamp(16,v.width*.04,24)):doc.kind==='art'?22:adminFriends?18:doc.kind==='treasures'?16.5:auth?21:doc.kind==='presets'&&doc.presetEditing?21:preferences?13:sound?23:social?socialPad:doc.kind==='vote'?18:doc.kind==='report'?19:doc.kind==='special-editor'||doc.kind==='code-editor'?19:doc.kind==='history'?17:15):doc.kind==='guide'||doc.kind==='guide-role'?12:doc.kind==='replay'?31:18, x=ox+pad, w=width-pad*2;
+  const ox=(v.width-width)/2, pad=modal?(doc.profileEditing?17:doc.kind==='abort-confirm'?(v.width<=380?17:23):doc.kind==='guanyin-window'?17:doc.kind==='private-notice'?(doc.noticeKind==='bell'?21:doc.noticeKind==='jingu'?23:v.width<=360?15:1+clamp(16,v.width*.04,24)):doc.kind==='art'?22:adminFriends?19:doc.kind==='treasures'?16.5:auth?21:doc.kind==='presets'&&doc.presetEditing?21:preferences?13:sound?23:social?socialPad:doc.kind==='vote'?18:doc.kind==='report'?19:doc.kind==='special-editor'||doc.kind==='code-editor'?19:doc.kind==='history'?17:15):doc.kind==='guide'||doc.kind==='guide-role'?12:doc.kind==='replay'?31:18, x=ox+pad, w=width-pad*2;
   const top=v.top, bottom=v.height-v.bottom, available=bottom-top;
   let y=modal?(adminFriends?19:doc.kind==='treasures'?16.5:auth?21:sound?23:social?socialPad:doc.kind==='history'?17:13):18, headerH=39, footerH=0, bodyStart=0, bodyEnd=0;
   const add=(kind:WebNode['kind'],id:string,text:string,px:number,py:number,pw:number,ph:number,props:Partial<WebNode>={})=>{const n:WebNode={kind,id,text,x:px,y:py,width:pw,height:ph,skin:kind==='button'?'button':kind==='label'?'text':'surface',...props};nodes.push(n);return n;};
@@ -45,9 +45,9 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
   const rowButtons=(items:{id:string;text:string;primary?:boolean;disabled?:boolean}[],py:number,ph=42)=>items.forEach((item,i)=>button(item.id,item.text,py,{primary:item.primary,disabled:item.disabled},x+i*(w+8)/items.length,(w-8*(items.length-1))/items.length,ph));
   const feedback=model.rows.filter(r=>['status','error'].includes(r.id)||!['vote','identity','report','history','confirm'].includes(doc.kind)&&['notice','announcement'].includes(r.id));
   const modalHeader=(title:string,subtitle?:string)=>{
-    headerH=doc.profileEditing?47:sound?48:social?51:doc.kind==='report'?52.78125:subtitle?51.9:39;
+    headerH=doc.profileEditing?47:sound?48:social?51:doc.kind==='report'?52.78125:doc.kind==='vote'?28.390625+clamp(14,v.width*.043,19)*1.4:subtitle?51.9:39;
     add('label','dialog-title',title,x,y,social?w-50:w-96,subtitle?18:social?36:32,{fontSize:doc.profileEditing?18:sound?25:social?24:doc.kind==='preferences'?15:subtitle?11:17,fontFace:sound?'home':'display',weight:sound?'600':undefined,tone:'gold',align:'left',fixed:true});
-    if(subtitle)add('label','dialog-subtitle',subtitle,x,y+(doc.kind==='report'?17.390625:20),w-92,26,{fontSize:doc.kind==='report'?22:doc.kind==='preferences'?11:clamp(14,v.width*.043,19),fontFace:doc.kind==='preferences'?'sans':'calligraphy',weight:'700',align:'left',fixed:true});
+    if(subtitle)add('label','dialog-subtitle',subtitle,x,y+(doc.kind==='report'||doc.kind==='vote'?17.390625:20),doc.kind==='vote'?w-87.25:w-92,doc.kind==='vote'?clamp(14,v.width*.043,19)*1.4:26,{letterSpacing:doc.kind==='vote'?.5:undefined,fontSize:doc.kind==='report'?22:doc.kind==='preferences'?11:clamp(14,v.width*.043,19),fontFace:doc.kind==='preferences'?'sans':'calligraphy',weight:'700',align:'left',fixed:true});
     button(model.web!.backId??'back',doc.kind==='identity'?'返回对局':doc.kind==='art'?'✕ 关闭':doc.kind==='presets'&&doc.presetEditing?'取消':social||doc.kind==='treasures'||doc.profileEditing||['friends','sound','special-editor','preferences','treasures'].includes(doc.kind)?'关闭':'返回法坛',y+(doc.kind==='report'?5.890625:doc.kind==='vote'?4.421875:0),{skin:doc.kind==='vote'||doc.kind==='report'?'modal-return':'pill',fixed:true,fontSize:doc.kind==='identity'?12:13},x+w-(sound?66:social||doc.profileEditing||doc.kind==='treasures'||doc.kind==='presets'?42:doc.kind==='identity'?66:doc.kind==='vote'?79.25:doc.kind==='report'?75.25:84),sound?66:social||doc.profileEditing||doc.kind==='treasures'||doc.kind==='presets'?42:doc.kind==='identity'?66:doc.kind==='vote'?79.25:doc.kind==='report'?75.25:84,sound?48:32);
     if(!sound)add('label','dialog-rule','',x,y+headerH-1,w,1,{skin:'rule',fixed:true});
     if(doc.profileEditing){for(const n of nodes.filter(n=>n.fixed)){if(n.id==='dialog-title'||n.id==='dialog-rule'){n.x-=2;n.width+=4;}else if(n.kind==='button')n.x+=2;}}
@@ -92,13 +92,13 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
     const hint=txt('auth-note',switching?'输入仙友码即可找回原账号，继续使用原昵称、头像和战绩。':'填朋友认识的称呼，别填房间号；仙友码由系统自动分配。',y,14.5,{lineHeight:21.75});y+=hint.height+14;
     button('login',switching?'找回账号，继续游戏':model.web!.authIntent==='create'?'取好昵称，创建房间':model.web!.authIntent==='join'?'取好昵称，加入房间':'取好昵称，继续游戏',y,{skin:'waiting-primary',fontSize:18,disabled:switching?!/^\d{6}$/.test(model.web!.switchCode??''):!model.web!.nickname?.trim()},x,w,50);y+=57.5;bodyEnd=y;
   }else if(adminFriends){
-    const title=txt('admin-friends-title','【'+(doc.adminFriendOwner??'')+'】的仙友圈子',y+5,18,{fontFace:'display',tone:'gold',fixed:true},x,w-60);button('page:users','关闭',y,{skin:'admin-tool',fontSize:12,fixed:true},x+w-54,54,30);y+=Math.max(38,title.height+14);bodyStart=y;
+    const title=txt('admin-friends-title','【'+(doc.adminFriendOwner??'')+'】的仙友圈子',y+3.5,21,{fontFace:'display',tone:'gold',fixed:true,lineHeight:21},x,w-60);button('page:users','关闭',y,{skin:'admin-tool',fontSize:12,fixed:true},x+w-49,49,28);y+=Math.max(42,title.height+21);bodyStart=y;
     if(!doc.adminFriends?.length){txt('admin-friends-empty','暂无好友记录',y+12,14,{fontFace:'system',tone:'muted'});y+=48;}
-    for(const [i,f] of (doc.adminFriends??[]).entries()){const lines=wrapText(f.nickname+' ('+f.player_code+')',w-98,t=>measure(t,14)),h=Math.max(37,lines.length*21+16);panel('admin-friend:'+i,y,h,'admin-friend-row');txt('admin-friend-name:'+i,f.nickname+' ('+f.player_code+')',y+8,14,{fontFace:'system',lines,lineHeight:21},x+12,w-98);txt('admin-friend-status:'+i,f.status==='accepted'?'已互关好友':'申请中',y+11,12,{fontFace:'system',tone:f.status==='accepted'?'green':'gold',align:'right'},x+w-80,68);y+=h+8;}y-=8;bodyEnd=y;
+    for(const [i,f] of (doc.adminFriends??[]).entries()){const lines=wrapText(f.nickname+' ('+f.player_code+')',w-98,t=>measure(t,16,'system')),h=Math.max(37,lines.length*21+16);panel('admin-friend:'+i,y,h,'admin-friend-row');txt('admin-friend-name:'+i,f.nickname+' ('+f.player_code+')',y+8,16,{fontFace:'system',lines,lineHeight:21},x+12,w-98);txt('admin-friend-status:'+i,f.status==='accepted'?'已互关好友':'申请中',y+11,12,{fontFace:'system',tone:f.status==='accepted'?'green':'gold',align:'right'},x+w-80,68);y+=h+8;}y-=8;bodyEnd=y;
   }else if(doc.kind==='code-editor'&&doc.playerCodeEditor){
     const d=doc.playerCodeEditor;y=19;bodyStart=19;
     txt('codeEditor-title',d.user.nickname+' · 仙友码管理',y+7.5,15,{weight:'700',tone:'gold',lineHeight:22.5},x,w-56);button('codeEditor:close','关闭',y,{skin:'admin-back',fontSize:13},x+w-44,44,37.5);add('label','codeEditor-rule','',x,y+47.5,w,1,{skin:'admin-rule'});y+=62.5;
-    txt('codeEditor-current','当前仙友码：'+d.currentCode,y,13,{lineHeight:19.5});y+=32.5;
+    txt('codeEditor-current','当前仙友码：'+d.currentCode,y,13,{lineHeight:19.5,emphasis:[{text:d.currentCode,weight:'700'}]});y+=32.5;
     const help=txt('codeEditor-help','改号保留账号、好友和会员；从未开局则释放旧号，存在任何已开局记录则保留旧号。',y,13,{tone:'muted',lineHeight:19.5});y+=help.height+12;
     txt('codeEditor-label','新仙友码',y,12.5,{weight:'600',lineHeight:18.75});y+=24.75;button('codeEditor:input',d.code,y,{skin:'admin-input',fontSize:13.5},x,w,38);y+=38;
     const available=d.check&&['available','reserved'].includes(d.check.status),status=d.check?.status;
@@ -139,10 +139,10 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
         const phase=r.activeRoomId?({waiting:'等待入席',playing:'对局进行中',finished:'已结束 · 待续局'}[r.activePhase??'waiting']):'待开桌';
         const info=txt('special-room-info:'+r.id,'房主：'+r.managerName+' #'+r.managerCode+' · '+r.settings.playerCount+'人 · '+(r.hasPassword?'有密码':'无密码')+' · '+phase,y,13,{lineHeight:19.5},px,cw);y+=info.height+8;
         button('special:edit:'+r.id,'修改配置与密码',y,{skin:'admin-tool',fontSize:11.5,disabled:!!r.activeRoomId},px,107,28);
-        if(r.activeRoomId)button('special:end:'+r.id,'结束本次房间',y,{skin:'admin-tool',fontSize:11.5,tone:'red'},px+115,96,28);y+=36;
+        if(r.activeRoomId)button('special:end:'+r.id,'结束本次房间',y-2,{skin:'admin-tool',fontSize:11.5,tone:'red'},px+110,92,30);y+=36;
         if(r.activeRoomId){const hint=txt('special-room-hint:'+r.id,r.activePhase==='finished'?'本局已结束，房主可返回等待区续局；也可结束本次房间后重新开桌。':'本次房间关闭后可编辑配置；等待区改密可由房主直接操作。',y,13,{tone:'muted',lineHeight:19.5},px,cw);y+=hint.height+8;}
-        y+=5;card.height=y-card.y;y+=10;
-      }roomPanel.height=y-roomPanel.y;y+=20;
+        y+=3;card.height=y-card.y;y+=10;
+      }if(d.rooms.length)y+=9;roomPanel.height=y-roomPanel.y;y+=20;
       const codePanel=panel('admin-special-codes',y,1,'admin-card',ax,aw);y+=19;txt('special-code-title','仙友靓号管理',y,15,{fontFace:'display'},ax+19,aw-38);y+=38;const help=txt('special-code-help','预留号不会随机分配；分配后仍在此显示持有玩家和分配记录。分配号码请在“仙友用户”中点击“改仙友码”。',y,13,{tone:'muted',lineHeight:19.5},ax+19,aw-38);y+=help.height+12;
       const columns=aw-38>=310?2:1,fw=(aw-38-(columns-1)*10)/columns;
       for(const [i,id,label,value] of [[0,'special:reserveCode','六位仙友码',d.reserveDraft?.code??''],[1,'special:reserveNote','备注',d.reserveDraft?.note??'']] as const){const px=ax+19+i%columns*(fw+10),py=y+Math.floor(i/columns)*72.75;txt(id+'-label',label,py,12.5,{weight:'600',lineHeight:18.75},px,fw);button(id,value,py+18.75,{skin:'admin-input',fontSize:13.5},px,fw,38);}y+=Math.ceil(2/columns)*72.75;
@@ -297,9 +297,10 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
     button(model.web!.backId??'back','×',17.5,{skin:'pill',fixed:true,fontSize:15},x+w-36,32,32);
     add('label','dialog-rule','',ox+1,66,width-2,1,{skin:'rule',fixed:true});
     txt('pref-intent','⭐ 出战意向志愿 ('+(doc.preferences?.length??0)+'/3)',76,12.5,{tone:'gold',fixed:true},x,w-78);
-    if(doc.preferences?.length)button('prefClear','清空重选',73,{skin:'pill',fixed:true,fontSize:11,disabled:doc.preferencesDisabled},x+w-76,76,28);
-    for(let i=0;i<3;i++){const role=doc.preferences?.[i];button(role?'pref:'+role:'noop',role?roleNames[role]:'待选择',97.9375,{disabled:doc.preferencesDisabled,skin:'preference-slot',fixed:true,count:i+1,selected:!!role,image:role?'roles/'+defaultRoleArtPrefix(role)+'-160.webp':undefined},x+2+i*(w+4)/3,(w-20)/3,38);}
-    add('label','pref-slot-rule','',ox+1,145.9375,width-2,1,{skin:'rule',fixed:true});y=155.9375;bodyStart=145.9375;footerH=56;
+    const selectedExtra=doc.preferences?.length?6:0;
+    if(doc.preferences?.length)button('prefClear','清空重选',76,{skin:'preference-clear',fixed:true,fontSize:10.5,disabled:doc.preferencesDisabled},x+w-62,62,22);
+    for(let i=0;i<3;i++){const role=doc.preferences?.[i];button(role?'pref:'+role:'noop',role?roleNames[role]:'待选择',97.9375+selectedExtra,{disabled:doc.preferencesDisabled,skin:'preference-slot',fixed:true,count:i+1,selected:!!role,image:role?'roles/'+defaultRoleArtPrefix(role)+'-160.webp':undefined},x+2+i*(w+4)/3,(w-20)/3,38);}
+    add('label','pref-slot-rule','',ox+1,145.9375+selectedExtra,width-2,1,{skin:'rule',fixed:true});y=155.9375+selectedExtra;bodyStart=145.9375+selectedExtra;footerH=56;
     if(doc.preferencesDisabled)para('pref-disabled','本局已开始或房主已关闭心仪选角，暂不可修改。');
     for(const team of ['blue','red'] as const){const roles=[...new Set(ROLE_CONFIG[doc.settings.playerCount]??[])].filter(r=>getRoleGalleryItem(r).team===team);
       txt('pref-team:'+team,(team==='blue'?'🔵 护经正道 · 神佛仙圣':'🔴 乱道妖魔 · 混世群妖')+' ('+roles.length+')',y,12.5,{tone:team});y+=24.9375;
@@ -390,7 +391,7 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
     bodyEnd=y;footerH=81;
   } else if(doc.kind==='vote'&&game) {
     y=18;modalHeader('第 '+game.mission+' 难 · 出征组队表决',WUYUE_MISSIONS[game.mission-1]?.subtitle??'取经出征组队表决');
-    y+=4;const ruleText='准行多于封驳即准予出征 · 平票或封驳视为流局',ruleLines=wrapText(ruleText,w-22,t=>measure(t,12)),ruleHeight=ruleLines.length*21+10;panel('vote-rule',y,ruleHeight,'vote-prompt').fixed=true;txt('guide:vote-rule',ruleText,y+5,12,{align:'center',lineHeight:21,lines:ruleLines,fixed:true},x+10,w-20);y+=ruleHeight+12;bodyStart=y;const voteBodyStart=nodes.length;
+    y+=4;const ruleText='准行多于封驳即准予出征 · 平票或封驳视为流局',ruleLines=wrapText(ruleText,w-26,t=>measure(t,12)),ruleHeight=ruleLines.length*21+10;panel('vote-rule',y,ruleHeight,'vote-prompt').fixed=true;txt('guide:vote-rule',ruleText,y+5,12,{align:'center',lineHeight:21,lines:ruleLines,fixed:true},x+10,w-20);y+=ruleHeight+12;bodyStart=y;const voteBodyStart=nodes.length;
     const round=game.rounds.at(-1),party=(round?.team??[]).map(id=>game.players.find(p=>p.id===id)).filter((p):p is Player=>!!p), captain=game.players.find(p=>p.id===game.captainId);
     const columns=Math.min(3,party.length)||1, slotW=Math.min(115,(w-32-(columns-1)*10)/columns),slotH=92;
     const teamH=66+18+Math.ceil(party.length/columns)*slotH+(Math.ceil(party.length/columns)-1)*10+4;
@@ -412,26 +413,26 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
     game.players.forEach((p,i)=>{const done=game.teamVote?.votedIds.includes(p.id),ballot=game.teamVote?.ballots?.[p.id];add('label','ballot:'+p.id,p.seat+'号 '+p.nickname+'  '+(ballot==='abstain'?'− 旁观':ballot===true?'✓ 准行':ballot===false?'× 封驳':done?'已落印':'待落印'),x+10+i%columnsV*((w-14)/columnsV),y+31.796875+Math.floor(i/columnsV)*29.390625,(w-20-(columnsV-1)*6)/columnsV,23.390625,{skin:'voter-chip',fontSize:9.5,tone:done?'green':'gold'});});
     txt('vote-privacy',game.teamVote?.ballots?'🔓 公开表决：提交后全员可见票型':'🔒 匿名表决：仅公开落印进度，不公开个人票型',y+progressH-25,10.5,{align:'center'},x+5,w-10);y+=progressH+6;for(const n of nodes.slice(voteBodyStart)){if(n.x===x&&n.width===w){n.x+=2;n.width-=4;}if(n.id.startsWith('vote-choice:')){const i=['approve','reject','abstain'].indexOf(n.id.slice(12));n.x=x+2+i*(w+4)/3;n.width=(w-20)/3;}if(n.id==='vote-captain'){n.x+=2;n.width-=4;}}bodyEnd=y;
   } else if(doc.kind==='art'&&doc.roleItem) {
-    const item=doc.roleItem;y=20;
+    const item=doc.roleItem,gallery=model.web?.backId==='guideArtClose';y=20;
     add('label','art-faction',(item.team==='blue'?'蓝方 · 取经正果':'红方 · 群妖乱道')+' · '+item.title,x,y+3,Math.min(w-88,200),26,{skin:'art-faction',team:item.team,fontSize:11});
-    button(model.web!.backId??'overlayClose','✕ 关闭',y,{skin:'pill',fontSize:13},x+w-76,76,32);add('label','art-header-rule','',x,y+44,w,1,{skin:'rule'});y+=64;
+    button(model.web!.backId??'overlayClose','✕ 关闭',y,{skin:'pill',fontSize:13},x+w-69.5625,69.5625,32);add('label','art-header-rule','',x,y+(gallery?48:44),w,1,{skin:'rule'});y+=gallery?67:64;
     const diameter=Math.min(v.width*.72,300);
     add('portrait','role-large',item.fullName,(v.width-diameter)/2,y,diameter,diameter,{skin:'art-circle',image:'/art/roles/'+item.artPrefix+'-640.webp',team:item.team});
-    if(model.web?.backId==='guideArtClose'){button('guideArtPrev','⟨',y+diameter/2-22,{skin:'pill',fontSize:22},x+6,44,44);button('guideArtNext','⟩',y+diameter/2-22,{skin:'pill',fontSize:22},x+w-50,44,44);}y+=diameter+14;
-    add('label','art-name',item.fullName,x,y,w,33.6,{skin:'art-name',fontFace:'display',fontSize:28});y+=41.6;
+    if(gallery){button('guideArtPrev','⟨',y+diameter/2-22,{skin:'art-nav',fontSize:22},x+6,44,44);button('guideArtNext','⟩',y+diameter/2-22,{skin:'art-nav',fontSize:22},x+w-50,44,44);}y+=diameter+(gallery?18:14);
+    add('label','art-name',item.fullName,x,y,w,gallery?20.4:33.6,{skin:'art-name',fontFace:'display',fontSize:gallery?17:28,tone:gallery?'gold':undefined});y+=gallery?28.4:41.6;
     const motto=txt('art-motto','“'+item.motto+'”',y,14,{align:'center',tone:'gold',lineHeight:21});y+=motto.height+10;
-    const story=txt('art-story',item.story,y+11,13,{lineHeight:21.45,skin:'art-story-copy'},x+15,w-30);const storyPanel=panel('art-story-panel',y,story.height+22,'art-story');nodes.splice(nodes.indexOf(storyPanel),1);nodes.splice(nodes.indexOf(story),0,storyPanel);y+=storyPanel.height+31;bodyEnd=y;
+    const story=txt('art-story',item.story,y+11,13,{lineHeight:21.45,skin:'art-story-copy'},x+15,w-30);const storyPanel=panel('art-story-panel',y,story.height+22,'art-story');nodes.splice(nodes.indexOf(storyPanel),1);nodes.splice(nodes.indexOf(story),0,storyPanel);y+=storyPanel.height;if(gallery){add('label','art-footer-rule','',x,y,w,1,{skin:'rule'});const index=ALL_GALLERY_ROLES.findIndex(r=>r.id===item.id),counter=(index+1)+' / '+ALL_GALLERY_ROLES.length,bw=76.921875,cw=measure(counter,13,'sans','700'),left=(v.width-bw*2-cw-32)/2;button('guideArtPrev','⟨ 上一位',y+11,{skin:'art-page',fontSize:13},left,bw,32);txt('art-counter',counter,y+20.5,13,{lineHeight:13,tone:'gold',weight:'700',align:'center'},left+bw+16,cw);button('guideArtNext','下一位 ⟩',y+11,{skin:'art-page',fontSize:13},left+bw+32+cw,bw,32);y+=81;}else y+=31;bodyEnd=y;
   } else if(doc.kind==='report'&&game){
     const r=game.rounds.find(r=>r.mission===doc.reportMission&&r.result);
     y=19;modalHeader('第 '+doc.reportMission+' 难 · 战报落定',WUYUE_MISSIONS[(doc.reportMission??1)-1]?.title??'取经战报');y+=4;
     if(r?.result){const passed=r.result.passed;
       panel('report-hero',y,140,passed?'report-success-hero':'report-failure-hero');
       txt('report-outcome-icon',passed?'🪷':'🔥',y+18,24,{lineHeight:34},x+12,34);
-      txt('report-kicker',passed?'MISSION SUCCESS · 取经护持':'MISSION FAILED · 妖魔作祟',y+10,10,{tone:passed?'green':'red'},x+46,w-58);
-      txt('report-result',passed?'✓ 护经成功 · 此难化解':'取经失利 · 妖魔作祟',y+28,17,{fontFace:'calligraphy',letterSpacing:.5,lineHeight:22.1,tone:passed?'green':'red'},x+46,w-58);
+      txt('report-kicker',passed?'MISSION SUCCESS · 取经护持':'MISSION FAILED · 妖孽作祟',y+10,10,{skin:'report-kicker',weight:'700',letterSpacing:.6,tone:passed?'green':'red'},x+46,w-58);
+      txt('report-result',passed?'✓ 护经成功 · 此难化解':'× 妖魔作祟 · 任务失败',y+28,17,{skin:'report-headline',fontFace:'calligraphy',letterSpacing:.5,lineHeight:22.1,tone:passed?'green':'red'},x+46,w-58);
       panel('report-success',y+58,34,'report-stat-success',x+12,(w-30)/2);panel('report-fail',y+58,34,'report-stat-failure',x+18+(w-30)/2,(w-30)/2);
-      txt('report-success-total','🪷 成功牌 '+r.result.successes+' 张',y+65,14,{align:'center'},x+12,(w-30)/2);
-      txt('report-fail-total','🔥 失败牌 '+r.result.failures+' 张',y+65,14,{align:'center'},x+18+(w-30)/2,(w-30)/2);
+      txt('report-success-total','🪷 成功牌 '+r.result.successes+' 张',y+65,14,{skin:'report-stat-copy',count:r.result.successes,tone:'green',align:'center'},x+12,(w-30)/2);
+      txt('report-fail-total','🔥 失败牌 '+r.result.failures+' 张',y+65,14,{skin:'report-stat-copy',count:r.result.failures,tone:'red',align:'center'},x+18+(w-30)/2,(w-30)/2);
       txt('report-rule',(failuresRequiredFor(game.players.length,doc.reportMission??game.mission)===2?'本难规则：需 2 张及以上失败牌方判定失败':'本难规则：只要出现 1 张失败牌即判定失败')+'，出牌过程始终匿名。',y+100,11,{align:'center',lineHeight:15.4},x+12,w-24);y+=150;
       const party=r.team.map(id=>game.players.find(p=>p.id===id)).filter((p):p is Player=>!!p),ph=82+Math.ceil(party.length/2)*34+8;
       panel('report-party',y,ph,'report-section');txt('report-party-title','出征领队与执行阵容',y+10,13,{tone:'gold',fontFace:'calligraphy'},x+38,w-48);
@@ -566,7 +567,7 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
       add('label','account-name',user.nickname,x+78,y+38,nameWidth,nameLines.length*30,{skin:'text',fontSize:22,fontFace:'display',lines:nameLines,lineHeight:30,align:'left'});
       button('copyCode','#'+(user.playerCode??'')+' 📋 复制',y+42+(codeBelow?nameLines.length*30:0),{skin:'code-badge',fontSize:11},codeBelow?x+78:x+84+nameWidth,Math.min(110,nameSpace),24);
       txt('account-help','专属仙友码全局唯一 · 微信小程序静默对应 · 换号凭此码随时找回战绩',y+74+profileExtra,11.5,{},x+78,w-90);
-      button('switch','🚪 更换身份',y+124+profileExtra,{skin:'pill',fontSize:12},x+12,88,38);button('back','返回原页面',y+124+profileExtra,{skin:'pill',fontSize:12},x+108,88,38);y+=184.4375+profileExtra;
+      button('switch','🚪 更换身份',y+124+profileExtra,{skin:'pill',fontSize:12},x+12,88,38);button('back','返回原页面',y+124+profileExtra,{skin:'pill',fontSize:12},x+108.203125,82,38);y+=184.4375+profileExtra;
       button('profileToggle','修改昵称与头像',y,{skin:'pill',fontSize:13},x,(w-8)/2,40);button('sound','声音设置',y,{skin:'pill',fontSize:13},x+(w+8)/2,(w-8)/2,40);y+=50;
       const tabs=[['stats','我的战绩'],['history','历史对局'],['favorites','我的收藏'],['presets','常用设置']];
       panel('account-tab-frame',y,56,'tabs');tabs.forEach(([id,text],i)=>button('page:'+id,text!,y+4,{skin:'account-tab',selected:id===doc.activeTab,fontSize:14},x+4+i*(w-8)/4,(w-8)/4,48));y+=70;
@@ -587,7 +588,7 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
           txt('history-outcome:'+g.id,(g.result.winner===null?'中断':g.result.winner===g.self.team?'胜利':'失败'),y+14,22,{fontFace:'display'},x+12,50);txt('history-player-count:'+g.id,g.playerCount+' 人局',y+19,14,{tone:'muted'},x+64,w-152);
           add('label','history-status:'+g.id,g.favorite?'已收藏':'已结束',x+w-63,y+14,50,30,{skin:'history-status',fontSize:12});
           txt('history-role:'+g.id,formatRoleName(g.self.role)+' · '+(g.self.team==='blue'?'蓝方':'红方')+' · '+(reasons[g.result.reason]??''),y+61,16,{},x+12,w-24);
-          button('game:'+g.id,'查看复盘 · '+formatDate(g.endedAt),y+111,{skin:'pill',fontSize:16},x+12,w-24,48);
+          button('game:'+g.id,'查看复盘 · '+formatDate(g.endedAt),y+109,{skin:'pill',fontSize:16},x+15,w-28,50);
           const details=panel('history-details:'+g.id,y+169,60,'replay-details',x+12,w-24);button('details:'+g.id,(expanded?'▾':'▸')+' 对局信息',y+174,{skin:'plain-summary',fontSize:13},x+22,w-44,30);
           if(expanded){const date=txt('history-date:'+g.id,formatDate(g.endedAt)+' · 当时昵称：'+g.self.nickname,y+237,14,{lineHeight:25.2,tone:'muted'},x+22,w-44);const uid=txt('history-id:'+g.id,'对局编号 ID：'+g.id,date.y+date.height+12,12,{lineHeight:21,tone:'muted'},x+22,w-44);details.height=uid.y+uid.height+16-details.y;h=details.y+details.height+14-y;historyCard.height=h;}
           y+=h+12;
@@ -645,7 +646,7 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
       y+=doc.friendTab==='friends'?-8:doc.friendTab==='add'?-4:6;
     } else if(doc.kind==='chat') {
       const direct=doc.activeTab==='direct';modalHeader(direct?'仙友录 · 召集与好友':'法坛传音');
-      if(direct){panel('direct-topbar',y,104,'direct-topbar');button('page:friends','← 返回仙友录',y+34,{skin:'direct-back',fontSize:12},x+14,104,48);const f=doc.chatFriend;if(f){add('portrait','direct-friend','',x+118,y+8,92,92,{skin:'direct-avatar',image:f.avatarUrl??'emblems/'+(f.avatar??'cards')+'.png'});txt('direct-name',f.nickname,y+22,13.5,{tone:'gold',weight:'700'},x+214,24);}button('refresh:direct','🔄',y+34,{skin:'direct-back',fontSize:12},x+w-110,96,48);y+=104;}
+      if(direct){panel('direct-topbar',y,104,'direct-topbar');button('page:friends','← 返回仙友录',y+34,{skin:'direct-back',fontSize:12},x+14,104,48);const f=doc.chatFriend;if(f){add('portrait','direct-friend','',x+118,y+8,92,92,{skin:'direct-avatar',image:f.avatarUrl??'emblems/'+(f.avatar??'cards')+'.png'});txt('direct-name',f.nickname,y+22,13.5,{tone:'gold',weight:'700'},x+214,24);}button('refresh:direct','🔄',y+34,{skin:'direct-back',fontSize:12},x+w-117.53125,103.53125,48);y+=104;}
       const streamStart=y,streamMin=direct?142:120;
       for(const msg of doc.messages??[]){const tw=Math.min(w*.78,Math.max(60,measure(msg.text,13)+26)),lines=wrapText(msg.text,tw-26,t=>measure(t,13)),h=lines.length*(direct?18.2:20)+(direct?18:38);add('label','chat:'+msg.id,msg.text,msg.self?x+w-tw-12:x+12,y+(direct?12:0),tw,h,{skin:direct?'direct-message':'message',lines,fontSize:13,detail:direct?'':msg.name,selected:msg.self,align:'left'});y+=h+(direct?15:0);if(direct&&msg.timestamp){const time=new Date(msg.timestamp).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit',hour12:false});txt('chat-time:'+msg.id,time,y,10.5,{tone:'muted',lineHeight:15},msg.self?x+w-tw-8:x+16,tw-8);y+=15;}y+=12;}
       if(!doc.messages?.length){const n=txt('empty',direct?'📜 暂无密札往来，发送快捷密语或打字开始交谈吧！':'法坛尚无传音，发送文字与仙友论道。',y+20,12,{tone:'muted',align:'center'});y=n.y+n.height+12;}y=Math.max(y,streamStart+streamMin);
@@ -798,7 +799,7 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
   if(!bodyEnd)bodyEnd=y;
   if(modal) {
     const identity=doc.kind==='identity',profile=doc.kind==='account'&&doc.profileEditing,preset=doc.kind==='presets'&&doc.presetEditing,report=doc.kind==='report';
-    const intrinsic=doc.kind==='art'||preferences?bodyEnd:profile?bodyEnd+94:identity?bodyEnd+footerH+12.725:preset||report?bodyEnd+footerH+23:y+(doc.kind==='code-editor'?19:sound?13:social?socialPad:13);
+    const intrinsic=doc.kind==='art'||preferences?bodyEnd:profile?bodyEnd+94:identity?bodyEnd+footerH+12.725:preset||report?bodyEnd+footerH+23:y+(doc.kind==='code-editor'||adminFriends?19:sound?13:social?socialPad:13);
     const h=doc.kind==='art'?Math.min(available*.94,760,intrinsic):adminFriends?Math.min(available*.8,intrinsic):preferences?Math.min(available*.88,620):doc.kind==='history'?Math.min(available-20,Math.max(Math.min(available*.82,760),intrinsic)):Math.min(drawer?available*.6:available-(identity?24:28),intrinsic),fy=drawer?bottom-h:top+(available-h)/2-(adminFriends?10:0);
     const frame=add('panel','dialog-frame','',ox,fy,width,h,{team:doc.roleItem?.team,skin:doc.kind==='guanyin-window'?'mirror-frame':doc.kind==='private-notice'?(doc.noticeKind==='jingu'?'jingu-frame':'notice-frame'):profile?'profile-frame':doc.kind==='art'?'art-frame':adminFriends?'admin-card':auth?'auth-frame':sound?'sound-frame':doc.kind==='treasures'?'treasure-frame':doc.kind==='special-editor'||doc.kind==='code-editor'?'admin-card':doc.kind==='preferences'?'preference-frame':doc.kind==='vote'?'vote-frame':'dialog-frame',fixed:true});
     nodes.splice(nodes.indexOf(frame),1);nodes.unshift(frame);
@@ -822,7 +823,7 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
     if(heading){heading.fixed=true;heading.y=Math.max(0,heading.y-scroll);if(back){back.fixed=true;back.y=heading.y+8;}}
     if(nav){const originalY=nav.y,stuckY=Math.max(72,originalY-scroll);nav.fixed=true;nav.y=stuckY;for(const n of nodes.filter(n=>n.id.startsWith('round-jump:'))){n.fixed=true;n.y=stuckY+n.y-originalY;}}
   }
-  for(const node of nodes){node.y+=top-(node.fixed?(['guide','guide-role'].includes(doc.kind)?Math.min(scroll,14):0):scroll);node.clipTop=top;node.clipBottom=bottom;}
+  for(const node of nodes){node.y+=top-(node.fixed?(['guide','guide-role'].includes(doc.kind)?Math.min(scroll,14):0):scroll);node.clipTop=doc.kind==='admin'&&!node.fixed?top+80.59375:top;node.clipBottom=bottom;}
   feedback.slice(0,1).forEach(r=>add('button',r.id==='error'?'error':'dismissFeedback',r.text,18,top+58,v.width-36,56,{skin:'toast',tone:r.id==='error'?'red':'gold',fixed:true,fontSize:12}));
   appendSettingChoices();
   return {nodes,maxScroll,contentTop:top,contentBottom:bottom};

@@ -22,6 +22,7 @@ test('admin header actions remain visible and tappable after scrolling a long pa
  const model=p.model();model.scroll=10000;
  for(const width of [320,390,430]){
   const layout=layoutWebScreen(model,{width,height:568,top:24,bottom:0});
+  for(const node of layout.nodes.filter(n=>!n.fixed))assert.ok((node.clipTop??0)>=104.59375,'scrolling content must not paint over sticky admin controls');
   for(const id of ['admin-header','admin:refresh','back','admin:logout']){
    const node=layout.nodes.find(n=>n.id===id)!;assert.ok(node.fixed);assert.ok(node.y>=24&&node.y+node.height<=105);
   }
@@ -145,5 +146,20 @@ test('guide chapter selector exposes every chapter and keeps its options inside 
   assert.equal(options.length,section==='rules'?6:9);
   for(const option of options){assert.ok(option.fixed);assert.ok(option.y>=88&&option.y+option.height<=534);assert.ok(option.id.startsWith('guide-jump:guide-anchor:'));}
   assert.ok(layout.nodes.some(n=>n.id==='guide:chapters'));
+ }
+});
+
+
+test('gallery art retains the bottom pager and correct index after scrolling on narrow screens',()=>{
+ for(const width of [320,390,430]){
+  const viewport={width,height:width===320?568:844,top:0,bottom:0},model=guideScreen('merlin','roles',true);
+  model.scroll=layoutWebScreen(model,viewport).maxScroll;
+  const nodes=layoutWebScreen(model,viewport).nodes;
+  assert.equal(nodes.find(n=>n.id==='art-counter')?.text,'1 / 15');
+  for(const id of ['guideArtPrev','guideArtNext']){
+   const footer=nodes.find(n=>n.id===id&&n.skin==='art-page')!;
+   assert.ok(footer);assert.ok(footer.y>=0&&footer.y+footer.height<=viewport.height);
+  }
+  assert.equal(nodes.find(n=>n.id==='art-name')?.fontSize,17);
  }
 });

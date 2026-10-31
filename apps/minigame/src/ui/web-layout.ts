@@ -101,7 +101,7 @@ export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout 
     (web.practice ? [['bot','代操',26], ['rematch','重开',51.6], ['practiceSettings','配置',51.6], ['guide','📖 规则',51.6]] : [['sound','sound',26], ['chat','💬 传音',51.6], ['more','⚙️ 设置',51.6], ['guide','📖 规则',51.6]]).forEach(([id,title,width]) => {
       add('button', String(id), String(title), tx, top + 3, Number(width) * toolScale, 26, { fixed: true }); tx += (Number(width) + 3) * toolScale;
     });
-    for(const node of nodes)node.badge='table-toolbar';
+    for(const node of nodes){node.badge='table-toolbar';if(game)node.y-=2;}
     y = top + (game?34:48);
     const boardX = 12, boardW = w - 24, questW = (boardW - 24) / 5;
     const questH = 67.3 + cssClamp(36, availableH * .055, 44);
@@ -215,12 +215,12 @@ export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout 
       add('choice','mission-choice:fail','任务失败',panelX+19+cw,cardY,cw,54,{skin:'mission-card',selected:web.missionChoice===false,tone:'red',detail:web.ownTeam==='blue'?'蓝方阵营不可出失败牌':'妖魔作祟 · 破坏任务'});
       if(web.warning)add('label','mission-warning',web.warning,panelX+13,cardY+112,panelW-26,36,{skin:'warning',fontSize:11,tone:'red'});
       const submit=model.rows.find(row=>row.id==='submitMission');
-      add('button','submitMission',submit?.text??'确认提交任务牌',panelX+9,cardY+60+(web.warning?44:0),panelW-18,48,{skin:'dragon-button',primary:true,fontFace:'calligraphy',fontSize:17,letterSpacing:.5,disabled:web.missionChoice===undefined});
+      add('button','submitMission',submit?.text??'确认提交任务牌',panelX+9,cardY+60+(web.warning?44:0),panelW-18,48,{skin:'dragon-button',primary:true,fontFace:'calligraphy',fontSize:cssClamp(13,w*.038,17),letterSpacing:.5,disabled:web.missionChoice===undefined});
     } else if (proposing && captain?.id === web.user?.id) {
-      add('label','dock-rule',stage === 'proposing' ? '—◇ 点击头像选人 · 预选阵容后进入论道 ◇—' : '—◇ 真假论道 · 听取陈述后发起表决 ◇—',panelX+4,panelY+10,panelW-8,17);
-      const directionW=cssClamp(100,w*.28,118), controlsX=panelX+13, controlsW=panelW-26;
-      add('button','direction',(game?.draftTeam?.direction === 'counterclockwise' ? '逆时针' : '顺时针')+'发言',controlsX,panelY+28,directionW,48);
-      add('button',stage === 'proposing' ? 'propose' : 'startTeamVote',stage === 'proposing' ? (selected.length===size?'确认阵容':'待选队员')+' ('+selected.length+'/'+size+')' : '锁定阵容 · 发起表决', controlsX+directionW+10,panelY+28,controlsW-directionW-10,48,{ primary:true,disabled:selected.length!==size });
+      add('label','dock-rule',stage === 'proposing' ? '—◇ 点击头像选人 · 预选阵容后进入论道 ◇—' : '—◇ 真假论道 · 听取陈述后发起表决 ◇—',panelX+9,panelY+7,panelW-18,16.890625);
+      const directionW=cssClamp(100,w*.28,118), controlsX=panelX+9, controlsW=panelW-18;
+      add('button','direction',(game?.draftTeam?.direction === 'counterclockwise' ? '逆时针' : '顺时针')+'发言',controlsX,panelY+23.890625,directionW,48);
+      add('button',stage === 'proposing' ? 'propose' : 'startTeamVote',stage === 'proposing' ? (selected.length===size?'确认阵容':'待选队员')+' ('+selected.length+'/'+size+')' : '锁定阵容 · 发起表决', controlsX+directionW+10,panelY+23.890625,controlsW-directionW-10,48,{ primary:true,disabled:selected.length!==size });
     } else {
       const actions=model.rows.filter(row => ['confirmRole','openVote','openMission','inspect','confirmInspection','assassinate','rematch',...(!game?['ready',...(room.hostId===web.user?.id?['start']:['practice'])]:[])].includes(row.id)).slice(0,2);
       if (actions.length) actions.forEach((action,index)=>add('button',action.id,action.text,panelX+10+index*(panelW-14)/actions.length,panelY+21,(panelW-20)/actions.length-4,48,{primary:true}));

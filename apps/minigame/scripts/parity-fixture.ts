@@ -3,10 +3,10 @@ import { createGame, projectGame, MISSION_SIZES } from '@avalon/game-core';
 
 // Deterministic, local-only fixture shared by both screenshot renderers.
 export function parityFixture(scene = 'game',playerCount=6) {
-  const publicReport=scene==='report-public';if(publicReport)scene='report';
+  const publicReport=scene==='report-public',failedReport=scene==='report-failed';if(publicReport||failedReport)scene='report';
   let user = { id: '11111111-1111-4111-8111-111111111111', nickname: '行者', playerCode: '123456', avatar: 'leaf' as const };
   const members = Array.from({ length: playerCount }, (_, index) => ({ id: index ? '00000000-0000-4000-8000-' + String(index).padStart(12, '0') : user.id, nickname: index ? '仙友' + index : user.nickname, seat: index + 1, ready: true, online: true, ...(index ? {} : { avatar: 'leaf' as const }) }));
-  const settings={...defaultSettings,playerCount,...(scene==='preferences'?{rolePreferenceEnabled:true}:{}),...(scene.startsWith('treasures-')?{treasuresEnabled:true,guardianPerksEnabled:false}:{})};
+  const settings={...defaultSettings,playerCount,...(scene.startsWith('preferences')?{rolePreferenceEnabled:true}:{}),...(scene.startsWith('treasures-')?{treasuresEnabled:true,guardianPerksEnabled:false}:{})};
   const game = createGame('11111111-2222-4333-8444-555555555555', members, settings, values => [...values], { randomBelow: () => 0n });
   game.phase = 'proposing'; game.confirmed = members.map(member => member.id);
   game.captainIndex = 0;
@@ -16,7 +16,7 @@ export function parityFixture(scene = 'game',playerCount=6) {
     game.rounds = [{number:1,mission:1,captainId:user.id,team:members.slice(0,MISSION_SIZES[playerCount]![0]).map(p=>p.id),direction:'clockwise'}];
     if(scene.startsWith('vote')) {game.phase='team_vote';game.teamVoteStartedAt='2026-10-22T00:00:00Z';game.teamVotes={};if(scene==='vote-submitted')game.teamVotes[user.id]=true;}
     else {game.phase='mission';game.rounds[0]!.vote={approvals:playerCount-2,rejections:1,abstentions:1,passed:true};if(scene==='mission-submitted')game.missionVotes[user.id]=true;}
-    if(scene==='report'||scene==='result') {game.rounds[0]!.result={successes:MISSION_SIZES[playerCount]![0],failures:0,passed:true};game.phase='proposing';game.mission=2;}
+    if(scene==='report'||scene==='result') {game.rounds[0]!.result={successes:MISSION_SIZES[playerCount]![0]-(failedReport?1:0),failures:failedReport?1:0,passed:!failedReport};game.phase='proposing';game.mission=2;}
     if(scene==='result') {game.phase='finished';game.result={winner:'blue',reason:'merlin_survived'};}
   }
   if(scene.startsWith('treasures-')&&scene.endsWith('-available')){
