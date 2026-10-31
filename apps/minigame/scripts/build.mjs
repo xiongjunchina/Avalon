@@ -64,13 +64,17 @@ export async function buildMiniGame({
     }
   }
   const existingHd=await stat(join(outDir,'hd-art')).catch(()=>undefined);
-  const size = await bytesIn(outDir)-(existingHd?await bytesIn(join(outDir,'hd-art')):0);
+  const existingFonts=await stat(join(outDir,'web-fonts')).catch(()=>undefined);
+  const size = await bytesIn(outDir)-(existingHd?await bytesIn(join(outDir,'hd-art')):0)-(existingFonts?await bytesIn(join(outDir,'web-fonts')):0);
   if (size > maxBytes) throw new Error(`PACKAGE_TOO_LARGE: ${size} > ${maxBytes}`);
   const hdRoot=join(outDir,'hd-art');await mkdir(hdRoot,{recursive:true});
   await writeFile(join(hdRoot,'game.js'),'// Local high-resolution artwork package.\n');
   for(const name of await readdir(join(minigameRoot,'assets/hd-art')))if(name.endsWith('.jpg'))await copyFile(join(minigameRoot,'assets/hd-art',name),join(hdRoot,name));
   const hdSize=await bytesIn(hdRoot);if(hdSize>4*1024*1024)throw Error('HD_PACKAGE_TOO_LARGE');
-  return { outDir, size:size+hdSize, appId: selectedAppId, apiBaseUrl:serviceUrl, voiceEnabled };
+  const fontRoot=join(outDir,'web-fonts');await mkdir(fontRoot,{recursive:true});await writeFile(join(fontRoot,'game.js'),'// Actual web font weights.\n');
+  for(const name of await readdir(join(minigameRoot,'assets/web-fonts')))await copyFile(join(minigameRoot,'assets/web-fonts',name),join(fontRoot,name));
+  const fontSize=await bytesIn(fontRoot);if(fontSize>4*1024*1024)throw Error('FONT_PACKAGE_TOO_LARGE');
+  return { outDir, size:size+hdSize+fontSize, appId: selectedAppId, apiBaseUrl:serviceUrl, voiceEnabled };
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

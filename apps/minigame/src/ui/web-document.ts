@@ -1,8 +1,23 @@
-import type { Role, Avatar, DirectMessage, FriendSummary, GameSummary, GameView, Replay, RoomChatMessage, Settings, SettingPreset, Statistics, User } from '@avalon/contracts';
+import type { PlayerCodeAvailability, PlayerCodeAllocation, DedicatedRoom, PlayerCodeReservation, PlayerCodeHistoryPage, AdminOverview, AdminUserSummary, AdminRoomSummary, AdminGameSummary, RedemptionCodeItem, Role, Avatar, DirectMessage, FriendSummary, GameSummary, GameView, Replay, RoomChatMessage, Settings, SettingPreset, Statistics, User } from '@avalon/contracts';
 import type { RoleGalleryItem } from '../../../web/src/roles.js';
 
 export interface WebDocument {
-  kind: 'preferences' | 'identity' | 'vote' | 'treasures' | 'report' | 'history' | 'art' | 'confirm' | 'tools' | 'account' | 'presets' | 'friends' | 'chat' | 'guide' | 'guide-role' | 'admin' | 'replay' | 'settings';
+  kind: 'admin-friends' | 'code-editor' | 'auth' | 'special-editor' | 'sound' | 'preferences' | 'identity' | 'vote' | 'treasures' | 'report' | 'history' | 'art' | 'confirm' | 'tools' | 'account' | 'presets' | 'friends' | 'chat' | 'guide' | 'guide-role' | 'admin' | 'replay' | 'settings';
+  playerCodeEditor?:{user:AdminUserSummary;code:string;currentCode:string;check?:PlayerCodeAvailability;history:PlayerCodeAllocation[];expanded:boolean;notice:string};
+  specialDraft?:{id?:string;code:string;name:string;managerCode:string;settings:Settings;password?:string|null};
+  adminOverview?: AdminOverview;
+  adminUsers?:AdminUserSummary[];
+  adminUserTotal?:number;
+  adminUserQuery?:string;
+  adminFriendOwner?:string;
+  adminFriends?:{nickname:string;player_code:string;status:string}[];
+  adminRooms?:AdminRoomSummary[];
+  adminGames?:AdminGameSummary[];
+  adminCodes?:RedemptionCodeItem[];
+  adminSpecial?:{rooms:DedicatedRoom[];codes:PlayerCodeReservation[];history:PlayerCodeHistoryPage;editing:boolean;reserveDraft?:{code:string;note:string}};
+  adminCodeDraft?:{count:string;days:string;note:string};
+  adminSettings?:{freeAccessMode:boolean;adRewardHours:number;announcement:{enabled:boolean;text:string}};
+  soundPreferences?:{music:boolean;effects:boolean};
   preferences?:Role[];
   preferencesDisabled?:boolean;
   modal?: boolean;
@@ -30,9 +45,11 @@ export interface WebDocument {
   friendTab?: 'invite' | 'friends' | 'add';
   friendQuery?: string;
   roomCode?: string;
+  roomMemberIds?:string[];
   canInvite?: boolean;
   messages?: { id: string; text: string; name: string; self: boolean; timestamp?: string }[];
   chatDraft?: string;
+  chatFriend?:FriendSummary;
   quickExpanded?: boolean;
   replay?: Replay;
 }

@@ -65,7 +65,7 @@ test('built client logs in, opens a clean join form and creates the selected web
     end({ changedTouches: [{ clientX: target.x, clientY: target.y }] });
     await settle();
   }
-  await settle(); await tap('踏入取经大道');
+  await settle(); await tap('取昵称');await tap('例如：小陈、阿辉');confirmKeyboard({value:'行者'});await settle();await tap('取好昵称，继续游戏');
   assert.ok(frame.some(item => item.text === '开常规房'));
   await tap('加入房间');
   assert.ok(frame.some(item => item.text === '输入房间号或邀请链接'));
@@ -84,7 +84,7 @@ test('built client logs in, opens a clean join form and creates the selected web
   assert.ok(frame.some(item => item.text.includes('房号 123456')));
   room = parityFixture().room; room.version = 2;
   socketMessage({data:JSON.stringify({type:'snapshot',room})}); await settle();
-  await tap('行者'); await tap('仙友1');
+  await tap('1号 · 行者'); await tap('2号 · 仙友1');
   assert.equal(commands.filter(command => command.type === 'updateTeamDraft').length, 2);
   await tap('确认阵容 (2/2)');
   assert.deepEqual(commands.find(command => command.type === 'proposeTeam')?.payload.playerIds, room.game.players.slice(0,2).map((player: any) => player.id));

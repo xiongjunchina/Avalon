@@ -14,11 +14,13 @@ test('home preserves web role showcase, paired room actions and compact account 
   assert.ok(nodes.some(node => node.id === 'account' && node.y < 120));
 });
 
-test('waiting table preserves five mission medallions, vacant seats and scrolling action dock', () => {
+test('waiting table folds mission details after readiness and preserves vacant seats', () => {
   const room = { id: 'r', code: '123456', hostId: 'u', settings: defaultSettings, acceptingNewMembers: true, members: [{ id: 'u', nickname: '行者', seat: 1, online: true, ready: false }] } as any;
   const model = lobbyScreen(room, room.members[0]);
   const result = layoutWebScreen(model, { width: 390, height: 844, top: 44, bottom: 34 });
-  assert.equal(result.nodes.filter(node => node.kind === 'quest').length, 5);
+  assert.equal(result.nodes.filter(node => node.kind === 'quest').length, 0);
+  const expanded=layoutWebScreen({...model,web:{...model.web!,waitingMissionsExpanded:true}},{width:390,height:844,top:44,bottom:34});
+  assert.equal(expanded.nodes.filter(node=>node.kind==='quest').length,5);
   assert.equal(result.nodes.filter(node => node.kind === 'seat').length, defaultSettings.playerCount);
   assert.equal(result.nodes.some(node => node.id === 'altar'), false);
   assert.ok(result.nodes.some(node => node.id === 'ready' && node.y > result.nodes.find(n => n.skin === 'waiting-seat')!.y));

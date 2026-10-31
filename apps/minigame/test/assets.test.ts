@@ -37,3 +37,11 @@ test('subpackage exceptions preserve the packaged preview and throttle retries',
  for(let i=0;i<100;i++)assert.equal(art.get('roles/merlin-160.webp'),images[0]);
  assert.equal(loads,1);
 });
+
+test('scene quality upgrade retains the first frame until its local HD image decodes',()=>{
+ const images:WxImage[]=[];let ready=()=>{};
+ const runtime={loadSubpackage:(o:any)=>{ready=o.success;},createImage:()=>{const image={width:768,height:1376,src:'',onload:null,onerror:null} as WxImage;images.push(image);return image;}} as unknown as WxRuntime;
+ const art=createArtwork(runtime,()=>{},'https://unavailable.invalid/avalon');art.get('scenes/gate.webp');images[0]!.onload?.();ready();
+ assert.equal(art.get('scenes/gate.webp'),images[0]);assert.equal(images[1]!.src,'hd-art/scene-gate.jpg');images[1]!.onload?.();assert.equal(art.get('scenes/gate.webp'),images[1]);
+ assert.ok(images.every(i=>!i.src.startsWith('https:')));
+});

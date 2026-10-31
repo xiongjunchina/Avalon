@@ -1,3 +1,4 @@
+import {configureDocumentMetrics,setBackdropCanvasFactory} from './ui/web-render.js';
 import {invitationUrl} from './net/urls.js';
 import {RolePreferenceDraft} from './screens/role-preferences.js';
 import type {Role} from '@avalon/contracts';
@@ -37,9 +38,10 @@ declare const wx: WxRuntime;
 declare const __MINIGAME_API_BASE_URL__: string;
 
 const baseUrl = __MINIGAME_API_BASE_URL__;
-installWebFonts(wx);
+installWebFonts(wx,()=>{setTimeout(render,0);});
 const platform = new WechatPlatform(wx);
 const canvas = drawShell(platform);
+setBackdropCanvasFactory(()=>wx.createCanvas() as unknown as HTMLCanvasElement);
 const artwork = createArtwork(wx, () => render(), baseUrl);
 const api = new MiniGameApi(platform, baseUrl);
 const nativeVoice = new NativeVoice(wx, async roomId => api.request<VoiceTicket>(`/rooms/${roomId}/wechat-voice-ticket`, { code: await platform.login() }), () => render(), MINI_GAME_VOICE_ENABLED);
@@ -81,8 +83,10 @@ let commandBusy = false;
 let roleIndex = 0;
 let nickname = '';
 let switchCode = '';
+let guestHomeVisible=true;let authIntent:'create'|'join'|undefined;
 let authMode: 'create' | 'switch' = 'create';
 const rolePreferenceDraft=new RolePreferenceDraft();
+let waitingMissionsExpanded=false;
 let auxiliary: 'preferences' | 'dedicated' | 'roomTools' | 'practiceSeats' | 'sound' | 'switchAccount' | 'join' | undefined;
 let joinKey = '';
 let dedicatedRooms: DedicatedRoom[] = [];
@@ -120,12 +124,12 @@ function model(): ScreenModel {
     { id: 'joinSubmit', text: '入座取经' },
   ], web: { page: 'sheet', background: 'gate', backId: 'auxiliaryClose',document:{kind:'tools',modal:true},underlay:entryScreen(user) } });
   if(auxiliary==='dedicated')return feedback({title:'选择开桌方式',rows:[{id:'dedicated:normal',text:'普通房 · 随机房号'},...dedicatedRooms.map(r=>({id:'dedicated:'+r.id,text:r.code+' · '+r.name+(r.activeRoomId?'（已开桌）':''),disabled:!!r.activeRoomId}))],web:{page:'sheet',background:'library',backId:'auxiliaryClose',document:{kind:'tools',modal:true}}});
-  if (auxiliary === 'switchAccount') return feedback({ ...entryScreen(), web: { page: 'home', authMode, nickname, switchCode, knownAccounts: knownAccounts.list(), backId: 'auxiliaryClose' } });
+  if (auxiliary === 'switchAccount') return feedback({ ...entryScreen(undefined,undefined,true), web: {...entryScreen(undefined,undefined,true).web!, authMode, nickname, switchCode, knownAccounts: knownAccounts.list(), backId: 'auxiliaryClose' } });
   if (auxiliary === 'sound') return feedback({ title: '声音设置', rows: [
     { id: 'sound:music', text: '背景音乐：' + (sound.preferences.music ? '开' : '关') },
     { id: 'sound:effects', text: '游戏音效：' + (sound.preferences.effects ? '开' : '关') },
     ...nativeVoice.rows(),
-  ], web: { page: 'sheet', background: 'library', backId: 'auxiliaryClose',document:{kind:'tools',modal:true} } });
+  ], web: { page: 'sheet', background: 'library', backId: 'auxiliaryClose',document:{kind:'sound',modal:true,soundPreferences:sound.preferences} } });
   if (auxiliary === 'practiceSeats' && practice) return feedback({ title: '选择演练视角', rows: practice.perspectives().map(player => ({ id: 'practiceSeat:' + player.id, text: `${player.seat}号 · ${player.nickname} · ${formatRoleName(player.role)}` })), web: { page: 'sheet', background: 'sword', backId: 'auxiliaryClose',document:{kind:'tools',modal:true},underlay:gameScreen(practice.view(),practice.user,{privateRoleVisible:false,ballotVisible:false}) } });
   if (auxiliary === 'roomTools' && room && user) return feedback({ ...lobbyScreen(room, user), title: '房间工具', web: { page: 'sheet', backId: 'auxiliaryClose', background: 'pavilion',document:{kind:'tools',modal:true},underlay:lobbyScreen(room,user) } });
   if (view === 'admin') result = adminPanel.model();
@@ -146,9 +150,11 @@ function model(): ScreenModel {
   }
   else if (room?.game && view === 'game' && user) result = gameScreen(room, user, gameUi);
   else if (room && user && view === 'lobby') result = lobbyScreen(room, user, connectionStatus);
-  else result = entryScreen(user, error);
+  else {result = entryScreen(user, error,!guestHomeVisible);if(!user&&guestHomeVisible)result.web={page:'home',guestHome:true};}
   if (result.web?.page === 'home') Object.assign(result.web, { roleIndex, nickname, switchCode, authMode, freeAccess, knownAccounts: knownAccounts.list() });
   result.web ??= { page: 'sheet', background: view === 'player' ? 'dawn' : 'library' };
+  result.web.freeAccess=freeAccess;
+  result.web.waitingMissionsExpanded=waitingMissionsExpanded;
   result = feedback(result);
   const privateSelf = gameUi.privateRoleVisible
     ? view === 'game' ? room?.game?.self : view === 'practice' ? practice?.view().game?.self : undefined
@@ -161,6 +167,7 @@ function model(): ScreenModel {
 function render() {
   clearTimeout(countdownTimer);
   sound.update(view === 'practice' ? practice?.view().game : view === 'game' ? room?.game : undefined, !suspended && (view === 'practice' || view === 'game' && connectionStatus === '已连接'));
+  configureDocumentMetrics(canvas);
   const current = model();
   const layout = current.web ? layoutWebScreen(current, viewport) : undefined;
   scroll = layout ? Math.max(0, Math.min(scroll, layout.maxScroll)) : clampScroll(current.rows, viewport, scroll, current.scene);
@@ -247,9 +254,11 @@ async function select(id: string) {
   if (id === 'copyCode' && user?.playerCode && wx.setClipboardData) { wx.setClipboardData({ data: user.playerCode, success: () => { notice = '仙友码已复制'; render(); }, fail: () => { error = '复制失败，请重试'; render(); } }); return; }
   sound.activate(); sound.effect('tap'); platform.vibrate('light');
   if(id==='share'&&room){if(wx.shareAppMessage)wx.shareAppMessage({title:`来嘻游 · 真假猴王房间 ${room.code} 一起论剑`,query:`invite=${encodeURIComponent(room.inviteKey??room.code)}`});else{notice=`请告知好友房间号 ${room.code}`;render();}return;}
+  if(id==='copyRoomCode'&&room&&wx.setClipboardData){wx.setClipboardData({data:room.code,success:()=>{notice='房间号已复制';render();},fail:()=>{error='复制失败，请重试';render();}});return;}
   if (id === 'copyRoom' && room && wx.setClipboardData) { wx.setClipboardData({ data: invitationUrl(baseUrl,room.inviteKey??room.code), success: () => { notice = '房间邀请链接已复制'; render(); }, fail: () => { error = '复制失败，请重试'; render(); } }); return; }
   if (id === 'mode:voice') { notice = MINI_GAME_VOICE_ENABLED ? '创建或加入房间后，点顶部声音按钮加入微信语音；最多10人，与网页语音独立。' : '当前版本不支持实时语音；网页语音能力保持可用。'; render(); return; }
   if (id.startsWith('voice:')) return run(async () => { if(id==='voice:join') await nativeVoice.join(); else if(id==='voice:leave') await nativeVoice.leave(); else if(id==='voice:microphone') await nativeVoice.toggleMicrophone(); else if(id==='voice:speaker') await nativeVoice.toggleSpeaker(); });
+  if(id==='waiting:missions'){waitingMissionsExpanded=!waitingMissionsExpanded;render();return;}
   if (id === 'sound') { auxiliary = 'sound'; scroll = 0; render(); return; }
   if (id.startsWith('sound:')) { const key = id.slice(6) as 'music' | 'effects'; sound.configure(key, !sound.preferences[key]); render(); return; }
   if (id.startsWith('known:')) return run(async () => { await nativeVoice.leave(); const account=knownAccounts.list().find(a=>a.playerCode===id.slice(6));if (!api.session.get()) await api.login(); user = await api.switchAccount(id.slice(6),account?.id); knownAccounts.remember(user); lobby = new LobbyController(api, user); playerPanel = new PlayerPanel(extras, user, () => chooseAvatar(wx)); const existing = await lobby.resume(); if (existing) connect(existing); else navigate('entry'); });
@@ -261,6 +270,7 @@ async function select(id: string) {
   if (id === 'practiceSeats' && practice) { auxiliary = 'practiceSeats'; scroll = 0; render(); return; }
   if (id.startsWith('practiceSeat:') && practice) { practice.switchSeat(id.slice(13)); hideSensitiveView(gameUi); gameUi.snapshotKey = undefined; syncGameUi(gameUi, practice.view(), false, practice.user.id); auxiliary = undefined; scroll = 0; render(); return; }
   if ((view === 'game' || view === 'practice' || view === 'lobby' || view === 'settings') && id === 'guide') { guideReturn = view; navigate('guide'); return; }
+  if(id.startsWith('round-jump:')&&['replay','history'].includes(model().web?.document?.kind??'')){const l=layoutWebScreen({...model(),scroll:0},viewport),n=l.nodes.find(n=>n.id==='round:'+id.slice(11));if(n)scroll=Math.min(l.maxScroll,Math.max(0,n.y-l.contentTop-8));render();return;}
   const activeRoom = view === 'practice' ? practice?.view() : view === 'game' ? room : undefined;
   const priorOverlay=gameUi.overlay;
   if (activeRoom && handleGameOverlay(gameUi, activeRoom, id)) { overlayScrolls[priorOverlay??'table']=scroll;scroll=priorOverlay===gameUi.overlay?scroll:overlayScrolls[gameUi.overlay??'table']??0;render();return; }
@@ -311,7 +321,7 @@ async function select(id: string) {
   if (view === 'admin') return run(async () => {
     try {
       const title = adminPanel.model().title;
-      const outcome = await adminPanel.handle(id, async (label, maxLength) => { status = label; render(); return askText(wx, '', maxLength ?? 200); });
+      const outcome = await adminPanel.handle(id, async (label, maxLength) => { status = label; render(); return askText(wx, adminPanel.inputValue(id), maxLength ?? 200); });
       if (title !== adminPanel.model().title) scroll = 0;
       if (outcome === 'back') { adminPanel.onHide(); navigate('entry'); }
     } catch (cause) {
@@ -331,11 +341,13 @@ async function select(id: string) {
     return;
   }
   if (view === 'entry') {
+    if(id==='authClose'){guestHomeVisible=true;authIntent=undefined;render();return;}
+    if(!lobby&&['create','join','loginOpen'].includes(id)){authMode='create';guestHomeVisible=false;authIntent=id==='create'?'create':id==='join'?'join':undefined;render();return;}
     if (id === 'guide') { guideReturn = 'entry'; navigate('guide'); return; }
     if (id.startsWith('auth:')) { authMode = id === 'auth:switch' ? 'switch' : 'create'; render(); return; }
     if (id === 'input:nickname' || id === 'input:switch') return run(async () => { const text = await askText(wx, id === 'input:nickname' ? nickname : switchCode, id === 'input:nickname' ? 20 : 6); if (text !== undefined) { if (id === 'input:nickname') nickname = text; else switchCode = text.replace(/\D/g, '').slice(0, 6); } });
     if (id === 'practice') { practice = new PracticeSession(editableSettings, user?.nickname ?? '我'); syncGameUi(gameUi, practice.view()); navigate('practice'); return; }
-    if (id === 'login') return run(async () => { await nativeVoice.leave(); if (authMode === 'switch' && !/^\d{6}$/.test(switchCode)) throw new Error('INVALID_PLAYER_CODE'); const result = await api.login(nickname || undefined); user = authMode === 'switch' ? await api.switchAccount(switchCode) : result.user; knownAccounts.remember(user); auxiliary = undefined; lobby = new LobbyController(api, user); playerPanel = new PlayerPanel(extras, user, () => chooseAvatar(wx)); const existing = await lobby.resume(); if (existing) connect(existing); else if (invites.code) { connect(await joinWithPassword(invites.code)); invites.take(); } else render(); });
+    if (id === 'login') return run(async () => { await nativeVoice.leave(); if (authMode === 'switch' && !/^\d{6}$/.test(switchCode)) throw new Error('INVALID_PLAYER_CODE'); const result = await api.login(nickname || undefined); user = authMode === 'switch' ? await api.switchAccount(switchCode) : result.user; knownAccounts.remember(user); auxiliary = undefined; lobby = new LobbyController(api, user); playerPanel = new PlayerPanel(extras, user, () => chooseAvatar(wx)); const existing = await lobby.resume(); if (existing) connect(existing); else if (invites.code) { connect(await joinWithPassword(invites.code)); invites.take(); } else if(authIntent==='create'){authIntent=undefined;creationAccess={};selectedDedicated=undefined;setupIntent='room';navigate('settings');}else if(authIntent==='join'){authIntent=undefined;joinKey='';auxiliary='join';render();}else render(); });
     if (id === 'create' && lobby) { creationAccess={};selectedDedicated=undefined;setupIntent = 'room'; navigate('settings'); return; }
     if (id === 'join' && lobby) { joinKey = ''; auxiliary = 'join'; scroll = 0; render(); return; }
     if (id === 'switch') { authMode = 'switch'; switchCode = ''; auxiliary = 'switchAccount'; scroll = 0; render(); return; }
@@ -363,7 +375,7 @@ async function select(id: string) {
     else if (id === 'settings') { setupIntent = 'room'; editableSettings = { ...room.settings }; navigate('settings'); }
     else if (id === 'leave') lobby.leave();
     else if (id === 'share') { if (wx.shareAppMessage) wx.shareAppMessage({ title: `来嘻游 · 真假猴王房间 ${room.code} 一起论剑`, query: `invite=${encodeURIComponent(room.inviteKey??room.code)}` }); else { error = `请告知好友房间号 ${room.code}`; render(); } }
-    else if (id === 'friends' && playerPanel) return run(async () => { previousView = 'lobby'; await playerPanel!.open('friends', { roomId: room!.id }); navigate('player'); });
+    else if (id === 'friends' && playerPanel) return run(async () => { previousView = 'lobby'; await playerPanel!.open('friends', { roomId: room!.id,roomMemberIds:room!.members.map(m=>m.id) }); navigate('player'); });
     else if (id === 'presets' && playerPanel && room.hostId === user?.id) return run(async () => { previousView = 'lobby'; await playerPanel!.open('presets', { roomId: room!.id, settings: room!.settings, canApplyPreset: true }); navigate('player'); });
     else if (id.startsWith('member:') && room.hostId === user?.id && id.slice(7) !== user.id) {
       const targetId = id.slice(7), member = room.members.find(item => item.id === targetId);

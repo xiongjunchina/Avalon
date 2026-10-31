@@ -226,10 +226,17 @@ function gameOverlayScreen(room: RoomView, user: User, ui: GameUiState, base: Sc
       ...(ui.warning ? [{ id: 'error', text: ui.warning }] : [])];
   } else if (ui.overlay === 'treasures') {
     title = '专属法宝与神兵';
+    const t=self?.treasures;
+    const targetIds=new Set<string>();
+    if(t?.tinStaff?.available)game.players.filter(p=>p.id!==user.id&&!self?.merlinCandidates.includes(p.id)).forEach(p=>targetIds.add(p.id));
+    if(t?.guanyinMirror?.available)game.rounds.at(-1)?.team.filter(id=>id!==user.id).forEach(id=>targetIds.add(id));
+    if(t?.humanBag?.available)game.players.filter(p=>p.id!==user.id&&p.id!==game.captainId).forEach(p=>targetIds.add(p.id));
+    t?.heartBell?.available&&t.heartBell.targetIds.forEach(id=>targetIds.add(id));
+    if(base.rows.some(r=>['earlyAttempt','assassinate'].includes(r.id)))game.players.filter(p=>p.id!==user.id).forEach(p=>targetIds.add(p.id));
     rows = self?.treasures?.disabledReason === 'guardian_perks'
       ? [{ id: 'treasure-disabled', text: GUARDIAN_TREASURE_DISABLED_REASON }]
       : [...base.rows.filter(row => row.id.startsWith('treasure:') || ['earlyAttempt', 'earlySkip', 'assassinate'].includes(row.id)),
-        ...game.players.filter(player => player.id !== user.id).map(player => ({ id: 'player:' + player.id, text: name(player.id) + (ui.targetId === player.id ? ' · 已选目标' : '') }))];
+        ...game.players.filter(player => targetIds.has(player.id)).map(player => ({ id: 'player:' + player.id, text: name(player.id) + (ui.targetId === player.id ? ' · 已选目标' : '') }))];
     if (!rows.length) rows.push({ id: 'empty', text: '本局未开启专属法宝或当前尚未解锁。' });
   } else if (ui.overlay === 'more') {
     title = '法坛工具';

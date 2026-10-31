@@ -3,24 +3,48 @@
     "file": "calligraphy.ttf",
     "family": "Ma Shan Zheng",
     "source": "https://fonts.gstatic.com/s/mashanzheng/v18/NaPecZTRCLxvwo41b4gvzkXaRMQ.ttf",
-    "sha256": "1ac215e0636983a6cad434024933de3abb379e5c2af6f8f306b34eb499ad605f",
-    "glyphs": 1118,
-    "bytes": 775484
+    "sha256": "fcc4f63a9cef22aac67769ae5320545ddc5128b03b434904a97e36fd13017828",
+    "glyphs": 1150,
+    "bytes": 801740
   },
   {
     "file": "display.ttf",
     "family": "ZCOOL XiaoWei",
     "source": "https://fonts.gstatic.com/s/zcoolxiaowei/v15/i7dMIFFrTRywPpUVX9_RJyM1YFI.ttf",
-    "sha256": "c503c456a6b884f275f0afa4f8b8c0921af37491c3854c7418b42355ed39a4e3",
-    "glyphs": 1118,
-    "bytes": 791052
+    "sha256": "6172516708e87c46268183d998c647dca48aff74f2d33449d27409eeebb03bf3",
+    "glyphs": 1150,
+    "bytes": 816708
   },
   {
     "file": "sans.ttf",
     "family": "Noto Sans SC",
     "source": "https://fonts.gstatic.com/s/notosanssc/v41/k3kCo84MPvpLmixcA63oeAL7Iqp5IZJF9bmaG9_FnYw.ttf",
-    "sha256": "80c782b91c2e39d2f9d9c041587784ef8f40d23a3e5b22806539f2b75a708fed",
-    "glyphs": 1118,
-    "bytes": 294660
+    "sha256": "89219b52677aa45c011c66f4bc448e150a7a8aa65575e72ce003886e0c9186c7",
+    "glyphs": 1150,
+    "bytes": 303972
+  },
+  {
+    "file": "sans500.ttf",
+    "family": "Noto Sans SC:wght@500",
+    "source": "https://fonts.gstatic.com/s/notosanssc/v41/k3kCo84MPvpLmixcA63oeAL7Iqp5IZJF9bmaG-3FnYw.ttf",
+    "sha256": "18cdccb824150d074ffb43f85132712d66f605eebdd3a457b87481fd87f9a382",
+    "glyphs": 1150,
+    "bytes": 303836
+  },
+  {
+    "file": "sans600.ttf",
+    "family": "Noto Sans SC:wght@600",
+    "source": "https://fonts.gstatic.com/s/notosanssc/v41/k3kCo84MPvpLmixcA63oeAL7Iqp5IZJF9bmaGwHCnYw.ttf",
+    "sha256": "f6743f4fedee705a8ceb51a92c72302f985dd02d8f26fd9234f428d962ac5ef4",
+    "glyphs": 1150,
+    "bytes": 303752
+  },
+  {
+    "file": "sans700.ttf",
+    "family": "Noto Sans SC:wght@700",
+    "source": "https://fonts.gstatic.com/s/notosanssc/v41/k3kCo84MPvpLmixcA63oeAL7Iqp5IZJF9bmaGzjCnYw.ttf",
+    "sha256": "c189efa3ab1e33fedc7d56d768c3c6ce47ded5734e3c6ca6c5b01ee42f366ccb",
+    "glyphs": 1150,
+    "bytes": 303624
   }
 ]

@@ -18,9 +18,11 @@ export class AdminPanel {
   private moreGames = false;
   private codesData: RedemptionCodeItem[] = [];
   private settingsData?: Settings;
+  private rewardDraft=24;
+  private announcementDraft={enabled:false,text:""};
   private user?: AdminUserSummary;
   private replayData?: Replay;
-  private friendNames: string[] = [];
+  private friendNames: string[] = [];private friendDetails:{nickname:string;player_code:string;status:string}[]=[];
   private query = '';
   private pending?: { label: string; action: () => Promise<unknown> };
   private feedback = '';
@@ -38,22 +40,25 @@ export class AdminPanel {
     this.loadEpoch++;
     this.api.onHide(); this.pending = undefined; this.page = 'overview'; this.overviewData = undefined;
     this.usersData = []; this.userTotal = 0; this.roomsData = []; this.gamesData = []; this.moreGames = false;
-    this.codesData = []; this.settingsData = undefined; this.user = undefined; this.replayData = undefined;
-    this.friendNames = []; this.query = ''; this.feedback = '';this.codeDraft={count:'10',days:'30',note:''};
+    this.codesData = []; this.settingsData = undefined;this.rewardDraft=24;this.announcementDraft={enabled:false,text:''}; this.user = undefined; this.replayData = undefined;
+    this.friendNames = [];this.friendDetails=[]; this.query = ''; this.feedback = '';this.codeDraft={count:'10',days:'30',note:''};
   }
 
+  inputValue(id:string):string {if(id.startsWith('special:')||id.startsWith('codeEditor:'))return this.special.inputValue(id);if(id==='broadcast:input')return this.announcementDraft.text;if(id==='reward:input')return String(this.rewardDraft);if(id==='search:input')return this.query;if(id.startsWith('codeDraft:'))return this.codeDraft[id.slice(10) as keyof typeof this.codeDraft]??'';return '';}
   model(): ScreenModel {
     const result = this.pageModel();
     result.web ??= { page:'sheet',background:'library',activeTab:'page:'+this.page,backId:this.pending?'confirm:no':'back',document:{kind:this.pending?'confirm':'admin',modal:!!this.pending} };
+    if(result.web.document?.kind==='admin'){result.web.document.adminOverview=this.overviewData;if(this.page==='special')result.web.document.adminSpecial=this.special.data();result.web.document.adminUsers=this.usersData;result.web.document.adminUserTotal=this.userTotal;result.web.document.adminUserQuery=this.query;result.web.document.adminRooms=this.roomsData;result.web.document.adminGames=this.gamesData;result.web.document.adminCodes=this.codesData;result.web.document.adminCodeDraft=this.codeDraft;if(this.settingsData)result.web.document.adminSettings={...this.settingsData,adRewardHours:this.rewardDraft,announcement:this.announcementDraft};}
     if(this.page==='codes'&&!this.pending){result.rows=result.rows.filter(r=>r.id!=='generate');result.rows.splice(6,0,{id:'codeDraft:count',text:'生成数量：'+this.codeDraft.count},{id:'codeDraft:days',text:'有效天数：'+this.codeDraft.days},{id:'codeDraft:note',text:'备注：'+(this.codeDraft.note||'未填写')},{id:'generateDraft',text:'生成兑换码'});}
     return result;
   }
   private pageModel(): ScreenModel {
     if (this.pending) return { title: '确认管理操作', rows: [{ id: 'notice', text: this.pending.label }, { id: 'confirm:yes', text: '确认执行' }, { id: 'confirm:no', text: '取消' }] };
+    const codeEditor=this.special.codeEditorModel();if(codeEditor)return codeEditor;
     if(this.page==='special')return this.special.model();
     if (this.page === 'user' && this.user) return adminUserScreen(this.user);
     if (this.page === 'replay' && this.replayData) return adminReplayScreen(this.replayData);
-    if (this.page === 'friends') return { title: '用户仙友', rows: [...this.friendNames.map((name, index) => ({ id: `friend:${index}`, text: name })), { id: 'page:users', text: '返回用户列表' }] };
+    if (this.page === 'friends') return {title:'用户仙友',web:{page:'sheet',backId:'page:users',document:{kind:'admin-friends',modal:true,adminFriendOwner:this.user?.nickname,adminFriends:this.friendDetails},underlay:{...adminUsersScreen(this.usersData),web:{page:'sheet',activeTab:'page:users',document:{kind:'admin',adminUsers:this.usersData,adminUserTotal:this.userTotal}}}}, rows: [...this.friendNames.map((name, index) => ({ id: `friend:${index}`, text: name })), { id: 'page:users', text: '返回用户列表' }] };
     if (this.page === 'overview' && this.overviewData) return adminOverviewScreen(this.overviewData);
     if (this.page === 'users') return adminUsersScreen(this.usersData, this.query, this.usersData.length < this.userTotal);
     if (this.page === 'rooms') return adminRoomsScreen(this.roomsData);
@@ -73,11 +78,13 @@ export class AdminPanel {
     else if (page === 'rooms') { const result = await this.api.rooms(); if (epoch === this.loadEpoch) this.roomsData = result.rooms; }
     else if (page === 'games') { const result = await this.api.games(0); if (epoch === this.loadEpoch) { this.gamesData = result.games; this.moreGames = result.games.length === 20; } }
     else if (page === 'codes') { const result = await this.api.codes(); if (epoch === this.loadEpoch) this.codesData = result.codes; }
-    else if (page === 'settings') { const data = await this.api.settings() as Settings; if (epoch === this.loadEpoch) this.settingsData = data; }
+    else if (page === 'settings') { const data = await this.api.settings() as Settings; if (epoch === this.loadEpoch){this.settingsData=data;this.rewardDraft=data.adRewardHours;this.announcementDraft={...data.announcement};} }
   }
 
   async handle(id: string, input: Input): Promise<'back' | void> {
-    if (id === 'back') return 'back';
+    if (id === 'back'||id==='admin:logout') {if(id==='admin:logout')this.onHide();return 'back';}
+    if(id==='admin:refresh'){await this.load(this.page);return;}
+    if(id==='admin:mode'){await this.load('settings');await this.handle('mode',input);return;}
     if (id === 'confirm:no') { this.pending = undefined; return; }
     if (id === 'confirm:yes' && this.pending) { const action = this.pending.action; this.pending = undefined; await action(); this.user = undefined; await this.load(this.page === 'user' ? 'users' : this.page); return; }
     if (id === 'more:users' && this.page === 'users' && this.usersData.length < this.userTotal) { const epoch = this.loadEpoch; const result = await this.api.users(this.query, this.usersData.length); if (epoch === this.loadEpoch) { this.usersData.push(...result.users); this.userTotal = result.total; } return; }
@@ -94,9 +101,13 @@ export class AdminPanel {
       if (code) this.feedback = `${code.code} · ${code.days}天 · ${code.note || '无备注'} · ${code.redeemerNickname || '未兑换'}`;
       return;
     }
+    if(id.startsWith('codeEditor:')){await this.special.handleCodeEditor(id,input);return;}
     if (id.startsWith('page:')) { await this.load(id.slice(5) as Page); return; }
-    if(id.startsWith('playerCode:')&&this.user){await this.special.editPlayerCode(this.user,input);return;}
+    if(id.startsWith('playerCode:')&&this.user){await this.special.editPlayerCode(this.user,input,this.model());return;}
     if(this.page==='special'){await this.special.handle(id,input);return;}
+    if(id==='search:input'){this.query=await input('搜索用户',40)??this.query;return;}
+    if(id==='search:submit'){await this.load('users');return;}
+    if(id.startsWith('userAction:')){const [,action,target]=id.split(':');this.user=this.usersData.find(u=>u.id===target);if(!this.user)return;if(action==='delete'&&this.user.gamesCount>0)return;if(action==='playerCode'){await this.special.editPlayerCode(this.user,input,this.model());return;}this.page='user';await this.handle(action+':'+target,input);return;}
     if (id === 'search') { this.query = await input('搜索用户', 40) ?? ''; await this.load('users'); return; }
     if (id.startsWith('user:')) { this.user = this.usersData.find(user => user.id === id.slice(5)); if (this.user) this.page = 'user'; return; }
     if (id.startsWith('ban:') && this.user) {
@@ -109,7 +120,7 @@ export class AdminPanel {
       const epoch = this.loadEpoch;
       const response = await this.api.userFriends(this.user.id) as { friends: { nickname: string; player_code: string; status: string }[] };
       if (epoch === this.loadEpoch) {
-        this.friendNames = response.friends.map(friend => `${friend.nickname} (${friend.player_code}) · ${friend.status === 'accepted' ? '已互关' : '申请中'}`);
+        this.friendDetails=response.friends;this.friendNames = response.friends.map(friend => `${friend.nickname} (${friend.player_code}) · ${friend.status === 'accepted' ? '已互关' : '申请中'}`);
         this.page = 'friends';
       }
       return;
@@ -133,6 +144,11 @@ export class AdminPanel {
       const result = await this.api.generateCodes(count, days, note.trim() || undefined);
       await this.load('codes'); this.feedback = `已生成 ${result.codes.length} 个兑换码`; return;
     }
+    if(id==='reward:input'){const n=Number(await input('广告奖励小时数（1-720）',3));if(Number.isInteger(n)&&n>=1&&n<=720)this.rewardDraft=n;return;}
+    if(id==='reward:save'){await this.api.updateSetting('ad_reward_hours',this.rewardDraft);await this.load('settings');return;}
+    if(id==='broadcast:input'){const text=await input('全服公告内容',200);if(text!==undefined)this.announcementDraft.text=text;return;}
+    if(id==='broadcast:toggle'){this.announcementDraft.enabled=!this.announcementDraft.enabled;return;}
+    if(id==='broadcast:save'){await this.api.broadcast(this.announcementDraft.text,this.announcementDraft.enabled);await this.load('settings');return;}
     if (id === 'mode' && this.settingsData) { const value = !this.settingsData.freeAccessMode; this.pending = { label: value ? '恢复全员免费？' : '切换商业模式？', action: () => this.api.updateSetting('free_access_mode', value) }; return; }
     if (id === 'reward' && this.settingsData) { const hours = Number(await input('广告奖励小时数', 3)); if (Number.isInteger(hours) && hours >= 1 && hours <= 720) { await this.api.updateSetting('ad_reward_hours', hours); await this.load('settings'); } return; }
     if (id === 'broadcast' && this.settingsData) { const text = await input('公告内容（留空关闭）', 200); if (text !== undefined) { await this.api.broadcast(text, Boolean(text)); await this.load('settings'); } }

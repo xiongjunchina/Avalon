@@ -17,6 +17,6 @@ test('ready and deal remain visible above the safe area while the room scrolls',
   const v={width:390,height,top:92,bottom:34};const layout=layoutWebScreen({...lobbyScreen(room,fixture.user),scroll},v);
   for(const id of ['ready','start']){const n=layout.nodes.find(n=>n.id===id)!;assert.ok(n.y>=v.top&&n.y+n.height<=height-v.bottom,`${id} must be fully visible`);}
   const dock=layout.nodes.find(n=>n.id==='action-dock')!;
-  assert.ok(layout.contentBottom<=dock.y,'scrolling content must not cover the action dock');
+  if(dock.fixed)assert.ok(layout.contentBottom<=dock.y,'scrolling content must not cover the pinned action dock');
  }
 });

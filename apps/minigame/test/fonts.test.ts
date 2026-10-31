@@ -18,3 +18,10 @@ test('all bundled web fonts are TrueType files with their redistribution license
     assert.match(license,/SIL OPEN FONT LICENSE/);
   }
 });
+
+
+test('actual 500/600/700 sans weights load from their own subpackage and redraw once',()=>{
+ const paths:string[]=[],families:string[]=[];let redraws=0;
+ installWebFonts({loadFont:(path)=>{paths.push(path);return path;},loadSubpackage:options=>{families.push(options.name);options.success();}},()=>redraws++);
+ assert.deepEqual(families,['web-fonts']);assert.deepEqual(paths.slice(3),[500,600,700].map(w=>'web-fonts/sans'+w+'.ttf'));assert.equal(redraws,1);
+});

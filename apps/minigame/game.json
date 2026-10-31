@@ -14,6 +14,10 @@
     {
       "name": "hd-art",
       "root": "hd-art/"
+    },
+    {
+      "name": "web-fonts",
+      "root": "web-fonts/"
     }
   ]
 }

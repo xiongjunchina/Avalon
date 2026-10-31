@@ -3,7 +3,7 @@ Development-only: requires fonttools; no runtime font network dependency.
 Fonts are from Google Fonts under SIL OFL; licenses ship beside the TTFs.
 """
 from pathlib import Path
-import urllib.request, urllib.parse, re, json, hashlib, io
+import urllib.request, urllib.parse, re, json, hashlib, io, sys
 from fontTools import subset
 from fontTools.ttLib import TTFont
 root = Path(__file__).resolve().parents[3]
@@ -12,14 +12,20 @@ chars = ''.join(sorted(set(''.join((root / x).read_text(encoding='utf-8') for x 
 chars = ''.join(c for c in chars if '\u3400' <= c <= '\u9fff' or 32 <= ord(c) < 127)
 out = root / 'apps/minigame/assets/fonts'
 out.mkdir(parents=True, exist_ok=True)
+offline='--offline' in sys.argv
+previous={r['file']:r for r in json.loads((out/'source.json').read_text(encoding='utf-8'))} if (out/'source.json').exists() else {}
 records = []
-for name, family, directory in [('calligraphy', 'Ma Shan Zheng', 'mashanzheng'), ('display', 'ZCOOL XiaoWei', 'zcoolxiaowei'), ('sans', 'Noto Sans SC', 'notosanssc')]:
+for name, family, directory in [('calligraphy', 'Ma Shan Zheng', 'mashanzheng'), ('display', 'ZCOOL XiaoWei', 'zcoolxiaowei'), ('sans', 'Noto Sans SC', 'notosanssc'),('sans500','Noto Sans SC:wght@500','notosanssc'),('sans600','Noto Sans SC:wght@600','notosanssc'),('sans700','Noto Sans SC:wght@700','notosanssc')]:
     css_url = 'https://fonts.googleapis.com/css2?' + urllib.parse.urlencode({'family': family})
-    css = urllib.request.urlopen(css_url, timeout=30).read().decode()
-    url = re.search(r'url\(([^)]+)\)', css).group(1)
+    if offline:
+        url=previous[name+'.ttf']['source']
+    else:
+        css = urllib.request.urlopen(css_url, timeout=30).read().decode()
+        url = re.search(r'url\(([^)]+)\)', css).group(1)
     cache = root / 'dist/font-sources'
     cache.mkdir(parents=True, exist_ok=True)
     cached = cache / (name + '.ttf')
+    if offline and not cached.exists(): raise FileNotFoundError('Offline font source missing: '+str(cached))
     data = cached.read_bytes() if cached.exists() else urllib.request.urlopen(url, timeout=30).read()
     cached.write_bytes(data)
     if data[:4] != b'\x00\x01\x00\x00':
@@ -33,10 +39,12 @@ for name, family, directory in [('calligraphy', 'Ma Shan Zheng', 'mashanzheng'),
     buffer = io.BytesIO()
     font.save(buffer)
     data = buffer.getvalue()
-    (out / (name + '.ttf')).write_bytes(data)
+    destination=out if name in ['sans','display','calligraphy'] else root/'apps/minigame/assets/web-fonts'
+    destination.mkdir(parents=True,exist_ok=True)
+    (destination / (name + '.ttf')).write_bytes(data)
     license_url = 'https://raw.githubusercontent.com/google/fonts/main/ofl/' + directory + '/OFL.txt'
-    license_text = urllib.request.urlopen(license_url, timeout=30).read().decode('utf-8')
-    (out / (name + '-OFL.txt')).write_text('\n'.join(line.rstrip() for line in license_text.splitlines()) + '\n', encoding='utf-8')
+    license_text = (destination/(name+'-OFL.txt')).read_text(encoding='utf-8') if offline else urllib.request.urlopen(license_url, timeout=30).read().decode('utf-8')
+    (destination / (name + '-OFL.txt')).write_text('\n'.join(line.rstrip() for line in license_text.splitlines()) + '\n', encoding='utf-8')
     records.append({'file': name + '.ttf', 'family': family, 'source': url, 'sha256': hashlib.sha256(data).hexdigest(), 'glyphs': len(chars), 'bytes': len(data)})
 (out / 'source.json').write_text(json.dumps(records, indent=2), encoding='utf-8')
 print('Web font subsets generated:', sum(r['bytes'] for r in records), 'bytes')

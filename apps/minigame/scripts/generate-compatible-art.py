@@ -15,3 +15,7 @@ hd=root/'apps/minigame/assets/hd-art'
 hd.mkdir(parents=True,exist_ok=True)
 for src in (root/'apps/web/public/art/roles').glob('*-640.webp'):
     Image.open(src).convert('RGB').save(hd/(src.stem+'.jpg'),'JPEG',quality=92,optimize=True)
+
+# Preserve the web scene resolution with a high-quality local upgrade as well.
+for src in (root/'apps/web/public/art/scenes').glob('*.webp'):
+    Image.open(src).convert('RGB').save(hd/('scene-'+src.stem+'.jpg'),'JPEG',quality=95,optimize=True)

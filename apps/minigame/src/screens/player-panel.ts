@@ -40,6 +40,7 @@ export class PlayerPanel {
   private roomMessages: RoomChatMessage[] = [];
   private chatRoomId?: string;
   private roomId?: string;
+  private roomMemberIds:string[]=[];
   private roomSettings?: Settings;
   private appliedSettings?: Settings;
   private canApplyPreset = false;
@@ -61,8 +62,9 @@ export class PlayerPanel {
       message: message.text, createdAt: message.timestamp, isSelf: false });
     this.direct = this.direct.slice(-50);
   }
-  async open(page: Page, options: { roomId?: string; settings?: Settings; canApplyPreset?: boolean } = {}): Promise<void> {
+  async open(page: Page, options: { roomId?: string; roomMemberIds?:string[]; settings?: Settings; canApplyPreset?: boolean } = {}): Promise<void> {
     this.page = page;
+    if(page==='friends')this.roomMemberIds=options.roomMemberIds??(options.roomId===this.roomId?this.roomMemberIds:[]);
     this.feedback = '';
     if (page === 'roomchat' && options.roomId) this.setChatRoom(options.roomId);
     if (page === 'friends' || page === 'account') this.roomId = options.roomId;
@@ -100,8 +102,8 @@ export class PlayerPanel {
       result.web={...result.web!,backId:this.page==='direct'?'page:friends':this.page==='replay'?this.replayBack:'back',document:{kind,modal:['friends','chat'].includes(kind),
         user:this.user,expanded:[...this.expanded],activeTab:this.page==='account'||this.page==='stats'?'stats':this.page==='history'&&this.favoritesOnly?'favorites':this.page,
         stats:this.stats,games:this.games,presets:this.presets,settings:this.roomSettings??this.presetSettings,presetName:this.presetName,presetEditing:this.presetEditing,canApplyPreset:this.canApplyPreset,roomPreset:!!this.roomSettings,
-        profileEditing:this.profileEditing,profileDraft:this.profileDraft,friends:this.friends,friendTab:this.friendTab,friendQuery:this.friendQuery,canInvite:!!this.roomId,roomCode:this.roomId?this.roomCode:undefined,
-        chatDraft:this.chatDraft,quickExpanded:this.quickExpanded,replay:this.replay,
+        profileEditing:this.profileEditing,profileDraft:this.profileDraft,friends:this.friends,friendTab:this.friendTab,friendQuery:this.friendQuery,canInvite:!!this.roomId,roomMemberIds:this.roomMemberIds,roomCode:this.roomId?this.roomCode:undefined,
+        chatDraft:this.chatDraft,chatFriend:this.selectedFriend,quickExpanded:this.quickExpanded,replay:this.replay,
         messages:this.page==='direct'?this.direct.map(m=>({id:m.id,text:m.message,name:m.isSelf?'我':this.selectedFriend?.nickname??'',self:Boolean(m.isSelf),timestamp:m.createdAt})):this.roomMessages.map(m=>({id:m.messageId,text:m.text,name:m.seat+'号 '+m.nickname,self:m.fromUserId===this.user.id,timestamp:m.timestamp}))}};
       if(['direct','roomchat'].includes(this.page))result.rows.push(...(this.page==='direct'?['来开一局？','马上上线！','稍等我两分钟','今晚几点开战？','速来，三缺一！','上局打得漂亮！']:['我是取经好人','建议本轮流局','队长选我，必是红心','我看见假猴了！','刺客别急，听我一言','全票准行，即刻出征','有人在浑水摸鱼','这局必须查验他！','平票也算流局，谨慎投！','相信我，我带飞']).map((text,i)=>({id:'quick:'+i,text})));
     }
@@ -217,6 +219,7 @@ export class PlayerPanel {
     if (id.startsWith('friend:')) { this.selectedFriend = this.friends.find(friend => friend.id === id.slice(7)); if (this.selectedFriend) { this.direct = (await this.api.directChat(this.selectedFriend.id)).messages; this.page = 'direct'; this.chatDraft='';this.quickExpanded=false; } return; }
     if (id === 'send' && this.selectedFriend) { const text = await input('私聊消息', 500); if (text) { await this.api.sendDirect(this.selectedFriend.id, text); this.direct = (await this.api.directChat(this.selectedFriend.id)).messages; } return; }
     if (id === 'accept' && this.selectedFriend) { await this.api.acceptFriend(this.selectedFriend.id); await this.open('friends', { roomId: this.roomId }); return; }
+    if(id==='refresh:direct'&&this.selectedFriend){this.direct=(await this.api.directChat(this.selectedFriend.id)).messages;return;}
     if (id === 'refresh:friends') { await this.open('friends', { roomId: this.roomId }); return; }
     if (id === 'invite' && this.selectedFriend && this.roomId) { const result = await this.api.invite(this.roomId, this.selectedFriend.id); this.feedback = result.online ? '邀请已发送' : '仙友暂不在线，可通过微信分享房间号'; return; }
     if (id === 'remove' && this.selectedFriend) { const friend = this.selectedFriend; this.pending = { label: `删除仙友 ${friend.nickname}？`, action: () => this.api.removeFriend(friend.id) }; return; }

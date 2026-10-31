@@ -17,7 +17,7 @@ const result=await page.evaluate(async names=>{
  const expected=names.map(name=>({name,minWidth:name.startsWith('roles/')?640:1}));
  const deadline=Date.now()+8000;
  let results=[];
- do{results=expected.map(({name,minWidth})=>{const i=art.get(name);return {name,width:i?.width??0,height:i?.height??0,src:i?.src??'',loaded:(i?.width??0)>=minWidth};});if(results.every(r=>r.loaded))break;await new Promise(r=>setTimeout(r,20));}while(Date.now()<deadline);
+ do{results=expected.map(({name,minWidth})=>{const i=art.get(name);return {name,width:i?.width??0,height:i?.height??0,src:i?.src??'',loaded:(i?.width??0)>=minWidth&&(!name.startsWith('scenes/')||i?.src?.includes('/hd-art/scene-'))};});if(results.every(r=>r.loaded))break;await new Promise(r=>setTimeout(r,20));}while(Date.now()<deadline);
  if(packageLoads!==1)throw Error('unexpected subpackage loads '+packageLoads);
  if(requests.some(i=>i.src.startsWith('https:')))throw Error('local artwork requested backend');
  return results;
