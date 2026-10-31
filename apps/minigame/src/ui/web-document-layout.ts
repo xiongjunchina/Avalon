@@ -28,10 +28,10 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
   const social=doc.kind==='friends'||doc.kind==='chat'&&doc.activeTab==='direct', socialPad=v.width<=380?17:23;
   const adminReplay=!!doc.adminReplay;
   const modal=!!doc.modal, width=adminReplay?Math.min(v.width-24,720):doc.kind==='art'?Math.min(v.width-32,v.width*.92,480):drawer?v.width:adminFriends?Math.min(v.width-40,500):sound?Math.min(v.width-44,420):modal?Math.min(doc.kind==='treasures'?v.width*.92:v.width-20,doc.kind==='guanyin-window'?450:doc.kind==='private-notice'?(doc.noticeKind==='jingu'?380:420):doc.kind==='treasures'?440:doc.kind==='identity'?500:doc.kind==='vote'?520:570):v.width;
-  const ox=(v.width-width)/2, pad=modal?(adminReplay?17:doc.profileEditing?17:doc.kind==='abort-confirm'?(v.width<=380?17:23):doc.kind==='guanyin-window'?17:doc.kind==='private-notice'?(doc.noticeKind==='bell'?21:doc.noticeKind==='jingu'?23:v.width<=360?15:1+clamp(16,v.width*.04,24)):doc.kind==='art'?22:adminFriends?19:doc.kind==='treasures'?16.5:auth?21:doc.kind==='presets'&&doc.presetEditing?21:preferences?13:sound?23:social?socialPad:doc.kind==='vote'?18:doc.kind==='report'?19:doc.kind==='special-editor'||doc.kind==='code-editor'?19:doc.kind==='history'?17:15):doc.kind==='guide'||doc.kind==='guide-role'?12:doc.kind==='replay'?31:18, x=ox+pad, w=width-pad*2;
+  const ox=(v.width-width)/2, pad=modal?(adminReplay?17:doc.profileEditing?17:doc.kind==='abort-confirm'?(v.width<=380?17:23):doc.kind==='guanyin-window'?17:doc.kind==='private-notice'?(doc.noticeKind==='bell'?21:doc.noticeKind==='jingu'?23:v.width<=360?15:1+clamp(16,v.width*.04,24)):doc.kind==='art'?22:adminFriends?19:doc.kind==='treasures'?17:auth?21:doc.kind==='presets'&&doc.presetEditing?21:preferences?13:sound?23:social?socialPad:doc.kind==='vote'?18:doc.kind==='report'?19:doc.kind==='special-editor'||doc.kind==='code-editor'?19:doc.kind==='history'?17:15):doc.kind==='guide'||doc.kind==='guide-role'?12:doc.kind==='replay'?31:18, x=ox+pad, w=width-pad*2;
   const top=v.top, bottom=v.height-v.bottom, available=bottom-top;
   let replayRoundEnd=0;
-  let y=modal?(adminFriends?19:doc.kind==='treasures'?16.5:auth?21:sound?23:social?socialPad:doc.kind==='history'?17:13):18, headerH=39, footerH=0, bodyStart=0, bodyEnd=0;
+  let y=modal?(adminFriends?19:doc.kind==='treasures'?17:auth?21:sound?23:social?socialPad:doc.kind==='history'?17:13):18, headerH=39, footerH=0, bodyStart=0, bodyEnd=0;
   const add=(kind:WebNode['kind'],id:string,text:string,px:number,py:number,pw:number,ph:number,props:Partial<WebNode>={})=>{const n:WebNode={kind,id,text,x:px,y:py,width:pw,height:ph,skin:kind==='button'?'button':kind==='label'?'text':'surface',...props};nodes.push(n);return n;};
   const txt=(id:string,text:string,py:number,size=14,props:Partial<WebNode>={},px=x,pw=w)=>{
     if(adminReplay)props={fontFace:'system',...props};
@@ -41,7 +41,7 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
       let width=measure(t,size,props.fontFace,props.weight);
       if(props.emphasis?.length){const start=text.indexOf(t);if(start>=0)for(const span of props.emphasis){const at=text.indexOf(span.text),left=Math.max(start,at),right=Math.min(start+t.length,at+span.text.length);if(at>=0&&right>left){const part=text.slice(left,right);width+=measure(part,size,props.fontFace,span.weight??props.weight)-measure(part,size,props.fontFace,props.weight);}}}
       return width+Math.max(0,textGraphemes(t).length-1)*(props.letterSpacing??0);
-    };let lines=wrapText(text,pw,textWidth);if(!(doc.kind==='history'&&id==='dialog-title')&&props.fontFace==='display'&&lines.length>1&&lines.length<=6){const count=lines.length;let low=0,high=pw;for(let i=0;i<12;i++){const mid=(low+high)/2;if(wrapText(text,mid,textWidth).length<=count)high=mid;else low=mid;}lines=wrapText(text,high,textWidth);}const lh=props.lineHeight??size*1.5;
+    };let lines=wrapText(text,pw,textWidth);if(!(doc.kind==='history'&&id==='dialog-title')&&props.fontFace==='display'&&lines.length>1&&lines.length<=6){const count=lines.length;let low=0,high=pw;for(let i=0;i<12;i++){const mid=(low+high)/2;if(wrapText(text,mid,textWidth).length<=count)high=mid;else low=mid;}lines=wrapText(text,high,textWidth);}if(id==='treasure-role-name'&&lines.length>1){for(let i=0;i<lines.length-1;i++)if(lines[i]!.trimEnd().endsWith('·')){lines[i]=lines[i]!.trimEnd().slice(0,-1).trimEnd();lines[i+1]='· '+lines[i+1]!.trimStart();}}const lh=props.lineHeight??size*1.5;
     return add('label',id,text,px,py,pw,Math.max(lh,lines.length*lh),{fontSize:size,lineHeight:lh,lines,align:'left',...props});
   };
   const panel=(id:string,py:number,ph:number,skin='card',px=x,pw=w)=>add('panel',id,'',px,py,pw,ph,{skin});
@@ -54,7 +54,7 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
   const modalHeader=(title:string,subtitle?:string)=>{
     const socialLines=social?wrapText(title,w-56,t=>measure(t,24,'display')):undefined,socialTitleH=(socialLines?.length??1)*36;
     headerH=doc.profileEditing?47:sound?48:social?socialTitleH+15:doc.kind==='report'?52.78125:doc.kind==='vote'?28.390625+clamp(14,v.width*.043,19)*1.4:subtitle?51.9:39;
-    add('label','dialog-title',title,x,y,social?w-56:w-96,subtitle?18:social?socialTitleH:32,{lines:socialLines,lineHeight:social?36:undefined,fontSize:doc.profileEditing?18:sound?25:social?24:doc.kind==='preferences'?15:subtitle?11:17,fontFace:sound?'home':'display',weight:sound?'600':undefined,tone:'gold',align:'left',fixed:true});
+    add('label','dialog-title',title,x,y,social||doc.kind==='treasures'?w-56:w-96,subtitle?18:social?socialTitleH:32,{lines:socialLines,lineHeight:social?36:undefined,fontSize:doc.profileEditing?18:sound?25:social?24:doc.kind==='preferences'?15:subtitle?11:17,fontFace:sound?'home':'display',weight:sound?'600':undefined,tone:'gold',align:'left',fixed:true});
     if(subtitle)add('label','dialog-subtitle',subtitle,x,y+(doc.kind==='report'||doc.kind==='vote'?17.390625:20),doc.kind==='vote'?w-87.25:w-92,doc.kind==='vote'?clamp(14,v.width*.043,19)*1.4:26,{letterSpacing:doc.kind==='vote'?.5:undefined,fontSize:doc.kind==='report'?22:doc.kind==='preferences'?11:clamp(14,v.width*.043,19),fontFace:doc.kind==='preferences'?'sans':'calligraphy',weight:'700',align:'left',fixed:true});
     button(model.web!.backId??'back',doc.kind==='identity'?'返回对局':doc.kind==='art'?'✕ 关闭':doc.kind==='presets'&&doc.presetEditing?'取消':social||doc.kind==='treasures'||doc.profileEditing||['friends','sound','special-editor','preferences','treasures'].includes(doc.kind)?'关闭':'返回法坛',y+(doc.kind==='report'?5.890625:doc.kind==='vote'?4.421875:0),{skin:doc.kind==='vote'||doc.kind==='report'?'modal-return':'pill',fixed:true,fontSize:doc.kind==='identity'?12:13},x+w-(sound?66:social||doc.profileEditing||doc.kind==='treasures'||doc.kind==='presets'?42:doc.kind==='identity'?66:doc.kind==='vote'?79.25:doc.kind==='report'?75.25:84),sound?66:social||doc.profileEditing||doc.kind==='treasures'||doc.kind==='presets'?42:doc.kind==='identity'?66:doc.kind==='vote'?79.25:doc.kind==='report'?75.25:84,sound?48:32);
     if(!sound)add('label','dialog-rule','',x,y+headerH-1,w,1,{skin:'rule',fixed:true});
@@ -70,7 +70,7 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
   };
   if(drawer){
     const messages=doc.messages??[], streamRows=messages.map(msg=>{const split=msg.name.indexOf(' '),seat=split<0?'旁观':msg.name.slice(0,split),name=(split<0?msg.name:msg.name.slice(split+1))+'：',seatWidth=measure(seat,11,'sans','700'),nw=measure(name,13,'sans','600'),textWidth=measure(msg.text,13),free=v.width-28-nw-32,sw=Math.max(11,Math.min(seatWidth,free*seatWidth/(seatWidth+textWidth))),mw=Math.max(30,v.width-28-sw-nw-16),lines=wrapText(msg.text,mw-16,t=>measure(t,13));return {msg,seat,name,sw,nw,mw,lines,h:lines.length*18.2+6};});
-    const emptyLines=wrapText('暂无法坛发言，点击上方密语或输入打字传音',v.width-28,t=>measure(t,12)),streamNatural=messages.length?Math.max(70,20+streamRows.reduce((sum,r)=>sum+r.h+8,0)):52+emptyLines.length*17.4;
+    const emptyLines=wrapText('暂无法坛发言，点击上方密语或输入打字传音',v.width-28,t=>measure(t,12)),streamNatural=messages.length?Math.max(70,20+streamRows.reduce((sum,r)=>sum+r.h+8,0)):52+emptyLines.length*25;
     const h=Math.min(available*.6,195+streamNatural),fy=bottom-h,streamTop=fy+140,streamBottom=bottom-55,streamH=streamBottom-streamTop,maxScroll=Math.max(0,streamNatural-streamH),scroll=Math.min(maxScroll,Math.max(0,model.scroll??0));
     add('panel','dialog-frame','',0,fy,v.width,h,{skin:'chat-sheet',fixed:true});
     button('overlayClose','',fy+10,{skin:'chat-handle',fixed:true},v.width/2-20,40,4);
@@ -83,7 +83,7 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
     quick.forEach((r,i)=>{button(r.id,r.text,fy+99,{skin:'chat-quick',fontSize:12,weight:'500',fixed:true,clipLeft:14,clipRight:v.width-14,scrollMaxX:maxX},qx,widths[i]!,28);qx+=widths[i]!+6;});
     let my=streamTop+10-scroll;
     for(const r of streamRows){const clip={clipTop:streamTop,clipBottom:streamBottom};txt('chat-seat:'+r.msg.id,r.seat,my+5,11,{skin:'chat-copy',weight:'700',tone:'blue',lineHeight:15.4,...clip},14,r.sw);txt('chat-name:'+r.msg.id,r.name,my+3,13,{skin:'chat-copy',weight:'600',tone:'gold',lineHeight:18.2,...clip},22+r.sw,r.nw);add('label','chat:'+r.msg.id,r.msg.text,30+r.sw+r.nw,my,Math.min(r.mw,Math.max(...r.lines.map(t=>measure(t,13)))+16),r.h,{skin:'chat-bubble',lines:r.lines,fontSize:13,lineHeight:18.2,...clip});my+=r.h+8;}
-    if(!messages.length)add('label','chat-empty','暂无法坛发言，点击上方密语或输入打字传音',14,streamTop+26-scroll,v.width-28,emptyLines.length*17.4,{skin:'chat-copy',tone:'muted',fontSize:12,lines:emptyLines,lineHeight:17.4,align:'center',clipTop:streamTop,clipBottom:streamBottom});
+    if(!messages.length)add('label','chat-empty','暂无法坛发言，点击上方密语或输入打字传音',14,streamTop+26-scroll,v.width-28,emptyLines.length*25,{skin:'chat-copy',tone:'muted',fontSize:12,lines:emptyLines,lineHeight:25,align:'center',clipTop:streamTop,clipBottom:streamBottom});
     add('panel','chat-input-bar','',0,bottom-55,v.width,55,{skin:'chat-input-bar',fixed:true});
     button('chat:input','🎙️',bottom-46,{skin:'chat-mic',fontSize:18,fixed:true},12,38,38);
     button('chat:input',doc.chatDraft||'输入传音，或用手机键盘语音输入…',bottom-46,{skin:'chat-input',fontSize:13.5,fixed:true,muted:!doc.chatDraft},58,v.width-136,38);
@@ -117,7 +117,7 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
           }else{const hint=txt('round-vote-privacy:'+r.number,anonymous?'匿名组队投票，仅展示总票数。':'本次未记录个人票型，仅展示总票数。',y,12.5,{align:'center',tone:'muted',lineHeight:17.5},x+sectionPad,w-sectionPad*2);y+=hint.height+(compact?9:13);}
         }else{const hint=txt('round-vote-pending:'+r.number,'本次表决未完成，不展示未收齐的个人选择。',y,12.5,{align:'center',tone:'muted',lineHeight:17.5},x+sectionPad,w-sectionPad*2);y+=hint.height+(compact?9:13);}
         voteFrame.height=y-voteFrame.y;y+=sectionGap;
-        if(r.result){const frame=panel('round-result:'+r.number,y,compact?105.140625:113.140625,'battle-section');txt('round-result-title:'+r.number,r.result.passed?'✓ 任务成功':'× 任务失败',y+(compact?15:19),19,{fontFace:'display',tone:r.result.passed?'green':'red',align:'center',lineHeight:25.640625},x+14,w-28);add('label','round-result-count:'+r.number,r.result.successes+'|'+r.result.failures,x+14,y+(compact?46.640625:50.640625),w-28,26,{skin:'battle-card-counts'});txt('round-result-privacy:'+r.number,'任务牌始终匿名，不对应个人。',y+(compact?78.640625:82.640625),12.5,{align:'center',tone:'muted',lineHeight:17.5},x+14,w-28);y=frame.y+frame.height+(doc.kind==='replay'?22:10);}
+        if(r.result){const frame=panel('round-result:'+r.number,y,compact?105.140625:113.140625,'battle-section');txt('round-result-title:'+r.number,r.result.passed?'✓ 任务成功':'× 任务失败',y+(compact?15:19),19,{fontFace:'display',tone:r.result.passed?'green':'red',align:'center',lineHeight:25.640625},x+14,w-28);add('label','round-result-count:'+r.number,r.result.successes+'|'+r.result.failures,x+14,y+(compact?46.640625:50.640625),w-28,26,{skin:'battle-card-counts',fontFace:roundFace});txt('round-result-privacy:'+r.number,'任务牌始终匿名，不对应个人。',y+(compact?78.640625:82.640625),12.5,{align:'center',tone:'muted',lineHeight:17.5},x+14,w-28);y=frame.y+frame.height+(adminReplay?8:doc.kind==='replay'?22:10);}
         // Replay inspection and early-window records are rendered once in the shared disclosure sections below.
       }
   };
@@ -441,11 +441,11 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
     y=18;modalHeader('第 '+game.mission+' 难 · 出征组队表决',WUYUE_MISSIONS[game.mission-1]?.subtitle??'取经出征组队表决');
     y+=4;const ruleText='准行多于封驳即准予出征 · 平票或封驳视为流局',ruleLines=wrapText(ruleText,w-26,t=>measure(t,12)),ruleHeight=ruleLines.length*21+10;panel('vote-rule',y,ruleHeight,'vote-prompt').fixed=true;txt('guide:vote-rule',ruleText,y+5,12,{align:'center',lineHeight:21,lines:ruleLines,fixed:true},x+10,w-20);y+=ruleHeight+12;bodyStart=y;const voteBodyStart=nodes.length;
     const round=game.rounds.at(-1),party=(round?.team??[]).map(id=>game.players.find(p=>p.id===id)).filter((p):p is Player=>!!p), captain=game.players.find(p=>p.id===game.captainId);
-    const columns=Math.min(3,party.length)||1, slotW=Math.min(115,(w-32-(columns-1)*10)/columns),slotH=92;
+    const columns=Math.max(1,Math.min(party.length,Math.floor((w-18)/86))),slotH=92;
     const teamH=66+18+Math.ceil(party.length/columns)*slotH+(Math.ceil(party.length/columns)-1)*10+4;
     panel('vote-team-panel',y,teamH,'expedition');
     add('label','vote-captain',captain?'队长：'+captain.seat+'号 '+captain.nickname+(captain.id===doc.user?.id?'（你）':''):'队长：待定',x+2,y+2,w-4,66,{skin:'captain-banner',image:captain?.avatarUrl??'emblems/'+(captain?.avatar??'cards')+'.png',fontSize:clamp(17,v.width*.05,22),fontFace:'calligraphy',tone:'gold'});
-    party.forEach((p,i)=>token('party:'+p.id,p,x+(w-columns*slotW-(columns-1)*10)/2+(i%columns)*(slotW+10),y+74+Math.floor(i/columns)*(slotH+10),slotW,slotH,'出征'+(p.id===doc.user?.id?'|我':'')));
+    party.forEach((p,i)=>{const rowCount=Math.min(columns,party.length-Math.floor(i/columns)*columns),slotW=Math.min(115,(w-28-(rowCount-1)*10)/rowCount);token('party:'+p.id,p,x+(w-rowCount*slotW-(rowCount-1)*10)/2+(i%columns)*(slotW+10),y+74+Math.floor(i/columns)*(slotH+10),slotW,slotH,'出征'+(p.id===doc.user?.id?'|我':''));});
     y+=teamH+(doc.submitted?1:15);
     add('label','vote-party-rule','',x+2,y,w-4,1,{skin:'rule'});y+=18;
     if(!doc.submitted) {
@@ -529,12 +529,13 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
     if(disabled&&self.role!=='assassin'&&(!t?.enabled||t.disabledReason==='guardian_perks'||game.players.length<8)){const card=panel('treasure-empty',y,1,'card');txt('treasure-empty-icon','🏮',y+18,36,{align:'center'});txt('treasure-empty-title','仙家法宝 · 隐而不出',y+78,18,{fontFace:'display',tone:'gold',align:'center'});const hint=txt('treasure-empty-description',disabled.id==='treasure-disabled'?disabled.text:game.players.length<8?'专属法宝需至少 8 人且房间开启法宝模式。红孩儿仍可使用刺客神兵。':'当前房间未开启【8-12人专属法宝模式】。唯有红孩儿可在终局刺杀阶段祭出火尖枪。',y+112,13,{tone:'muted',align:'center'},x+18,w-36);y=hint.y+hint.height+24;card.height=y-card.y;}
     else{
       const copy=webTreasureCopy[self.role],card=panel('treasure-role-card',y,1,'treasure-card');
-      const badgeW=Math.min(96,measure(copy.badge,11)+18);
-      add('label','treasure-badge',copy.badge,x+15,y+15,badgeW,22,{skin:'treasure-badge',fontSize:11});
-      txt('treasure-role-name',copy.title,y+15,16,{fontFace:'display',tone:'gold',align:'right',lineHeight:20.8},x+15+badgeW+8,w-38-badgeW);
-      add('label','treasure-header-rule','',x+15,y+45,w-30,1,{skin:'rule'});
+      const headerW=w-30,badgeNatural=measure(copy.badge,11,'sans','700')+18,titleNatural=measure(copy.title,16,'display','700')+textGraphemes(copy.title).length*.5,shrink=Math.min(1,headerW/(badgeNatural+titleNatural)),badgeW=badgeNatural*shrink,titleW=headerW-badgeW;
+      const badgeLines=wrapText(copy.badge,badgeW-18,t=>measure(t,11,'sans','700')),titleLines=wrapText(copy.title,titleW,t=>measure(t,16,'display','700')+textGraphemes(t).length*.5),badgeH=badgeLines.length*16+6,headingH=Math.max(badgeH,titleLines.length*20.8);
+      add('label','treasure-badge',copy.badge,x+15,y+15+(headingH-badgeH)/2,badgeW,badgeH,{skin:'treasure-badge',fontSize:11,lines:badgeLines,lineHeight:16});
+      txt('treasure-role-name',copy.title,y+15+(headingH-titleLines.length*20.8)/2,16,{fontFace:'display',weight:'700',tone:'gold',align:'left',letterSpacing:.5,lineHeight:20.8},x+15+badgeW,titleW);
+      add('label','treasure-header-rule','',x+15,y+24+headingH,w-30,1,{skin:'rule'});
       const [intro,...notes]=(copy.description||roleTreasures[self.role]).split('\n');
-      const description=txt('treasure-role-description',intro!,y+56,self.role==='minion'?14:13,{lineHeight:self.role==='minion'?21.7:20.15,tone:'muted'},x+15,w-30);y=description.y+description.height;
+      const description=txt('treasure-role-description',intro!,y+34+headingH,self.role==='minion'?14:13,{lineHeight:self.role==='minion'?21.7:20.15,tone:'muted'},x+15,w-30);y=description.y+description.height;
       if(notes.length){const note=txt('treasure-role-note',notes.join('\n'),y,14,{lineHeight:25.2,tone:'muted'},x+15,w-30);y+=note.height;}y+=12;
       let actionBox:WebNode|undefined;
       if(self.role==='loyal'&&t?.jinguSeal?.available&&!t.jinguSeal.used){
@@ -840,7 +841,7 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
       txt('replay-rounds','逐轮记录',y,21,{fontFace:'display'});y+=42;
       roundNavigation(g.rounds);y+=adminReplay?70.796875:78;
       renderRounds(g.rounds,g.players,g.settings.anonymousTeamVote);replayRoundEnd=y;
-      for(const [key,label,items] of [['inspections','宝镜查验记录',g.inspections.map(i=>'第'+i.afterMission+'难：'+name(i.inspectorId)+' 查验 '+name(i.targetId)+'，随后交接给被查验者。')],['earlyWindows','轮间确认记录',g.earlyWindows.map(e=>'第'+e.afterProposal+'次提案后：'+(e.decision==='skip'?'跳过提前刺杀':'发起提前刺杀')+'（完成任务 '+e.afterMission+' 后）')]] as const){if(!items.length)continue;const opened=doc.expanded?.includes(key),frame=panel('replay-'+key,y,70,'replay-details');button('details:'+key,(opened?'▾':'▸')+' '+label,y+10,{skin:'plain-summary',fontSize:13},x+12,w-24,30);y+=70;if(opened){for(const [i,value] of items.entries()){const n=txt('replay-'+key+':'+i,value,y,14,{lineHeight:25.1875},x+12,w-24);y+=n.height+14;}y+=12;frame.height=y-frame.y;}y+=8;}
+      for(const [key,label,items] of [['inspections','宝镜查验记录',g.inspections.map(i=>'第'+i.afterMission+'难：'+name(i.inspectorId)+' 查验 '+name(i.targetId)+'，随后交接给被查验者。')],['earlyWindows','轮间确认记录',g.earlyWindows.map(e=>'第'+e.afterProposal+'次提案后：'+(e.decision==='skip'?'跳过提前刺杀':'发起提前刺杀')+'（完成任务 '+e.afterMission+' 后）')]] as const){if(!items.length)continue;const opened=doc.expanded?.includes(key),frame=panel('replay-'+key,y,70,'replay-details');button('details:'+key,(opened?'▾':'▸')+' '+label,y+10,{skin:'plain-summary',fontSize:13},x+12,w-24,30);y+=70;if(opened){for(const [i,value] of items.entries()){const n=txt('replay-'+key+':'+i,value,y,14,{lineHeight:25.1875},x+12,w-24);y+=n.height+14;}y+=12;frame.height=y-frame.y;}y+=adminReplay?0:8;}
       const audit=adminReplay?g.roleAssignmentAudit:undefined;
       if(audit&&g.endedAt&&g.result){
         y+=14;const frame=panel('audit-frame',y,49,'admin-audit-frame'),opened=doc.expanded?.includes('audit');button('details:audit',(opened?'▾':'▸')+' 发牌依据',y+1,{skin:'plain-summary',fontSize:13,weight:'600'},x+12,w-24,48);y+=49;
@@ -870,7 +871,7 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
   if(adminReplay){
     const h=Math.min(available*.92,y+17),fy=top+(available-h)/2,head=v.width>=430?53:60,clipTop=fy+head+1,clipBottom=fy+h-1,maxScroll=Math.max(0,y+17-h),scroll=Math.min(maxScroll,Math.max(0,model.scroll??0));
     for(const n of nodes){n.y+=fy-scroll;n.clipTop=clipTop;n.clipBottom=clipBottom;}
-    const nav=nodes.find(n=>n.id==='round-navigation'),roundEnd=fy+replayRoundEnd-scroll;if(nav&&roundEnd>clipTop){const delta=Math.max(nav.y,Math.min(clipTop,roundEnd-nav.height))-nav.y;nav.y+=delta;nav.fixed=true;for(const n of nodes.filter(n=>n.id.startsWith('round-jump:'))){n.y+=delta;n.fixed=true;}}
+    const nav=nodes.find(n=>n.id==='round-navigation'),roundEnd=fy+replayRoundEnd-scroll;if(nav&&roundEnd>clipTop){const delta=Math.max(nav.y,Math.min(fy+78,roundEnd-nav.height))-nav.y;nav.y+=delta;nav.fixed=true;for(const n of nodes.filter(n=>n.id.startsWith('round-jump:'))){n.y+=delta;n.fixed=true;}}
     const frame=add('panel','dialog-frame','',ox,fy,width,h,{skin:'admin-replay-frame',fixed:true});nodes.splice(nodes.indexOf(frame),1);nodes.unshift(frame);
     add('panel','admin-replay-header','',ox+1,fy+1,width-2,head,{skin:'admin-replay-header',fixed:true});
     const titleW=Math.max(80,w-72.671875),tw=titleW*.521,th=v.width>=430?20:35;

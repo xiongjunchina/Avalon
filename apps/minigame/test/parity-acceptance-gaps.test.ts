@@ -372,3 +372,19 @@ test('direct chat scrolls messages independently and matches web input limit',as
 test('vote progress uses CSS auto-fill columns without cutting wrapped statuses',()=>{
  const {room,user}=parityFixture('vote');for(const [width,columns] of [[320,2],[390,3],[430,4]]){const nodes=layoutWebScreen(gameScreen(room,user,{...state(),overlay:'vote'}),{...viewport,width:width!}).nodes,ballots=nodes.filter(n=>n.id.startsWith('ballot:')),first=ballots[0]!;assert.equal(ballots.filter(n=>n.y===first.y).length,columns);assert.ok(ballots.every(n=>n.width>=80));if(width===430)assert.equal(first.height,36);}
 });
+
+test('three-person expedition wraps on narrow phones and centers its final row',()=>{
+ const {room,user}=parityFixture('vote',12);
+ const narrow=layoutWebScreen(gameScreen(room,user,{...state(),overlay:'vote'}),{width:320,height:568,top:0,bottom:0}).nodes;
+ const cards=narrow.filter(n=>n.id.startsWith('party:'));
+ assert.equal(cards.length,3);assert.equal(cards[0]!.y,cards[1]!.y);assert.ok(cards[2]!.y>=cards[0]!.y+cards[0]!.height+10);assert.equal(cards[2]!.x+cards[2]!.width/2,160);
+ const wide=layoutWebScreen(gameScreen(room,user,{...state(),overlay:'vote'}),viewport).nodes.filter(n=>n.id.startsWith('party:'));assert.equal(new Set(wide.map(n=>n.y)).size,1);
+});
+
+test('treasure descriptions clear wrapped title and badge at every supported width',()=>{
+ for(const scene of ['treasures-percival','treasures-loyal-available','treasures-mordred-available'])for(const width of [320,390,430]){
+ const {room,user}=parityFixture(scene,12),nodes=layoutWebScreen(gameScreen(room,user,{...state(),privateRoleVisible:true,overlay:'treasures'}),{...viewport,width}).nodes;
+ const title=nodes.find(n=>n.id==='treasure-role-name')!,badge=nodes.find(n=>n.id==='treasure-badge')!,body=nodes.find(n=>n.id==='treasure-role-description')!;
+ assert.ok(body.y>=Math.max(title.y+title.height,badge.y+badge.height)+9);assert.ok(title.x>=badge.x+badge.width-.01);
+ }
+});
