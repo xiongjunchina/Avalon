@@ -62,11 +62,13 @@ class MigrationTests(unittest.TestCase):
         ]))
         (release / 'release.json').write_text(json.dumps({'revision': 'a' * 40}))
         (release / 'compose.yaml').write_text('services: {}')
+        (release / 'www').mkdir()
+        (release / 'www/index.html').write_text('<html><h1>游戏大厅</h1><p>新封面</p></html>\n')
         return release, 'a' * 40
 
     def get_url(self, path):
         if path == '/':
-            return '游戏大厅'
+            return (self.portal / 'public/current/www/index.html').read_text().strip()
         if path == '/avalon/':
             return '<script src="/avalon/assets/app.js"></script>'
         return json.dumps({'status': 'ok', 'ok': True})
@@ -100,6 +102,20 @@ class MigrationTests(unittest.TestCase):
         self.assertEqual(command[-1], runtime.ORIGIN + '/avalon/api/health')
         self.assertNotIn('-k', command)
         self.assertNotIn('--insecure', command)
+
+    def test_home_verification_rejects_an_old_game_hall(self):
+        release, _ = self.prepare(self.repo, self.portal)
+        runtime.get_url.side_effect = lambda path: '<html><h1>游戏大厅</h1><p>旧封面</p></html>' if path == '/' else self.get_url(path)
+        with self.assertRaisesRegex(RuntimeError, 'does not match the prepared release'):
+            runtime.verify_release(release)
+        self.assertEqual(runtime.get_url.call_args_list, [unittest.mock.call('/')])
+
+    def test_home_verification_accepts_the_prepared_release(self):
+        release, _ = self.prepare(self.repo, self.portal)
+        runtime.point_current(self.portal, release)
+        runtime.verify_release(release)
+        self.assertEqual([call.args[0] for call in runtime.get_url.call_args_list],
+                         ['/', '/avalon/', '/avalon/api/health', '/mafia/api/health', '/api/health'])
 
     def test_unhealthy_existing_game_prevents_mutations(self):
         runtime.get_url.side_effect = lambda path: '{"status":"error"}'
@@ -167,6 +183,8 @@ class MigrationTests(unittest.TestCase):
         old.mkdir()
         (old / 'release.json').write_text(json.dumps({'revision': 'b' * 40}))
         (old / 'games.json').write_text((self.portal / 'public/new-release/games.json').read_text())
+        (old / 'www').mkdir()
+        (old / 'www/index.html').write_text('<html><h1>游戏大厅</h1><p>旧封面</p></html>\n')
         state = json.loads((self.portal / 'state.json').read_text())
         state['previous'] = old.name
         (self.portal / 'state.json').write_text(json.dumps(state))

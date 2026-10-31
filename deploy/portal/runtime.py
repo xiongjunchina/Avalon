@@ -142,8 +142,9 @@ def get_url(path):
 
 
 def verify_release(release):
-    if '游戏大厅' not in get_url('/'):
-        raise RuntimeError('Local HTTPS game hall verification failed')
+    expected_home = (release / 'www/index.html').read_text().strip()
+    if get_url('/').strip() != expected_home:
+        raise RuntimeError('Local HTTPS game hall does not match the prepared release')
     if '/avalon/assets/' not in get_url('/avalon/'):
         raise RuntimeError('Avalon frontend prefix verification failed')
     for game in json.loads((release / 'games.json').read_text()):

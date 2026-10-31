@@ -72,13 +72,17 @@ Avalon 仍使用 `/root/update-avalon.sh` 或原有定时任务；门户模式�
 
 公共入口发布与回滚：
 
+统一入口的封面、文案和样式不会随 Avalon 游戏自动发布。遇到“游戏首页已更新、根入口仍是旧版”时，应执行下列独立发布；仅拉取 Git 或更新游戏镜像不会切换 `/opt/game-portal/public/current`。
+
 ```sh
 cd /opt/avalon
+git pull --ff-only origin main
 python3 deploy/portal/runtime.py release
+# 需要恢复上一个入口版本时才执行：
 python3 deploy/portal/runtime.py rollback
 ```
 
-两条命令都使用独立入口状态、发布锁、健康检查及失败回退；不操作游戏容器。未改变网络和镜像时，公共入口通过 Caddy reload 载入新路由，游戏长连接配置延迟关闭，客户端仍需支持断线恢复。添加网络或更换网关镜像时应安排维护窗口。
+两条命令都使用独立入口状态、发布锁、健康检查及失败回退；不操作游戏容器。发布验收会比对实际 HTTPS 首页与本次生成的首页内容，避免旧页面仅因包含“游戏大厅”而误判通过。未改变网络和镜像时，公共入口通过 Caddy reload 载入新路由，游戏长连接配置延迟关闭，客户端仍需支持断线恢复。添加网络或更换网关镜像时应安排维护窗口。
 
 ## 接入第三款游戏
 
