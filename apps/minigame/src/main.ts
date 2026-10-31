@@ -33,6 +33,7 @@ import { installWebFonts } from './platform/fonts.js';
 import { NativeVoice, type VoiceTicket } from './platform/native-voice.js';
 import { MINI_GAME_VOICE_ENABLED } from './features.js';
 import { KnownAccounts } from './net/known-accounts.js';
+import { copyWebEntry, roomVoiceGuidance, webHandoffScreen } from './screens/web-handoff.js';
 
 declare const wx: WxRuntime;
 declare const __MINIGAME_API_BASE_URL__: string;
@@ -91,7 +92,7 @@ let guestHomeVisible=true;let authIntent:'create'|'join'|undefined;
 let authMode: 'create' | 'switch' = 'create';
 const rolePreferenceDraft=new RolePreferenceDraft();
 let waitingMissionsExpanded=false;
-let auxiliary: 'preferences' | 'dedicated' | 'roomTools' | 'practiceSeats' | 'sound' | 'switchAccount' | 'join' | undefined;
+let auxiliary: 'preferences' | 'dedicated' | 'roomTools' | 'practiceSeats' | 'sound' | 'switchAccount' | 'join' | 'webHandoff' | undefined;
 let joinKey = '';
 let dedicatedRooms: DedicatedRoom[] = [];
 let creationAccess: {dedicatedRoomId?:string;password?:string|null} = {};
@@ -129,10 +130,12 @@ function model(): ScreenModel {
   ], web: { page: 'sheet', background: 'gate', backId: 'auxiliaryClose',document:{kind:'tools',modal:true},underlay:entryScreen(user) } });
   if(auxiliary==='dedicated')return feedback({title:'选择开桌方式',rows:[{id:'dedicated:normal',text:'普通房 · 随机房号'},...dedicatedRooms.map(r=>({id:'dedicated:'+r.id,text:r.code+' · '+r.name+(r.activeRoomId?'（已开桌）':''),disabled:!!r.activeRoomId}))],web:{page:'sheet',background:'library',backId:'auxiliaryClose',document:{kind:'tools',modal:true}}});
   if (auxiliary === 'switchAccount') return feedback({ ...entryScreen(undefined,undefined,true), web: {...entryScreen(undefined,undefined,true).web!, authMode, nickname, switchCode, knownAccounts: knownAccounts.list(), backId: 'auxiliaryClose' } });
+  if (auxiliary === 'webHandoff' && room && user) return feedback(webHandoffScreen(room, user));
   if (auxiliary === 'sound') return feedback({ title: '声音设置', rows: [
     { id: 'sound:music', text: '背景音乐：' + (sound.preferences.music ? '开' : '关') },
     { id: 'sound:effects', text: '游戏音效：' + (sound.preferences.effects ? '开' : '关') },
     ...nativeVoice.rows(),
+    ...(room && user ? [{ id: 'guide:web-voice', text: roomVoiceGuidance(room) }, { id: 'web:open', text: '转到网页版' }] : []),
   ], web: { page: 'sheet', background: 'library', backId: 'auxiliaryClose',document:{kind:'sound',modal:true,soundPreferences:sound.preferences} } });
   if (auxiliary === 'practiceSeats' && practice) return feedback({ title: '选择演练视角', rows: practice.perspectives().map(player => ({ id: 'practiceSeat:' + player.id, text: `${player.seat}号 · ${player.nickname} · ${formatRoleName(player.role)}` })), web: { page: 'sheet', background: 'sword', backId: 'auxiliaryClose',document:{kind:'tools',modal:true},underlay:gameScreen(practice.view(),practice.user,{privateRoleVisible:false,ballotVisible:false}) } });
   if (auxiliary === 'roomTools' && room && user) return feedback({ ...lobbyScreen(room, user), title: '房间工具', web: { page: 'sheet', backId: 'auxiliaryClose', background: 'pavilion',document:{kind:'tools',modal:true},underlay:lobbyScreen(room,user) } });
@@ -241,6 +244,11 @@ async function run(action: () => Promise<void>) {
 async function select(id: string) {
   if(id==='noop')return;
   if (busy || commandBusy) return;
+  if (id === 'web:open' && room && user) { auxiliary = 'webHandoff'; scroll = 0; render(); return; }
+  if ((id === 'web:copyPersonal' || id === 'web:copyInvite') && room && user) return run(async () => {
+    await copyWebEntry(id === 'web:copyPersonal' ? 'personal' : 'invite', api, wx, baseUrl, room!);
+    notice = id === 'web:copyPersonal' ? '本人接续链接已复制，5分钟内在系统浏览器打开；请勿群发。' : '房间邀请链接已复制，可发给朋友。';
+  });
   if(id==='rolePreferences'&&room){rolePreferenceDraft.open(room);auxiliary='preferences';scroll=0;render();return;}
   if(auxiliary==='preferences'&&room){
     if(id.startsWith('pref:'))return run(async()=>{rolePreferenceDraft.toggle(id.slice(5) as Role,room!);});
@@ -364,6 +372,7 @@ async function select(id: string) {
     if ((id === 'account' || id === 'friends') && playerPanel) return run(async () => { previousView = 'entry'; await playerPanel!.open(id); navigate('player'); });
   }
   if (view === 'settings') {
+    if (id === 'setup:offline' || id === 'setup:web') { editableSettings = { ...editableSettings, voiceChatEnabled: id === 'setup:web' }; render(); return; }
     if(id==='setupAccessToggle'){setupAccessExpanded=!setupAccessExpanded;render();return;}
     if (id.startsWith('setupRole:')) { guideReturn='settings'; guideRoleId=id.slice(10); guideSection='roles'; guideArt=false; navigate('guide'); return; }
     if (id === 'cancelSettings') { navigate(setupIntent === 'practice' && practice ? 'practice' : room ? 'lobby' : 'entry'); return; }

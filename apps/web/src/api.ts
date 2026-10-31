@@ -1,5 +1,9 @@
 import { deployment } from './deployment';
 export const errors: Record<string, string> = {
+  HANDOFF_EXPIRED: '接续链接已过期、已使用或已被新链接替换，请回到小游戏重新复制本人接续链接。',
+  HANDOFF_ROOM_CHANGED: '原房间或席位已变化，请回到小游戏确认后重新生成接续链接。',
+  HANDOFF_UNAVAILABLE: '接续服务暂时繁忙，请稍后重试；原房间可以继续游戏。',
+  WECHAT_VOICE_DISABLED: '微信语音尚未开放；可继续游戏，需要内置通话时请全员使用网页版。',
   NOT_MINION: '同心铃仅限女妖精使用。',
   TREASURES_DISABLED: '本局未启用专属法宝。', ALREADY_USED: '此法宝本局已使用。',
   BLUE_TREASURES_DISABLED: '已开启护法天机，蓝方法宝本局禁用；红方法宝保留。',

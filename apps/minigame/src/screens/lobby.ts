@@ -61,6 +61,7 @@ export function lobbyScreen(room: RoomView, user: User, status = ''): ScreenMode
       { id: 'admission', text: room.acceptingNewMembers ? '关闭新玩家加入' : '允许新玩家加入' },
     ] : []),
     { id: 'share', text: '邀请微信好友' }, { id: 'friends', text: '邀请仙友入房' }, { id: 'chat', text: '房间聊天' },
+    { id: 'web:open', text: '转到网页版' },
     { id: 'practice', text: `幻化分身试玩（${room.settings.playerCount}人局）` },
     { id: 'leave', text: '离开房间' },
   ] };

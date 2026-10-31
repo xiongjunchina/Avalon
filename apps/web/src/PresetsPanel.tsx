@@ -4,11 +4,13 @@ import {settingsText} from './settings-summary';
 export {settingsText} from './settings-summary';
 import { api, describe } from './api';
 import { Modal } from './Modal';
+import { RoomVoiceHint } from './RoomVoiceHint';
 
 export function SettingsFields({settings,onChange,prefix='room'}:{settings:Settings;onChange:(patch:Partial<Settings>)=>void;prefix?:string}) {
   return <>
     <fieldset className="player-count-field"><legend>对局人数</legend><div className="count-medallions">{[5,6,7,8,9,10,11,12].map(n=><label key={n}><input type="radio" name={`${prefix}-count`} value={n} checked={settings.playerCount===n} onChange={()=>onChange({playerCount:n,anonymousTeamVote:defaultAnonymousTeamVote(n)})}/><span>{n}<small className="sr-only">人</small></span></label>)}</div></fieldset>
-    <label htmlFor={`${prefix}-voice`}>房间类型</label><select id={`${prefix}-voice`} value={settings.voiceChatEnabled ? 'voice' : 'regular'} onChange={e=>onChange({voiceChatEnabled: e.target.value === 'voice'})}><option value="regular">🏛️ 线下常规房（无语音，聚会面杀）</option><option value="voice">🎙️ 远端语音房（声网实时语音）</option></select>
+    <label htmlFor={`${prefix}-voice`}>房间类型</label><select id={`${prefix}-voice`} value={settings.voiceChatEnabled ? 'voice' : 'regular'} onChange={e=>onChange({voiceChatEnabled: e.target.value === 'voice'})}><option value="regular">普通房（线下或自行通话）</option><option value="voice">网页语音房（声网实时语音）</option></select>
+    <RoomVoiceHint enabled={settings.voiceChatEnabled} />
     <label htmlFor={`${prefix}-captain`}>队长分配</label><select id={`${prefix}-captain`} value={settings.captainMode} onChange={e=>onChange({captainMode:e.target.value as Settings['captainMode']})}><option value="seat_order">按座位循环</option><option value="random_order">开局打乱一次，整局循环</option></select>
     <label htmlFor={`${prefix}-rejections`}>流局计数</label><select id={`${prefix}-rejections`} value={settings.rejectionScope} onChange={e=>onChange({rejectionScope:e.target.value as Settings['rejectionScope']})}><option value="game">全局累计，5 次判负</option><option value="mission">单次任务累计，5 次判负</option></select>
     {([['anonymousTeamVote','匿名组队投票'],['earlyAssassinationEnabled','提前刺杀'],['guardianPerksEnabled','护法天机（建议7-12人）'],['autoRevealRoleEnabled','倒计时后亮明真身'],['treasuresEnabled','专属法宝（8-12人专属）'],['rolePreferenceEnabled','心仪选角（偏好匹配模式）']] as const).map(([key,label])=><div className="check" key={key}><label htmlFor={`${prefix}-${key}`}>{label}</label><input id={`${prefix}-${key}`} type="checkbox" checked={settings[key]} onChange={e=>onChange({[key]:e.target.checked})}/></div>)}

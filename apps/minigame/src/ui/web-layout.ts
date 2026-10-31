@@ -115,7 +115,7 @@ export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout 
     if (!game) {
       const host=room.hostId===web.user?.id, me=room.members.find(m=>m.id===web.user?.id);
       y=top+34;
-      add('button','settings',count+' 人局 · '+(room.settings.anonymousTeamVote?'匿名表决':'公开表决')+' · '+(room.settings.voiceChatEnabled?'语音房':'线下房')+' · 房间设置',10,y,w-20,30,{skin:'pill',fontSize:12});y+=38;
+      add('button','settings',count+' 人局 · '+(room.settings.anonymousTeamVote?'匿名表决':'公开表决')+' · '+(room.settings.voiceChatEnabled?'网页语音':'普通房')+' · 房间设置',10,y,w-20,30,{skin:'pill',fontSize:12});y+=38;
       add('label','ribbon','等待仙友入座 '+room.members.length+'/'+count,10,y,w-20,24);y+=32;
       const cols=count>8?4:3, cellW=(w-24)/cols, cellH=133;
       for(let i=0;i<count;i++){
@@ -132,7 +132,7 @@ export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout 
       actions.forEach(([id,title],i)=>add('button',id!,title!,20+i*(aw+8),dockY+10,aw,48,{skin:'waiting-primary',selected:id==='ready'&&!!me?.ready,fixed:pinned}));
       y=naturalDockY+76;
       add('panel','waiting-tools','',10,y,w-20,44,{skin:'tabs'});
-      add('label','waiting-mode',room.settings.voiceChatEnabled?(MINI_GAME_VOICE_ENABLED?'🎙️ 微信语音':'实时语音未启用'):'🏛️ 线下房',18,y+6,w*.33,32,{skin:'text',fontSize:11,lineHeight:32});
+      add('button','web:open',room.settings.voiceChatEnabled?'网页语音 · 去网页':'转到网页版',18,y+6,w*.33,32,{skin:'pill',fontSize:11,lineHeight:32});
       add('button','chat','💬 传音',w*.4,y+6,w*.265,32,{skin:'pill',fontSize:11});add('button','friends','👥 仙友',w*.686,y+6,w*.265,32,{skin:'pill',fontSize:11});y+=52;
       add('button','waiting:missions',(web.waitingMissionsExpanded?'▾':'▸')+' 五难人数与本局配置',10,y,w-20,42,{skin:'accordion',fontSize:13});y+=50;
       if(web.waitingMissionsExpanded){drawQuests(y);y+=questH+8;}

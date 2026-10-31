@@ -1,0 +1,132 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { WebHandoffs, WEB_HANDOFF_TTL_MS } from '../src/web-handoff.js';
+import { headers, service } from './helpers.js';
+import { gameFixture } from './game-helpers.js';
+
+test('personal handoff tickets expire, are single use and replace the same session link',()=>{
+  let now=1_000;
+  const handoffs=new WebHandoffs(()=>now,2);
+  const first=handoffs.issue('session-one','user-one','room-one');
+  assert.match(first.ticket,/^[A-Za-z0-9_-]{43}$/);
+  assert.equal(Date.parse(first.expiresAt),now+WEB_HANDOFF_TTL_MS);
+  const replacement=handoffs.issue('session-one','user-one','room-one');
+  assert.notEqual(replacement.ticket,first.ticket);
+  assert.throws(()=>handoffs.consume(first.ticket),/HANDOFF_EXPIRED/);
+  assert.equal(handoffs.consume(replacement.ticket).userId,'user-one');
+  assert.throws(()=>handoffs.consume(replacement.ticket),/HANDOFF_EXPIRED/);
+  const expiring=handoffs.issue('session-one','user-one');
+  now+=WEB_HANDOFF_TTL_MS;
+  assert.throws(()=>handoffs.consume(expiring.ticket),/HANDOFF_EXPIRED/);
+  handoffs.issue('session-one','user-one');
+  handoffs.issue('session-two','user-two');
+  assert.throws(()=>handoffs.issue('session-three','user-three'),/HANDOFF_UNAVAILABLE/);
+  now+=WEB_HANDOFF_TTL_MS;
+  assert.doesNotThrow(()=>handoffs.issue('session-three','user-three'));
+});
+
+test('handoff keeps identity, room, seat and running game; web voice and independent sessions still work',async t=>{
+  const f=await gameFixture(t,true,{voiceChatEnabled:true});
+  const source=f.people[1];
+  const before=await f.state(source.user.id);
+  const identity=await f.store.authenticate(source.token);
+  const issued=await f.app.inject({method:'POST',url:'/api/sessions/web-handoff',headers:{authorization:`Bearer ${source.token}`},payload:{roomId:f.room.id}});
+  assert.equal(issued.statusCode,200);
+  assert.equal(issued.headers['cache-control'],'no-store');
+  assert.equal(issued.body.includes(source.token),false);
+  const result=await f.app.inject({method:'POST',url:'/api/sessions/web-handoff/exchange',headers,payload:{ticket:issued.json().ticket}});
+  assert.equal(result.statusCode,200);
+  assert.deepEqual(result.json(),{user:identity,roomId:f.room.id});
+  assert.equal(result.headers['cache-control'],'no-store');
+  const cookie=String(result.headers['set-cookie']);
+  assert.match(cookie,/HttpOnly/);
+  assert.match(cookie,/SameSite=Strict/);
+  assert.match(cookie,/Path=\//);
+  const webToken=result.cookies.find(c=>c.name==='avalon_session')!.value;
+  assert.notEqual(webToken,source.token);
+  const snapshot=await f.app.inject({method:'GET',url:`/api/rooms/${f.room.id}`,headers:{cookie:`avalon_session=${webToken}`}});
+  assert.equal(snapshot.statusCode,200);
+  assert.deepEqual(snapshot.json().room,JSON.parse(JSON.stringify(before)));
+  const voice=await f.app.inject({method:'GET',url:`/api/rooms/${f.room.id}/voice-token`,headers:{cookie:`avalon_session=${webToken}`}});
+  assert.equal(voice.statusCode,200);
+  assert.equal(voice.json().channel,`avalon-${f.room.id}`);
+  assert.equal((await f.pool.query('SELECT count(*)::int AS count FROM users')).rows[0].count,f.people.length);
+  assert.equal((await f.pool.query('SELECT count(*)::int AS count FROM games')).rows[0].count,1);
+  await f.store.revokeSession(webToken);
+  assert.equal((await f.store.authenticate(source.token)).id,identity.id);
+  const replay=await f.app.inject({method:'POST',url:'/api/sessions/web-handoff/exchange',headers,payload:{ticket:issued.json().ticket}});
+  assert.equal(replay.statusCode,401);
+  assert.equal(replay.json().error,'HANDOFF_EXPIRED');
+});
+
+test('handoff rejects cookie-only issuance, other rooms, CSRF, revoked sessions and expired links',async t=>{
+  const f=await service(t);
+  const owner=await f.store.createGuest('房主'),other=await f.store.createGuest('旁观者');
+  const room=await f.store.createRoom(owner.user);
+  const issue=(token:string,payload:object={})=>f.app.inject({method:'POST',url:'/api/sessions/web-handoff',headers:{authorization:`Bearer ${token}`},payload});
+  const exchange=(ticket:string,extraHeaders:Record<string,string>=headers)=>f.app.inject({method:'POST',url:'/api/sessions/web-handoff/exchange',headers:extraHeaders,payload:{ticket}});
+  const cookieOnly=await f.app.inject({method:'POST',url:'/api/sessions/web-handoff',headers:{...headers,cookie:`avalon_session=${owner.token}`},payload:{}});
+  assert.equal(cookieOnly.statusCode,401);
+  assert.equal((await issue(other.token,{roomId:room.id})).statusCode,403);
+  const first=(await issue(owner.token,{roomId:room.id})).json().ticket;
+  assert.equal((await exchange(first,{origin:'https://attacker.example','x-avalon-request':'1'})).statusCode,403);
+  assert.equal((await exchange(first,{origin:headers.origin})).statusCode,403);
+  assert.equal((await exchange(first,{})).statusCode,403);
+  await f.store.revokeSession(owner.token);
+  const revoked=await exchange(first);
+  assert.equal(revoked.json().error,'HANDOFF_EXPIRED');
+  assert.equal(revoked.headers['set-cookie'],undefined);
+  const expired=(await issue(other.token)).json().ticket;
+  f.advance(WEB_HANDOFF_TTL_MS);
+  assert.equal((await exchange(expired)).json().error,'HANDOFF_EXPIRED');
+});
+
+test('handoff rechecks room membership and account ban at exchange time',async t=>{
+  const f=await gameFixture(t,false);
+  const source=f.people[1];
+  const issue=()=>f.app.inject({method:'POST',url:'/api/sessions/web-handoff',headers:{authorization:`Bearer ${source.token}`},payload:{roomId:f.room.id}});
+  const exchange=(ticket:string)=>f.app.inject({method:'POST',url:'/api/sessions/web-handoff/exchange',headers,payload:{ticket}});
+  const first=(await issue()).json().ticket;
+  await f.command(source.user.id,'leaveRoom');
+  const removed=await exchange(first);
+  assert.equal(removed.statusCode,409);
+  assert.equal(removed.json().error,'HANDOFF_ROOM_CHANGED');
+  assert.equal(removed.headers['set-cookie'],undefined);
+  await f.store.join(source.user,f.room.code);
+  const second=(await issue()).json().ticket;
+  await f.pool.query('INSERT INTO user_memberships(user_id,is_banned) VALUES($1,true)',[source.user.id]);
+  const banned=await exchange(second);
+  assert.equal(banned.statusCode,403);
+  assert.equal(banned.json().error,'USER_BANNED');
+  assert.equal(banned.headers['set-cookie'],undefined);
+});
+
+test('only one concurrent exchange succeeds and a server restart invalidates pending links',async t=>{
+  const f=await service(t),source=await f.store.createGuest('仙友');
+  const issue=()=>f.app.inject({method:'POST',url:'/api/sessions/web-handoff',headers:{authorization:`Bearer ${source.token}`},payload:{}});
+  const exchange=(ticket:string)=>f.app.inject({method:'POST',url:'/api/sessions/web-handoff/exchange',headers,payload:{ticket}});
+  const first=(await issue()).json().ticket;
+  const attempts=await Promise.all([exchange(first),exchange(first)]);
+  assert.deepEqual(attempts.map(result=>result.statusCode).sort(),[200,401]);
+  const second=(await issue()).json().ticket;
+  await f.restart();
+  assert.equal((await exchange(second)).json().error,'HANDOFF_EXPIRED');
+});
+
+test('disabled WeChat voice makes no external call and does not prevent a twelve-player game',async t=>{
+  const original=process.env.WECHAT_MINIGAME_VOICE_ENABLED;
+  delete process.env.WECHAT_MINIGAME_VOICE_ENABLED;
+  t.after(()=>{if(original===undefined)delete process.env.WECHAT_MINIGAME_VOICE_ENABLED;else process.env.WECHAT_MINIGAME_VOICE_ENABLED=original;});
+  const f=await gameFixture(t,false,{playerCount:12,voiceChatEnabled:false});
+  let calls=0;
+  t.mock.method(globalThis,'fetch',async()=>{calls++;throw Error('unexpected external voice call');});
+  const voice=await f.app.inject({method:'POST',url:`/api/rooms/${f.room.id}/wechat-voice-ticket`,headers:{authorization:`Bearer ${f.people[0].token}`},payload:{code:'never-exchange-this'}});
+  assert.equal(voice.statusCode,503);
+  assert.equal(voice.json().error,'WECHAT_VOICE_DISABLED');
+  assert.equal(calls,0);
+  await f.command(f.people[0].user.id,'startGame');
+  await f.finishDeal();
+  const room=await f.state();
+  assert.equal(room.phase,'playing');
+  assert.equal(room.game!.players.length,12);
+});

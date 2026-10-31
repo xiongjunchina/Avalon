@@ -1,4 +1,11 @@
 /* Preserve the established palette and type scale; prioritize the current action. */
+.handoff-shell { min-height: 100dvh; display: grid; place-items: center; padding: 16px; }
+.handoff-sheet { width: min(100%, 560px); padding: 20px; }
+.handoff-sheet h1 { margin: 0 0 16px; font-size: 24px; }
+.handoff-sheet p { font: 400 16px/1.65 var(--sans); text-wrap: pretty; }
+.handoff-actions { display: grid; gap: 10px; }
+.handoff-actions button { min-height: 44px; white-space: normal; font: 600 16px/1.5 var(--sans); }
+.room-voice-hint { margin: 4px 0; width: 100%; text-wrap: pretty; }
 .flow-details { border: 1px solid rgba(212,163,89,.4); border-radius: 12px; padding: 10px 12px; background: rgba(34,11,10,.85); }
 .flow-details > summary { cursor: pointer; color: #ffd875; font: 600 13px/1.5 var(--sans); }
 .flow-details[open] > summary { margin-bottom: 10px; }

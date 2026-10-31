@@ -103,7 +103,7 @@ export class NativeVoice {
     await this.exiting;
   }
   rows(){return [
-    ...(!this.enabled ? [{id:'guide:voice',text:'当前版本不支持实时语音；网页语音能力保持可用。'}] : this.voiceRows()),
+    ...(!this.enabled ? [{id:'guide:voice',text:'当前小游戏版本不支持实时语音，5–12 人牌局照常进行；需要内置语音时请全员转到网页版。'}] : this.voiceRows()),
   ];}
   private voiceRows(){return [
     {id:'guide:voice',text:this.cleanupFailed?this.message:!this.roomId?'入房后可加入微信原生语音':this.count>10?'本房为'+this.count+'人局；微信原生语音最多10人，暂不可用':this.message},

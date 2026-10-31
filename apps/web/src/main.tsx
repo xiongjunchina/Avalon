@@ -60,6 +60,9 @@ import { uuidToRtcUid, type VoiceTokenResponse, type FriendSummary, type RoomCha
 import { AdminDashboard } from './AdminDashboard';
 import { ChatDrawer } from './ChatDrawer';
 import { RolePreferenceModal } from './RolePreferenceModal';
+import { WebHandoffEntry } from './WebHandoffGate';
+import { readWebHandoff } from './web-handoff';
+import { RoomVoiceHint } from './RoomVoiceHint';
 
 const BOT_NAMES = ['仙友2号', '仙友3号', '仙友4号', '仙友5号', '仙友6号', '仙友7号', '仙友8号', '仙友9号', '仙友10号', '仙友11号', '仙友12号'];
 
@@ -920,7 +923,7 @@ function App() {
                 <span className="mode-btn-icon">🏛️</span>
                 <span className="mode-btn-info">
                   <strong>线下常规房</strong>
-                  <small>同桌聚会 · 面杀无语音</small>
+                  <small>同桌交流 · 或自行通话</small>
                 </span>
               </button>
               <button
@@ -933,11 +936,12 @@ function App() {
                 <span className="mode-btn-icon">🎙️</span>
                 <span className="mode-btn-info">
                   <strong>远端语音房</strong>
-                  <small>线上开黑 · 实时语音</small>
+                  <small>5–12 人 · 全员使用网页</small>
                 </span>
               </button>
             </div>
 
+            <RoomVoiceHint enabled={setupSettings.voiceChatEnabled} />
             <div className="mp-shield-row" role="radiogroup" aria-label="选择游戏人数">
               {[5, 6, 7, 8, 9, 10, 11, 12].map(count => (
                 <button
@@ -1492,6 +1496,7 @@ function App() {
                 </button>
               </div>
 
+              {room.settings.voiceChatEnabled && <RoomVoiceHint enabled />}
               <details className="waiting-mission-preview flow-details">
                 <summary>五难人数与本局配置</summary>
               {/* Optional five-mission preview for the current player count */}
@@ -1773,4 +1778,9 @@ function App() {
   );
 }
 
-createRoot(document.getElementById('root')!).render(<SoundProvider><App /></SoundProvider>);
+const webHandoff = readWebHandoff(window.location.href);
+// Remove even an invalid credential before rendering or starting any API requests.
+if (webHandoff) window.history.replaceState(window.history.state, '', webHandoff.cleanUrl);
+createRoot(document.getElementById('root')!).render(
+  <WebHandoffEntry initialIntent={webHandoff}><SoundProvider><App /></SoundProvider></WebHandoffEntry>
+);

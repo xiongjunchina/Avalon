@@ -15,6 +15,7 @@ import { AdminService } from './admin.js';
 import { loginWithWechatCode } from './wechat-auth.js';
 import { issueWechatVoiceTicket } from './wechat-voice.js';
 import { MiniGameTickets, bearerToken, requestOriginAllowed } from './minigame-session.js';
+import { WebHandoffs } from './web-handoff.js';
 
 export async function buildApp(options: { store: PostgresStore; origin?: string; secure?: boolean; trustProxy?: boolean; heartbeatMs?: number; maintenanceMs?: number }) {
   const { store }=options;
@@ -32,6 +33,8 @@ export async function buildApp(options: { store: PostgresStore; origin?: string;
   type Connection={socket:WebSocket;roomId:string;id:string;alive:boolean;token?:string; userId:string};
   const connections=new Map<string,Connection>();
   const miniGameTickets=new MiniGameTickets(store.now);
+  const webHandoffs=new WebHandoffs(store.now);
+  const wechatVoiceEnabled=process.env.WECHAT_MINIGAME_VOICE_ENABLED==='true';
   const tasks=new Set<Promise<unknown>>();
   const queues=new Map<string,Promise<unknown>>();
   function track<T>(p:Promise<T>):Promise<T> { tasks.add(p); void p.finally(()=>tasks.delete(p)).catch(()=>{}); return p; }
@@ -141,6 +144,21 @@ export async function buildApp(options: { store: PostgresStore; origin?: string;
     if (!appId || !appSecret) throw new DomainError('WECHAT_UNAVAILABLE', 503);
     return loginWithWechatCode(req.body, { appId, appSecret }, identity => store.loginWechat(identity));
   });
+  app.post('/api/sessions/web-handoff', { config: { rateLimit: { max: 10, timeWindow: '1 minute' } } }, async(req,reply)=>{
+    const token=bearerToken(req.headers.authorization);
+    if(!token)throw new DomainError('UNAUTHENTICATED',401);
+    const user=await authenticate(req,reply);
+    const {roomId}=z.object({roomId:z.string().uuid().optional()}).strict().parse(req.body);
+    if(roomId)await store.roomFor(user.id,roomId);
+    return webHandoffs.issue(token,user.id,roomId);
+  });
+  app.post('/api/sessions/web-handoff/exchange', { config: { rateLimit: { max: 15, timeWindow: '1 minute' } } }, async(req,reply)=>{
+    const {ticket}=z.object({ticket:z.string().regex(/^[A-Za-z0-9_-]{43}$/)}).strict().parse(req.body);
+    const handoff=webHandoffs.consume(ticket);
+    const {user,token}=await store.createWebHandoffSession(handoff.sessionToken,handoff.userId,handoff.roomId);
+    setSession(reply,token);
+    return {user,...(handoff.roomId?{roomId:handoff.roomId}:{})};
+  });
   app.post('/api/minigame/socket-ticket',async(req,reply)=>{
     const token=bearerToken(req.headers.authorization);
     if(!token)throw new DomainError('UNAUTHENTICATED',401);
@@ -193,6 +211,7 @@ export async function buildApp(options: { store: PostgresStore; origin?: string;
   app.post<{Params:{id:string}}>('/api/rooms/:id/wechat-voice-ticket',{config:{rateLimit:{max:10,timeWindow:'1 minute'}}},async(req,reply)=>{
     const user=await authenticate(req,reply);
     if(!bearerToken(req.headers.authorization)) throw new DomainError('UNAUTHENTICATED',401);
+    if(!wechatVoiceEnabled)throw new DomainError('WECHAT_VOICE_DISABLED',503);
     const id=z.string().uuid().parse(req.params.id);
     const {code}=z.object({code:z.string().trim().min(1).max(512)}).strict().parse(req.body);
     reply.header('Cache-Control','no-store');

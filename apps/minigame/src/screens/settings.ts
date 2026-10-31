@@ -10,7 +10,7 @@ export function settingsScreen(settings: Settings): ScreenModel {
     { id: 'ladyEnabled', text: `照妖宝镜：${settings.ladyEnabled ? '开' : '关'}` },
     { id: 'earlyAssassinationEnabled', text: `提前刺杀：${settings.earlyAssassinationEnabled ? '开' : '关'}` },
     { id: 'guardianPerksEnabled', text: `护法天机：${settings.guardianPerksEnabled ? '开' : '关'}` },
-    { id: 'voiceChatEnabled', text: `网页端语音：${settings.voiceChatEnabled ? '开' : '关'}（与微信原生语音独立）` },
+    { id: 'voiceChatEnabled', text: `房间类型：${settings.voiceChatEnabled ? '网页语音房（全员转到网页交流）' : '普通房（线下或外部通话）'}` },
     { id: 'autoRevealRoleEnabled', text: `自动亮身份：${settings.autoRevealRoleEnabled ? '开' : '关'}` },
     { id: 'treasuresEnabled', text: `8–12人法宝：${settings.treasuresEnabled ? '开' : '关'}（仅8人以上生效）` },
     ...(settings.treasuresEnabled && settings.playerCount >= 8 ? [{ id: 'treasureRule', text: settings.guardianPerksEnabled ? '新局法宝：护法天机已开，蓝方禁用、红方保留' : '新局法宝：护法天机未开，双方按角色保留' }] : []),

@@ -1,7 +1,7 @@
 import {webTreasureCopy} from './web-treasure-copy.js';
 import {BACKGROUND_MUSIC} from '../../../web/src/audio-catalog.js';
 import {settingsText} from '../../../web/src/settings-summary.js';
-import { MINI_GAME_VOICE_ENABLED } from '../features.js';
+import { roomVoiceGuidance } from '../screens/web-handoff.js';
 import {BUILTIN_AVATARS} from '../../../web/src/avatar-catalog.js';
 import type { GameView, Player, Role, Score, RoundView } from '@avalon/contracts';
 import { assignFemaleDemons, assignLoyalGuardians, failuresRequiredFor, ROLE_CONFIG, teamOf } from '@avalon/game-core';
@@ -229,7 +229,7 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
       button('sound:'+id,label,y,{skin:'sound-option',selected:doc.soundPreferences?.[id],detail,lines,fontSize:16},x,w,h);y+=h+10;
     }
     for(const [i,t] of ['仅影响自己的设备，自动记住选择。音量使用手机或电脑的媒体音量键调整。','全部操作都有声音反馈，投票与出牌使用相同点击声。胜负音效按自己的结果播放，全程无人声。'].entries()){const n=txt('sound-hint:'+i,t,y,12,{tone:'muted',lineHeight:19.8},x,w);y+=n.height+10;}
-    for(const row of model.rows.filter(r=>!r.id.startsWith('sound:'))){button(row.id,row.text,y,{skin:'pill'});y+=50;}bodyEnd=y;
+    for(const row of model.rows.filter(r=>!r.id.startsWith('sound:')&&!feedback.includes(r))){if(row.id.startsWith('guide:')){para(row.id,row.text,13);}else{button(row.id,row.text,y,{skin:'pill'});y+=50;}}bodyEnd=y;
   } else if(doc.kind==='preferences'&&doc.settings){
     add('label','dialog-title','🎭 心仪选角 · 偏好匹配',x+4,13,w-50,24,{skin:'text',fontFace:'display',fontSize:clamp(14,v.width*.042,18),tone:'gold',fixed:true,align:'left'});
     txt('dialog-subtitle','志愿提高机会 · 不保证命中',37,11,{fixed:true},x+4,w-50);
@@ -404,7 +404,8 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
     const ignored=new Set(['back','overlayClose']);
     if(doc.kind==='confirm')for(const r of model.rows){if(r.id.startsWith('confirm:'))continue;para(r.id,r.text);}
     else for(const r of model.rows){if(ignored.has(r.id)||r.id==='result'||r.id==='rematch')continue;if(r.id==='report-result')continue;
-      const actionable=doc.kind==='tools'||r.id==='confirmInspection';
+      if(feedback.includes(r))continue;
+      const actionable=!r.id.startsWith('guide:')&&(doc.kind==='tools'||r.id==='confirmInspection');
       if(actionable){button(r.id,r.text,y,{skin:r.id.startsWith('player:')?'target':'button',selected:r.text.includes('已选'),primary:!r.id.startsWith('player:')});y+=50;}else para(r.id,r.text,12.5,r.id.startsWith('replay:mission:')?'tip':'card');
     }
     if(doc.kind==='confirm'){rowButtons([{id:'confirm:no',text:'取消'},{id:'confirm:yes',text:'确认执行',primary:true}],y);y+=50;}
@@ -584,15 +585,16 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
       }
     } else if(doc.kind==='settings') {
       if(doc.activeTab==='setup'&&doc.settings){
-        y=12;button('cancelSettings','❮',y,{skin:'pill'},16,38,38);button('sound','♫',y,{skin:'pill'},v.width-94,32,32);button('guide','规则',y,{skin:'pill'},v.width-56,40,32);add('label','setup-title','🏛 开启常规房',62,y,v.width-162,40,{skin:'text',fontSize:22,fontFace:'sans',weight:'700',tone:'gold',align:'center'});y=76;
-        button('noop','🏛 线下常规房\n同桌或远程 · 自选语音',y,{skin:'setup-mode',selected:true},16,(v.width-42)/2,52);button('noop',MINI_GAME_VOICE_ENABLED?'🎙️ 微信原生语音\n入房后在声音设置加入':'实时语音暂不提供\n当前版本支持文字传音',y,{skin:'setup-mode',disabled:true},26+(v.width-42)/2,(v.width-42)/2,52);y=145;
+        y=12;button('cancelSettings','❮',y,{skin:'pill'},16,38,38);button('sound','♫',y,{skin:'pill'},v.width-94,32,32);button('guide','规则',y,{skin:'pill'},v.width-56,40,32);add('label','setup-title',doc.settings.voiceChatEnabled?'开启网页语音房':'🏛 开启常规房',62,y,v.width-162,40,{skin:'text',fontSize:22,fontFace:'sans',weight:'700',tone:'gold',align:'center'});y=76;
+        button('setup:offline','线下常规房\n同桌或外部通话',y,{skin:'setup-mode',selected:!doc.settings.voiceChatEnabled},16,(v.width-42)/2,52);button('setup:web','网页语音房\n建房后全员转网页',y,{skin:'setup-mode',selected:doc.settings.voiceChatEnabled},26+(v.width-42)/2,(v.width-42)/2,52);y=145;
+        para('setup-voice-guide',roomVoiceGuidance({settings:doc.settings})+' 微信语音当前关闭。',12.5);
         panel('setup-count-frame',y,120,'profile',53,v.width-106);
         for(let count=5;count<=12;count++)button('count:'+count,String(count),y+10+Math.floor((count-5)/4)*56,{skin:'count',selected:doc.settings.playerCount===count,fontSize:18},70+(count-5)%4*(v.width-140)/4,(v.width-160)/4,48);y+=135;
         const accessRows=model.rows.filter(r=>['chooseDedicated','creationPassword'].includes(r.id));
         if(accessRows.length){const room=accessRows.find(r=>r.id==='chooseDedicated'),password=accessRows.find(r=>r.id==='creationPassword');button('setupAccessToggle',(model.web?.setupAccessExpanded?'▾ ':'▸ ')+(room?.text.startsWith('普通房')?'普通房 · 随机房号':room?.text??'普通房')+' · '+(password?.text.includes('已设置')?'已设密码':password?.text.includes('沿用')?'沿用密码设置':'无密码')+'\n房号与密码设置',y,{skin:'setup-access',fontSize:13},18,v.width-36,68);y+=88;
           if(model.web?.setupAccessExpanded)for(const r of accessRows){button(r.id,r.text,y,{skin:'input',fontSize:13});y+=48;}
         }
-        for(const r of model.rows.filter(r=>['createRoom','startPractice'].includes(r.id))){const main=r.id==='createRoom';button(r.id,main?'开启线下常规房':'幻境单人演练 '+doc.settings.playerCount+' 人取经牌局 ›',y,{primary:main,skin:main?'waiting-primary':'pill',fontSize:main?15:12},(v.width-(main?220:190))/2,main?220:190,main?44:32);y+=main?50:44;}
+        for(const r of model.rows.filter(r=>['createRoom','startPractice'].includes(r.id))){const main=r.id==='createRoom';button(r.id,main?(doc.settings.voiceChatEnabled?'开启网页语音房':'开启线下常规房'):'幻境单人演练 '+doc.settings.playerCount+' 人取经牌局 ›',y,{primary:main,skin:main?'waiting-primary':'pill',fontSize:main?15:12},(v.width-(main?220:190))/2,main?220:190,main?44:32);y+=main?50:44;}
         y+=2;txt('setup-role-preview','本局角色配置（'+doc.settings.playerCount+' 人）',y,14,{tone:'gold',weight:'700'});y+=32;
         for(const team of ['blue','red'] as const){
           const roles=ROLE_CONFIG[doc.settings.playerCount].filter(role=>teamOf(role)===team),unique=[...new Set(roles)],rows=Math.ceil(unique.length/3);
@@ -672,14 +674,14 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
     if(!settings)return;
     if(doc.kind==='special-editor'){
       txt('special-count-label','对局人数',y,12.5);y+=25;for(let count=5;count<=12;count++)button('special:setting:count:'+count,String(count),y,{skin:'count',fontSize:12,selected:settings.playerCount===count},x+(count-5)*w/8,w/8-4,30);y+=46;
-      for(const [key,label,value] of [['voiceChatEnabled','房间类型',settings.voiceChatEnabled?'微信语音房':'线下常规房，面对面聚会'],['captainMode','队长轮转',settings.captainMode==='seat_order'?'按座位顺序轮换':'开局打乱，整局循环'],['rejectionScope','流局计数',settings.rejectionScope==='game'?'全局累计，5 次判负':'单次任务累计，5 次判负']]){txt('special-setting-label:'+key,label!,y,12.5);y+=22;button('special:setting:'+key,value!,y,{skin:'admin-input',fontSize:12.5},x,w,36);y+=46;}
+      for(const [key,label,value] of [['voiceChatEnabled','房间类型',settings.voiceChatEnabled?'网页语音房（全员用网页）':'普通房，线下或外部通话'],['captainMode','队长轮转',settings.captainMode==='seat_order'?'按座位顺序轮换':'开局打乱，整局循环'],['rejectionScope','流局计数',settings.rejectionScope==='game'?'全局累计，5 次判负':'单次任务累计，5 次判负']]){txt('special-setting-label:'+key,label!,y,12.5);y+=22;button('special:setting:'+key,value!,y,{skin:'admin-input',fontSize:12.5},x,w,36);y+=46;}
       for(const [key,label] of [['anonymousTeamVote','匿名组队表决'],['earlyAssassinationEnabled','提前刺杀'],['guardianPerksEnabled','护法天机（建议7-12人）'],['rolePreferenceEnabled','心仪选角 · 偏好匹配'],['autoRevealRoleEnabled','倒计时后亮明真身'],['treasuresEnabled','专属法宝（8-12人）']] as const){button('special:setting:'+key,label,y,{skin:'admin-toggle',fontSize:12.5,selected:settings[key]},x,w,34);y+=42;}return;
     }
     const prefix=doc.kind==='presets'?'preset:':'';
     txt('settings-count-title','对局人数',y,16);y+=40;
     for(let count=5;count<=12;count++)button(prefix+'count:'+count,String(count),y+Math.floor((count-5)/4)*56,{skin:doc.kind==='presets'?'preset-count':'count',fontSize:18,selected:settings.playerCount===count},x+((count-5)%4+.5)*w/4-23,46,46);y+=122;
-    const fields=[['voiceChatEnabled','房间类型',settings.voiceChatEnabled?'微信语音房':'🏛️ 线下常规房（无语音，聚会面杀）'],['captainMode','队长分配',settings.captainMode==='seat_order'?'按座位循环':'开局打乱一次，整局循环'],['rejectionScope','流局计数',settings.rejectionScope==='game'?'全局累计，5 次判负':'单次任务累计，5 次判负']];
-    for(const [id,label,value] of fields){txt('field:'+id,label!,y,16);y+=32;button(prefix+id,value!+' ▾',y,{skin:'input',fontSize:16},x,w,50);y+=68;}
+    const fields=[['voiceChatEnabled','房间类型',settings.voiceChatEnabled?'网页语音房（全员用网页）':'普通房（线下或外部通话）'],['captainMode','队长分配',settings.captainMode==='seat_order'?'按座位循环':'开局打乱一次，整局循环'],['rejectionScope','流局计数',settings.rejectionScope==='game'?'全局累计，5 次判负':'单次任务累计，5 次判负']];
+    for(const [id,label,value] of fields){txt('field:'+id,label!,y,16);y+=32;button(prefix+id,value!+' ▾',y,{skin:'input',fontSize:16},x,w,50);y+=68;if(id==='voiceChatEnabled')para('settings-voice-guide',roomVoiceGuidance({settings}),12.5);}
     for(const [id,label] of [['anonymousTeamVote','匿名组队投票'],['earlyAssassinationEnabled','提前刺杀'],['guardianPerksEnabled','护法天机（建议7-12人）'],['rolePreferenceEnabled','心仪选角 · 偏好匹配'],['autoRevealRoleEnabled','倒计时后亮明真身'],['treasuresEnabled','专属法宝（8-12人专属）']] as const){button(prefix+id,label,y,{skin:'preset-toggle',fontSize:14,selected:settings[id]},x,w,46);y+=60;}
     if(settings.treasuresEnabled && settings.playerCount >= 8)para('settings-treasure-rule',settings.guardianPerksEnabled?'新局同时开启护法天机时，蓝方法宝禁用，仅红方法宝生效。':'新局未开启护法天机时，双方按角色保留专属法宝。',12);
     y+=36;

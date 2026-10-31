@@ -234,35 +234,55 @@ export class PostgresStore {
         ? await c.query(`UPDATE sessions SET expires_at=$2 WHERE token_hash=$1 AND expires_at>$3 RETURNING user_id`, [digest(token),new Date(this.now()+SESSION_MS),this.date()])
         : await c.query('SELECT user_id FROM sessions WHERE token_hash=$1 AND expires_at>$2', [digest(token),this.date()]);
       if (!result.rows[0]) throw new DomainError('UNAUTHENTICATED', 401);
-      const u = (await c.query<{
-        id: string;
-        nickname: string;
-        avatar: User['avatar'];
-        avatar_url?: string | null;
-        wechat_avatar_url?: string | null;
-        player_code?: string | null;
-        is_banned?: boolean | null;
-        vip_until?: Date | null;
-      }>(
-        `SELECT u.id, u.nickname, u.avatar, u.avatar_url, u.wechat_avatar_url, u.player_code,
-                m.is_banned, m.vip_until
-         FROM users u
-         LEFT JOIN user_memberships m ON m.user_id = u.id
-         WHERE u.id=$1`,
-        [result.rows[0].user_id]
-      )).rows[0];
-      if (u.is_banned) throw new DomainError('USER_BANNED', 403);
-      const isVip = Boolean(u.vip_until && u.vip_until.getTime() > this.now());
-      return {
-        id: u.id,
-        nickname: u.nickname,
-        avatar: u.avatar,
-        ...(u.avatar_url ? { avatarUrl: u.avatar_url } : {}),
-        ...(u.wechat_avatar_url ? { wechatAvatarUrl: u.wechat_avatar_url } : {}),
-        ...(u.player_code ? { playerCode: u.player_code } : {}),
-        isVip,
-        ...(u.vip_until ? { vipUntil: u.vip_until.toISOString() } : {}),
-      };
+      return this.sessionUser(c,result.rows[0].user_id);
+    });
+  }
+  private async sessionUser(c: PoolClient, userId: string): Promise<User> {
+    const u = (await c.query<{
+      id: string;
+      nickname: string;
+      avatar: User['avatar'];
+      avatar_url?: string | null;
+      wechat_avatar_url?: string | null;
+      player_code?: string | null;
+      is_banned?: boolean | null;
+      vip_until?: Date | null;
+    }>(
+      `SELECT u.id, u.nickname, u.avatar, u.avatar_url, u.wechat_avatar_url, u.player_code,
+              m.is_banned, m.vip_until
+       FROM users u
+       LEFT JOIN user_memberships m ON m.user_id = u.id
+       WHERE u.id=$1`,
+      [userId]
+    )).rows[0];
+    if (!u) throw new DomainError('UNAUTHENTICATED', 401);
+    if (u.is_banned) throw new DomainError('USER_BANNED', 403);
+    const isVip = Boolean(u.vip_until && u.vip_until.getTime() > this.now());
+    return {
+      id: u.id,
+      nickname: u.nickname,
+      avatar: u.avatar,
+      ...(u.avatar_url ? { avatarUrl: u.avatar_url } : {}),
+      ...(u.wechat_avatar_url ? { wechatAvatarUrl: u.wechat_avatar_url } : {}),
+      ...(u.player_code ? { playerCode: u.player_code } : {}),
+      isVip,
+      ...(u.vip_until ? { vipUntil: u.vip_until.toISOString() } : {}),
+    };
+  }
+  async createWebHandoffSession(sourceToken: string, userId: string, roomId?: string): Promise<{user:User;token:string}> {
+    return this.tx(async c=>{
+      // Lock the source session until the new session is committed, including against logout.
+      const source=await c.query('SELECT user_id FROM sessions WHERE token_hash=$1 AND expires_at>$2 FOR SHARE',[digest(sourceToken),this.date()]);
+      if(source.rows[0]?.user_id!==userId)throw new DomainError('HANDOFF_EXPIRED',401);
+      if(roomId){
+        const room=(await c.query<RoomRow>('SELECT * FROM rooms WHERE id=$1 FOR SHARE',[roomId])).rows[0];
+        const member=room&&room.phase!=='closed'&&(await c.query('SELECT 1 FROM room_members WHERE room_id=$1 AND user_id=$2 FOR SHARE',[roomId,userId])).rowCount;
+        if(!member)throw new DomainError('HANDOFF_ROOM_CHANGED',409);
+      }
+      const user=await this.sessionUser(c,userId);
+      const token=randomBytes(32).toString('base64url');
+      await c.query('INSERT INTO sessions(token_hash,user_id,expires_at) VALUES($1,$2,$3)',[digest(token),userId,new Date(this.now()+SESSION_MS)]);
+      return {user,token};
     });
   }
   async revokeSession(token: string): Promise<void> {

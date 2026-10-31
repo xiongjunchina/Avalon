@@ -67,10 +67,10 @@ export function LobbyHome({
       <div className="lobby-mode-switch" role="radiogroup" aria-label="建房模式">
         <button type="button" role="radio" aria-checked={!voiceEnabled}
           className={`lobby-mode-pill ${!voiceEnabled ? 'is-active' : ''}`}
-          onClick={() => onVoiceChange(false)} title="同桌线下聚会，无语音干扰">🏛️ 线下常规房</button>
+          onClick={() => onVoiceChange(false)} title="5–12 人，同桌交流或自行通话，两端均可入房">🏛️ 线下常规房</button>
         <button type="button" role="radio" aria-checked={voiceEnabled}
           className={`lobby-mode-pill ${voiceEnabled ? 'is-active' : ''}`}
-          onClick={() => onVoiceChange(true)} title="远端线上开黑，支持声网高清实时语音">🎙️ 远端语音房</button>
+          onClick={() => onVoiceChange(true)} title="5–12 人，使用声网通话时请全员使用网页版">🎙️ 远端语音房</button>
       </div>
       {hasInvitation && <p className="lobby-invite-hint" role="status">已收到朋友邀请，点击加入即可继续入座。</p>}
       <div className="lobby-primary-actions">
