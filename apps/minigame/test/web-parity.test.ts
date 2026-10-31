@@ -102,3 +102,9 @@ test('home invitation is part of the footer and preserves the invitation action'
  assert.equal(nodes.find(n=>n.id==='invitation')!.text,'加入邀请房间');
  assert.ok(nodes.find(n=>n.id==='home-invite-hint')!.y<nodes.find(n=>n.id==='invitation')!.y);
 });
+
+test('home background remains unclipped behind the safe area while controls stay inside it',()=>{
+ const {nodes}=layoutWebScreen(entryScreen({id:'u',nickname:'行者',playerCode:'123456'}),{width:390,height:844,top:44,bottom:34});
+ const bg=nodes.find(n=>n.id==='home-duel')!;assert.equal(bg.clipTop,0);assert.equal(bg.clipBottom,844);
+ assert.ok(nodes.find(n=>n.id==='create')!.y>=44);
+});

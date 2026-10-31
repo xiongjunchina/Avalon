@@ -9,7 +9,7 @@ export function parityFixture(scene = 'game',playerCount=6) {
   const game = createGame('11111111-2222-4333-8444-555555555555', members, settings, values => [...values], { randomBelow: () => 0n });
   game.phase = 'proposing'; game.confirmed = members.map(member => member.id);
   game.captainIndex = 0;
-  if(scene.startsWith('treasures-')){const role=scene.slice(10) as Role,viewer=members.find(m=>game.roles[m.id]===role);if(!viewer)throw Error('Fixture role unavailable: '+role);user={id:viewer.id,nickname:viewer.nickname,playerCode:'123456',avatar:'leaf'};game.mission=3;}
+  if(scene.startsWith('treasures-')){const role=scene.split('-')[1] as Role,viewer=members.find(m=>game.roles[m.id]===role);if(!viewer)throw Error('Fixture role unavailable: '+role);user={id:viewer.id,nickname:viewer.nickname,playerCode:'123456',avatar:'leaf'};game.mission=3;}
   if (['vote','vote-submitted','mission','mission-submitted','report','result'].includes(scene)) {
     game.rounds = [{number:1,mission:1,captainId:user.id,team:members.slice(0,MISSION_SIZES[playerCount]![0]).map(p=>p.id),direction:'clockwise'}];
     if(scene.startsWith('vote')) {game.phase='team_vote';game.teamVoteStartedAt='2026-10-22T00:00:00Z';game.teamVotes={};if(scene==='vote-submitted')game.teamVotes[user.id]=true;}
@@ -18,6 +18,13 @@ export function parityFixture(scene = 'game',playerCount=6) {
     if(scene==='result') {game.phase='finished';game.result={winner:'blue',reason:'merlin_survived'};}
   }
   const room = { id: '22222222-2222-4222-8222-222222222222', code: '123456', version: 1, hostId: user.id, settings, acceptingNewMembers: true, members, phase: 'playing' as const, serverTime: '2026-10-22T00:00:00Z', game: projectGame(game, user.id) };
+  if(scene.endsWith('-used')&&room.game.self?.treasures){const t=room.game.self.treasures,targetId=members[1]!.id;
+    if(t.tinStaff)t.tinStaff={used:true,available:false,result:{targetId,team:'blue'}};
+    if(t.guanyinMirror)t.guanyinMirror={used:true,available:false,result:{targetId,alignment:'evil'}};
+    if(t.humanBag)t.humanBag={used:true,available:false,targetId};
+    if(t.jinguSeal)t.jinguSeal={used:true,available:false};
+    if(t.bananaFan)t.bananaFan={used:true,available:false,armed:false};
+  }
   return { user, room };
 }
 

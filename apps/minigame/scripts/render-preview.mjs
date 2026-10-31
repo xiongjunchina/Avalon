@@ -32,7 +32,7 @@ for(const name of await readdir(join(packageRoot,'hd-art')))if(name.endsWith('.j
 for(const name of await readdir(join(packageRoot,'art/emblems')))if(name.endsWith('.png')&&!assets['emblems/'+name])assets['emblems/'+name]='data:image/png;base64,'+(await readFile(join(packageRoot,'art/emblems',name))).toString('base64');
 assets['home/duel-mobile.jpg']='data:image/jpeg;base64,'+(await readFile(join(packageRoot,'hd-art/home-duel.jpg'))).toString('base64');
 for(const name of await readdir(join(packageRoot,'art/emblems')))if(name.endsWith('.png'))assets['symbols/'+name]='data:image/png;base64,'+(await readFile(join(packageRoot,'art/emblems',name))).toString('base64');
-const fonts = Object.fromEntries(await Promise.all(['calligraphy','display','sans','sans500','sans600','sans700','homeInterface'].map(async name => [name,'data:font/ttf;base64,'+(await readFile(join(packageRoot,(/sans[567]00/.test(name)||name==='homeInterface')?'web-fonts':'art/fonts',name+'.ttf'))).toString('base64')])));
+const fonts = Object.fromEntries(await Promise.all(['calligraphy','display','sans','sans500','sans600','sans700','homeInterface'].map(async name => [name,'data:font/ttf;base64,'+(await readFile(join(packageRoot,(/sans[567]00/.test(name)||name==='homeInterface'||name==='display')?'web-fonts':'art/fonts',name+'.ttf'))).toString('base64')])));
 const dpr=Number(process.env.PARITY_DPR??1);
 const playerCount=Number(process.env.PARITY_PLAYERS??6);
 const captureSuffix=process.env.PARITY_BOTTOM==='1'?'-bottom':'';
@@ -56,7 +56,7 @@ try {
         const room = { id: 'r', code: '123456', hostId: 'u', settings: app.defaultSettings, acceptingNewMembers: true,
           members: Array.from({ length: 6 }, (_, index) => ({ id: index ? 'u' + index : 'u', seat: index + 1, nickname: index ? '仙友' + index : '行者', ready: index > 0, online: true })) };
         let model;
-        if (scene === 'guest') model = app.entryScreen();
+        if (scene === 'guest') {model=app.entryScreen(undefined,undefined,true);model.web.authIntent='create';}
         if (scene === 'setup') model = { ...app.settingsScreen(app.defaultSettings), web: { page: 'setup', settings: app.defaultSettings } };
         if (scene === 'entry') model = { ...app.entryScreen(user),web:{...app.entryScreen(user).web,friendRequests:1}, scene: 'entry' };
         if (scene === 'lobby') model = { ...app.lobbyScreen({...parityRoom,game:undefined,phase:'waiting'}, user, '已连接'), scene: 'game' };

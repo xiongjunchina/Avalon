@@ -6,10 +6,10 @@ import { setWebFonts } from '../ui/web-render.js';
 export function installWebFonts(wx: Pick<WxRuntime, 'loadFont'|'loadSubpackage'>, redraw:()=>void=()=>{}): void {
   if (!wx.loadFont) return;
   const loaded: Record<string, string> = {};
-  for (const name of ['calligraphy', 'display', 'sans']) {
+  for (const name of ['calligraphy', 'sans']) {
     try { const family = wx.loadFont('art/fonts/' + name + '.ttf'); if (family) loaded[name] = family; }
     catch { /* System font fallback keeps older runtimes usable. */ }
   }
   setWebFonts(loaded);
-  if(wx.loadSubpackage)try{wx.loadSubpackage({name:'web-fonts',success:()=>{for(const weight of [500,600,700])try{const family=wx.loadFont!('web-fonts/sans'+weight+'.ttf');if(family)loaded['sans'+weight]=family;}catch{}try{const family=wx.loadFont!('web-fonts/homeInterface.ttf');if(family)loaded.homeInterface=family;}catch{}setWebFonts(loaded);redraw();},fail:()=>{}});}catch{}
+  if(wx.loadSubpackage)try{wx.loadSubpackage({name:'web-fonts',success:()=>{try{const family=wx.loadFont!('web-fonts/display.ttf');if(family)loaded.display=family;}catch{}for(const weight of [500,600,700])try{const family=wx.loadFont!('web-fonts/sans'+weight+'.ttf');if(family)loaded['sans'+weight]=family;}catch{}try{const family=wx.loadFont!('web-fonts/homeInterface.ttf');if(family)loaded.homeInterface=family;}catch{}setWebFonts(loaded);redraw();},fail:()=>{}});}catch{}
 }

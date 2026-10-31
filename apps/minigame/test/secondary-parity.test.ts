@@ -168,3 +168,13 @@ test('an invalid friend response cannot corrupt the homepage badge',async()=>{
  const p=new PlayerPanel(new PlayerExtras({request:async()=>({ok:true})} as any),parityFixture().user);
  await p.refreshFriends();assert.equal(p.incomingFriendRequests,0);
 });
+
+test('spent treasures expose their private result card and cannot be activated again',()=>{
+ for(const role of ['percival','guinevere','mordred','oberon']){
+  const {room,user}=parityFixture('treasures-'+role+'-used',12),ui:GameUiState={privateRoleVisible:true,ballotVisible:false,overlay:'treasures'};
+  const model=gameScreen(room,user,ui),nodes=layoutWebScreen(model,{width:390,height:844,top:0,bottom:0}).nodes;
+  assert.ok(nodes.some(n=>n.skin==='treasure-result'),role);
+  assert.ok(!nodes.some(n=>n.id==='treasureTargets'),role);
+  for(const r of model.rows.filter(r=>r.id.startsWith('treasure:')))assert.equal(gameAction(room,user,r.id,ui),undefined);
+ }
+});

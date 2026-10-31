@@ -153,7 +153,7 @@ function model(): ScreenModel {
   else if (room?.game && view === 'game' && user) result = gameScreen(room, user, gameUi);
   else if (room && user && view === 'lobby') result = lobbyScreen(room, user, connectionStatus);
   else {result = entryScreen(user, error,!guestHomeVisible);if(!user&&guestHomeVisible)result.web={page:'home',guestHome:true};}
-  if (result.web?.page === 'home') Object.assign(result.web, { roleIndex, nickname, switchCode, authMode, freeAccess, friendRequests:playerPanel?.incomingFriendRequests??0, knownAccounts: knownAccounts.list() });
+  if (result.web?.page === 'home') Object.assign(result.web, { roleIndex, nickname, switchCode, authMode, authIntent, freeAccess, friendRequests:playerPanel?.incomingFriendRequests??0, knownAccounts: knownAccounts.list() });
   result.web ??= { page: 'sheet', background: view === 'player' ? 'dawn' : 'library' };
   result.web.freeAccess=freeAccess;
   result.web.waitingMissionsExpanded=waitingMissionsExpanded;

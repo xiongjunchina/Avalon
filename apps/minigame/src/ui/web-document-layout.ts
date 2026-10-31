@@ -84,7 +84,7 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
     txt('auth-label',switching?'原账号的 6 位仙友码':'玩家昵称（大家怎么称呼你）',y,16);y+=34;
     button(switching?'input:switch':'input:nickname',switching?model.web!.switchCode||'例如：123456':model.web!.nickname||'例如：小陈、阿辉',y,{skin:'input',fontSize:16},x,w,50);y+=64;
     const hint=txt('auth-note',switching?'输入仙友码即可找回原账号，继续使用原昵称、头像和战绩。':'填朋友认识的称呼，别填房间号；仙友码由系统自动分配。',y,14,{lineHeight:25.2});y+=hint.height+14;
-    button('login',switching?'找回账号，继续游戏':'取好昵称，继续游戏',y,{skin:'waiting-primary',fontSize:18,disabled:switching?!/^\d{6}$/.test(model.web!.switchCode??''):!model.web!.nickname?.trim()},x,w,50);y+=60;bodyEnd=y;
+    button('login',switching?'找回账号，继续游戏':model.web!.authIntent==='create'?'取好昵称，创建房间':model.web!.authIntent==='join'?'取好昵称，加入房间':'取好昵称，继续游戏',y,{skin:'waiting-primary',fontSize:18,disabled:switching?!/^\d{6}$/.test(model.web!.switchCode??''):!model.web!.nickname?.trim()},x,w,50);y+=60;bodyEnd=y;
   }else if(adminFriends){
     const title=txt('admin-friends-title','【'+(doc.adminFriendOwner??'')+'】的仙友圈子',y+5,18,{fontFace:'display',tone:'gold',fixed:true},x,w-60);button('page:users','关闭',y,{skin:'admin-tool',fontSize:12,fixed:true},x+w-54,54,30);y+=Math.max(38,title.height+14);bodyStart=y;
     if(!doc.adminFriends?.length){txt('admin-friends-empty','暂无好友记录',y+12,14,{fontFace:'system',tone:'muted'});y+=48;}
@@ -200,7 +200,7 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
     for(const n of nodes){n.fontFace='system';if(n.skin==='setting'||n.skin==='input')n.skin=n.selected?'admin-primary':'admin-input';}
   } else if(doc.kind==='presets'&&doc.presetEditing){
     modalHeader(doc.roomPreset?'保存房间预设':'编辑常用设置');y+=22;
-    txt('preset-name-label','预设名称',y+12,14);y+=42;button('preset:name',doc.presetName||'例如：八人法宝局',y,{skin:'input',fontSize:14},x+4,w-8,50);y+=70;
+    txt('preset-name-label','预设名称',y+12,16);y+=42;button('preset:name',doc.presetName||'例如：八人法宝局',y,{skin:'input',fontSize:14},x+4,w-8,50);y+=70;
     if(doc.roomPreset)para('preset-room-summary','将保存当前房间：'+doc.settings?.playerCount+' 人 · '+(doc.settings?.anonymousTeamVote?'匿名':'公开')+'组队表决。玩法修改请返回房间设置。');else settingsForm(doc.settings);
     bodyEnd=y;footerH=88;
   } else if(doc.kind==='account'&&doc.profileEditing&&doc.user){
@@ -358,7 +358,16 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
         if(!t?.heartBell?.available){const hint=txt('bell-unavailable','需已进入出牌阶段、你与已相认同伙同车且双方未出牌；两张失败牌才失败的轮次不可用。',y,14,{lineHeight:21,tone:'muted'},x+25,w-50);y+=hint.height+12;}
         box.height=y-box.y;y+=10;
       }
-      const rows=model.rows.filter(r=>!r.id.startsWith('player:')&&!['back','overlayClose','empty','treasure:heartProtect','treasure:heartSabotage'].includes(r.id));
+      const resultRows=new Set<string>();
+      const treasureName=(id:string)=>{const p=game.players.find(p=>p.id===id);return p?String(p.seat).padStart(2,'0')+'号 · '+p.nickname:'未知仙友';};
+      const treasureResult=(id:string,title:string,content:string)=>{const box=panel(id+':result',y,1,'treasure-result',x+15,w-30);txt(id+':result-title',title,y+10,12,{tone:'gold',weight:'700'},x+27,w-54);const body=txt(id+':result-body',content,y+32,13,{lineHeight:19.5,tone:'muted'},x+27,w-54);y=body.y+body.height+10;box.height=y-box.y;y+=10;resultRows.add(id);};
+      if(t?.tinStaff?.result)treasureResult('treasure:tinStaff','【锡杖显灵秘录】','仙友：'+treasureName(t.tinStaff.result.targetId)+'\n气息：'+(t.tinStaff.result.team==='blue'?'✨ 取经正道（蓝方）':'🔥 混世妖魔（红方）'));
+      if(t?.guanyinMirror?.result)treasureResult('treasure:guanyinMirror','【照妖镜显圣】','车队队员：'+treasureName(t.guanyinMirror.result.targetId)+'\n心性照映：'+(t.guanyinMirror.result.alignment==='pure'?'✨ 心性纯良（好人）':'🔥 妖气内伏（恶妖）'));
+      if(t?.humanBag?.used)treasureResult('treasure:humanBag','【袋中乾坤】','已在本局祭出后天人种袋！\n禁锢仙友：'+treasureName(t.humanBag.targetId??''));
+      if(t?.jinguSeal?.used)treasureResult('treasure:jinguSeal','【佛印已传达】','你已捏动金箍向大唐圣僧亮明护法真身！\n圣僧已在暗中锁定你的座次，请全力辅佐圣僧逆转战局！');
+      if(t?.bananaFan?.used)treasureResult('treasure:bananaFan','【芭蕉扇已出】','神扇狂风已在先前轮次成功吹散发车，本局法宝已消耗完毕。');
+      if(t?.jinguAllyId)treasureResult('treasure:ally','👑【紧箍佛印 · 同修来投】',treasureName(t.jinguAllyId)+'\n此仙友确系忠良取经护法同修，绝非妖魔！可全力倚重！');
+      const rows=model.rows.filter(r=>!resultRows.has(r.id)&&!r.id.startsWith('player:')&&!['back','overlayClose','empty','treasure:heartProtect','treasure:heartSabotage'].includes(r.id));
       if(!rows.length&&self.role==='assassin')rows.push({id:'assassin-idle',text:copy.idle});
       for(const row of rows){
         const actionable=row.id==='treasure:tinStaff'?t?.tinStaff?.available:row.id==='treasure:guanyinMirror'?t?.guanyinMirror?.available:row.id==='treasure:humanBag'?t?.humanBag?.available:row.id==='treasure:jinguSeal'?t?.jinguSeal?.available:row.id==='treasure:bananaFan'?t?.bananaFan?.available:/^(early|assassinate|treasure:heart|treasure:guanyinSkip)/.test(row.id);

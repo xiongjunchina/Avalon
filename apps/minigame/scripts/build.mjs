@@ -55,8 +55,10 @@ export async function buildMiniGame({
   await rm(join(outDir, 'art/home/duel-mobile.png'), { force: true });
   await rm(join(outDir, 'hd-art/home-duel.png'), { force: true });
   await mkdir(join(outDir, 'art/fonts'), { recursive: true });
+  await rm(join(outDir,'art/fonts/display.ttf'),{force:true});
+  await rm(join(outDir,'art/fonts/display-OFL.txt'),{force:true});
   for (const name of await readdir(join(minigameRoot, 'assets/fonts')))
-    if (name.endsWith('.ttf') || name.endsWith('-OFL.txt')) await copyFile(join(minigameRoot, 'assets/fonts', name), join(outDir, 'art/fonts', name));
+    if (!name.startsWith('display')&&(name.endsWith('.ttf') || name.endsWith('-OFL.txt'))) await copyFile(join(minigameRoot, 'assets/fonts', name), join(outDir, 'art/fonts', name));
   for(const folder of ['scenes','roles','avatars','home']){
     const target=join(outDir,'art',folder);await mkdir(target,{recursive:true});
     for(const name of await readdir(join(minigameRoot,'assets/compatible',folder))){
@@ -75,6 +77,7 @@ export async function buildMiniGame({
   const hdSize=await bytesIn(hdRoot);if(hdSize>4*1024*1024)throw Error('HD_PACKAGE_TOO_LARGE');
   const fontRoot=join(outDir,'web-fonts');await mkdir(fontRoot,{recursive:true});await writeFile(join(fontRoot,'game.js'),'// Actual web font weights.\n');
   for(const name of await readdir(join(minigameRoot,'assets/web-fonts')))await copyFile(join(minigameRoot,'assets/web-fonts',name),join(fontRoot,name));
+  for(const name of ['display.ttf','display-OFL.txt'])await copyFile(join(minigameRoot,'assets/fonts',name),join(fontRoot,name));
   const fontSize=await bytesIn(fontRoot);if(fontSize>4*1024*1024)throw Error('FONT_PACKAGE_TOO_LARGE');
   return { outDir, size:size+hdSize+fontSize, appId: selectedAppId, apiBaseUrl:serviceUrl, voiceEnabled };
 }

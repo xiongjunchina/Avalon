@@ -12,7 +12,7 @@ export interface WebSurface {
   page: 'home' | 'setup' | 'table' | 'sheet';
   background?: 'gate' | 'pavilion' | 'sword' | 'library' | 'mirror' | 'dawn';
   user?: User; room?: RoomView; settings?: Settings;
-  roleIndex?: number; selectedIds?: string[]; targetId?: string;
+  authIntent?:'create'|'join';roleIndex?: number; selectedIds?: string[]; targetId?: string;
   guestHome?:boolean;
   setupAccessExpanded?:boolean;
   nickname?: string; authMode?: 'create' | 'switch'; switchCode?: string;
@@ -83,7 +83,7 @@ export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout 
     const last = nodes.filter(n=>n.id!=='home-duel').reduce((max, node) => Math.max(max, node.y + node.height), 0);
     const maxScroll = Math.max(0, last - (v.height - v.bottom));
     const scroll = Math.min(model.scroll ?? 0, maxScroll);
-    for (const node of nodes) if (!node.fixed) { node.y -= scroll; node.clipTop = top + (web.user ? 42 : 0); node.clipBottom = bottom; }
+    for (const node of nodes) if (!node.fixed&&node.id!=='home-duel') { node.y -= scroll; node.clipTop = top + (web.user ? 42 : 0); node.clipBottom = bottom; }
     appendAlerts();
     return { nodes, maxScroll, contentTop: top, contentBottom: bottom };
   }
