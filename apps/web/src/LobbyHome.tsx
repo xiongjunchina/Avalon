@@ -1,10 +1,9 @@
 import type { ReactNode } from 'react';
-import type { Role, User } from '@avalon/contracts';
-import { Emblem, PlayerAvatar, roleTeam } from './Heraldry';
-import { RolePortrait } from './RolePortrait';
-import { FEMALE_DEMONS, roleMottos, roleNames } from './roles';
+import type { User } from '@avalon/contracts';
+import { Emblem, PlayerAvatar } from './Heraldry';
+import { assetUrl } from './deployment';
 
-export function LobbyHero({ role, freeAccess }: { role: Role; freeAccess: boolean }) {
+export function LobbyHero({ freeAccess }: { freeAccess: boolean }) {
   return <>
     <div className="mp-logo-block">
       <h1 className="mp-avalon-logo">
@@ -17,28 +16,32 @@ export function LobbyHero({ role, freeAccess }: { role: Role; freeAccess: boolea
         <span className="lobby-free-access-banner">🎉 公测盛典 · 全特权限时免费畅玩中</span>
       </div>}
     </div>
-    <section className="mp-medallion-stage" aria-label="角色展示">
-      <div className={`mp-medallion-circle allegiance-${roleTeam(role)}`}>
-        <RolePortrait role={role} femaleDemon={role === 'minion' ? 'yutu' : undefined} size="card" />
-      </div>
-      <h2 className="mp-medallion-name">{role === 'minion' ? '玉兔精' : roleNames[role]}</h2>
-      <p className="mp-medallion-motto">{role === 'minion' ? FEMALE_DEMONS.yutu.motto : roleMottos[role]}</p>
+    <figure className="lobby-duel-art">
+      <picture>
+        <source media="(max-width: 759px)" srcSet={assetUrl('/art/home/duel-mobile.webp')} />
+        <img src={assetUrl('/art/home/duel-desktop.webp')} width={1280} height={640}
+          alt="孙悟空与六耳猕猴相对而立" loading="eager" fetchPriority="high" decoding="async" />
+      </picture>
+    </figure>
+    <section className="lobby-duel-copy" aria-label="游戏介绍">
+      <h2>两个悟空，你信哪一个？</h2>
+      <p>组队、表决、暗中试探，找出取经路上的妖。</p>
     </section>
   </>;
 }
 
 /** Visitors and returning players share the same public artwork and room entry points. */
 export function LobbyHome({
-  user, role, freeAccess, busy, voiceEnabled, hasInvitation, friendRequests, soundControl,
+  user, freeAccess, busy, voiceEnabled, hasInvitation, friendRequests, soundControl,
   onVoiceChange, onAccount, onSignIn, onLogout, onFriends, onGuide, onCreate, onJoin, onPractice,
 }: {
-  user: User | null; role: Role; freeAccess: boolean; busy: boolean; voiceEnabled: boolean;
+  user: User | null; freeAccess: boolean; busy: boolean; voiceEnabled: boolean;
   hasInvitation: boolean; friendRequests: number; soundControl: ReactNode;
   onVoiceChange: (enabled: boolean) => void;
   onAccount: () => void; onSignIn: () => void; onLogout: () => void; onFriends: () => void;
   onGuide: () => void; onCreate: () => void; onJoin: () => void; onPractice: () => void;
 }) {
-  return <div className="mp-home-screen">
+  return <div className="mp-home-screen home-duel-screen">
     <header className="mp-home-topbar">
       <button type="button" className="mp-avatar-btn" aria-label={user ? '个人中心' : '登录或注册'}
         title={user ? `${user.nickname} · 点击进入个人中心` : '设置身份，保留取经战绩'}
@@ -61,7 +64,7 @@ export function LobbyHome({
       </div>
     </header>
 
-    <LobbyHero role={role} freeAccess={freeAccess} />
+    <LobbyHero freeAccess={freeAccess} />
 
     <footer className="mp-home-footer">
       <div className="lobby-mode-switch" role="radiogroup" aria-label="建房模式">

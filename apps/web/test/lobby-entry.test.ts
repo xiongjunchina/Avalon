@@ -7,7 +7,7 @@ import { EntryDialog } from '../src/EntryDialog';
 
 const noop = () => {};
 const props = {
-  role: 'loyal' as const, freeAccess: true, busy: false, voiceEnabled: false,
+  freeAccess: true, busy: false, voiceEnabled: false,
   hasInvitation: false, friendRequests: 0, soundControl: null,
   onVoiceChange: noop, onAccount: noop, onSignIn: noop, onLogout: noop,
   onFriends: noop, onGuide: noop, onCreate: noop, onJoin: noop, onPractice: noop,
@@ -20,11 +20,38 @@ test('visitor and signed-in home expose the same hero and public guide without a
   }));
   const hero = (html: string) => html.slice(html.indexOf('<div class="mp-logo-block">'), html.indexOf('<footer'));
   assert.equal(hero(visitor), hero(signedIn));
-  assert.match(visitor, /取经护法/);
+  assert.match(visitor, /<h2>两个悟空，你信哪一个？<\/h2>/);
+  assert.match(visitor, /<p>组队、表决、暗中试探，找出取经路上的妖。<\/p>/);
+  assert.match(visitor, /一念佛魔皆幻相，谁是修道取经人/);
+  assert.match(visitor, /<source media="\(max-width: 759px\)" srcSet="\/art\/home\/duel-mobile\.webp"/);
+  assert.match(visitor, /<img[^>]+src="\/art\/home\/duel-desktop\.webp"[^>]+alt="孙悟空与六耳猕猴相对而立"/);
+  assert.doesNotMatch(visitor, /mp-medallion|\/art\/roles\//);
   assert.match(visitor, /玩法与角色/);
   assert.match(visitor, /加入房间/);
   assert.doesNotMatch(visitor, /<form|<input|请留取经尊号|仙友码/);
   assert.match(signedIn, /个人中心/);
+  assert.match(visitor, /公测盛典/);
+});
+
+test('both room modes retain room and practice entries and disable submissions while busy', () => {
+  const buttons = (html: string) => [...html.matchAll(/<button\b[^>]*>.*?<\/button>/gs)].map(match => match[0]);
+  for (const voiceEnabled of [false, true]) {
+    for (const busy of [false, true]) {
+      const html = renderToStaticMarkup(createElement(LobbyHome, { ...props, user: null, voiceEnabled, busy }));
+      const rendered = buttons(html);
+      for (const name of [voiceEnabled ? '开语音房' : '开常规房', '加入房间', '幻境单人试玩']) {
+        const entry = rendered.find(button => button.includes(name));
+        assert.ok(entry, `missing public entry: ${name}`);
+        assert.equal(/\bdisabled=""/.test(entry), busy, `busy state for ${name}`);
+      }
+      const modes = rendered.filter(button => button.includes('role="radio"'));
+      assert.equal(modes.length, 2);
+      assert.equal(modes[0].includes('aria-checked="true"'), !voiceEnabled);
+      assert.equal(modes[1].includes('aria-checked="true"'), voiceEnabled);
+      assert.match(html, /玩法与角色/);
+      assert.match(html, /功果簿/);
+    }
+  }
 });
 
 test('the public promotion follows system configuration and invitation context has a visible entry', () => {

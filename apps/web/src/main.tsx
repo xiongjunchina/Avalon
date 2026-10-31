@@ -30,6 +30,7 @@ import {
 import './style.css';
 import './scenes.css';
 import './player-flow.css';
+import './home-duel.css';
 import './sound.css';
 import { ReadyReminder } from './ReadyReminder';
 import './feedback.css';
@@ -59,18 +60,6 @@ import { uuidToRtcUid, type VoiceTokenResponse, type FriendSummary, type RoomCha
 import { AdminDashboard } from './AdminDashboard';
 import { ChatDrawer } from './ChatDrawer';
 import { RolePreferenceModal } from './RolePreferenceModal';
-
-const SHOWCASE_ROLES: Role[] = [
-  'merlin',
-  'assassin',
-  'percival',
-  'morgana',
-  'guinevere',
-  'mordred',
-  'oberon',
-  'loyal',
-  'minion',
-];
 
 const BOT_NAMES = ['仙友2号', '仙友3号', '仙友4号', '仙友5号', '仙友6号', '仙友7号', '仙友8号', '仙友9号', '仙友10号', '仙友11号', '仙友12号'];
 
@@ -129,7 +118,6 @@ function App() {
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [rolePrefModalOpen, setRolePrefModalOpen] = useState(false);
   const [kickTarget, setKickTarget] = useState<Member | null>(null);
-  const [showcaseIndex, setShowcaseIndex] = useState(0);
   const [invite, setInvite] = useState('');
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -306,15 +294,6 @@ function App() {
   useGameSound(practiceGame ? projectGame(practiceGame, practiceUserId) : room?.game ?? null,
     page === 'table' && !loading && !!user, !!practiceGame || !roomId || connection === '已连接');
   useNavigationSound(`${page}:${!!user}:${roomId ?? ''}:${practiceGame?.id ?? ''}:${setupOpen}:${joinOpen}`, !loading);
-
-  // Auto-rotate home role showcase every 3.8s
-  useEffect(() => {
-    if (roomId || setupOpen || practiceGame || page !== 'table') return;
-    const timer = setInterval(() => {
-      setShowcaseIndex(i => (i + 1) % SHOWCASE_ROLES.length);
-    }, 3800);
-    return () => clearInterval(timer);
-  }, [roomId, setupOpen, practiceGame, page]);
 
   // Auto-dismiss notice toast after 2 seconds
   useEffect(() => {
@@ -755,7 +734,6 @@ function App() {
     if (settings) command({ type: 'updateSettings', payload: { ...settings, ...patch } });
   }
 
-  const showcaseRole = SHOWCASE_ROLES[showcaseIndex];
   const setupRoles = ROLE_CONFIG[setupSettings.playerCount] ?? ROLE_CONFIG[6];
   const setupBlueRoles = setupRoles.filter(r => roleTeam(r) === 'blue');
   const setupRedRoles = setupRoles.filter(r => roleTeam(r) === 'red');
@@ -763,11 +741,12 @@ function App() {
   const groupedRed = groupRoles(setupRedRoles);
 
   const inTableViewport = Boolean((roomId || practiceGame) && page === 'table');
+  const inHomeViewport = page === 'table' && !roomId && !practiceGame && !setupOpen;
   const activeGame = practiceGame ?? room?.game;
   const scene = page === 'guide' || setupOpen ? 'library' : page === 'account' ? 'dawn' : activeGame ? (activeGame.result ? 'dawn' : 'sword') : roomId ? 'pavilion' : 'gate';
 
   return (
-    <main data-scene={scene} data-sound="tap" className={`app-shell ${inTableViewport ? 'is-table-viewport is-live-table' : ''}`}>
+    <main data-scene={scene} data-sound="tap" className={`app-shell ${inTableViewport ? 'is-table-viewport is-live-table' : ''} ${inHomeViewport ? 'is-home-viewport' : ''}`}>
       {/* Global Announcement Marquee */}
       {announcement?.enabled && announcement.text && !announcement.text.includes('欢迎光临') && page !== 'admin' && (
         <div className="global-announcement-marquee" role="alert">
@@ -1050,7 +1029,7 @@ function App() {
           </div>
         ) : (
           <>
-            <LobbyHome user={user} role={showcaseRole} freeAccess={freeAccessMode} busy={busy}
+            <LobbyHome user={user} freeAccess={freeAccessMode} busy={busy}
               voiceEnabled={setupSettings.voiceChatEnabled} hasInvitation={Boolean(inviteKey)}
               friendRequests={incomingFriendRequestsCount} soundControl={<SoundButton />}
               onVoiceChange={enabled => setSetupSettings(s => ({ ...s, voiceChatEnabled: enabled }))}
