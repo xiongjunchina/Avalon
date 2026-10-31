@@ -14,6 +14,7 @@ export interface GameUiState {
   selectedIds?: string[];
   direction?: 'clockwise' | 'counterclockwise';
   targetId?: string;
+  treasureTargetsExpanded?:boolean;
   snapshotKey?: string;
   draftKey?: string;
   overlay?: 'identity' | 'vote' | 'mission' | 'history' | 'report' | 'treasures' | 'result' | 'more' | 'art';
@@ -34,7 +35,7 @@ export function syncGameUi(ui: GameUiState, room: RoomView, allowAutoReveal = tr
   if (changed) {
     ui.privateRoleVisible = Boolean(allowAutoReveal && room.settings.autoRevealRoleEnabled && game.phase === 'role_reveal' && game.self);
     ui.ballotVisible = false;
-    ui.targetId = undefined;
+    ui.targetId = undefined;ui.treasureTargetsExpanded=false;
     ui.selectedIds = [];
     ui.direction = 'clockwise';
     ui.snapshotKey = key;
@@ -171,6 +172,8 @@ export function gameScreen(room: RoomView, user: User, ui: GameUiState, now = Da
 }
 
 export function handleGameOverlay(ui: GameUiState, room: RoomView, id: string): boolean {
+  if(id==='treasureTargets'&&ui.overlay==='treasures'){ui.treasureTargetsExpanded=!ui.treasureTargetsExpanded;return true;}
+  if(id.startsWith('player:'))ui.treasureTargetsExpanded=false;
   if (id === 'overlayClose') { ui.overlay = ui.overlayReturn; ui.overlayReturn = undefined; ui.privateRoleVisible = ui.overlay === 'identity' || ui.overlay === 'treasures'; ui.ballotVisible = false; ui.warning = undefined; return true; }
   if (id === 'identityArt' && ui.privateRoleVisible && room.game?.self) { ui.overlayReturn='identity'; ui.overlay='art'; return true; }
   if (id === 'voteHistory') { ui.historyExpanded=!ui.historyExpanded; return true; }
@@ -230,9 +233,9 @@ function gameOverlayScreen(room: RoomView, user: User, ui: GameUiState, base: Sc
     const targetIds=new Set<string>();
     if(t?.tinStaff?.available)game.players.filter(p=>p.id!==user.id&&!self?.merlinCandidates.includes(p.id)).forEach(p=>targetIds.add(p.id));
     if(t?.guanyinMirror?.available)game.rounds.at(-1)?.team.filter(id=>id!==user.id).forEach(id=>targetIds.add(id));
-    if(t?.humanBag?.available)game.players.filter(p=>p.id!==user.id&&p.id!==game.captainId).forEach(p=>targetIds.add(p.id));
+    if(t?.humanBag?.available)game.players.filter(p=>p.id!==game.captainId).forEach(p=>targetIds.add(p.id));
     t?.heartBell?.available&&t.heartBell.targetIds.forEach(id=>targetIds.add(id));
-    if(base.rows.some(r=>['earlyAttempt','assassinate'].includes(r.id)))game.players.filter(p=>p.id!==user.id).forEach(p=>targetIds.add(p.id));
+    if(base.rows.some(r=>['earlyAttempt','assassinate'].includes(r.id)))game.players.filter(p=>p.id!==user.id&&!self?.evilIds.includes(p.id)).forEach(p=>targetIds.add(p.id));
     rows = self?.treasures?.disabledReason === 'guardian_perks'
       ? [{ id: 'treasure-disabled', text: GUARDIAN_TREASURE_DISABLED_REASON }]
       : [...base.rows.filter(row => row.id.startsWith('treasure:') || ['earlyAttempt', 'earlySkip', 'assassinate'].includes(row.id)),
@@ -256,8 +259,8 @@ function gameOverlayScreen(room: RoomView, user: User, ui: GameUiState, base: Sc
   const kind = ui.overlay === 'more' ? 'tools' : ui.overlay === 'mission' ? 'history' : ui.overlay === 'result' ? 'history' : ui.overlay!;
   const underlay = ui.overlayReturn === 'identity' && ui.overlay !== 'identity'
     ? gameOverlayScreen(room,user,{...ui,overlay:'identity',overlayReturn:undefined,privateRoleVisible:true},base) : base;
-  return { title, rows, portrait, web: { page:'sheet',sheet:ui.overlay,background:ui.overlay==='identity'?'mirror':'sword',backId:'overlayClose',underlay,
-    document: {kind,modal:true,game:{...game,self:undefined},...(ui.privateRoleVisible && ['identity','treasures','art'].includes(ui.overlay??'')?{self}:{}),user,
+  return { title, rows, portrait, web: { page:'sheet',sheet:ui.overlay,targetId:ui.targetId,background:ui.overlay==='identity'?'mirror':'sword',backId:'overlayClose',underlay,
+    document: {kind,modal:true,treasureTargetsExpanded:ui.treasureTargetsExpanded,game:{...game,self:undefined},...(ui.privateRoleVisible && ['identity','treasures','art'].includes(ui.overlay??'')?{self}:{}),user,
       roleItem:ui.overlay==='art'&&self?getRoleGalleryItem(self.role,self.loyalGuardian,self.femaleDemon):undefined,
       voteChoice:ui.voteChoice,submitted:self?.teamVoted,historyExpanded:ui.historyExpanded,reportMission:ui.reportMission} } };
 
@@ -291,7 +294,7 @@ export function gameAction(room: RoomView, user: User, action: string, ui: Parti
       command = { type: 'useTreasure', payload: { action: 'guanyinMirror', targetId: targetId! } };
     if(action==='treasure:guanyinSkip'&&treasures.guanyinMirror?.available&&game.phase==='guanyin_window')command={type:'useTreasure',payload:{action:'guanyinMirror',skip:true}};
     if(['treasure:heartProtect','treasure:heartSabotage'].includes(action)&&treasures.heartBell?.available&&validTarget&&treasures.heartBell.targetIds.includes(targetId!))command={type:'useTreasure',payload:{action:'heartBell',targetId:targetId!,advice:action==='treasure:heartProtect'?'protect':'sabotage'}};
-    if (action === 'treasure:humanBag' && treasures.humanBag?.available && validTarget && targetId !== game.captainId)
+    if (action === 'treasure:humanBag' && treasures.humanBag?.available && targetId && game.players.some(p=>p.id===targetId) && targetId !== game.captainId)
       command = { type: 'useTreasure', payload: { action: 'humanBag', targetId: targetId! } };
     if (action === 'treasure:jinguSeal' && treasures.jinguSeal?.available)
       command = { type: 'useTreasure', payload: { action: 'jinguSeal' } };

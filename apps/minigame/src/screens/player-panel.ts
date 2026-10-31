@@ -18,6 +18,7 @@ export class PlayerPanel {
   private friendQuery = '';
   private roomCode?: string;
   private chatDraft = '';
+  private chatSending=false;
   private quickExpanded = false;
   private presetSettings: Settings = {...defaultSettings};
   private expanded=new Set<string>();
@@ -46,6 +47,9 @@ export class PlayerPanel {
   private canApplyPreset = false;
   private pending?: { label: string; action: () => Promise<unknown> };
   constructor(private readonly api: PlayerExtras, public user: User, private readonly avatarPicker?: AvatarPicker) {}
+
+  get incomingFriendRequests(){return this.friends.filter(f=>f.status==='pending'&&!f.isSender).length;}
+  async refreshFriends(){const result=await this.api.friends();if(Array.isArray(result.friends))this.friends=result.friends;}
 
   setChatRoom(roomId: string, roomCode?: string) {
     if(roomCode)this.roomCode=roomCode;
@@ -188,10 +192,10 @@ export class PlayerPanel {
     if(id.startsWith('inviteFriend:')&&this.roomId){const friend=this.friends.find(f=>f.id===id.slice(13)&&f.status==='accepted');if(friend){const result=await this.api.invite(this.roomId,friend.id);this.feedback=result.online?'邀请已发送':'仙友暂不在线，可通过微信分享房间号';}return;}
     if(id.startsWith('removeFriend:')){const friend=this.friends.find(f=>f.id===id.slice(13));if(friend)this.pending={label:'删除仙友 '+friend.nickname+'？',action:()=>this.api.removeFriend(friend.id)};return;}
     if(id==='quickToggle'){this.quickExpanded=!this.quickExpanded;return;}
-    if(id.startsWith('quick:')){const text=this.model().rows.find(r=>r.id===id)?.text;if(text)this.chatDraft=text;return;}
+    if(id.startsWith('quick:')){if(this.chatSending)return;const text=this.model().rows.find(r=>r.id===id)?.text;if(text){this.chatDraft=text;return this.handle(this.page==='direct'?'chat:send':'chat:sendroom',input);}return;}
     if(id==='chat:input'){const text=await input('写下你要说的话',this.page==='direct'?500:200);if(text!==undefined)this.chatDraft=text;return;}
-    if(id==='chat:send'&&this.selectedFriend){if(!this.chatDraft.trim())return;await this.api.sendDirect(this.selectedFriend.id,this.chatDraft.trim());this.chatDraft='';this.direct=(await this.api.directChat(this.selectedFriend.id)).messages;return;}
-    if(id==='chat:sendroom'&&this.chatRoomId){if(!this.chatDraft.trim())return;await this.api.roomChat(this.chatRoomId,this.chatDraft.trim());this.chatDraft='';return 'back';}
+    if(id==='chat:send'&&this.selectedFriend){if(!this.chatDraft.trim()||this.chatSending)return;this.chatSending=true;const friendId=this.selectedFriend.id;try{await this.api.sendDirect(friendId,this.chatDraft.trim());this.chatDraft='';const result=await this.api.directChat(friendId);if(this.selectedFriend?.id===friendId)this.direct=result.messages;}finally{this.chatSending=false;}return;}
+    if(id==='chat:sendroom'&&this.chatRoomId){if(!this.chatDraft.trim()||this.chatSending)return;this.chatSending=true;try{await this.api.roomChat(this.chatRoomId,this.chatDraft.trim());this.chatDraft='';return 'back';}finally{this.chatSending=false;}}
     if(id==='preset:new'){this.presetEditing=true;this.presetName='';this.presetSettings={...defaultSettings};return;}
     if(id==='preset:cancel'){this.presetEditing=false;return;}
     if(id==='preset:name'){const text=await input('预设名称',24);if(text!==undefined)this.presetName=text;return;}

@@ -14,9 +14,10 @@ export interface WebSurface {
   user?: User; room?: RoomView; settings?: Settings;
   roleIndex?: number; selectedIds?: string[]; targetId?: string;
   guestHome?:boolean;
+  setupAccessExpanded?:boolean;
   nickname?: string; authMode?: 'create' | 'switch'; switchCode?: string;
   waitingMissionsExpanded?:boolean;
-  freeAccess?: boolean; practice?: boolean; sheet?: string;
+  friendRequests?:number;freeAccess?: boolean; practice?: boolean; sheet?: string;
   backId?: string;
   activeTab?: string;
   document?: WebDocument;
@@ -36,7 +37,6 @@ export interface WebNode extends HitRegion {
 }
 export interface WebLayout { nodes: WebNode[]; maxScroll: number; contentTop: number; contentBottom: number }
 const cssClamp = (min: number, value: number, max: number) => Math.max(min, Math.min(value, max));
-const showcase = ['merlin', 'assassin', 'percival', 'morgana', 'guinevere', 'mordred', 'oberon', 'loyal', 'minion'] as const;
 
 export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout {
   if (model.web?.document) return layoutDocument(model,v);
@@ -48,45 +48,40 @@ export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout 
   };
   const label = (id: string, text: string, py: number, extra: Partial<WebNode> = {}) => add('label', id, text, pad, py, full, 28, extra);
   if (web.page === 'home') {
-    top = v.top + 14;
-    if (web.user) {
-      const scale = Math.min(1, (w - 120) / 242.6);
-      add('button', 'account', web.user.nickname, pad, top, 74, 34, { fixed: true, image: 'emblems/' + (web.user.avatar ?? 'cards') + '.png' });
-      let toolX = w - 16 - 242.6 * scale;
-      for (const [id, title, width] of [['friends', '👥 仙友', 61.2], ['sound', 'sound', 32], ['switch', '🚪 换号', 61.2], ['guide', '📖 识妖谱', 73.2]] as const) {
-        add('button', id, title, toolX, top + 1, width * scale, 32, { fixed: true });
-        toolX += (width + 5) * scale;
-      }
-    }
-    const logoTop = v.top + (web.user||web.guestHome ? 68 : 50);
-    const logoH = cssClamp(24, w * .068, 40) * 1.35;
-    add('label', 'brand', '嘻游 · 真假猴王', pad, logoTop, full, logoH, { detail: '一念佛魔皆幻相，谁是修道取经人' });
-    {
-      const subtitleH = cssClamp(12, w * .034, 15) * 1.75;
-      const bannerY = logoTop + logoH + 5 + subtitleH + 6;
-      const bannerH = Math.min(29, 26 + Math.max(0,(w-320)/35));
-      const bannerW = Math.min(full,cssClamp(11.5,w*.032,13)*16.49+45.1);
-      if (web.freeAccess !== false) add('label', 'free-access', '🎉 公测盛典 · 全特权限时免费畅玩中', (w-bannerW)/2, bannerY, bannerW, bannerH);
-      const role = showcase[(web.roleIndex ?? 0) % showcase.length]!;
-      const diameter = cssClamp(120, w * .34, 160);
-      const portraitY = bannerY + (web.freeAccess !== false ? bannerH+16 : 10);
-      add('portrait', 'showcase', roleNames[role], (w - diameter) / 2, portraitY, diameter, diameter,
-        { image: 'roles/' + defaultRoleArtPrefix(role) + '-160.webp', detail: roleMottos[role], team: teamOf(role) });
-      const actionH = cssClamp(42, w * .11, 48);
-      const footer = Math.max(portraitY + diameter + 74, v.height - v.bottom - 12 - (141 + actionH));
-      add('panel', 'mode-frame', '', 35, footer + 2, w - 70, 40);
-      add('tab', 'mode:offline', '🏛️ 线下常规房', 39, footer + 6, (w - 84) / 2, 32, { selected: true });
-      add('tab', 'mode:voice', MINI_GAME_VOICE_ENABLED ? '🎙️ 微信语音说明' : '实时语音暂不提供', w / 2 + 3, footer + 6, (w - 84) / 2, 32, { disabled: !MINI_GAME_VOICE_ENABLED });
-      add('button', 'create', '开常规房', pad, footer + 54, (full - 8) / 2, actionH, { primary: true, image: 'emblems/mountain.png' });
-      add('button', 'join', '加入房间', pad + (full + 8) / 2, footer + 54, (full - 8) / 2, actionH, { image: 'emblems/crown.png' });
-      add('button', 'practice', '🐒 幻境单人试玩 ›', w / 2 - 67.5, footer + 62 + actionH, 135, 32);
-      add('label', 'footer-rule', '', pad, footer + 104 + actionH, full, 1);
-      add('button', web.user?'account':'loginOpen', web.user?'📜 功果簿':'取昵称', w / 2 - 98.4, footer + 109 + actionH, 76, 28, { muted: true });
-      add('label', 'footer-dot', '·', w / 2 - 12, footer + 109 + actionH, 24, 28);
-      add('button', web.user?'logout':'guide', web.user?'🚪 退出登录':'📖 识妖谱', w / 2 + 9.5, footer + 109 + actionH, 89, 28, { muted: true });
-    }
-    const last = nodes.reduce((max, node) => Math.max(max, node.y + node.height), 0);
-    const maxScroll = Math.max(0, last + 4 - (v.height - v.bottom));
+    const compact=v.height-v.top-v.bottom<=660,homePad=compact?12:16,homeW=w-homePad*2,fg=compact?7:10,toolbarH=w<=380||compact?36:40;
+    top=v.top+(compact?8:12);
+    add('label','home-duel','',0,0,w,v.height,{skin:'home-duel',image:'home/duel-mobile.jpg',clipTop:0,clipBottom:v.height});
+    const avatarW=Math.min(122,Math.max(74,50+(web.user?.nickname.length??4)*12));
+    add('button',web.user?'account':'loginOpen',web.user?.nickname??'游客浏览',homePad,top,avatarW,toolbarH,{fixed:true,badge:'home-avatar',image:web.user?.avatarUrl??web.user?.wechatAvatarUrl??'emblems/'+(web.user?.avatar??'cards')+'.png'});
+    const soundW=web.user&&w<=380?36:74,friendW=w<=380?65:80,switchW=w<=380?53:61.2,toolsW=web.user?friendW+soundW+switchW+12:soundW;
+    let toolX=w-homePad-toolsW;
+    for(const [id,title,width] of (web.user?[['friends','♟ 仙友',friendW],['sound','静音',soundW],['switch','▣ 换号',switchW]]:[['sound','静音',soundW]]) as [string,string,number][]){add('button',id,title,toolX,top,width,toolbarH,{fixed:true,fontSize:13,count:id==='friends'?web.friendRequests:undefined});toolX+=width+6;}
+    const logoTop=top+(compact?36:40)+(compact?5:8),logoSize=compact?28:cssClamp(28,w*.088,36),logoH=logoSize*1.2,subSize=compact?11:cssClamp(11,w*.033,14);
+    add('label','brand','嘻游 · 真假猴王',homePad,logoTop,homeW,logoH,{fontSize:logoSize});
+    add('label','home-subtitle','一念佛魔皆幻相，谁是修道取经人',homePad,logoTop+logoH+(compact?5:8),homeW,subSize*1.45,{skin:'home-copy',fontSize:subSize});
+    const hasInvitation=model.rows.some(r=>r.id==='invitation'),promotion=web.freeAccess!==false,inviteH=hasInvitation?16.8+fg:0,footerH=(compact?202:230)+inviteH+(promotion?0:-5),footer=v.height-v.bottom-(compact?8:14)-footerH;
+    const headlineSize=compact?cssClamp(29,w*.088,34):cssClamp(34,w*.108,44),headlineH=headlineSize*1.06*2,descSize=compact?12:cssClamp(12,w*.036,15),copyH=headlineH+(compact?6:10)+descSize*1.45,copyY=footer-(compact?11:20)-copyH;
+    add('label','home-headline','两个悟空，\n你信哪一个？',homePad,copyY,homeW,headlineH,{skin:'home-copy',fontFace:'calligraphy',fontSize:headlineSize});
+    add('label','home-description','组队、表决、暗中试探，找出取经路上的妖。',homePad,copyY+headlineH+(compact?6:10),homeW,descSize*1.45,{skin:'home-copy',fontSize:descSize});
+    add('panel','mode-frame','',homePad,footer,homeW,52);
+    const modeSize=cssClamp(12,w*.036,15);
+    add('tab','mode:offline','🏛️ 线下常规房',homePad+4,footer+4,(homeW-14)/2,44,{selected:true,fontSize:modeSize});
+    add('tab','mode:voice',MINI_GAME_VOICE_ENABLED?'🎙️ 微信语音说明':'实时语音暂不提供',w/2+3,footer+4,(homeW-14)/2,44,{disabled:!MINI_GAME_VOICE_ENABLED,fontSize:modeSize});
+    if(hasInvitation)add('label','home-invite-hint','已收到朋友邀请，点击加入即可继续入座。',homePad,footer+52+fg,homeW,16.8,{skin:'home-copy',fontSize:12});
+    const actionsY=footer+52+fg+inviteH,actionH=compact?46:52,actionSize=cssClamp(16,w*.045,19),practiceH=compact?34:40;
+    add('button','create','开常规房',homePad,actionsY,(homeW-10)/2,actionH,{primary:true,fontSize:actionSize,image:'emblems/mountain.png'});
+    add('button',hasInvitation?'invitation':'join',hasInvitation?'加入邀请房间':'加入房间',homePad+(homeW+10)/2,actionsY,(homeW-10)/2,actionH,{fontSize:actionSize,image:'emblems/crown.png'});
+    add('button','practice','🐒 幻境单人试玩 ›',w/2-72,actionsY+actionH+fg,144,practiceH,{fontSize:14});
+    const linksY=actionsY+actionH+fg+practiceH+fg+1,linkW=Math.min(homeW,280),linkX=(w-linkW)/2,linkSize=cssClamp(11,w*.0325,14),linkH=compact?34:38;
+    add('label','footer-rule','',homePad,linksY-1,homeW,1);
+    add('button','guide','玩法与角色',linkX,linksY,linkW*.3,linkH,{muted:true,fontSize:linkSize});
+    add('label','footer-dot','·',linkX+linkW*.3,linksY,12,linkH);
+    add('button',web.user?'account':'loginOpen','📜 功果簿',linkX+linkW*.35,linksY,linkW*.3,linkH,{muted:true,fontSize:linkSize});
+    add('label','footer-dot','·',linkX+linkW*.63,linksY,12,linkH);
+    add('button',web.user?'logout':'loginOpen',web.user?'🚪 退出登录':'登录 / 注册',linkX+linkW*.68,linksY,linkW*.32,linkH,{muted:true,fontSize:linkSize});
+    if(promotion)add('label','home-promotion','公测盛典 · 全特权限时免费畅玩中',homePad,linksY+linkH+4,homeW,13,{skin:'home-copy',fontSize:10});
+    const last = nodes.filter(n=>n.id!=='home-duel').reduce((max, node) => Math.max(max, node.y + node.height), 0);
+    const maxScroll = Math.max(0, last - (v.height - v.bottom));
     const scroll = Math.min(model.scroll ?? 0, maxScroll);
     for (const node of nodes) if (!node.fixed) { node.y -= scroll; node.clipTop = top + (web.user ? 42 : 0); node.clipBottom = bottom; }
     appendAlerts();
@@ -319,7 +314,7 @@ export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout 
 
   function appendAlerts() {
     if (web.page === 'sheet' || web.page === 'setup') return;
-    const alerts = model.rows.filter(row => ['notice', 'error', 'announcement', 'invitation'].includes(row.id));
+    const alerts = model.rows.filter(row => !(web.page==='home'&&row.id==='invitation')&&['notice', 'error', 'announcement', 'invitation'].includes(row.id));
     alerts.slice(0, 2).forEach((row, index) => add('button', row.id, row.text, pad, v.top + 48 + index * 52, full, 48, { fixed: true, lines: wrapText(row.text, full - 24).slice(0, 2) }));
   }
 }

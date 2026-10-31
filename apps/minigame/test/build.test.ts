@@ -105,8 +105,13 @@ test('incremental builds remove only obsolete artwork and keep the new font budg
   await buildMiniGame({outDir});
   await writeFile(join(outDir,'art/moonlit.png'),new Uint8Array(2_080_000));
   await writeFile(join(outDir,'art/gate.webp'),new Uint8Array(130_000));
+  await writeFile(join(outDir,'art/home/duel-mobile.png'),new Uint8Array(30_000));
+  await writeFile(join(outDir,'hd-art/home-duel.png'),new Uint8Array(400_000));
   const result=await buildMiniGame({outDir});
-  assert.ok(result.size<8*1024*1024);
+  // Project regression budget includes the new full-resolution palace composition.
+  assert.ok(result.size<9*1024*1024);
+  assert.ok((await readFile(join(outDir,'art/home/duel-mobile.jpg'))).length>0);
+  assert.deepEqual(await readFile(join(outDir,'hd-art/home-duel.jpg')),await readFile('apps/minigame/assets/hd-art/home-duel.jpg'));
   const game=JSON.parse(await readFile(join(outDir,'game.json'),'utf8'));
   assert.ok(game.subpackages.some((p:any)=>p.name==='hd-art'));
   assert.deepEqual(await readFile(join(outDir,'hd-art/merlin-640.jpg')),await readFile('apps/minigame/assets/hd-art/merlin-640.jpg'));

@@ -45,3 +45,9 @@ test('scene quality upgrade retains the first frame until its local HD image dec
  assert.equal(art.get('scenes/gate.webp'),images[0]);assert.equal(images[1]!.src,'hd-art/scene-gate.jpg');images[1]!.onload?.();assert.equal(art.get('scenes/gate.webp'),images[1]);
  assert.ok(images.every(i=>!i.src.startsWith('https:')));
 });
+
+test('decorative mountain symbol does not resolve to the legacy mountain avatar',()=>{
+ const images:WxImage[]=[];const runtime={createImage:()=>{const i={width:160,height:160,src:'',onload:null,onerror:null} as WxImage;images.push(i);return i;}} as unknown as WxRuntime;
+ const a=createArtwork(runtime,()=>{});a.get('symbols/mountain.png');a.get('emblems/mountain.png');
+ assert.equal(images[0]?.src,'art/emblems/mountain.png');assert.match(images[1]?.src??'',/^art\/avatars\//);
+});

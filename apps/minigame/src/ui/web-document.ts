@@ -21,6 +21,7 @@ export interface WebDocument {
   preferences?:Role[];
   preferencesDisabled?:boolean;
   modal?: boolean;
+  treasureTargetsExpanded?:boolean;
   game?: GameView;
   self?: NonNullable<GameView['self']>;
   user?: User;

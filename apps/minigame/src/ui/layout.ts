@@ -1,5 +1,5 @@
 export interface SafeViewport { width: number; height: number; top: number; bottom: number }
-export interface HitRegion { id: string; x: number; y: number; width: number; height: number; text: string; lines?: string[]; clipTop?: number; clipBottom?: number }
+export interface HitRegion { id: string; x: number; y: number; width: number; height: number; text: string; lines?: string[]; clipLeft?:number;clipRight?:number;scrollMaxX?:number;clipTop?: number; clipBottom?: number }
 export type Scene = 'entry' | 'standard' | 'game' | 'admin';
 type Row = { id: string; text: string };
 
@@ -62,7 +62,7 @@ export function layoutRows(rows: Row[], viewport: SafeViewport, scroll: number, 
 }
 export function hitTest(rows: HitRegion[], x: number, y: number): HitRegion | undefined {
   return rows.find(row => y >= (row.clipTop ?? row.y) && y <= (row.clipBottom ?? row.y + row.height)
-    && x >= row.x && x <= row.x + row.width && y >= row.y && y <= row.y + row.height);
+    && x >= (row.clipLeft??row.x) && x <= (row.clipRight??row.x+row.width) && x >= row.x && x <= row.x + row.width && y >= row.y && y <= row.y + row.height);
 }
 export function hideSensitiveView(state: { privateRoleVisible: boolean; ballotVisible: boolean; overlay?: string;overlayReturn?:string }): void {
   state.privateRoleVisible = false;

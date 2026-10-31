@@ -9,7 +9,7 @@ from fontTools.ttLib import TTFont
 root = Path(__file__).resolve().parents[3]
 sources = [str(p.relative_to(root)) for p in (root/'apps/minigame/src').rglob('*.ts')] + ['apps/web/src/roles.ts','apps/web/src/identity-presentation.ts','apps/web/src/role-descriptions.ts','apps/web/src/game-presentation.ts']
 chars = ''.join(sorted(set(''.join((root / x).read_text(encoding='utf-8') for x in sources))))
-chars = ''.join(c for c in chars if '\u3400' <= c <= '\u9fff' or 32 <= ord(c) < 127)
+chars = ''.join(c for c in chars if '\u3400' <= c <= '\u9fff' or 32 <= ord(c) < 127 or 0x3000 <= ord(c) <= 0x303f or 0xff00 <= ord(c) <= 0xffef or 0x2000 <= ord(c) <= 0x206f)
 out = root / 'apps/minigame/assets/fonts'
 out.mkdir(parents=True, exist_ok=True)
 offline='--offline' in sys.argv
@@ -48,3 +48,9 @@ for name, family, directory in [('calligraphy', 'Ma Shan Zheng', 'mashanzheng'),
     records.append({'file': name + '.ttf', 'family': family, 'source': url, 'sha256': hashlib.sha256(data).hexdigest(), 'glyphs': len(chars), 'bytes': len(data)})
 (out / 'source.json').write_text(json.dumps(records, indent=2), encoding='utf-8')
 print('Web font subsets generated:', sum(r['bytes'] for r in records), 'bytes')
+
+# Preserve the current homepage's static 650 interface font exactly.
+home_font=TTFont(root/'apps/web/public/art/home/fonts/home-interface.woff2')
+home_font.flavor=None
+home_font.save(root/'apps/minigame/assets/web-fonts/homeInterface.ttf')
+(root/'apps/minigame/assets/web-fonts/homeInterface-OFL.txt').write_text('\n'.join(line.rstrip() for line in (root/'apps/web/public/art/home/fonts/interface-OFL.txt').read_text(encoding='utf-8').splitlines())+'\n',encoding='utf-8')

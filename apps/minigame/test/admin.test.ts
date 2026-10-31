@@ -155,3 +155,12 @@ test('admin friend inspection shows player codes and relationship status', async
   const text = panel.model().rows.map(row => row.text).join(' ');
   assert.match(text, /乙.*123456.*已互关/);
 });
+
+
+test('code generator starts with the same five-code default as the web and never writes on opening', async () => {
+  const calls: unknown[]=[];
+  const panel=new AdminPanel({codes:async()=>({codes:[]}),generateCodes:async(...args:unknown[])=>{calls.push(args);return {codes:[]};}} as any);
+  await panel.load('codes');
+  assert.equal(panel.model().web?.document?.adminCodeDraft?.count,'5');
+  assert.deepEqual(calls,[]);
+});

@@ -10,10 +10,9 @@ import { parityPlayerData } from '../scripts/parity-fixture';
 const viewport = { width: 390, height: 844, top: 0, bottom: 0 };
 const user = { id: 'p0', nickname: '仙友', playerCode: '123456' };
 
-test('mini-game public home, setup and statistics consistently show white dragon as the guardian category', () => {
+test('mini-game uses duel homepage and white dragon for setup and statistics', () => {
   const home = entryScreen(user);
-  home.web!.roleIndex = 7;
-  assert.equal(layoutWebScreen(home, viewport).nodes.find(n => n.id === 'showcase')?.image, 'roles/bailong-loyal-160.webp');
+  assert.equal(layoutWebScreen(home, viewport).nodes.find(n => n.id === 'home-duel')?.image, 'home/duel-mobile.jpg');
   for (const page of ['setup', 'sheet'] as const) {
     const model = { title: '房间设置', rows: [], web: { page, settings: defaultSettings,
       ...(page === 'sheet' ? { document: { kind: 'settings' as const, activeTab: 'setup', settings: defaultSettings } } : {}) } };

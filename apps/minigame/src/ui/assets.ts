@@ -17,6 +17,7 @@ export function createArtwork(runtime: WxRuntime, redraw: () => void, baseUrl = 
   const artwork: Artwork = {get revision(){return revision;}, get(name) {
     const legacy=/^emblems\/(leaf|moon|sun|mountain|wave|star)\.png$/.exec(name);
     if(legacy)name=builtinAvatarFor(legacy[1] as Avatar).src;
+    if(name.startsWith('symbols/'))name='emblems/'+name.slice(8);
     if(/^\/art\/avatars\/wx-\d+\.webp/.test(name))name=name.slice(5).split('?')[0]!;
     const role=/^(?:\/art\/)?roles\/([a-z-]+)-(160|640)\.webp$/.exec(name);
     let preview:WxImage|undefined;
@@ -29,7 +30,8 @@ export function createArtwork(runtime: WxRuntime, redraw: () => void, baseUrl = 
     }
     const scene=/^scenes\/(gate|sword|pavilion|library|mirror|dawn)\.webp$/.exec(name);
     if(scene){ensureHd();if(hdReady){const low=cache.get(name);preview=low?.ready?low.image:undefined;name='hd-art/scene-'+scene[1]+'.jpg';}}
-    if (!runtime.createImage || !/^(hd-art\/(?:[a-z-]+-640|scene-[a-z-]+)\.jpg|moonlit\.png|avatars\/wx-\d+\.webp|emblems\/[a-z0-9-]+\.png|scenes\/(gate|sword|pavilion|library|mirror|dawn)\.webp|roles\/[a-z-]+-160\.webp|data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+|https:\/\/[^\s]+|\/art\/[^\s]+)$/.test(name)) return undefined;
+    if(name==='home/duel-mobile.jpg'){ensureHd();if(hdReady){const low=cache.get(name);preview=low?.ready?low.image:undefined;name='hd-art/home-duel.jpg';}}
+    if (!runtime.createImage || !/^(home\/duel-mobile\.jpg|hd-art\/home-duel\.jpg|hd-art\/(?:[a-z-]+-640|scene-[a-z-]+)\.jpg|moonlit\.png|avatars\/wx-\d+\.webp|emblems\/[a-z0-9-]+\.png|scenes\/(gate|sword|pavilion|library|mirror|dawn)\.webp|roles\/[a-z-]+-160\.webp|data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+|https:\/\/[^\s]+|\/art\/[^\s]+)$/.test(name)) return undefined;
     const existing = cache.get(name);
     if (existing && (!existing.retryAt || Date.now() < existing.retryAt)) return existing.ready ? existing.image : preview;
     const image = runtime.createImage();

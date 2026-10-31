@@ -81,6 +81,8 @@ let suspended = false;
 let busy = false;
 let commandBusy = false;
 let roleIndex = 0;
+let horizontalScroll=0;
+let setupAccessExpanded=false;
 let nickname = '';
 let switchCode = '';
 let guestHomeVisible=true;let authIntent:'create'|'join'|undefined;
@@ -144,14 +146,14 @@ function model(): ScreenModel {
   }
   else if (view === 'settings') {
     result = settingsScreen(editableSettings);
-    result.web = {page:'setup',settings:editableSettings,background:'library',backId:'cancelSettings',document:{kind:'settings',settings:editableSettings,activeTab:!room||setupIntent==='practice'?'setup':'room',modal:!!room&&setupIntent==='room'},underlay:room&&user?lobbyScreen(room,user):undefined};
+    result.web = {page:'setup',setupAccessExpanded,settings:editableSettings,background:'library',backId:'cancelSettings',document:{kind:'settings',settings:editableSettings,activeTab:!room||setupIntent==='practice'?'setup':'room',modal:!!room&&setupIntent==='room'},underlay:room&&user?lobbyScreen(room,user):undefined};
     if (!room && setupIntent==='room')result.rows.unshift({id:'chooseDedicated',text:selectedDedicated?selectedDedicated.code+' · '+selectedDedicated.name:'普通房 · 选择专属房'},{id:'creationPassword',text:creationAccess.password===null?'入房密码：不设置':typeof creationAccess.password==='string'?'入房密码：已设置':selectedDedicated?'入房密码：沿用已保存设置':'入房密码：不设置'});
     if (!room || setupIntent === 'practice') result.rows = result.rows.filter(row => row.id !== 'apply').concat([...(setupIntent === 'room' ? [{ id: 'createRoom', text: '敕令开坛 · 创建房间' }] : []), { id: 'startPractice', text: '幻化分身试玩此板子' }]);
   }
   else if (room?.game && view === 'game' && user) result = gameScreen(room, user, gameUi);
   else if (room && user && view === 'lobby') result = lobbyScreen(room, user, connectionStatus);
   else {result = entryScreen(user, error,!guestHomeVisible);if(!user&&guestHomeVisible)result.web={page:'home',guestHome:true};}
-  if (result.web?.page === 'home') Object.assign(result.web, { roleIndex, nickname, switchCode, authMode, freeAccess, knownAccounts: knownAccounts.list() });
+  if (result.web?.page === 'home') Object.assign(result.web, { roleIndex, nickname, switchCode, authMode, freeAccess, friendRequests:playerPanel?.incomingFriendRequests??0, knownAccounts: knownAccounts.list() });
   result.web ??= { page: 'sheet', background: view === 'player' ? 'dawn' : 'library' };
   result.web.freeAccess=freeAccess;
   result.web.waitingMissionsExpanded=waitingMissionsExpanded;
@@ -161,7 +163,7 @@ function model(): ScreenModel {
     : undefined;
   const portraitRole = privateSelf?.loyalGuardian ? `${privateSelf.loyalGuardian}-loyal`
     : privateSelf?.femaleDemon ? `minion-${privateSelf.femaleDemon}` : privateSelf?.role;
-  return { ...result, scroll, scene: view === 'entry' ? 'entry' : view === 'game' || view === 'practice' || view === 'lobby' ? 'game' : view === 'admin' ? 'admin' : 'standard',
+  return { ...result, scroll, horizontalScroll, scene: view === 'entry' ? 'entry' : view === 'game' || view === 'practice' || view === 'lobby' ? 'game' : view === 'admin' ? 'admin' : 'standard',
     ...(portraitRole ? { portrait: `${portraitRole}-160.webp` } : view === 'guide' && guideRoleId ? { portrait: `${guideRoleId}-160.webp` } : {}) };
 }
 function render() {
@@ -172,10 +174,11 @@ function render() {
   const layout = current.web ? layoutWebScreen(current, viewport) : undefined;
   scroll = layout ? Math.max(0, Math.min(scroll, layout.maxScroll)) : clampScroll(current.rows, viewport, scroll, current.scene);
   rows = renderScreen({ ...current, scroll }, canvas, viewport, artwork, layout);
-  if (!suspended && view === 'entry' && user) countdownTimer = setTimeout(() => { roleIndex++; render(); }, 3_800);
-  else if (!suspended && view === 'game' && room?.game?.phase === 'dealing') countdownTimer = setTimeout(render, 1_000);
+  // Static duel artwork needs no idle animation timer.
+  if (!suspended && view === 'game' && room?.game?.phase === 'dealing') countdownTimer = setTimeout(render, 1_000);
 }
-function navigate(next: typeof view) { view = next; auxiliary = undefined; scroll = 0; error = ''; notice = ''; pendingConfirm = undefined; render(); }
+function refreshHomeFriends(){const panel=playerPanel;if(panel)void panel.refreshFriends().then(()=>{if(playerPanel===panel)render();}).catch(()=>{});}
+function navigate(next: typeof view) { view = next;if(next==='entry')refreshHomeFriends(); auxiliary = undefined; scroll = 0; error = ''; notice = ''; pendingConfirm = undefined; render(); }
 
 function connect(next: RoomView) {
   connection?.stop();
@@ -261,7 +264,7 @@ async function select(id: string) {
   if(id==='waiting:missions'){waitingMissionsExpanded=!waitingMissionsExpanded;render();return;}
   if (id === 'sound') { auxiliary = 'sound'; scroll = 0; render(); return; }
   if (id.startsWith('sound:')) { const key = id.slice(6) as 'music' | 'effects'; sound.configure(key, !sound.preferences[key]); render(); return; }
-  if (id.startsWith('known:')) return run(async () => { await nativeVoice.leave(); const account=knownAccounts.list().find(a=>a.playerCode===id.slice(6));if (!api.session.get()) await api.login(); user = await api.switchAccount(id.slice(6),account?.id); knownAccounts.remember(user); lobby = new LobbyController(api, user); playerPanel = new PlayerPanel(extras, user, () => chooseAvatar(wx)); const existing = await lobby.resume(); if (existing) connect(existing); else navigate('entry'); });
+  if (id.startsWith('known:')) return run(async () => { await nativeVoice.leave(); const account=knownAccounts.list().find(a=>a.playerCode===id.slice(6));if (!api.session.get()) await api.login(); user = await api.switchAccount(id.slice(6),account?.id); knownAccounts.remember(user); lobby = new LobbyController(api, user); playerPanel = new PlayerPanel(extras, user, () => chooseAvatar(wx));refreshHomeFriends(); const existing = await lobby.resume(); if (existing) connect(existing); else navigate('entry'); });
   if (id === 'notice' || id === 'error') { notice = ''; error = ''; render(); return; }
   if (id === 'announcement') { announcement = ''; render(); return; }
   if (id === 'auxiliaryClose') { auxiliary = undefined; scroll = 0; render(); return; }
@@ -283,7 +286,7 @@ async function select(id: string) {
   }
   if (id === 'invitation') {
     if (room) { error = room.game && !['finished', 'aborted'].includes(room.game.phase) ? '当前牌局结束后再加入邀请' : '请先离开当前房间'; render(); return; }
-    if (!lobby) { error = '请先微信登录，再点击邀请'; render(); return; }
+    if (!lobby) { guestHomeVisible=false;authMode='create';authIntent='join';render();return; }
     return run(async () => { const code = invites.code; if (code) { connect(await joinWithPassword(code)); invites.take(); } });
   }
   if (view === 'practice' && practice) {
@@ -347,7 +350,7 @@ async function select(id: string) {
     if (id.startsWith('auth:')) { authMode = id === 'auth:switch' ? 'switch' : 'create'; render(); return; }
     if (id === 'input:nickname' || id === 'input:switch') return run(async () => { const text = await askText(wx, id === 'input:nickname' ? nickname : switchCode, id === 'input:nickname' ? 20 : 6); if (text !== undefined) { if (id === 'input:nickname') nickname = text; else switchCode = text.replace(/\D/g, '').slice(0, 6); } });
     if (id === 'practice') { practice = new PracticeSession(editableSettings, user?.nickname ?? '我'); syncGameUi(gameUi, practice.view()); navigate('practice'); return; }
-    if (id === 'login') return run(async () => { await nativeVoice.leave(); if (authMode === 'switch' && !/^\d{6}$/.test(switchCode)) throw new Error('INVALID_PLAYER_CODE'); const result = await api.login(nickname || undefined); user = authMode === 'switch' ? await api.switchAccount(switchCode) : result.user; knownAccounts.remember(user); auxiliary = undefined; lobby = new LobbyController(api, user); playerPanel = new PlayerPanel(extras, user, () => chooseAvatar(wx)); const existing = await lobby.resume(); if (existing) connect(existing); else if (invites.code) { connect(await joinWithPassword(invites.code)); invites.take(); } else if(authIntent==='create'){authIntent=undefined;creationAccess={};selectedDedicated=undefined;setupIntent='room';navigate('settings');}else if(authIntent==='join'){authIntent=undefined;joinKey='';auxiliary='join';render();}else render(); });
+    if (id === 'login') return run(async () => { await nativeVoice.leave(); if (authMode === 'switch' && !/^\d{6}$/.test(switchCode)) throw new Error('INVALID_PLAYER_CODE'); const result = await api.login(nickname || undefined); user = authMode === 'switch' ? await api.switchAccount(switchCode) : result.user; knownAccounts.remember(user); auxiliary = undefined; lobby = new LobbyController(api, user); playerPanel = new PlayerPanel(extras, user, () => chooseAvatar(wx));refreshHomeFriends(); const existing = await lobby.resume(); if (existing) connect(existing); else if (invites.code) { connect(await joinWithPassword(invites.code)); invites.take(); } else if(authIntent==='create'){authIntent=undefined;creationAccess={};selectedDedicated=undefined;setupIntent='room';navigate('settings');}else if(authIntent==='join'){authIntent=undefined;joinKey='';auxiliary='join';render();}else render(); });
     if (id === 'create' && lobby) { creationAccess={};selectedDedicated=undefined;setupIntent = 'room'; navigate('settings'); return; }
     if (id === 'join' && lobby) { joinKey = ''; auxiliary = 'join'; scroll = 0; render(); return; }
     if (id === 'switch') { authMode = 'switch'; switchCode = ''; auxiliary = 'switchAccount'; scroll = 0; render(); return; }
@@ -356,6 +359,7 @@ async function select(id: string) {
     if ((id === 'account' || id === 'friends') && playerPanel) return run(async () => { previousView = 'entry'; await playerPanel!.open(id); navigate('player'); });
   }
   if (view === 'settings') {
+    if(id==='setupAccessToggle'){setupAccessExpanded=!setupAccessExpanded;render();return;}
     if (id.startsWith('setupRole:')) { guideReturn='settings'; guideRoleId=id.slice(10); guideSection='roles'; guideArt=false; navigate('guide'); return; }
     if (id === 'cancelSettings') { navigate(setupIntent === 'practice' && practice ? 'practice' : room ? 'lobby' : 'entry'); return; }
     if (id.startsWith('count:')) { const count = Number(id.slice(6)); if (count >= 5 && count <= 12) editableSettings = { ...editableSettings, playerCount: count, anonymousTeamVote: defaultAnonymousTeamVote(count) }; render(); return; }
@@ -426,10 +430,12 @@ function scheduleRender() {
 
 attachTouchNavigation(wx, {
   scrollBy(delta) { scroll = Math.max(0, scroll + delta); scheduleRender(); },
+  canScrollHorizontal(x,y){return rows.some(r=>r.scrollMaxX!==undefined&&x>=(r.clipLeft??0)&&x<=(r.clipRight??viewport.width)&&y>=r.y&&y<=r.y+r.height);},
+  scrollHorizontal(delta){const max=rows.find(r=>r.scrollMaxX!==undefined)?.scrollMaxX??0;horizontalScroll=Math.max(0,Math.min(max,horizontalScroll+delta));scheduleRender();},
   tap(x,y) { const row=hitTest(rows,x,y); if(row) void select(row.id); },
 });
 platform.onHide(() => { void nativeVoice.leave(); suspended = true; sound.foreground(false); cancelTextInput(); hideSensitiveView(gameUi); pendingConfirm = undefined; adminPanel.onHide(); if (view === 'admin') view = 'entry'; render(); });
-platform.onShow(options => { suspended = false; sound.foreground(true); hideSensitiveView(gameUi); invites.receive(options?.query?.invite); connection?.resume(); render(); });
+platform.onShow(options => { suspended = false;refreshHomeFriends(); sound.foreground(true); hideSensitiveView(gameUi); invites.receive(options?.query?.invite); connection?.resume(); render(); });
 render();
 if (typeof wx.request === 'function') void extras.announcement().then(result => {
   announcement = result.announcement.enabled ? result.announcement.text : '';
@@ -440,7 +446,7 @@ if (api.session.get()) void run(async () => {
   user = await api.refresh();
   knownAccounts.remember(user);
   lobby = new LobbyController(api, user);
-  playerPanel = new PlayerPanel(extras, user, () => chooseAvatar(wx));
+  playerPanel = new PlayerPanel(extras, user, () => chooseAvatar(wx));refreshHomeFriends();
   const existing = await lobby.resume();
   if (existing) connect(existing);
   else if (invites.code) { connect(await joinWithPassword(invites.code)); invites.take(); }

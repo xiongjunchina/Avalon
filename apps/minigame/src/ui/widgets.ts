@@ -10,6 +10,7 @@ export interface ScreenModel {
   subtitle?: string;
   rows: { id: string; text: string }[];
   scroll?: number;
+  horizontalScroll?:number;
   scene?: 'entry' | 'standard' | 'game' | 'admin';
   portrait?: string;
 }

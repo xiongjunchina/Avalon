@@ -1,14 +1,15 @@
-import { defaultSettings } from '@avalon/contracts';
+import { defaultSettings, type Role } from '@avalon/contracts';
 import { createGame, projectGame, MISSION_SIZES } from '@avalon/game-core';
 
 // Deterministic, local-only fixture shared by both screenshot renderers.
 export function parityFixture(scene = 'game',playerCount=6) {
-  const user = { id: '11111111-1111-4111-8111-111111111111', nickname: '行者', playerCode: '123456', avatar: 'leaf' as const };
+  let user = { id: '11111111-1111-4111-8111-111111111111', nickname: '行者', playerCode: '123456', avatar: 'leaf' as const };
   const members = Array.from({ length: playerCount }, (_, index) => ({ id: index ? '00000000-0000-4000-8000-' + String(index).padStart(12, '0') : user.id, nickname: index ? '仙友' + index : user.nickname, seat: index + 1, ready: true, online: true, ...(index ? {} : { avatar: 'leaf' as const }) }));
-  const settings={...defaultSettings,playerCount,...(scene==='preferences'?{rolePreferenceEnabled:true}:{})};
+  const settings={...defaultSettings,playerCount,...(scene==='preferences'?{rolePreferenceEnabled:true}:{}),...(scene.startsWith('treasures-')?{treasuresEnabled:true,guardianPerksEnabled:false}:{})};
   const game = createGame('11111111-2222-4333-8444-555555555555', members, settings, values => [...values], { randomBelow: () => 0n });
   game.phase = 'proposing'; game.confirmed = members.map(member => member.id);
   game.captainIndex = 0;
+  if(scene.startsWith('treasures-')){const role=scene.slice(10) as Role,viewer=members.find(m=>game.roles[m.id]===role);if(!viewer)throw Error('Fixture role unavailable: '+role);user={id:viewer.id,nickname:viewer.nickname,playerCode:'123456',avatar:'leaf'};game.mission=3;}
   if (['vote','vote-submitted','mission','mission-submitted','report','result'].includes(scene)) {
     game.rounds = [{number:1,mission:1,captainId:user.id,team:members.slice(0,MISSION_SIZES[playerCount]![0]).map(p=>p.id),direction:'clockwise'}];
     if(scene.startsWith('vote')) {game.phase='team_vote';game.teamVoteStartedAt='2026-10-22T00:00:00Z';game.teamVotes={};if(scene==='vote-submitted')game.teamVotes[user.id]=true;}

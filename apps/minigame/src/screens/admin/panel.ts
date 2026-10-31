@@ -27,7 +27,7 @@ export class AdminPanel {
   private pending?: { label: string; action: () => Promise<unknown> };
   private feedback = '';
   private loadEpoch = 0;
-  private codeDraft={count:'10',days:'30',note:''};
+  private codeDraft={count:'5',days:'30',note:''};
   private special:SpecialPanel;
   constructor(readonly api: AdminApi, private readonly copy?: (text: string) => Promise<void>) {this.special=new SpecialPanel(api,(label,action)=>{this.pending={label,action};});}
 
@@ -41,7 +41,7 @@ export class AdminPanel {
     this.api.onHide(); this.pending = undefined; this.page = 'overview'; this.overviewData = undefined;
     this.usersData = []; this.userTotal = 0; this.roomsData = []; this.gamesData = []; this.moreGames = false;
     this.codesData = []; this.settingsData = undefined;this.rewardDraft=24;this.announcementDraft={enabled:false,text:''}; this.user = undefined; this.replayData = undefined;
-    this.friendNames = [];this.friendDetails=[]; this.query = ''; this.feedback = '';this.codeDraft={count:'10',days:'30',note:''};
+    this.friendNames = [];this.friendDetails=[]; this.query = ''; this.feedback = '';this.codeDraft={count:'5',days:'30',note:''};
   }
 
   inputValue(id:string):string {if(id.startsWith('special:')||id.startsWith('codeEditor:'))return this.special.inputValue(id);if(id==='broadcast:input')return this.announcementDraft.text;if(id==='reward:input')return String(this.rewardDraft);if(id==='search:input')return this.query;if(id.startsWith('codeDraft:'))return this.codeDraft[id.slice(10) as keyof typeof this.codeDraft]??'';return '';}

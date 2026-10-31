@@ -52,11 +52,11 @@ test('room preset save shows the current room snapshot rather than ineffective e
  const data=parityPlayerData(),p=new PlayerPanel({presets:async()=>({presets:data.presets})} as any,parityFixture().user);await p.open('presets',{roomId:'r',settings:parityFixture().room.settings,canApplyPreset:true});await p.handle('preset:new',async()=>undefined);const nodes=layoutWebScreen(p.model(),{width:390,height:844,top:0,bottom:0}).nodes;
  assert.ok(nodes.some(n=>n.id==='preset-room-summary'));assert.equal(nodes.some(n=>n.id==='preset:count:12'),false);
 });
-test('profile edits and chat quick phrases do not write until explicit save/send; failed send retains draft',async()=>{
+test('profile edits require save; quick phrases send like the web and failed sends retain the draft',async()=>{
  const data=parityPlayerData(),writes:any[]=[];let fail=true;
  const p=new PlayerPanel({statistics:async()=>data.stats,updateProfile:async(profile:any)=>{writes.push(profile);return{user:{...parityFixture().user,...profile}};},roomChat:async()=>{if(fail)throw new Error('offline');writes.push('sent');}} as any,parityFixture().user);
  await p.open('account');await p.handle('profileToggle',async()=>undefined);await p.handle('profile:nickname',async()=> '新行者');assert.equal(writes.length,0);await p.handle('profile:save',async()=>undefined);assert.equal(p.user.nickname,'新行者');
- await p.open('roomchat',{roomId:'r'});await p.handle('quick:0',async()=>undefined);assert.ok(p.model().web?.document?.chatDraft);assert.equal(writes.length,1);await assert.rejects(p.handle('chat:sendroom',async()=>undefined),/offline/);assert.ok(p.model().web?.document?.chatDraft);fail=false;assert.equal(await p.handle('chat:sendroom',async()=>undefined),'back');assert.equal(p.model().web?.document?.chatDraft,'');
+ await p.open('roomchat',{roomId:'r'});await assert.rejects(p.handle('quick:0',async()=>undefined),/offline/);assert.ok(p.model().web?.document?.chatDraft);assert.equal(writes.length,1);await assert.rejects(p.handle('chat:sendroom',async()=>undefined),/offline/);assert.ok(p.model().web?.document?.chatDraft);fail=false;assert.equal(await p.handle('chat:sendroom',async()=>undefined),'back');assert.equal(p.model().web?.document?.chatDraft,'');
 });
 test('private modal return and vote submit stay reachable on small safe-area screens',()=>{
  for(const scene of ['identity','vote'] as const)for(const width of [320,390,430]){const {room,user}=parityFixture(scene),ui=state();if(scene==='identity')handleGameOverlay(ui,room,'role');else{syncGameUi(ui,room,true,user.id);handleGameOverlay(ui,room,'vote-choice:approve');}const m=gameScreen(room,user,ui),v={width,height:568,top:24,bottom:34};const first=layoutWebScreen(m,v);m.scroll=first.maxScroll;const last=layoutWebScreen(m,v);assert.ok(last.nodes.some(n=>n.id==='overlayClose'&&n.kind==='button'&&n.y>=v.top&&n.y+n.height<=v.height-v.bottom));assert.ok(first.nodes.some(n=>n.id==='noop'&&n.kind==='hitbox'));if(scene==='vote')assert.ok(last.nodes.some(n=>n.id==='submitVote'&&n.y+n.height>last.contentTop&&n.y<last.contentBottom));}
@@ -119,4 +119,52 @@ test('editing a preset from a scrolled list starts at the name and resets on ret
  assert.equal(playerPanelScroll(list,editor,2000),0);assert.equal(playerPanelScroll(editor,editor,200),200);
  await p.handle('preset:cancel',async()=>undefined);assert.equal(playerPanelScroll(editor,p.model(),700),0);
  assert.equal(editor.web?.underlay?.web?.document?.kind,'presets');assert.equal(editor.web?.underlay?.web?.document?.modal,false);
+});
+
+test('direct quick phrases scroll as one clipped row and send once on tap',async()=>{
+ const {hitTest}=await import('../src/ui/layout.js');
+ const data=parityPlayerData();let writes=0,release:()=>void=()=>{};
+ const p=new PlayerPanel({friends:async()=>({friends:data.friends}),directChat:async()=>({messages:[]}),sendDirect:async()=>{writes++;await new Promise<void>(r=>release=r);}} as any,parityFixture().user);
+ await p.open('friends');await p.handle('friend:'+data.friends[0]!.id,async()=>undefined);
+ const v={width:390,height:844,top:0,bottom:0},m=p.model(),chips=layoutWebScreen(m,v).nodes.filter(n=>n.id.startsWith('quick:'));
+ assert.ok(chips.length>3);assert.equal(new Set(chips.map(n=>n.y)).size,1);assert.ok(chips[0]!.scrollMaxX!>0);
+ assert.equal(hitTest(chips,389,chips[0]!.y+4),undefined);
+ const scrolled=layoutWebScreen({...m,horizontalScroll:9999},v).nodes.filter(n=>n.id.startsWith('quick:'));
+ assert.ok(scrolled.at(-1)!.x+scrolled.at(-1)!.width<=scrolled.at(-1)!.clipRight!+.01);
+ const pending=p.handle('quick:0',async()=>undefined);await p.handle('quick:1',async()=>undefined);assert.equal(writes,1);release();await pending;assert.equal(p.model().web?.document?.chatDraft,'');
+});
+
+
+test('human bag preserves web legal targets including self, excludes captain, and requires explicit activation',()=>{
+ const {room,user}=parityFixture('treasures-mordred',12);const ui:GameUiState={privateRoleVisible:true,ballotVisible:false,overlay:'treasures'};
+ assert.notEqual(room.game!.captainId,user.id);
+ const model=gameScreen(room,user,ui);
+ assert.ok(model.rows.some(r=>r.id==='player:'+user.id));
+ assert.ok(!model.rows.some(r=>r.id==='player:'+room.game!.captainId));
+ assert.equal(gameAction(room,user,'treasure:humanBag',ui),undefined);
+ handleGameOverlay(ui,room,'treasureTargets');assert.equal(ui.treasureTargetsExpanded,true);
+ handleGameOverlay(ui,room,'player:'+user.id);ui.targetId=user.id;
+ assert.equal(ui.treasureTargetsExpanded,false);
+ assert.equal(gameAction(room,user,'player:'+user.id,ui),undefined);
+ assert.equal(gameAction(room,user,'treasure:humanBag',ui)?.type,'useTreasure');
+ ui.targetId=room.game!.captainId;assert.equal(gameAction(room,user,'treasure:humanBag',ui),undefined);
+});
+test('enabled heart bell shows unavailable controls rather than claiming treasure mode is disabled',()=>{
+ const {room,user}=parityFixture('treasures-minion',12);const ui:GameUiState={privateRoleVisible:true,ballotVisible:false,overlay:'treasures'};
+ const nodes=layoutWebScreen(gameScreen(room,user,ui),{width:390,height:844,top:0,bottom:0}).nodes;
+ assert.ok(nodes.some(n=>n.id==='bell-unavailable'));
+ assert.ok(!nodes.some(n=>n.id==='treasure-empty'));
+ assert.ok(nodes.filter(n=>n.id.startsWith('treasure:heart')).every(n=>n.disabled));
+});
+
+
+test('home request badge counts only incoming pending friendships',async()=>{
+ const friends=[{id:'a',status:'pending',isSender:false},{id:'b',status:'pending',isSender:true},{id:'c',status:'accepted',isSender:false}];
+ const p=new PlayerPanel(new PlayerExtras({request:async()=>({friends})} as any),parityFixture().user);
+ await p.refreshFriends();assert.equal(p.incomingFriendRequests,1);
+});
+
+test('an invalid friend response cannot corrupt the homepage badge',async()=>{
+ const p=new PlayerPanel(new PlayerExtras({request:async()=>({ok:true})} as any),parityFixture().user);
+ await p.refreshFriends();assert.equal(p.incomingFriendRequests,0);
 });

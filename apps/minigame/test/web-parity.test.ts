@@ -5,11 +5,11 @@ import { entryScreen } from '../src/screens/entry.js';
 import { lobbyScreen } from '../src/screens/lobby.js';
 import { layoutWebScreen } from '../src/ui/web-layout.js';
 
-test('home preserves web role showcase, paired room actions and compact account tools', () => {
+test('home preserves latest web duel artwork, paired room actions and compact account tools', () => {
   const model = entryScreen({ id: 'u', nickname: '行者', playerCode: '123456' });
   assert.equal(model.web?.page, 'home');
   const nodes = layoutWebScreen(model, { width: 390, height: 844, top: 44, bottom: 34 }).nodes;
-  assert.ok(nodes.some(node => node.kind === 'portrait' && node.id === 'showcase'));
+  assert.ok(nodes.some(node => node.id === 'home-duel' && node.image === 'home/duel-mobile.jpg'));
   assert.equal(nodes.find(node => node.id === 'create')?.y, nodes.find(node => node.id === 'join')?.y);
   assert.ok(nodes.some(node => node.id === 'account' && node.y < 120));
 });
@@ -30,11 +30,11 @@ test('waiting table folds mission details after readiness and preserves vacant s
 test('390px home geometry follows the web CSS instead of a separate mini game composition', () => {
   const model = entryScreen({ id: 'u', nickname: '行者', playerCode: '123456' });
   const { nodes } = layoutWebScreen(model, { width: 390, height: 844, top: 0, bottom: 0 });
-  const role = nodes.find(n => n.id === 'showcase')!;
-  assert.ok(Math.abs(role.width - 132.6) < 1);
-  assert.ok(Math.abs(role.y - 182) < 1);
-  assert.ok(Math.abs(nodes.find(n => n.id === 'brand')!.y - 68) < 1);
-  assert.ok(Math.abs(nodes.find(n => n.id === 'create')!.y - 702.14) < 1);
+  const role = nodes.find(n => n.id === 'home-duel')!;
+  assert.ok(Math.abs(role.width - 390) < 1);
+  assert.ok(Math.abs(role.y - 0) < 1);
+  assert.ok(Math.abs(nodes.find(n => n.id === 'brand')!.y - 60) < 1);
+  assert.ok(Math.abs(nodes.find(n => n.id === 'create')!.y - 662) < 1);
 });
 
 test('active round, alternating seats and actions precede the full mission history', async () => {
@@ -93,4 +93,12 @@ test('selected captains keep both public badges and mission teammates show depar
   room.game.rounds=[{number:1,mission:1,captainId:user.id,team:selected,direction:'clockwise'}];
   nodes=layoutWebScreen(gameScreen(room,user,ui),{width:390,height:844,top:0,bottom:0}).nodes;
   assert.equal(nodes.filter(n=>n.teamStatus==='出征').length,2);
+});
+
+test('home invitation is part of the footer and preserves the invitation action',()=>{
+ const m=entryScreen();m.rows.push({id:'invitation',text:'朋友邀请你加入'});
+ const {nodes}=layoutWebScreen(m,{width:390,height:844,top:44,bottom:34});
+ assert.equal(nodes.filter(n=>n.id==='invitation').length,1);
+ assert.equal(nodes.find(n=>n.id==='invitation')!.text,'加入邀请房间');
+ assert.ok(nodes.find(n=>n.id==='home-invite-hint')!.y<nodes.find(n=>n.id==='invitation')!.y);
 });

@@ -65,7 +65,7 @@ test('built client logs in, opens a clean join form and creates the selected web
     end({ changedTouches: [{ clientX: target.x, clientY: target.y }] });
     await settle();
   }
-  await settle(); await tap('取昵称');await tap('例如：小陈、阿辉');confirmKeyboard({value:'行者'});await settle();await tap('取好昵称，继续游戏');
+  await settle(); await tap('登录 / 注册');await tap('例如：小陈、阿辉');confirmKeyboard({value:'行者'});await settle();await tap('取好昵称，继续游戏');
   assert.ok(frame.some(item => item.text === '开常规房'));
   await tap('加入房间');
   assert.ok(frame.some(item => item.text === '输入房间号或邀请链接'));

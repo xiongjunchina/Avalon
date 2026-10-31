@@ -52,15 +52,17 @@ export async function buildMiniGame({
   // Remove only the two named legacy build outputs, including on incremental rebuilds.
   await rm(join(outDir, 'art/moonlit.png'), { force: true });
   await rm(join(outDir, 'art/gate.webp'), { force: true });
+  await rm(join(outDir, 'art/home/duel-mobile.png'), { force: true });
+  await rm(join(outDir, 'hd-art/home-duel.png'), { force: true });
   await mkdir(join(outDir, 'art/fonts'), { recursive: true });
   for (const name of await readdir(join(minigameRoot, 'assets/fonts')))
     if (name.endsWith('.ttf') || name.endsWith('-OFL.txt')) await copyFile(join(minigameRoot, 'assets/fonts', name), join(outDir, 'art/fonts', name));
-  for(const folder of ['scenes','roles','avatars']){
+  for(const folder of ['scenes','roles','avatars','home']){
     const target=join(outDir,'art',folder);await mkdir(target,{recursive:true});
     for(const name of await readdir(join(minigameRoot,'assets/compatible',folder))){
-      if(!name.endsWith('.jpg'))continue;
+      if(!/\.(jpg|png)$/.test(name))continue;
       await copyFile(join(minigameRoot,'assets/compatible',folder,name),join(target,name));
-      await rm(join(target,name.replace(/\.jpg$/,'.webp')),{force:true});
+      if(name.endsWith('.jpg'))await rm(join(target,name.replace(/\.jpg$/,'.webp')),{force:true});
     }
   }
   const existingHd=await stat(join(outDir,'hd-art')).catch(()=>undefined);
@@ -69,7 +71,7 @@ export async function buildMiniGame({
   if (size > maxBytes) throw new Error(`PACKAGE_TOO_LARGE: ${size} > ${maxBytes}`);
   const hdRoot=join(outDir,'hd-art');await mkdir(hdRoot,{recursive:true});
   await writeFile(join(hdRoot,'game.js'),'// Local high-resolution artwork package.\n');
-  for(const name of await readdir(join(minigameRoot,'assets/hd-art')))if(name.endsWith('.jpg'))await copyFile(join(minigameRoot,'assets/hd-art',name),join(hdRoot,name));
+  for(const name of await readdir(join(minigameRoot,'assets/hd-art')))if(/\.(jpg|png)$/.test(name))await copyFile(join(minigameRoot,'assets/hd-art',name),join(hdRoot,name));
   const hdSize=await bytesIn(hdRoot);if(hdSize>4*1024*1024)throw Error('HD_PACKAGE_TOO_LARGE');
   const fontRoot=join(outDir,'web-fonts');await mkdir(fontRoot,{recursive:true});await writeFile(join(fontRoot,'game.js'),'// Actual web font weights.\n');
   for(const name of await readdir(join(minigameRoot,'assets/web-fonts')))await copyFile(join(minigameRoot,'assets/web-fonts',name),join(fontRoot,name));

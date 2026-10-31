@@ -11,5 +11,5 @@ export function installWebFonts(wx: Pick<WxRuntime, 'loadFont'|'loadSubpackage'>
     catch { /* System font fallback keeps older runtimes usable. */ }
   }
   setWebFonts(loaded);
-  if(wx.loadSubpackage)try{wx.loadSubpackage({name:'web-fonts',success:()=>{for(const weight of [500,600,700])try{const family=wx.loadFont!('web-fonts/sans'+weight+'.ttf');if(family)loaded['sans'+weight]=family;}catch{}setWebFonts(loaded);redraw();},fail:()=>{}});}catch{}
+  if(wx.loadSubpackage)try{wx.loadSubpackage({name:'web-fonts',success:()=>{for(const weight of [500,600,700])try{const family=wx.loadFont!('web-fonts/sans'+weight+'.ttf');if(family)loaded['sans'+weight]=family;}catch{}try{const family=wx.loadFont!('web-fonts/homeInterface.ttf');if(family)loaded.homeInterface=family;}catch{}setWebFonts(loaded);redraw();},fail:()=>{}});}catch{}
 }
