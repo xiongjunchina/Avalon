@@ -6,6 +6,7 @@ import {join, resolve} from 'node:path';
 import {createServer} from 'node:http';
 import {spawn, spawnSync} from 'node:child_process';
 import {runInNewContext} from 'node:vm';
+import {createHash} from 'node:crypto';
 import {WebSocket, WebSocketServer} from 'ws';
 import {validateGames, generatePortal, portalCaddy, portalCompose, portalHtml} from '../../deploy/portal/generate.mjs';
 
@@ -116,6 +117,29 @@ test('portal artwork stays within separate mobile and desktop download budgets',
     }
     assert.ok(total <= budget, `${layout} covers use ${total} bytes, exceeding ${budget}-byte budget`);
   }
+});
+
+test('portal ships a small licensed local font covering the current Chinese copy', async t => {
+  const root = new URL('../../deploy/portal/assets/fonts/', import.meta.url);
+  const metadata = JSON.parse(await readFile(new URL('source.json', root),'utf8'));
+  const font = await readFile(new URL('portal-display.woff2', root));
+  assert.equal(font.subarray(0,4).toString(),'wOF2');
+  assert.ok(font.length <= 30000, `font must stay below 30KB, got ${font.length}`);
+  assert.equal(font.length,metadata.bytes);
+  assert.equal(createHash('sha256').update(font).digest('hex'),metadata.sha256);
+  assert.match(await readFile(new URL('OFL.txt',root),'utf8'), /SIL OPEN FONT LICENSE Version 1.1/);
+  const copy = '游戏大厅好友桌游一起入局每个人都在说话谁在说真话进入游戏' +
+    games.map(g => [g.name,g.hook,g.description,g.genre,g.action,g.players].join('')).join('');
+  for (const char of new Set(copy)) {
+    if (/\p{Script=Han}/u.test(char)) assert.ok(metadata.characters.includes(char), `missing game-font glyph: ${char}`);
+  }
+  const css = await readFile(new URL('../../deploy/portal/assets/portal.css', import.meta.url),'utf8');
+  assert.match(css,/url\("\/portal-assets\/fonts\/portal-display\.woff2"\)/);
+  assert.doesNotMatch(css,/@import|https?:\/\//);
+  const directory = await mkdtemp(join(tmpdir(),'avalon-portal-font-'));
+  t.after(() => rm(directory,{recursive:true,force:true}));
+  await generatePortal(directory);
+  assert.deepEqual(await readFile(join(directory,'www','portal-assets','fonts','portal-display.woff2')),font);
 });
 
 test('legacy invitation and administration bookmarks preserve query and fragment', async () => {
