@@ -33,6 +33,7 @@ export interface WebDocument {
   reportMission?: number;
   roleItem?: RoleGalleryItem;
   activeTab?: string;
+  guideChaptersOpen?:boolean;
   stats?: Statistics;
   games?: GameSummary[];
   presets?: SettingPreset[];

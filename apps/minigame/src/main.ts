@@ -64,6 +64,7 @@ let practice: PracticeSession | undefined;
 let guideRoleId: string | undefined;
 let guideSection: 'rules'|'roles'|'config' = 'rules';
 let guideArt = false;
+let guideChaptersOpen=false;
 const overlayScrolls: Record<string,number> = {};
 let connection: MiniGameRoomConnection | undefined;
 let view: 'entry' | 'lobby' | 'game' | 'settings' | 'admin' | 'player' | 'practice' | 'guide' = 'entry';
@@ -135,7 +136,7 @@ function model(): ScreenModel {
   if (auxiliary === 'practiceSeats' && practice) return feedback({ title: '选择演练视角', rows: practice.perspectives().map(player => ({ id: 'practiceSeat:' + player.id, text: `${player.seat}号 · ${player.nickname} · ${formatRoleName(player.role)}` })), web: { page: 'sheet', background: 'sword', backId: 'auxiliaryClose',document:{kind:'tools',modal:true},underlay:gameScreen(practice.view(),practice.user,{privateRoleVisible:false,ballotVisible:false}) } });
   if (auxiliary === 'roomTools' && room && user) return feedback({ ...lobbyScreen(room, user), title: '房间工具', web: { page: 'sheet', backId: 'auxiliaryClose', background: 'pavilion',document:{kind:'tools',modal:true},underlay:lobbyScreen(room,user) } });
   if (view === 'admin') result = adminPanel.model();
-  else if (view === 'guide') result = guideScreen(guideRoleId,guideSection,guideArt);
+  else if (view === 'guide') result = guideScreen(guideRoleId,guideSection,guideArt,guideChaptersOpen);
   else if (view === 'player' && playerPanel) {result = playerPanel.model();if(result.web?.document?.modal&&!result.web.underlay&&room&&user)result.web.underlay=room.game?gameScreen(room,user,{privateRoleVisible:false,ballotVisible:false}):lobbyScreen(room,user);}
   else if (view === 'practice' && practice) {
     const local = practice.view();
@@ -335,12 +336,13 @@ async function select(id: string) {
     }
   });
   if (view === 'guide') {
-    if (id === 'back') { guideRoleId=undefined;guideArt=false;navigate(guideReturn); }
-    else if(id==='guide:directory'||id.startsWith('guide-jump:')){const target=id==='guide:directory'?'guide-directory':id.slice('guide-jump:'.length);const layout=layoutWebScreen({...model(),scroll:0},viewport),node=layout.nodes.find(n=>n.id===target);if(node)scroll=Math.max(0,node.y-viewport.top-76);render();}
+    if (id === 'back') { guideRoleId=undefined;guideArt=false;guideChaptersOpen=false;navigate(guideReturn); }
+    else if(id==='guide:chapters'){guideChaptersOpen=!guideChaptersOpen;render();}
+    else if(id==='guide:directory'||id.startsWith('guide-jump:')){guideChaptersOpen=false;const target=id==='guide:directory'?'guide-directory':id.slice('guide-jump:'.length);const layout=layoutWebScreen({...model(),scroll:0},viewport),node=layout.nodes.find(n=>n.id===target);if(node)scroll=Math.max(0,node.y-viewport.top-76);render();}
     else if (id==='guideArt'){guideArt=true;scroll=0;render();}
     else if(id==='guideArtClose'){guideArt=false;guideRoleId=undefined;scroll=0;render();}
-    else if(id==='guide:rules'||id==='guide:config'){guideSection=id==='guide:rules'?'rules':'config';guideRoleId=undefined;scroll=0;render();}
-    else if (id === 'guide:roles') { guideRoleId=undefined;guideArt=false;guideSection='roles';scroll=0;render(); }
+    else if(id==='guide:rules'||id==='guide:config'){guideChaptersOpen=false;guideSection=id==='guide:rules'?'rules':'config';guideRoleId=undefined;scroll=0;render();}
+    else if (id === 'guide:roles') { guideChaptersOpen=false;guideRoleId=undefined;guideArt=false;guideSection='roles';scroll=0;render(); }
     else if (id.startsWith('guide-role:')) { guideRoleId = id.slice('guide-role:'.length);guideArt=true;scroll = 0; render(); }
     else if(id==='guideArtPrev'||id==='guideArtNext'){const i=ALL_GALLERY_ROLES.findIndex(r=>r.id===guideRoleId);guideRoleId=ALL_GALLERY_ROLES[(i+(id==='guideArtNext'?1:-1)+ALL_GALLERY_ROLES.length)%ALL_GALLERY_ROLES.length]!.id;scroll=0;render();}
     return;

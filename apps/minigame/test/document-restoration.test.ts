@@ -94,3 +94,14 @@ test('player code editor checks availability and requires a reviewed confirmatio
  await p.handle('codeEditor:input',async()=> '654321');assert.deepEqual(writes,[]);assert.equal(p.inputValue('codeEditor:input'),'654321');await p.handle('codeEditor:save',async()=>undefined);assert.deepEqual(writes,[]);assert.ok(p.model().rows.some(r=>r.id==='confirm:yes'));
  await p.handle('confirm:no',async()=>undefined);assert.equal(p.model().web?.document?.kind,'code-editor');await p.handle('codeEditor:save',async()=>undefined);await p.handle('confirm:yes',async()=>undefined);assert.deepEqual(writes,[{playerCode:'654321',expectedCode:user.playerCode}]);assert.equal(p.model().web?.document?.playerCodeEditor?.currentCode,'654321');
 });
+
+test('guide chapter selector exposes every chapter and keeps its options inside narrow safe areas',()=>{
+ for(const section of ['rules','roles'] as const){
+  const model=guideScreen(undefined,section,false,true);
+  const layout=layoutWebScreen(model,{width:320,height:568,top:88,bottom:34});
+  const options=layout.nodes.filter(n=>n.skin==='chapter-option');
+  assert.equal(options.length,section==='rules'?6:9);
+  for(const option of options){assert.ok(option.fixed);assert.ok(option.y>=88&&option.y+option.height<=534);assert.ok(option.id.startsWith('guide-jump:guide-anchor:'));}
+  assert.ok(layout.nodes.some(n=>n.id==='guide:chapters'));
+ }
+});

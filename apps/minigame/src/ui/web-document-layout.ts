@@ -435,8 +435,8 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
         if(!games.length)para('empty',doc.activeTab==='favorites'?'暂无收藏，可在复盘中收藏对局':'暂无已完成的对局');
         const infoY=y;const info=txt('history-info','只显示你参与且已结束的对局，按结束时间倒序。'+(doc.activeTab==='favorites'?'取消收藏不会删除对局。':'中断局也保留记录。'),y+12,14,{lineHeight:25.2},x+14,w-28);const infoFrame=panel('history-info-panel',infoY,info.height+24,'hint');nodes.splice(nodes.indexOf(infoFrame),1);nodes.splice(nodes.indexOf(info),0,infoFrame);y+=info.height+40;
         for(const g of games){const expanded=doc.expanded?.includes(g.id),h=expanded?310:242;panel('history:'+g.id,y,h,'history-card');
-          txt('history-outcome:'+g.id,(g.result.winner===null?'中断':g.result.winner===g.self.team?'胜利':'失败')+'  '+g.playerCount+' 人局',y+14,22,{fontFace:'display'},x+12,w-100);
-          txt('history-status:'+g.id,g.favorite?'已收藏':'已结束',y+17,12,{tone:'gold',align:'right'},x+w-84,72);
+          txt('history-outcome:'+g.id,(g.result.winner===null?'中断':g.result.winner===g.self.team?'胜利':'失败'),y+14,22,{fontFace:'display'},x+12,50);txt('history-player-count:'+g.id,g.playerCount+' 人局',y+19,14,{tone:'muted'},x+64,w-152);
+          add('label','history-status:'+g.id,g.favorite?'已收藏':'已结束',x+w-63,y+14,50,30,{skin:'history-status',fontSize:12});
           txt('history-role:'+g.id,formatRoleName(g.self.role)+' · '+(g.self.team==='blue'?'蓝方':'红方')+' · '+(reasons[g.result.reason]??''),y+61,16,{},x+12,w-24);
           button('game:'+g.id,'查看复盘 · '+formatDate(g.endedAt),y+111,{skin:'pill',fontSize:16},x+12,w-24,48);
           button('details:'+g.id,(expanded?'▾':'▸')+' 对局信息',y+169,{skin:'accordion'},x+12,w-24,60);
@@ -511,22 +511,27 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
       button('back','返回',y+5,{skin:'pill',fixed:true,fontSize:12},x+4,38,40);
       button('guide:rules','规则',y+5,{skin:'pill',fixed:true,fontSize:12,selected:doc.activeTab!=='roles'},x+46,42,40);
       button('guide:roles','角色',y+5,{skin:'pill',fixed:true,fontSize:12,selected:doc.activeTab==='roles'},x+92,42,40);
-      button('guide:directory','章节跳转',y+5,{skin:'input',fixed:true,fontSize:12},x+138,Math.max(40,w-194),40);
+      button('guide:chapters','章节跳转 ▾',y+5,{skin:'input',fixed:true,fontSize:12},x+138,Math.max(40,w-194),40);
       button('guide:directory','目录↑',y+5,{skin:'pill',fixed:true,fontSize:12},x+w-52,48,40);
       nodes.find(n=>n.id==='guide-toolbar')!.fixed=true;
       y+=58;panel('guide-brand',y,86,'profile');txt('guide-brand-title','《嘻游 · 真假猴王》',y+12,20,{fontFace:'display'},x+14,w-28);txt('guide-brand-tagline','一念佛魔皆幻相，谁是修道取经人',y+53,13,{},x+14,w-28);y+=86;
       const chapters=doc.activeTab==='roles'?Object.entries(roleNames).map(([role,label])=>({id:'guide-anchor:'+role,label})):['胜负条件','对局流程','人数配置','房主设置','刺杀与天机','专属法宝'].map((label,i)=>({id:'guide-anchor:'+(i+1),label}));
+      if(doc.guideChaptersOpen){
+        const menuY=54,menuW=Math.min(240,w-4),menuX=x+w-menuW-2,itemH=Math.min(34,(available-menuY-12)/chapters.length);
+        panel('guide-chapter-menu',menuY,chapters.length*itemH+4,'input',menuX,menuW).fixed=true;
+        chapters.forEach((c,i)=>button('guide-jump:'+c.id,c.label,menuY+2+i*itemH,{skin:'chapter-option',fixed:true,fontSize:13},menuX+2,menuW-4,itemH));
+      }
       const dh=36+Math.ceil(chapters.length/3)*46;
       panel('guide-directory',y,dh,'card');txt('guide-index-label',doc.activeTab==='roles'?'角色目录':'规则目录',y+10,12,{tone:'gold'},x+8,w-16);
       chapters.forEach((c,i)=>button('guide-jump:'+c.id,c.label,y+32+Math.floor(i/3)*46,{skin:'pill',fontSize:12},x+8+i%3*(w-10)/3,(w-22)/3,40));y+=dh+12;
       if(doc.roleItem){const item=doc.roleItem;add('button','guideArt',item.fullName,x,y,w,142,{skin:'identity-card',image:'roles/'+item.artPrefix+'-160.webp',detail:item.title+'|'+item.motto,team:item.team});y+=156;
         for(const r of model.rows.filter(r=>r.id.startsWith('role-')))para(r.id,r.text,14);
       } else if(doc.activeTab==='roles') {
-        const introPrivacy=txt('guide-privacy','这里介绍《嘻游 · 真假猴王》全部神魔人物的通用规则，不显示本局谁拿到了什么身份。准确角色仅由本人查看，终局才公开。点击任意法相可鉴赏高清立绘大图。',y-4,13,{lineHeight:19.5});y+=introPrivacy.height+20;
+        const introPrivacy=txt('guide-privacy','这里介绍《嘻游 · 真假猴王》全部神魔人物的通用规则，不显示本局谁拿到了什么身份。准确角色仅由本人查看，终局才公开。点击任意法相可鉴赏高清立绘大图。',y-4,13,{lineHeight:19.5});y+=introPrivacy.height+4;
         for(const team of ['blue','red'] as const){add('label','guide-faction:'+team,team==='blue'?'蓝方 · 取经正果':'红方 · 群妖乱道',x,y,w,38,{skin:'guide-faction',team});y+=48;
           for(const role of Object.keys(roleNames).filter(r=>teamOf(r as Role)===team) as Role[]){
             const item=getRoleGalleryItem(role),frame=panel('guide-anchor:'+role,y,1,team==='blue'?'guide-role-blue':'guide-role-red');y+=10;
-            const title=roleNames[role]+(role==='loyal'?'（白龙 / 猪八戒 / 沙悟净 / 金刚）':role==='minion'?'（玉兔精 / 白骨精 / 老鼠精 / 蜘蛛精）':''),titleLines=wrapText(title,w-82,v=>measure(v,18)),headH=80+(titleLines.length-1)*21;add('button','guide-role:'+item.id,title,x+12,y,w-24,headH,{skin:'guide-role-heading',image:'roles/'+defaultRoleArtPrefix(role)+'-160.webp',team,detail:roleTitles[role]+'|'+roleMottos[role],lines:titleLines});y+=headH+6;
+            const title=roleNames[role]+(role==='loyal'?'（白龙 / 猪八戒 / 沙悟净 / 金刚）':role==='minion'?'（玉兔精 / 白骨精 / 老鼠精 / 蜘蛛精）':''),titleLines=wrapText(title,w-82,v=>measure(v,18)),headH=90+(titleLines.length-1)*21;add('button','guide-role:'+item.id,title,x+12,y,w-24,headH,{skin:'guide-role-heading',image:'roles/'+defaultRoleArtPrefix(role)+'-160.webp',team,detail:roleTitles[role]+'|'+roleMottos[role],lines:titleLines});y+=headH+6;
             for(const [key,label] of [['ability','能力与视野'],['visibility','谁能看见你'],['treasure','专属法宝'],['tip','玩法提示']] as const){
               const value=key==='treasure'?roleTreasures[role]:roleDescriptions[role][key],lines=wrapText(value,w-116,t=>measure(t,12.5)),h=10+lines.length*17.25;
               panel('guide:'+role+':'+key+':frame',y,h,'guide-step',x+12,w-24);txt('guide:'+role+':'+key+':label',label,y+5,11.5,{tone:'gold'},x+20,64);txt('guide:'+role+':'+key,value,y+5,12.5,{lineHeight:17.25},x+92,w-112);y+=h+4;
