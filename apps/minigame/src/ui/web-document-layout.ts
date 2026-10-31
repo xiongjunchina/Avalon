@@ -335,13 +335,16 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
       const hint=txt('vip-description',user.isVip?'VIP 到期时间：'+new Date(user.vipUntil!).toLocaleDateString():'当前处于公测体验期，全员零门槛免费畅享战绩复盘与高级板子！',y,12,{lineHeight:21,tone:'muted'},x+28,w-56);y+=hint.height+10;
       button('redeem:input',doc.redeemCode||'输入 8 位 VIP 授权兑换码…',y,{skin:'vip-input',selected:!!doc.redeemCode,fontSize:13},x+28,w-162,40);button('redeem:submit','核销兑换',y,{skin:'vip-redeem',disabled:!doc.redeemCode?.trim(),fontSize:13.5},x+w-124,96,40);y+=53;vipCard.height=y-vipCard.y;y+=24;vipFrame.height=y-vipFrame.y;}bodyEnd=y;footerH=60;
   } else if(doc.kind==='sound'){
-    modalHeader('天宫仙乐');
+    modalHeader('声音与实时语音');
+    const voiceRows=model.rows.filter(r=>r.id.startsWith('voice:')||r.id.startsWith('guide:voice'));
+    for(const row of voiceRows){if(row.id.startsWith('voice:')){button(row.id,row.text,y,{skin:'pill',primary:row.id==='voice:join'});y+=50;}else if(row.id!=='guide:voice-scope'){para(row.id,row.text,13);}}
+    const scope=voiceRows.find(r=>r.id==='guide:voice-scope');if(scope)para(scope.id,scope.text,12);
     for(const [id,label,detail] of [['music','背景音乐',BACKGROUND_MUSIC.title],['effects','操作音效','法器反馈 · 降妖法鼓 · 金箍惊鸣 · 胜负终章']] as const){
       const lines=wrapText(detail,w-60,t=>measure(t.replaceAll('·',''),12,'sans','400')+(t.match(/·/g)?.length??0)*2.89),h=58+lines.length*17;
       button('sound:'+id,label,y,{skin:'sound-option',selected:doc.soundPreferences?.[id],detail,lines,fontSize:16},x,w,h);y+=h+10;
     }
-    for(const [i,t] of ['仅影响自己的设备，自动记住选择。音量使用手机或电脑的媒体音量键调整。','全部操作都有声音反馈，投票与出牌使用相同点击声。胜负音效按自己的结果播放，全程无人声。'].entries()){const n=txt('sound-hint:'+i,t,y,12,{tone:'muted',lineHeight:19.8,fontFace:'home',weight:'650'},x,w);y+=n.height+10;}
-    for(const row of model.rows.filter(r=>!r.id.startsWith('sound:')&&!feedback.includes(r))){if(row.id.startsWith('guide:')){para(row.id,row.text,13);}else{button(row.id,row.text,y,{skin:'pill'});y+=50;}}bodyEnd=y;
+    for(const [i,t] of ['仅影响自己的设备，自动记住选择。音量使用手机或电脑的媒体音量键调整。','全部操作都有声音反馈，投票与出牌使用相同点击声。胜负音效按自己的结果播放；音效开关不影响实时语音。'].entries()){const n=txt('sound-hint:'+i,t,y,12,{tone:'muted',lineHeight:19.8,fontFace:'home',weight:'650'},x,w);y+=n.height+10;}
+    for(const row of model.rows.filter(r=>!r.id.startsWith('sound:')&&!voiceRows.includes(r)&&!feedback.includes(r))){if(row.id.startsWith('guide:')){para(row.id,row.text,13);}else{button(row.id,row.text,y,{skin:'pill'});y+=50;}}bodyEnd=y;
   } else if(doc.kind==='preferences'&&doc.settings){
     add('label','dialog-title','🎭 心仪选角 · 偏好匹配',x+4,13,w-50,24,{skin:'text',fontFace:'display',fontSize:clamp(14,v.width*.042,18),tone:'gold',fixed:true,align:'left'});
     txt('dialog-subtitle','志愿提高机会 · 不保证命中',37,11,{fixed:true},x+4,w-50);
