@@ -202,7 +202,7 @@ function drawDocumentNode(ctx:CanvasRenderingContext2D,n:WebNode,model:ScreenMod
   if(n.skin==='admin-special-card'){fill(ctx,n,'transparent',8,'#ffffff14');return;}
   if(n.skin==='admin-rule'){rule(ctx,n,'#ffffff14');return;}
   if(n.skin==='admin-password-frame'){fill(ctx,n,'transparent',12,'#d4a3598c');return;}
-  if(n.skin==='admin-radio'){circle(ctx,n.x+7,cy,6.5,n.selected?'#1683fa':'#fff','#aab1ba');if(n.selected)circle(ctx,n.x+7,cy,2.5,'white','transparent');write(n.text,n.x+20,cy,n.width-20,12.5,'left',family,'600','#cbd5e1');return;}
+  if(n.skin==='admin-radio'){circle(ctx,n.x+7,cy,6.5,n.selected?'#99c8ff':'#3b3b3b','#9b9b9b');if(n.selected)circle(ctx,n.x+7,cy,2.5,'#3b3b3b','transparent');write(n.text,n.x+20,cy,n.width-20,12.5,'left',family,'600','#cbd5e1');return;}
   if(n.skin==='admin-count'){ctx.save();ctx.lineWidth=1.5;circle(ctx,cx,cy,Math.min(17,n.width/2),n.selected?'#266778':'#240d0b',n.selected?'#a5f3fc':'#ffd875');if(n.selected)circle(ctx,cx,cy,Math.min(17,n.width/2)+4,'transparent','#a5f3fc');ctx.restore();write(n.text,cx,cy,n.width,13,'center',family,'600');return;}
   if(n.skin==='admin-toggle'){rule(ctx,{...n,y:n.y+n.height},'#d6c29766');write(n.text,n.x,cy,n.width-56,13,'left',family,'400','#e2e8f0');fill(ctx,{...n,x:n.x+n.width-40,y:cy-11,width:40,height:22},n.selected?'#216d7e':'#445567',11,n.selected?'#a5f3fc':'#b8c5cf');circle(ctx,n.x+n.width-(n.selected?12:28),cy,8,n.selected?'#dbfff9':'#e5edf1','transparent');return;}
   if(n.skin==='admin-friend-row'){fill(ctx,n,'#1e293b80',6,'transparent');return;}
@@ -224,7 +224,8 @@ function drawDocumentNode(ctx:CanvasRenderingContext2D,n:WebNode,model:ScreenMod
   if(n.skin==='plain-summary'){write(n.text,n.x,cy,n.width,13,'left',family,'400','#ffd875');return;}
   if(n.skin==='replay-heading'){fill(ctx,n,'#1e0908cc',12,'transparent');write(n.text,n.x+8,cy,n.width-110,30,'left',display);return;}
   if(n.skin==='replay-hero'){fill(ctx,n,'#1e0908cc',24,'#e5b964');return;}
-  if(n.skin==='replay-captain'){circle(ctx,n.x+20,cy,21,'#210d0b','#e5b964');image(n.image,n.x+1,cy-19,38,38,true);write((n.count??'')+'号 '+n.text,n.x+52,cy,n.width-58,13,'left',sans,'400','#ffe3af');return;}
+  if(n.skin==='replay-captain'){circle(ctx,n.x+20,cy,21,'#210d0b','#e5b964');image(n.image,n.x+1,cy-19,38,38,true);const title=(n.count??'')+'号 '+n.text;ctx.font='600 14px '+sans;const tw=Math.min(n.width-58,ctx.measureText(title).width+12);fill(ctx,{...n,x:n.x+52,y:cy-11,width:tw,height:22},'#210d0b',999,'#e5b96477');write(title,n.x+58,cy,tw-12,14,'left',sans,'600','#ffe3af');return;}
+  if(n.skin==='replay-direction'){fill(ctx,{...n,width:68},'#f4d99c2e',999,'#f4d99c73');write('本轮领队',n.x+34,cy,50,12.5,'center',sans,'700','#ffe8b3');write(n.text,n.x+76,cy,n.width-76,13.5,'left',sans,'500','#dff2ff');return;}
   if(n.skin==='guide-emblem'){if(n.image)art(ctx,artwork,n.image.slice(8,-4),n.x,n.y,n.width,n.height);return;}
   if(n.skin==='guide-mission'){rule(ctx,n,'#d4a35966');write(n.badge??'',cx,n.y+14,n.width-4,9,'center',sans,'400','#eddcc4');write(n.detail??'',cx,n.y+35,n.width-4,14,'center',display,'400','#ffd875');return;}
   if(n.skin==='rule'){rule(ctx,n,'#d0be8d66');return;}
@@ -242,7 +243,11 @@ function drawDocumentNode(ctx:CanvasRenderingContext2D,n:WebNode,model:ScreenMod
     circle(ctx,n.x+40,n.y+36,23,'#e5b96422','#e5b96477');write(info.won?'🏆':'⚖️',n.x+40,n.y+36,42,27);
     write(info.won?'VICTORY · 你的阵营获胜':'MATCH RESULT · 本局结算',n.x+76,n.y+23,n.width-212,10,'left',sans,'700','#ffd875');
     write(n.text,n.x+76,n.y+47,n.width-212,Math.min(21,(n.width-212)/5),'left',display,'700','#ffd875');
-    fill(ctx,{...n,x:n.x+16,y:n.y+70,width:n.width-32,height:36},'#0d111ddd',9,'#d4a35944');write((n.team==='blue'?'🛡 蓝方获胜':n.team==='red'?'⚔ 红方获胜':'本局不计胜负')+'  '+(info.reason??''),n.x+27,n.y+88,n.width-54,12,'left',sans,'600','#e5decb');
+    fill(ctx,{...n,x:n.x+16,y:n.y+70,width:n.width-32,height:36},'#080e14ad',9,'#ffffff1a');
+    const tag={...n,x:n.x+27,y:n.y+77,width:84,height:22};
+    fill(ctx,tag,n.team==='blue'?gradient(ctx,tag,['#1e62b0','#14437a'],135):n.team==='red'?gradient(ctx,tag,['#b3242a','#7d151a'],135):'#2b3942',999,n.team==='blue'?'#6cb4ff':n.team==='red'?'#ff8a8a':'transparent');
+    write(n.team==='blue'?'🛡️ 蓝方获胜':n.team==='red'?'🗡️ 红方获胜':'⚖️ 未分胜负',tag.x+42,n.y+88,68,12,'center',sans,'700',n.team==='red'?'#fff0f0':'#eaf5ff');
+    write((info.reason??'')+'。',n.x+119,n.y+88,n.width-146,13,'left',sans,'600','#f3ede0');
     fill(ctx,{...n,x:n.x+n.width-126,y:n.y+18,width:110,height:40},'#17314bdd',8,'#7dd3fc88');write('我的底牌',n.x+n.width-71,n.y+29,100,10,'center',sans,'400','#bdd3e0');write(info.self??'',n.x+n.width-71,n.y+45,100,12,'center',sans,'700','#cdeaff');
     return;
 
@@ -255,11 +260,12 @@ function drawDocumentNode(ctx:CanvasRenderingContext2D,n:WebNode,model:ScreenMod
   if(n.skin==='setup-count-frame'){fill(ctx,n,gradient(ctx,n,['#16314ce6','#0c1f33eb'],160),20,'#e2ca9273');return;}
   if(n.skin==='setup-practice'){write(n.text,cx,cy,n.width-12,12,'center',sans,'500','#d7c08a');return;}
   if(n.skin==='count'){ctx.save();shadow(ctx,n.selected?'#5ce8f566':'#040e1a99',n.selected?14:10,n.selected?0:3);circle(ctx,cx,cy,n.width/2-.75,'transparent',n.selected?'#5ef2ff':'#e3cea0');ctx.fillStyle=gradient(ctx,n,n.selected?['#2b8296','#165668']:['#284865f0','#10263cf5'],n.selected?160:145);ctx.fill();ctx.stroke();ctx.restore();if(n.selected){circle(ctx,cx,cy,n.width/2+3,'transparent','#aefff4');}write(n.text,cx,cy,n.width-5,n.fontSize??18,'center',display,'600',n.selected?'#fff':'#fff5d8');return;}
-  if(n.skin==='setup-mode') {fill(ctx,n,gradient(ctx,n,n.selected?['#235467','#123440']:['#191c27','#111520']),16,'#d4a359');const [title,sub]=n.text.split('\n');write(title??'',cx,n.y+17,n.width-12,13.5,'center',sans,'700',n.selected?'#ffd54f':'#b8a99b');write(sub??'',cx,n.y+36,n.width-10,10.5,'center',sans,'400','#b5cddd');return;}
+  if(n.skin==='setup-mode') {ctx.save();if(n.selected)shadow(ctx,'#58c7d94d',12,0);fill(ctx,{...n,selected:false},n.selected?gradient(ctx,n,['#235467','#123440'],180):'#121c2abf',14,n.selected?'#ffd54f':'#e5b96459');ctx.restore();const [title,sub]=n.text.split('\n');write(n.id==='setup:offline'?'🏛️':'🎙️',n.x+28,cy,40,20);write(title??'',n.x+49,n.y+19,n.width-58,13.5,'left',sans,'700',n.selected?'#ffffff':'#ffd54f');write(sub??'',n.x+49,n.y+36,n.width-56,11,'left',sans,'400',n.selected?'#bce7ff':'#9cb1c9');return;}
+  if(n.skin==='faction-blue'||n.skin==='faction-red'){const blue=n.skin==='faction-blue';ctx.save();shadow(ctx,blue?'#040e1ea6':'#160509a6',24,8);fill(ctx,n,gradient(ctx,n,blue?['#133159f0','#0a1b34f5']:['#441824f0','#230c13f5'],165),20,blue?'#6ebaffb3':'#ff7e7eb3');ctx.restore();return;}
   if(n.skin==='setup-role'){
-    const imgSize=n.width-4;
-    fill(ctx,n,gradient(ctx,n,n.team==='blue'?['#0c1831','#1a4bb8']:['#9e1115','#4b1015']),8,n.team==='blue'?'#4d88ff':'#e04a4e');
-    image(n.image,n.x+2,n.y+2,imgSize,imgSize);
+    const imgSize=n.width-2;
+    ctx.save();shadow(ctx,'#030a1499',16,6);fill(ctx,n,n.team==='blue'?'#1a4bb8':'#9e1115',12,n.team==='blue'?'#4d88ff':'#e04a4e');ctx.restore();
+    ctx.save();rect(ctx,n.x+1,n.y+1,n.width-2,n.height-2,11);ctx.clip();image(n.image,n.x+1,n.y+1,imgSize,imgSize);ctx.restore();
     const labelY=n.y+2+imgSize;
     const nameSize=14;
     if(n.badge){fill(ctx,{...n,x:n.x+n.width-26,y:n.y+6,width:20,height:16},'#ffffff',3);text(ctx,n.badge,n.x+n.width-16,n.y+14,20,10,'#1a3878','center',sans,'700');}
@@ -284,7 +290,7 @@ function drawDocumentNode(ctx:CanvasRenderingContext2D,n:WebNode,model:ScreenMod
     const tx=px+diameter+14,tw=n.x+n.width-tx-10,[title,motto]=n.detail?.split('|')??[];
     const allegiance=(n.badge??(n.team==='blue'?'蓝方 · 取经正果':'红方 · 群妖乱道'))+' · '+(title??'');ctx.font='600 11px '+sans;const badgeW=Math.min(tw,ctx.measureText(allegiance).width+38);
     fill(ctx,{...n,x:tx,y:n.y+10,width:badgeW,height:24},'#00000073',8,'#dcbe7859');
-    image('symbols/'+(n.team==='blue'?'blue':'red')+'.png',tx+8,n.y+14,16,16);
+    image('symbols/'+(n.team==='blue'?'blue':'red')+'-identity.png',tx+8,n.y+14,16,16);
     write(allegiance,tx+28,n.y+22,badgeW-36,11,'left',sans,'600','#eeddc4');
     write(n.text,tx,n.y+52,tw,20,'left',display,'700','#fff2d5');
     write(motto??'',tx,n.y+72,tw,11,'left',sans,'400','#cbdbe8');
@@ -417,7 +423,7 @@ function drawDocumentNode(ctx:CanvasRenderingContext2D,n:WebNode,model:ScreenMod
   }
   if(n.skin==='code-badge'){ctx.save();shadow(ctx,'#d4a35940',8,0);fill(ctx,n,'#d4a35926',4,'#d4a3594d');ctx.restore();write(n.text,cx,cy,n.width-8,11,'center',sans,'700','#ffd875');return;}
   if(n.skin==='history-status'){fill(ctx,n,'#ffffff0d',2,'#ffffff44');write(n.text,cx,cy,n.width-8,12,'center',sans,'400','#eddcc4');return;}
-  if(n.skin==='voter-chip'){fill(ctx,n,'#1e0a0acc',5,'#d4a3594d');const parts=/^(\d+号) (.*?)  (.*)$/.exec(n.text);if(parts){write(parts[1]!,n.x+6,cy,25,9.5,'left',sans,'700','#ffd875');write(parts[2]!,cx-1,cy,Math.max(24,n.width-66),10.5,'center',sans,'400','#eedcc4');write(parts[3]!,n.x+n.width-6,cy,35,9.5,'right',sans,'400',n.tone==='green'?'#34d399':'#ffd875');}else write(n.text,cx,cy,n.width-8,n.fontSize??10.5,'center',sans,'400');return;}
+  if(n.skin==='voter-chip'){fill(ctx,n,'#1e0a0acc',6,n.tone==='green'?'#10b981':'#d4a3594d');const parts=/^(\d+号) (.*?)  (.*)$/.exec(n.text);if(parts){write(parts[1]!,n.x+6,cy,25,9.5,'left',sans,'700','#ffd875');write(parts[2]!,cx-1,cy,Math.max(24,n.width-66),10.5,'center',sans,'400','#eedcc4');write(parts[3]!,n.x+n.width-6,cy,35,9.5,'right',sans,'400',n.tone==='green'?'#34d399':'#ffd875');}else write(n.text,cx,cy,n.width-8,n.fontSize??10.5,'center',sans,'400');return;}
   if(n.skin==='badge'){box('tip');write(n.text,cx,cy,n.width-8,n.fontSize??10.5,'center',sans,'700');return;}
   if(n.skin==='treasure-entry'){ctx.save();ctx.globalAlpha=n.disabled?.5:1;if(n.disabled)ctx.setLineDash([4,3]);box();ctx.setLineDash([]);write('📿',n.x+24,cy,32,23);write(n.text,n.x+46,n.y+13,n.width-70,12,'left',display,'700','#ffd875');write(n.detail??'',n.x+46,n.y+31,n.width-70,10,'left',sans,'400','#cbdbe8');write(n.disabled?'🔒':'❯',n.x+n.width-16,cy,20,13);ctx.restore();return;}
   if(n.skin==='metric'){if(n.id!=='metric:0')fill(ctx,{...n,y:n.y+8,width:1,height:n.height-16},'#d4a35988',0,'transparent');write(n.text,cx,n.y+20,n.width-4,20,'center',display,'400','#f1deba');write(n.detail??'',cx,n.y+42,n.width-4,11.5,'center',sans,'400','#eddcc4');return;}
@@ -746,7 +752,8 @@ export function renderWebScreen(model: ScreenModel, canvas: HTMLCanvasElement, v
     const scale = Math.max(v.width / bg.width, v.height / bg.height);
     ctx.drawImage(bg as CanvasImageSource, (v.width - bg.width * scale) / 2, (v.height - bg.height * scale) * (scene === 'gate' ? 0.46 : scene === 'sword' ? 0.4 : scene === 'pavilion' ? 0.55 : 0.5), bg.width * scale, bg.height * scale);
   }
-  // Web scene is shown at full opacity; do not add an extra Mini Game dark veil.
+  // Match the setup screen's own CSS surface, leaving other scenes unchanged.
+  if(!modal&&model.web!.page==='setup'){ctx.fillStyle='#0c1f3378';ctx.fillRect(0,0,v.width,v.height);}
   const layout = preparedLayout ?? layoutWebScreen(model, v);
   for (const node of [...layout.nodes.filter(item => item.fixed && item.id === 'dialog-frame'), ...layout.nodes.filter(item => !item.fixed), ...layout.nodes.filter(item => item.fixed && item.kind === 'panel' && item.id !== 'dialog-frame'), ...layout.nodes.filter(item => item.fixed && item.kind !== 'panel')]) {
     // Clipping alone still issues all text/image draw calls for long documents.

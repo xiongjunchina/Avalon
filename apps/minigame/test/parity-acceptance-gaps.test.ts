@@ -179,3 +179,13 @@ test('private treasure notices open individually, queue unread results and hide 
  handleGameOverlay(ui,room,'overlayClose');syncGameUi(ui,room,true);assert.equal(ui.overlay,undefined);assert.equal(ui.privateRoleVisible,false);
  model=gameScreen(room,user,{...ui,overlay:'private-notice',noticeKind:'mirror',privateRoleVisible:false});assert.equal(model.web!.document!.self,undefined);
 });
+
+
+test('vote progress keeps all twelve participants above the privacy footer at every supported width',()=>{
+ for(const width of [320,390,430]){
+  const {room,user}=parityFixture('vote',12);const model=gameScreen(room,user,{...state(),overlay:'vote'});
+  const nodes=layoutWebScreen(model,{...viewport,width}).nodes,footer=nodes.find(n=>n.id==='vote-privacy')!;
+  const voters=nodes.filter(n=>n.id.startsWith('ballot:'));assert.equal(voters.length,12);
+  for(const voter of voters)assert.ok(voter.y+voter.height<=footer.y,`participant ${voter.id} overlaps privacy footer at ${width}`);
+ }
+});

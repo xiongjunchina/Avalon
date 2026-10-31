@@ -16,6 +16,7 @@ const out = join(root, 'apps/minigame/assets/emblems');
 await mkdir(out, { recursive: true });
 try{for (const [name, component, color] of [
   ['cards-white',React.createElement(Emblem,{kind:'cards'}),'#fff8ef'],
+  ...['blue','red'].map(kind=>[kind+'-identity',React.createElement(Emblem,{kind}),'#eeddc4']),
   ['cards-ink',React.createElement(Emblem,{kind:'cards'}),'#240a08'],
   ['cards-cyan',React.createElement(Emblem,{kind:'cards'}),'#b6f5ff'],
   ...['left','right'].flatMap(side=>[['cloud-brown-'+side,React.createElement(CloudFlourish,{side}),'#78350f'],['cloud-disabled-'+side,React.createElement(CloudFlourish,{side}),'#5a260e']]),
