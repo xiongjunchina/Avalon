@@ -77,7 +77,7 @@ test('built bundle starts with only WeChat Mini Game APIs available', async t =>
   const labels: string[] = [];
   let touchStart: ((event: any) => void) | undefined;
   let touchEnd: ((event: any) => void) | undefined;
-  const ctx = new Proxy({}, { get: (_target, name) => name === 'createLinearGradient'
+  const ctx = new Proxy({}, { get: (_target, name) => (name === 'createLinearGradient' || name === 'createRadialGradient')
     ? () => ({ addColorStop() {} })
     : name === 'measureText' ? (value: string) => ({ width: value.length * 12 })
       : (...args: unknown[]) => { calls.push(String(name)); if (name === 'fillText') labels.push(String(args[0])); } });

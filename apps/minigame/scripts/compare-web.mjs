@@ -17,6 +17,8 @@ try {
     const native=JSON.parse(await readFile(join(root,'dist/minigame-preview'+suffix,scene+'-'+width+'.json'),'utf8'));
     const guidePairs=scene==='guide'&&!suffix?Array.from({length:6},(_,i)=>['guide-anchor:'+(i+1),'panel guide-section']):[];
     const pairs=width!==390||players!==6||suffix||!['entry','game'].includes(scene)?[]:scene==='entry'?[['home-duel','lobby-duel-image'],['create','mp-cyan-pill'],['join','secondary lobby-join']]:[['mission:1','quest-medallion-wrap mission-current'],['arena-frame','table-seats-grid grid-8 altar-dual-flank-arena scheme-a-stage '],['action-dock','table-action-dock']];
+    if(!suffix&&['result','result-top','mission','game'].includes(scene))pairs.push(['score','quest-vote-track-zone']);
+    if(!suffix&&scene==='result-top')pairs.push(['result-hero','ended-hero-banner outcome-victory winner-blue']);
     for(const [id,css] of pairs) {
       const a=native.nodes.find(n=>n.id===id),b=web.find(n=>n.class===css);assert.ok(a&&b,id);
       const error=Math.max(...['x','y','width','height'].map(k=>Math.abs(a[k]-b[k])));

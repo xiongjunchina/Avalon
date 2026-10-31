@@ -1,3 +1,4 @@
+import { treasureAccess } from '../../../web/src/treasure-access.js';
 import { reasons } from '../../../web/src/game-presentation.js';
 import type { WebDocument } from './web-document.js';
 import { layoutDocument, measureWebText } from './web-document-layout.js';
@@ -7,6 +8,16 @@ import { defaultRoleArtPrefix, roleNames, roleMottos, WUYUE_MISSIONS, getRoleGal
 import { wrapText, textGraphemes, type HitRegion, type SafeViewport } from './layout.js';
 import { MINI_GAME_VOICE_ENABLED } from '../features.js';
 import type { ScreenModel } from './widgets.js';
+
+// CSS flex wrapping used by .ended-hero-top and .ended-verdict-strip.
+export function resultHeroGeometry(width:number,self:string,reason:string){
+ const roleW=Math.max(22,measureWebText(self,13,'sans','700')+22),inner=width-32;
+ const wrapped=inner<48+24+140+roleW,topH=wrapped?100.75:48;
+ const reasonLines=wrapText(reason,Math.max(1,inner-22),t=>measureWebText(t,13,'sans','600'));
+ const verdictWrapped=85.203125+8+measureWebText(reason,13,'sans','600')>inner-22;
+ const verdictH=verdictWrapped?14+23+8+reasonLines.length*22.75:37;
+ return {roleW,wrapped,topH,verdictWrapped,reasonLines,verdictH,height:28+topH+8+verdictH};
+}
 
 export interface WebSurface {
   chatBubbles?:Record<string,string>;
@@ -96,8 +107,9 @@ export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout 
     add('panel','table-toolbar-frame','',10,top,w-20,32,{fixed:true,skin:'table-toolbar-frame'});
     add('button', web.practice ? 'exitPractice' : 'leave', '↶', 16, top + 3, 26, 26, { fixed: true });
     add('button', 'copyRoom', web.practice ? '幻境演练' : '房号 ' + room.code, 45, top + 3, 111.5625, 26, { fixed: true, detail: room.members.length + '/' + count + '人 · 复制' });
-    const toolScale = Math.min(1, (w - 175) / 195);
-    let tx = w - 21 - 189.8 * toolScale;
+    const toolScale = 1;
+    let tx = Math.max(130.2,w-210.8);
+    nodes.find(n=>n.id==='copyRoom')!.width=Math.min(111.5625,tx-48);
     (web.practice ? [['bot','代操',26], ['rematch','重开',51.6], ['practiceSettings','配置',51.6], ['guide','📖 规则',51.6]] : [['sound','sound',26], ['chat','💬 传音',51.6], ['more','⚙️ 设置',51.6], ['guide','📖 规则',51.6]]).forEach(([id,title,width]) => {
       add('button', String(id), String(title), tx, top + 3, Number(width) * toolScale, 26, { fixed: true }); tx += (Number(width) + 3) * toolScale;
     });
@@ -116,24 +128,25 @@ export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout 
     if (!game) {
       const host=room.hostId===web.user?.id, me=room.members.find(m=>m.id===web.user?.id);
       y=top+34;
-      add('button','settings',count+' 人局 · '+(room.settings.anonymousTeamVote?'匿名表决':'公开表决')+' · '+(room.settings.voiceChatEnabled?'网页语音':'普通房')+' · 房间设置',10,y,w-20,30,{skin:'pill',fontSize:12});y+=38;
+      add('button','settings',count+' 人局 · '+(room.settings.anonymousTeamVote?'匿名表决':'公开表决')+' · '+(room.settings.voiceChatEnabled?'网页语音':'线下房')+' · 房间设置',10,y,w-20,30,{skin:'pill',fontSize:12});y+=38;
       add('label','ribbon','等待仙友入座 '+room.members.length+'/'+count,10,y-4,w-20,36);y+=32;
-      const cols=count>8?4:3, cellW=(w-28-(cols-1)*8)/cols, cellH=133;
+      const compact=count>=9,cols=count>=7?4:3,gap=compact?6:8,seatX=compact?12:14,cellW=(w-seatX*2-(cols-1)*gap)/cols,cellH=compact?120:133;if(compact)y-=2;
+      const seatLeft=(i:number)=>seatX+(i%cols)*(cellW+gap)+(Math.floor(i/cols)===Math.floor((count-1)/cols)?(cols-(count%cols||cols))*(cellW+gap)/2:0);
       for(let i=0;i<count;i++){
         const m=room.members.find(p=>p.seat===i+1);
-        add('seat',m?'member:'+m.id:'share',m?m.nickname+(m.id===web.user?.id?'（你）':''):'虚位以待',14+i%cols*(cellW+8),y+Math.floor(i/cols)*cellH,cellW,cellH,{skin:'waiting-seat',disabled:!!m,count:i+1,selected:!!m?.ready,selfPlayer:m?.id===web.user?.id,online:m?.online,badge:m?.id===room.hostId?'房主':host&&m?'踢出':undefined,detail:m?(m.ready?'✓ 已准备':'未准备'):'邀请仙友',image:m?(m.avatarUrl??m.wechatAvatarUrl??'emblems/'+(m.avatar??'cards')+'.png'):undefined});
+        add('seat',m?'member:'+m.id:'share',m?m.nickname+(m.id===web.user?.id?'（你）':''):'虚位以待',seatLeft(i),y+Math.floor(i/cols)*cellH,cellW,cellH,{skin:'waiting-seat',disabled:!!m,count:i+1,selected:!!m?.ready,selfPlayer:m?.id===web.user?.id,online:m?.online,badge:m?.id===room.hostId?'房主':host&&m?'踢出':undefined,detail:m?(m.ready?'✓ 已准备':'未准备'):'邀请仙友',image:m?(m.avatarUrl??m.wechatAvatarUrl??'emblems/'+(m.avatar??'cards')+'.png'):undefined});
       }
-      if(host)for(const m of room.members.filter(m=>m.id!==web.user?.id)){const i=m.seat-1;add('hitbox','member:'+m.id,'踢出',14+i%cols*(cellW+8)+cellW/2-24,y+Math.floor(i/cols)*cellH+7,48,17,{skin:'hitbox'});}
-      y+=Math.ceil(count/cols)*cellH+4;
+      if(host)for(const m of room.members.filter(m=>m.id!==web.user?.id)){const i=m.seat-1;add('hitbox','member:'+m.id,'踢出',seatLeft(i)+cellW/2-24,y+Math.floor(i/cols)*cellH+7,48,17,{skin:'hitbox'});}
+      y+=Math.ceil(count/cols)*cellH+(compact?0:4);
       const canStart=host&&room.members.length===count&&room.members.every(m=>m.ready);
       const naturalDockY=y+12,dockY=Math.min(naturalDockY,bottom-76),pinned=dockY<naturalDockY;
       add('panel','action-dock','',10,dockY,w-20,64,{fixed:pinned});
       const actions=[['ready',me?.ready?'取消取经':'✋ 出发取经'],...(room.settings.rolePreferenceEnabled?[['rolePreferences','🎭 心仪角色']]:[]),[canStart?'start':'practice',canStart?'📜 仙友齐聚 · 敕令发牌':'🐒 幻化分身试玩 ('+count+'人局)']];
       const aw=(w-40-8*(actions.length-1))/actions.length;
-      actions.forEach(([id,title],i)=>add('button',id!,title!,20+i*(aw+8),dockY+8,aw,48,{skin:'waiting-primary',selected:id==='ready'&&!!me?.ready,fixed:pinned}));
+      actions.forEach(([id,title],i)=>add('button',id!,title!,20+i*(aw+8),dockY+8,aw,48,{skin:'waiting-primary',fontSize:id==='ready'?cssClamp(14,w*.038,16):cssClamp(12,w*.034,14),selected:id==='ready'&&!!me?.ready,fixed:pinned}));
       y=naturalDockY+68;
       add('panel','waiting-tools','',10,y,w-20,44,{skin:'tabs'});
-      const unit=(w-54)/3.25;add('button','web:open',room.settings.voiceChatEnabled?'网页语音 · 去网页':'转到网页版',19,y+6,unit*1.25,32,{skin:'waiting-social',fontSize:11,lineHeight:32});
+      const unit=(w-54)/3.25;add('button',room.settings.voiceChatEnabled?'web:open':'noop',room.settings.voiceChatEnabled?'网页语音 · 去网页':'🏛️ 线下房',19,y+6,unit*1.25,32,{skin:room.settings.voiceChatEnabled?'waiting-social':'waiting-offline',disabled:!room.settings.voiceChatEnabled,fontSize:11,lineHeight:32});
       add('button','chat','💬 传音',27+unit*1.25,y+6,unit,32,{skin:'waiting-social',fontSize:12});add('button','friends','👥 仙友',35+unit*2.25,y+6,unit,32,{skin:'waiting-social',fontSize:12,count:web.friendRequests});y+=50;
       add('button','waiting:missions',(web.waitingMissionsExpanded?'▾':'▸')+' 五难人数与本局配置',10,y,w-20,70,{skin:'waiting-accordion',fontSize:13});y+=78;
       if(web.waitingMissionsExpanded){drawQuests(y);y+=questH+8;}
@@ -144,8 +157,10 @@ export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout 
     const wins = game?.rounds.filter(round => round.result?.passed).length ?? 0;
     const losses = game?.rounds.filter(round => round.result && !round.result.passed).length ?? 0;
     const blue = ROLE_CONFIG[count].filter(role => teamOf(role) === 'blue').length;
-    const scoreH = w < 360 ? 43 : 24;
-    const drawScore = (scoreY: number) => add('label', 'score', '⚔ 护经 ' + wins + ':' + losses + ' 群妖  ◇  ♨ 流局 ' + (game?.rejectionCount ?? 0) + '/5  ◇  👥 ' + count + '人局  ◇  仙' + blue + ' 妖' + (count - blue), boardX, scoreY, boardW, scoreH);
+    const scoreParts=['⚔ 护经 '+wins+':'+losses+' 群妖','◇','♨ 流局 '+(game?.rejectionCount??0)+'/5','◇','👥 '+count+'人局','◇','仙'+blue+' 妖'+(count-blue)];
+    const scoreWidths=scoreParts.map((text,i)=>i===6?measureWebText('仙'+blue+'妖'+(count-blue),11,'display')+6:i===2?measureWebText('♨',11,'system')+measureWebText(text.slice(1),11,'display'):measureWebText(text,11,i%2?'system':'display'));
+    const scoreH=scoreWidths.reduce((a,b)=>a+b,0)+48>boardW-12?43:24;
+    const drawScore = (scoreY: number) => add('label', 'score', '⚔ 护经 ' + wins + ':' + losses + ' 群妖  ◇  ♨ 流局 ' + (game?.rejectionCount ?? 0) + '/5  ◇  👥 ' + count + '人局  ◇  仙' + blue + ' 妖' + (count - blue), boardX, scoreY, boardW, scoreH,{detail:JSON.stringify({parts:scoreParts,widths:scoreWidths})});
     const selected = ['discussion','team_vote','guanyin_window','mission'].includes(game.phase) ? game.rounds.at(-1)?.team ?? [] : web.selectedIds ?? game.draftTeam?.playerIds ?? [];
     const captain = game?.players.find(player => player.id === game.captainId);
     const size = game?.missionSizes[(game?.mission ?? 1) - 1] ?? 0;
@@ -154,20 +169,22 @@ export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout 
     const phaseText = proposing ? (stage === 'proposing' ? '👑 队长【' : '🗣️ 论道中【') + (captain ? captain.seat + '号 ' + captain.nickname : '') + '】\n' + (stage === 'proposing' ? '正在点将' : '真假论道') + '（已选 ' + selected.length + '/' + size + '人）'
       : stage==='mission'?'⚔️ 取经出征中 · 已出牌 '+(game?.progress.missionVotes??0)+'/'+(game?.rounds.at(-1)?.team.length??0)+' 人':model.rows.find(row => row.id === 'status')?.text ?? '仙友齐聚，静候敕令发牌';
     add('label','current-round','第 '+game.mission+' 难 · '+size+' 人出征'+(game.failuresRequired>=2?' · 需2败':'')+'    护经 '+wins+':'+losses+' 群妖',12,y,w-24,30,{skin:'current-summary',fontSize:12});
-    const ribbonY = y + 34, ribbonH=proposing?47.8125:36;
+    const ribbonY = y + 34, ribbonH=proposing?Math.round(cssClamp(12.5,w*.034,15)*1.35*64)/32+12:36;
     const phaseSize=cssClamp(12.5,w*.034,15),ribbonW=stage==='mission'?Math.min(w-20,measureWebText(phaseText,phaseSize,'calligraphy')+textGraphemes(phaseText).length*.8+88):w-20;add('label','ribbon',phaseText,(w-ribbonW)/2,ribbonY,ribbonW,ribbonH,{fontSize:phaseSize,letterSpacing:stage==='mission'?.8:undefined});
-    const ended=Boolean(game?.result);
+    const ended=Boolean(game?.result);let resultHeroH=121;
     if(ended&&game){
       const role=game.revealedRoles?.[web.user?.id??''];const ownTeam=role?teamOf(role):web.ownTeam;
       const headline=game.result!.winner===null?'本局不计胜负':game.result!.winner===ownTeam?'本局胜利！':'本局失败';
       const guardian=game.revealedRoles?assignLoyalGuardians(game.id,game.players,game.revealedRoles,game.rulesetVersion):{};
       const demons=game.revealedRoles?assignFemaleDemons(game.id,game.players,game.revealedRoles):{};
       nodes.splice(nodes.findIndex(n=>n.id==='ribbon'),1);
-      add('label','result-hero',headline,10,ribbonY-2,w-20,120,{skin:'result-hero',team:game.result!.winner??undefined,
+      const self=role?formatRoleName(role,guardian[web.user?.id??''],demons[web.user?.id??''])+'（'+(ownTeam==='blue'?'蓝方':'红方')+'）':'';
+      resultHeroH=resultHeroGeometry(w-20,self,(reasons[game.result!.reason]??game.result!.reason)+'。').height;
+      add('label','result-hero',headline,10,ribbonY,w-20,resultHeroH,{skin:'result-hero',team:game.result!.winner??undefined,
         detail:JSON.stringify({won:game.result!.winner===ownTeam,self:role?formatRoleName(role,guardian[web.user?.id??''],demons[web.user?.id??''])+'（'+(ownTeam==='blue'?'蓝方':'红方')+'）':'',reason:reasons[game.result!.reason]??game.result!.reason,teams:['blue','red'].map(team=>({team,players:game.players.filter(p=>game.revealedRoles?.[p.id]&&teamOf(game.revealedRoles[p.id]!)===team).map(p=>p.seat+'号 '+p.nickname+' · '+formatRoleName(game.revealedRoles![p.id]!,guardian[p.id],demons[p.id]))}))})});
     }
     const resultExtra=ended&&w<=380&&!web.practice&&room.hostId===web.user?.id?11.1875:0;
-    const arenaTop = ended?ribbonY-2+120+138.6875+resultExtra:ribbonY + ribbonH + 4;
+    const arenaTop = ended?ribbonY+resultHeroH+134.6875+resultExtra:ribbonY + ribbonH + 4;
     const flankRows = Math.ceil(count / 2), cellH = Math.floor(cssClamp(38,v.height*.05,46)*64)/64, gap = 10;
     const avatarSize = 40;
     const flankH = flankRows * cellH + (flankRows - 1) * gap;
@@ -197,12 +214,12 @@ export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout 
         }
         add('altar','altar','☯',(10+arenaInset+rightEnd-altarW)/2,arenaTop + 15 + (flankH - altarW)/2,altarW,altarW,{ detail: (game?.draftTeam?.direction === 'counterclockwise' ? '⟲ 逆时针' : '⟳ 顺时针'), count: ended ? undefined : (game?.mission ?? 1) });
     const missionEligible=game?.phase==='mission'&&model.rows.some(row=>row.id==='mission-choice:success');
-    const missionRule='—◇ '+(game?.failuresRequired===2?'需至少 2 张失败牌，任务方告失败':'只要出现 1 张失败牌，任务即失败')+' ◇—',missionRuleLines=wrapText(missionRule,w-58,t=>measureWebText(t,13,'display')+Array.from(t).length-1),missionRuleExtra=missionEligible?(missionRuleLines.length-1)*16.890625:0;const utilityExtra=!ended&&w<=360?50:0;const dockY = arenaTop + arenaH + 4, dockH = (ended?68:missionEligible?220.890625+missionRuleExtra+(web.warning?44:0):w < 360 ? 170 : 154.890625)+utilityExtra;
+    const missionRule='—◇ '+(game?.failuresRequired===2?'需至少 2 张失败牌，任务方告失败':'只要出现 1 张失败牌，任务即失败')+' ◇—',missionRuleLines=wrapText(missionRule,w-58,t=>measureWebText(t,13,'display')+Array.from(t).length-1),missionRuleExtra=missionEligible?(missionRuleLines.length-1)*16.890625:0;const utilityExtra=!ended&&w<=360?50:0;const dockY = arenaTop + arenaH + 4, dockH = (ended?70:missionEligible?220.890625+missionRuleExtra+(web.warning?44:0):w < 360 ? 171.78125 : 154.890625)+utilityExtra;
     add('panel','action-dock','',10,dockY,w-20,dockH);
     const panelX = 20, panelW = w - 40, panelY = dockY + 8, panelH = dockH - 76 - utilityExtra;
     if(!ended)add('panel','dock-inner','',panelX,panelY,panelW,panelH);
     if(game?.result){
-      const ry=ribbonY+126;
+      const ry=ribbonY+resultHeroH+4;
       add('panel','result-actions','',10,ry,w-20,126.6875+resultExtra,{skin:'card'});
       add('label','result-summary',game.result.winner===null?'本局不计胜负':game.result.winner==='blue'?'蓝方获胜':'红方获胜',22,ry+12,w-44,25,{skin:'text',fontSize:18,fontFace:'display',tone:'gold',align:'left'});
       add('label','result-reason',reasons[game.result.reason]??'',22,ry+42,w-44,20,{skin:'text',fontSize:13,align:'left'});
@@ -218,10 +235,10 @@ export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout 
       const submit=model.rows.find(row=>row.id==='submitMission');
       add('button','submitMission',submit?.text??'确认提交任务牌',panelX+9,cardY+60+(web.warning?44:0),panelW-18,48,{skin:'dragon-button',primary:true,fontFace:'calligraphy',fontSize:cssClamp(13,w*.038,17),letterSpacing:.5,disabled:web.missionChoice===undefined});
     } else if (proposing && captain?.id === web.user?.id) {
-      add('label','dock-rule',stage === 'proposing' ? '—◇ 点击头像选人 · 预选阵容后进入论道 ◇—' : '—◇ 真假论道 · 听取陈述后发起表决 ◇—',panelX+9,panelY+7,panelW-18,16.890625);
+      add('label','dock-rule',stage === 'proposing' ? '—◇ 点击头像选人 · 预选阵容后进入论道 ◇—' : '—◇ 真假论道 · 听取陈述后发起表决 ◇—',panelX+9,panelY+7,panelW-18,w<360?33.78125:16.890625);
       const directionW=cssClamp(100,w*.28,118), controlsX=panelX+9, controlsW=panelW-18;
-      add('button','direction',(game?.draftTeam?.direction === 'counterclockwise' ? '逆时针' : '顺时针')+'发言',controlsX,panelY+23.890625,directionW,48);
-      add('button',stage === 'proposing' ? 'propose' : 'startTeamVote',stage === 'proposing' ? (selected.length===size?'确认阵容':'待选队员')+' ('+selected.length+'/'+size+')' : '锁定阵容 · 发起表决', controlsX+directionW+10,panelY+23.890625,controlsW-directionW-10,48,{ primary:true,disabled:selected.length!==size });
+      add('button','direction',(game?.draftTeam?.direction === 'counterclockwise' ? '逆时针' : '顺时针')+'发言',controlsX,panelY+23.890625+(w<360?14.828125:0),directionW,48);
+      add('button',stage === 'proposing' ? 'propose' : 'startTeamVote',stage === 'proposing' ? (selected.length===size?'确认阵容':'待选队员')+' ('+selected.length+'/'+size+')' : '锁定阵容 · 发起表决', controlsX+directionW+10,panelY+23.890625+(w<360?14.828125:0),controlsW-directionW-10,48,{ primary:true,disabled:selected.length!==size });
     } else {
       const actions=model.rows.filter(row => ['confirmRole','openVote','openMission','inspect','confirmInspection','assassinate','rematch',...(!game?['ready',...(room.hostId===web.user?.id?['start']:['practice'])]:[])].includes(row.id)).slice(0,2);
       if (actions.length) actions.forEach((action,index)=>add('button',action.id,action.text,panelX+10+index*(panelW-14)/actions.length,panelY+21,(panelW-20)/actions.length-4,48,{primary:true}));
@@ -232,12 +249,12 @@ export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout 
     const utility=game ? [...(!ended?[['role','真身'],['treasures','法宝']]:[['treasures','法宝']]),['history','取经录'],['chat','传音'],[web.practice?'practiceSeats':'guide',web.practice?'切换视角':'识妖谱'],...(!ended?[[web.practice?'exitPractice':room.hostId===web.user?.id?'endGame':'requestAbort',web.practice?'结束演练':room.hostId===web.user?.id?'结束':'申请结束']]:[])]
       : [['settings','房间设置'],['share','邀请仙友'],['chat','传音'],['friends','仙友']];
     const utilityCols=utilityExtra?3:utility.length,uw=(w-40-(utilityCols-1)*6)/utilityCols;
-    utility.forEach(([id,title],index)=>add('button',id!,title!,20+index%utilityCols*(uw+6),utilityY+Math.floor(index/utilityCols)*50,uw,44,{badge:'utility'}));
+    utility.forEach(([id,title],index)=>add('button',id!,title!,20+index%utilityCols*(uw+6),utilityY+Math.floor(index/utilityCols)*50,uw,44,{badge:'utility',disabled:id==='treasures'&&Boolean(game&&!treasureAccess(game,room.settings.treasuresEnabled).canOpen)}));
     const historyY=dockY+dockH+16.390625;
     add('label','mission-overview-heading','五难进度 · 点击任务查看记录',12,historyY,w-24,30,{skin:'current-summary',fontSize:12});
     drawQuests(historyY+41);
     drawScore(historyY+41+questH+8);
-    const maxScroll=Math.max(0,historyY+41+questH+8+scoreH+48-(v.height-v.bottom));
+    const maxScroll=Math.max(0,historyY+41+questH+8+scoreH+51.6875-(v.height-v.bottom));
     const scroll=Math.min(model.scroll??0,maxScroll);
     for(const node of nodes){node.fixed=false;node.y-=scroll;node.clipTop=v.top;node.clipBottom=v.height-v.bottom;}
     contentBottom=v.height-v.bottom;

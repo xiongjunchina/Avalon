@@ -28,7 +28,7 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
   const social=doc.kind==='friends'||doc.kind==='chat'&&doc.activeTab==='direct', socialPad=v.width<=380?17:23;
   const adminReplay=!!doc.adminReplay;
   const modal=!!doc.modal, width=adminReplay?Math.min(v.width-24,720):doc.kind==='art'?Math.min(v.width-32,v.width*.92,480):drawer?v.width:adminFriends?Math.min(v.width-40,500):sound?Math.min(v.width-44,420):modal?Math.min(doc.kind==='treasures'?v.width*.92:v.width-20,doc.kind==='guanyin-window'?450:doc.kind==='private-notice'?(doc.noticeKind==='jingu'?380:420):doc.kind==='treasures'?440:doc.kind==='identity'?500:doc.kind==='vote'?520:570):v.width;
-  const ox=(v.width-width)/2, pad=modal?(adminReplay?17:doc.profileEditing?17:doc.kind==='abort-confirm'?(v.width<=380?17:23):doc.kind==='guanyin-window'?17:doc.kind==='private-notice'?(doc.noticeKind==='bell'?21:doc.noticeKind==='jingu'?23:v.width<=360?15:1+clamp(16,v.width*.04,24)):doc.kind==='art'?22:adminFriends?19:doc.kind==='treasures'?17:auth?21:doc.kind==='presets'&&doc.presetEditing?21:preferences?13:sound?23:social?socialPad:doc.kind==='vote'?18:doc.kind==='report'?19:doc.kind==='special-editor'||doc.kind==='code-editor'?19:doc.kind==='history'?17:15):doc.kind==='guide'||doc.kind==='guide-role'?12:doc.kind==='replay'?31:18, x=ox+pad, w=width-pad*2;
+  const ox=(v.width-width)/2, pad=modal?(adminReplay?17:doc.profileEditing?17:doc.kind==='abort-confirm'?(v.width<=380?17:23):doc.kind==='guanyin-window'?17:doc.kind==='private-notice'?(doc.noticeKind==='bell'?21:doc.noticeKind==='jingu'?(v.width<=360?17:23):v.width<=360?15:1+clamp(16,v.width*.04,24)):doc.kind==='art'?22:adminFriends?19:doc.kind==='treasures'?17:auth?21:doc.kind==='presets'&&doc.presetEditing?21:preferences?13:sound?23:social?socialPad:doc.kind==='vote'?18:doc.kind==='report'?19:doc.kind==='special-editor'||doc.kind==='code-editor'?19:doc.kind==='history'?17:15):doc.kind==='guide'||doc.kind==='guide-role'?12:doc.kind==='replay'?31:18, x=ox+pad, w=width-pad*2;
   const top=v.top, bottom=v.height-v.bottom, available=bottom-top;
   let replayRoundEnd=0;
   let y=modal?(adminFriends?19:doc.kind==='treasures'?17:auth?21:sound?23:social?socialPad:doc.kind==='history'?17:13):18, headerH=39, footerH=0, bodyStart=0, bodyEnd=0;
@@ -41,7 +41,7 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
       let width=measure(t,size,props.fontFace,props.weight);
       if(props.emphasis?.length){const start=text.indexOf(t);if(start>=0)for(const span of props.emphasis){const at=text.indexOf(span.text),left=Math.max(start,at),right=Math.min(start+t.length,at+span.text.length);if(at>=0&&right>left){const part=text.slice(left,right);width+=measure(part,size,props.fontFace,span.weight??props.weight)-measure(part,size,props.fontFace,props.weight);}}}
       return width+Math.max(0,textGraphemes(t).length-1)*(props.letterSpacing??0);
-    };let lines=wrapText(text,pw,textWidth);if(!(doc.kind==='history'&&id==='dialog-title')&&props.fontFace==='display'&&lines.length>1&&lines.length<=6){const count=lines.length;let low=0,high=pw;for(let i=0;i<12;i++){const mid=(low+high)/2;if(wrapText(text,mid,textWidth).length<=count)high=mid;else low=mid;}lines=wrapText(text,high,textWidth);}if(id==='treasure-role-name'&&lines.length>1){for(let i=0;i<lines.length-1;i++)if(lines[i]!.trimEnd().endsWith('·')){lines[i]=lines[i]!.trimEnd().slice(0,-1).trimEnd();lines[i+1]='· '+lines[i+1]!.trimStart();}}const lh=props.lineHeight??size*1.5;
+    };let lines=wrapText(text,pw,textWidth);if(id!=='auth-title'&&!(doc.kind==='private-notice'&&id==='notice-title')&&!(doc.kind==='history'&&id==='dialog-title')&&props.fontFace==='display'&&lines.length>1&&lines.length<=6){const count=lines.length;let low=0,high=pw;for(let i=0;i<12;i++){const mid=(low+high)/2;if(wrapText(text,mid,textWidth).length<=count)high=mid;else low=mid;}lines=wrapText(text,high,textWidth);}if(id==='treasure-role-name'&&lines.length>1){for(let i=0;i<lines.length-1;i++)if(lines[i]!.trimEnd().endsWith('·')){lines[i]=lines[i]!.trimEnd().slice(0,-1).trimEnd();lines[i+1]='· '+lines[i+1]!.trimStart();}}const lh=props.lineHeight??size*1.5;
     return add('label',id,text,px,py,pw,Math.max(lh,lines.length*lh),{fontSize:size,lineHeight:lh,lines,align:'left',...props});
   };
   const panel=(id:string,py:number,ph:number,skin='card',px=x,pw=w)=>add('panel',id,'',px,py,pw,ph,{skin});
@@ -123,12 +123,12 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
   };
   const game=doc.game;
   if(auth){
-    const switching=model.web!.authMode==='switch';add('label','auth-title',switching?'找回原来的仙友身份':'取个朋友认识的昵称',x,y,w-50,30,{skin:'text',fontSize:22,fontFace:'display',tone:'gold',align:'left',fixed:true});button(model.web!.backId??'authClose','关闭',y,{skin:'pill',fontSize:12,fixed:true},x+w-42,42,32);y+=42;add('label','auth-rule','',x,y,w,1,{skin:'rule',fixed:true});y+=11.5;bodyStart=y;
+    const switching=model.web!.authMode==='switch';const authTitle=txt('auth-title',switching?'找回原来的仙友身份':'取个朋友认识的昵称',y,22,{fontFace:'display',tone:'gold',align:'left',fixed:true,lineHeight:33},x,w-56);button(model.web!.backId??'authClose','关闭',y+Math.max(0,(authTitle.height-32)/2),{skin:'pill',fontSize:12,fixed:true},x+w-42,42,32);y+=Math.max(42,authTitle.height+9);add('label','auth-rule','',x,y,w,1,{skin:'rule',fixed:true});y+=11.5;bodyStart=y;
     const intro=txt('auth-intro','填好玩家昵称后继续创建房间。',y,14.5,{lineHeight:21.75});y+=intro.height+12;
     for(const account of model.web!.knownAccounts??[]){button('known:'+account.playerCode,account.nickname+'  #'+account.playerCode+' · 继续',y,{skin:'pill'});y+=48;}
     button('auth:create','第一次玩 · 取昵称',y,{skin:'auth-tab',selected:!switching,fontSize:14},x,(w-8)/2,44);button('auth:switch','已有仙友码',y,{skin:'auth-tab',selected:switching,fontSize:14},x+(w+8)/2,(w-8)/2,44);y+=56;
     txt('auth-label',switching?'原账号的 6 位仙友码':'玩家昵称（大家怎么称呼你）',y,16);y+=32;
-    button(switching?'input:switch':'input:nickname',switching?model.web!.switchCode||'例如：123456':model.web!.nickname||'例如：小陈、阿辉',y,{skin:'input',fontSize:16},x,w,50);y+=60;
+    button(switching?'input:switch':'input:nickname',switching?model.web!.switchCode||'例如：123456':model.web!.nickname||'例如：小陈、阿辉',y,{skin:'input',fontSize:16,muted:switching?!model.web!.switchCode:!model.web!.nickname},x,w,50);y+=60;
     const hint=txt('auth-note',switching?'输入仙友码即可找回原账号，继续使用原昵称、头像和战绩。':'填朋友认识的称呼，别填房间号；仙友码由系统自动分配。',y,14.5,{lineHeight:21.75});y+=hint.height+14;
     button('login',switching?'找回账号，继续游戏':model.web!.authIntent==='create'?'取好昵称，创建房间':model.web!.authIntent==='join'?'取好昵称，加入房间':'取好昵称，继续游戏',y,{skin:'waiting-primary',fontSize:18,disabled:switching?!/^\d{6}$/.test(model.web!.switchCode??''):!model.web!.nickname?.trim()},x,w,50);y+=57.5;bodyEnd=y;
   }else if(adminFriends){
@@ -199,11 +199,11 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
       if(d.history.nextCursor){button('special:more','加载更多分配记录',y,{skin:'admin-tool'},ax+18,aw-36,38);y+=50;}y+=12;historyPanel.height=y-historyPanel.y;
     }else if(model.web?.activeTab==='page:rooms'||model.web?.activeTab==='page:games'){
       const frame=panel('admin-rooms-panel',y,1,'admin-card',ax,aw);y+=19;
-      const historyLabel='📜 历史对局归档 ('+(doc.adminGames?.length??0)+')',activeLabel='⚡ 未关闭房间 ('+(doc.adminRooms?.length??0)+')',activeWidth=measure(activeLabel,12.5,'system','700')+24,historyWidth=measure(historyLabel,12.5,'system','700')+24,titleWidth=Math.max(25,aw-38-activeWidth-historyWidth-8);
-      const titleText='🏛️ 法坛对局监控',titleMeasure=(value:string)=>measure(value,16,'display'),lineCount=wrapText(titleText,titleWidth,titleMeasure).length;
+      const historyLabel='📜 历史对局归档 ('+(doc.adminGames?.length??0)+')',activeLabel='⚡ 未关闭房间 ('+(doc.adminRooms?.length??0)+')',activeWidth=measure(activeLabel,12.5,'system','700')+24,historyWidth=measure(historyLabel,12.5,'system','700')+24,titleWidth=Math.max(22.46875,aw-38-activeWidth-historyWidth-8);
+      const titleText='🏛️ 法坛对局监控',titleMeasure=(value:string)=>measure(value,16,'display','700')+Math.max(0,textGraphemes(value).length-1)*.5,lineCount=wrapText(titleText,titleWidth,titleMeasure).length;
       let low=16,high=titleWidth;for(let i=0;i<12;i++){const mid=(low+high)/2;if(wrapText(titleText,mid,titleMeasure).length<=lineCount)high=mid;else low=mid;}
       const titleLines=wrapText(titleText,high,titleMeasure).map(line=>line.trim()),heading=add('label','admin-rooms-title',titleText,ax+19,y,titleWidth,titleLines.length*16+5,{skin:'admin-room-heading',fontFace:'display',fontSize:16,lines:titleLines}),headH=Math.max(28,heading.height);
-      button('page:rooms',activeLabel,y+(headH-28)/2,{skin:'admin-tool',fontSize:12.5},ax+aw-19-historyWidth-8-activeWidth,activeWidth,28);button('page:games',historyLabel,y+(headH-28)/2,{skin:'admin-tool',fontSize:12.5},ax+aw-19-historyWidth,historyWidth,28);y+=headH+16;
+      const tabsX=ax+19+titleWidth,tabsMax=Math.max(0,tabsX+activeWidth+8+historyWidth-v.width),tabsScroll=Math.min(tabsMax,Math.max(0,model.horizontalScroll??0)),tabProps={skin:'admin-tool',fontSize:12.5,clipLeft:tabsX,clipRight:v.width,scrollMaxX:tabsMax};button('page:rooms',activeLabel,y+(headH-28)/2,tabProps,tabsX-tabsScroll,activeWidth,28);button('page:games',historyLabel,y+(headH-28)/2,tabProps,tabsX+activeWidth+8-tabsScroll,historyWidth,28);y+=headH+16;
       if(model.web.activeTab==='page:rooms'){
         if(!doc.adminRooms?.length){txt('admin-rooms-empty','当前没有未关闭的法坛房间',y+20,13,{tone:'muted',align:'center'},ax+18,aw-36);y+=76;}
         for(const r of doc.adminRooms??[]){
@@ -218,10 +218,12 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
         if(!doc.adminGames?.length){txt('admin-games-empty','暂无历史对局数据',y+20,13,{tone:'muted',align:'center'},ax+18,aw-36);y+=76;}
         for(const g of doc.adminGames??[]){
           const start=y,card=panel('admin-game:'+g.id,y,1,'admin-user-card',ax+19,aw-38),px=ax+34,cw=aw-68;
-          txt('admin-game-title:'+g.id,'房间 #'+g.roomCode+' ('+g.playerCount+'人局)',y+13,13,{weight:'700'},px,cw*.6);
-          txt('admin-game-winner:'+g.id,g.winner==='blue'?'蓝方 · 取经正果':g.winner==='red'?'红方 · 群妖乱道':'平局/中止',y+13,13.5,{weight:'700',tone:g.winner==='red'?'red':g.winner==='blue'?'blue':'muted',align:'right'},px+cw*.6,cw*.4);y+=41;
-          add('label','admin-game-rule:'+g.id,'',px,y,cw,1,{skin:'admin-rule'});y+=6;
-          for(const [key,value] of [['reason','结案原因：'+(g.reason||'—')],['ended','结束时间：'+(g.endedAt?new Date(g.endedAt).toLocaleString('zh-CN'):'—')],['id','对局ID：'+g.id]]){const n=txt('admin-game-'+key+':'+g.id,value!,y,key==='id'?11:12,{tone:key==='id'?'gold':'muted',lineHeight:18},px,cw);y+=n.height+3;}
+          const title='房间 #'+g.roomCode,suffix='('+g.playerCount+'人局)',winner=g.winner==='blue'?'蓝方 · 取经正果':g.winner==='red'?'红方 · 群妖乱道':'平局/中止',titleNatural=measure(title,16,'system','700')+5+measure(suffix,14,'sans'),winnerNatural=measure(winner,13.5,'system','700'),leftW=Math.min(titleNatural,cw*titleNatural/(titleNatural+winnerNatural)),rightW=Math.min(winnerNatural,cw-leftW),titleWrapped=titleNatural>leftW+.1,titleH=titleWrapped?42:21,winnerLines=wrapText(winner,rightW,t=>measure(t,13.5,'system','700')),winnerH=winnerLines.length*19,headH=Math.max(titleH,winnerH);
+          txt('admin-game-title:'+g.id,title,y+13+(headH-titleH)/2,16,{weight:'700',lineHeight:21},px,leftW);
+          txt('admin-game-count:'+g.id,suffix,y+13+(headH-titleH)/2+(titleWrapped?21:1),14,{fontFace:'sans',tone:'muted',lineHeight:20},titleWrapped?px:px+measure(title,16,'system','700')+5,titleWrapped?leftW:measure(suffix,14,'sans')+.1);
+          txt('admin-game-winner:'+g.id,winner,y+13+(headH-winnerH)/2,13.5,{weight:'700',tone:g.winner==='red'?'red':g.winner==='blue'?'blue':'muted',align:'right',lineHeight:19,lines:winnerLines},px+cw-rightW,rightW);y+=13+headH+8;
+          add('label','admin-game-rule:'+g.id,'',px,y,cw,1,{skin:'admin-rule'});y+=7;
+          for(const [key,value] of [['reason','结案原因：'+(g.reason||'—')],['ended','结束时间：'+(g.endedAt?new Date(g.endedAt).toLocaleString('zh-CN'):'—')],['id','对局ID：'+g.id]]){const n=txt('admin-game-'+key+':'+g.id,value!,y,key==='id'?11:12,{fontFace:key==='id'?'mono':'system',tone:key==='id'?'gold':'muted',lineHeight:16},px,cw);y+=n.height+3;}
           y+=3;add('label','admin-game-end-rule:'+g.id,'',px,y,cw,1,{skin:'admin-rule'});y+=9;
           button('replay:'+g.id,'🔍 查看本局完整复盘',y,{skin:'admin-primary',fontSize:14},px,cw,37);y+=50;card.height=y-start;y+=10;
         }
@@ -524,15 +526,15 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
     }
     bodyEnd=y;
   } else if(doc.kind==='treasures'&&doc.self&&game){
-    modalHeader('📿 本命法宝 · 仙家神兵');y+=6;
+    modalHeader('📿 本命法宝 · 仙家神兵');y+=6;bodyStart=y;
     const self=doc.self,t=self.treasures,disabled=model.rows.find(r=>r.id==='treasure-disabled'||r.id==='empty');
     if(disabled&&self.role!=='assassin'&&(!t?.enabled||t.disabledReason==='guardian_perks'||game.players.length<8)){const card=panel('treasure-empty',y,1,'card');txt('treasure-empty-icon','🏮',y+18,36,{align:'center'});txt('treasure-empty-title','仙家法宝 · 隐而不出',y+78,18,{fontFace:'display',tone:'gold',align:'center'});const hint=txt('treasure-empty-description',disabled.id==='treasure-disabled'?disabled.text:game.players.length<8?'专属法宝需至少 8 人且房间开启法宝模式。红孩儿仍可使用刺客神兵。':'当前房间未开启【8-12人专属法宝模式】。唯有红孩儿可在终局刺杀阶段祭出火尖枪。',y+112,13,{tone:'muted',align:'center'},x+18,w-36);y=hint.y+hint.height+24;card.height=y-card.y;}
     else{
       const copy=webTreasureCopy[self.role],card=panel('treasure-role-card',y,1,'treasure-card');
-      const headerW=w-30,badgeNatural=measure(copy.badge,11,'sans','700')+18,titleNatural=measure(copy.title,16,'display','700')+textGraphemes(copy.title).length*.5,shrink=Math.min(1,headerW/(badgeNatural+titleNatural)),badgeW=badgeNatural*shrink,titleW=headerW-badgeW;
+      const headerW=w-30,badgeNatural=measure(copy.badge,11,'sans','700')+18,titleNatural=measure(copy.title,16,'display','700')+textGraphemes(copy.title).length*.5,shrink=Math.min(1,headerW/(badgeNatural+titleNatural)),badgeW=badgeNatural*shrink,titleW=Math.min(titleNatural,headerW-badgeW);
       const badgeLines=wrapText(copy.badge,badgeW-18,t=>measure(t,11,'sans','700')),titleLines=wrapText(copy.title,titleW,t=>measure(t,16,'display','700')+textGraphemes(t).length*.5),badgeH=badgeLines.length*16+6,headingH=Math.max(badgeH,titleLines.length*20.8);
       add('label','treasure-badge',copy.badge,x+15,y+15+(headingH-badgeH)/2,badgeW,badgeH,{skin:'treasure-badge',fontSize:11,lines:badgeLines,lineHeight:16});
-      txt('treasure-role-name',copy.title,y+15+(headingH-titleLines.length*20.8)/2,16,{fontFace:'display',weight:'700',tone:'gold',align:'left',letterSpacing:.5,lineHeight:20.8},x+15+badgeW,titleW);
+      txt('treasure-role-name',copy.title,y+15+(headingH-titleLines.length*20.8)/2,16,{fontFace:'display',weight:'700',tone:'gold',align:'left',letterSpacing:.5,lineHeight:20.8},x+15+headerW-titleW,titleW);
       add('label','treasure-header-rule','',x+15,y+24+headingH,w-30,1,{skin:'rule'});
       const [intro,...notes]=(copy.description||roleTreasures[self.role]).split('\n');
       const description=txt('treasure-role-description',intro!,y+34+headingH,self.role==='minion'?14:13,{lineHeight:self.role==='minion'?21.7:20.15,tone:'muted'},x+15,w-30);y=description.y+description.height;
@@ -891,11 +893,11 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
   if(modal) {
     const identity=doc.kind==='identity',profile=doc.kind==='account'&&doc.profileEditing,preset=doc.kind==='presets'&&doc.presetEditing,report=doc.kind==='report';
     const intrinsic=doc.kind==='art'||preferences?bodyEnd:profile?bodyEnd+94:identity?bodyEnd+footerH+17:preset||report?bodyEnd+footerH+23:y+(doc.kind==='code-editor'||adminFriends?19:sound?13:social?socialPad:13);
-    const h=doc.kind==='art'?Math.min(available*.94,760,intrinsic):adminFriends?Math.min(available*.8,intrinsic):preferences?Math.min(available*.88,620):doc.kind==='history'?Math.min(available-20,Math.max(Math.min(available*.82,760),intrinsic)):Math.min(drawer?available*.6:available-(identity?24:28),intrinsic),fy=drawer?bottom-h:top+(available-h)/2-(adminFriends?10:0);
+    const h=doc.kind==='treasures'?Math.min(intrinsic,bodyStart+available*.65+17):doc.kind==='art'?Math.min(available*.94,760,intrinsic):adminFriends?Math.min(available*.8,intrinsic):preferences?Math.min(available*.88,620):doc.kind==='history'?Math.min(available-20,Math.max(Math.min(available*.82,760),intrinsic)):Math.min(drawer?available*.6:available-(identity?24:28),intrinsic),fy=drawer?bottom-h:top+(available-h)/2-(adminFriends?10:0);
     const frame=add('panel','dialog-frame','',ox,fy,width,h,{team:doc.roleItem?.team,skin:doc.kind==='guanyin-window'?'mirror-frame':doc.kind==='private-notice'?(doc.noticeKind==='jingu'?'jingu-frame':'notice-frame'):profile?'profile-frame':doc.kind==='art'?'art-frame':adminFriends?'admin-card':auth?'auth-frame':sound?'sound-frame':doc.kind==='treasures'?'treasure-frame':doc.kind==='special-editor'||doc.kind==='code-editor'?'admin-card':doc.kind==='preferences'?'preference-frame':doc.kind==='vote'?'vote-frame':'dialog-frame',fixed:true});
     nodes.splice(nodes.indexOf(frame),1);nodes.unshift(frame);
     const maxScroll=Math.max(0,intrinsic+(preferences?footerH:0)-h),scroll=Math.min(model.scroll??0,maxScroll);
-    const clipTop=fy+(doc.kind==='special-editor'?1:(bodyStart||12)+(preset?16:0)),clipBottom=fy+h-(preferences?footerH:profile?94:identity||preset||report?footerH+17:12);
+    const clipTop=fy+(doc.kind==='special-editor'?1:(bodyStart||12)+(preset?16:0)),clipBottom=fy+h-(preferences?footerH:profile?94:identity||preset||report?footerH+17:doc.kind==='treasures'?17:12);
     for(const node of nodes){if(node===frame)continue;node.y+=fy;if(node.fixed||identity&&node.y<fy+bodyStart){node.fixed=true;}else {node.y-=scroll;node.clipTop=clipTop;node.clipBottom=clipBottom;}}
     if(doc.kind==='history'){const nav=nodes.find(n=>n.id==='round-navigation');if(nav){const delta=Math.max(clipTop,nav.y)-nav.y;nav.y+=delta;nav.fixed=true;for(const n of nodes.filter(n=>n.id.startsWith('round-jump:'))){n.y+=delta;n.fixed=true;}}}
     if(preferences){const fyButtons=fy+h-47;add('label','pref-footer-rule','',ox+1,fy+h-55,width-2,1,{skin:'rule',fixed:true});button(model.web!.backId??'back','取消',fyButtons,{skin:'preference-cancel',fixed:true},x,(w-8)/2.6,38);button('prefSave',doc.preferences?.length?'确认出战偏好 ('+doc.preferences.length+'/3)':'盲选出战 (不设偏好)',fyButtons,{skin:'preference-submit',fixed:true,disabled:doc.preferencesDisabled},x+(w-8)/2.6+8,(w-8)*1.6/2.6,38);}

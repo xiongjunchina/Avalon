@@ -1,3 +1,4 @@
+import {parityFixture} from '../scripts/parity-fixture.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { defaultSettings } from '@avalon/contracts';
@@ -113,4 +114,25 @@ test('narrow live docks keep all six utility actions in two reachable rows', asy
  const {parityFixture}=await import('../scripts/parity-fixture.js');const {gameScreen}=await import('../src/screens/game.js');
  const {room,user}=parityFixture();const model=gameScreen(room,user,{privateRoleVisible:false,ballotVisible:false,selectedIds:[]});
  for(const width of [320,360]){const layout=layoutWebScreen(model,{width,height:568,top:0,bottom:0}),buttons=layout.nodes.filter(n=>n.badge==='utility');assert.equal(buttons.length,6);assert.equal(new Set(buttons.map(n=>n.y)).size,2);for(const b of buttons)assert.ok(b.width>=80);}
+});
+
+test('waiting rooms use the web four-column layout and center incomplete final rows',()=>{
+ const viewport={width:390,height:844,top:0,bottom:0};
+ for(const count of [5,6,7,8,9,10,11,12]){
+ const {room,user}=parityFixture('lobby',count),nodes=layoutWebScreen(lobbyScreen({...room,game:undefined},user),viewport).nodes,seats=nodes.filter(n=>n.kind==='seat'),columns=count>=7?4:3;
+ assert.equal(seats.filter(n=>n.y===seats[0]!.y).length,columns);
+ const last=seats.filter(n=>n.y===seats.at(-1)!.y);assert.ok(Math.abs((last[0]!.x+last.at(-1)!.x+last.at(-1)!.width)/2-viewport.width/2)<.01);
+ if(count>=9)assert.equal(seats[4]!.y-seats[0]!.y,120);
+ }
+});
+
+
+test('narrow results wrap the role below the headline without shrinking the headline or covering result actions',async()=>{
+ const {gameScreen}=await import('../src/screens/game.js');
+ const {room,user}=parityFixture('result',6),model=gameScreen(room,user,{privateRoleVisible:false,ballotVisible:false});
+ const small=layoutWebScreen(model,{width:320,height:568,top:0,bottom:0}).nodes,wide=layoutWebScreen(model,{width:390,height:844,top:0,bottom:0}).nodes;
+ assert.equal(small.find(n=>n.id==='result-hero')!.height,173.75);
+ assert.equal(wide.find(n=>n.id==='result-hero')!.height,121);
+ assert.equal(small.find(n=>n.id==='treasures')!.disabled,true);
+ assert.ok(small.find(n=>n.id==='result-actions')!.y>=small.find(n=>n.id==='result-hero')!.y+173.75);
 });

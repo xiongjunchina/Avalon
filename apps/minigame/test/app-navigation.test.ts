@@ -18,7 +18,7 @@ test('built client logs in, opens a clean join form and creates the selected web
   const user = { id: '11111111-1111-4111-8111-111111111111', nickname: '行者', playerCode: '123456' };
   const storage = new Map(), requests: { path: string; data: any }[] = [];
   let frame: { text: string; x: number; y: number }[] = [];
-  const ctx = new Proxy({}, { get: (_target, key) => key === 'createLinearGradient' ? () => ({ addColorStop() {} })
+  const ctx = new Proxy({}, { get: (_target, key) => (key === 'createLinearGradient' || key === 'createRadialGradient') ? () => ({ addColorStop() {} })
     : key === 'measureText' ? (text: string) => ({ width: Array.from(text).reduce((sum, char) => sum + (/[^\u0020-\u007e]/.test(char) ? 1 : .6) * (Number(/([\d.]+)px/.exec(String((_target as any).font))?.[1]) || 12), 0) })
     : key === 'fillRect' ? (x: number, y: number, w: number, h: number) => { if (x === 0 && y === 0 && w === 390 && h === 844) frame = []; }
     : key === 'fillText' ? (text: string, x: number, y: number) => frame.push({ text, x, y })
