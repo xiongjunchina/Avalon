@@ -89,4 +89,6 @@ test('built client logs in, opens a clean join form and creates the selected web
   await tap('确认阵容 (2/2)');
   assert.deepEqual(commands.find(command => command.type === 'proposeTeam')?.payload.playerIds, room.game.players.slice(0,2).map((player: any) => player.id));
   assert.equal(room.game.phase, 'discussion');
+  socketMessage({data:JSON.stringify({type:'roomChat',messageId:'public-chat',fromUserId:user.id,nickname:user.nickname,seat:1,text:'我来带队',timestamp:new Date().toISOString()})});await settle();
+  assert.ok(frame.some(item=>item.text==='我来带队'),'public chat must appear over the player seat');
 });

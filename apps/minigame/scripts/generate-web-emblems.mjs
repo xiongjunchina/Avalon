@@ -15,6 +15,8 @@ const page=await browser.newPage();
 const out = join(root, 'apps/minigame/assets/emblems');
 await mkdir(out, { recursive: true });
 try{for (const [name, component, color] of [
+  ['cards-cyan',React.createElement(Emblem,{kind:'cards'}),'#b6f5ff'],
+  ...['left','right'].flatMap(side=>[['cloud-brown-'+side,React.createElement(CloudFlourish,{side}),'#78350f'],['cloud-disabled-'+side,React.createElement(CloudFlourish,{side}),'#5a260e']]),
   ['blue-faction',React.createElement(Emblem,{kind:'blue'}),'#b9e2ed'],
   ['red-faction',React.createElement(Emblem,{kind:'red'}),'#f0bea8'],
   ['imperial-crown',React.createElement(ImperialDragonCrown)],
@@ -25,7 +27,7 @@ try{for (const [name, component, color] of [
   ...['cards', 'leaf', 'moon', 'sun', 'mountain', 'wave', 'star', 'blue', 'red', 'crown', 'chronicle'].map(kind => [kind, React.createElement(Emblem, { kind })]),
 ]) {
   const svg = renderToStaticMarkup(component).replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" color="'+(color??'#ffd875')+'" ').replace(/style="transform:[^"]+"/g, '');
-  const dimensions=name.startsWith('ruyi')?[200,240]:name==='imperial-crown'?[144,90]:name.startsWith('cloud-')||name.startsWith('dragon-')?[280,160]:[192,192];
+  const dimensions=name.startsWith('ruyi')?[200,230]:name==='imperial-crown'?[144,90]:name.startsWith('cloud-')||name.startsWith('dragon-')?[280,160]:[192,192];
   const png=await page.evaluate(async({svg,dimensions,flip})=>{const canvas=document.createElement('canvas');[canvas.width,canvas.height]=dimensions;const ctx=canvas.getContext('2d'),img=new Image();img.src='data:image/svg+xml;base64,'+btoa(unescape(encodeURIComponent(svg)));await img.decode();const scale=Math.min(canvas.width/img.width,canvas.height/img.height);if(flip){ctx.translate(canvas.width,0);ctx.scale(-1,1);}ctx.drawImage(img,(canvas.width-img.width*scale)/2,(canvas.height-img.height*scale)/2,img.width*scale,img.height*scale);return canvas.toDataURL('image/png').split(',')[1];},{svg,dimensions,flip:name.endsWith('-right')});
   await writeFile(join(out,name+'.png'),Buffer.from(png,'base64'));
 }}finally{await browser.close();}

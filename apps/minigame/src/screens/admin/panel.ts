@@ -75,8 +75,7 @@ export class AdminPanel {
     if(page==='special'){await this.special.load();return;}
     if (page === 'overview') { const data = await this.api.overview(); if (epoch === this.loadEpoch) this.overviewData = data; }
     else if (page === 'users') { const result = await this.api.users(this.query, 0); if (epoch === this.loadEpoch) { this.usersData = result.users; this.userTotal = result.total; } }
-    else if (page === 'rooms') { const result = await this.api.rooms(); if (epoch === this.loadEpoch) this.roomsData = result.rooms; }
-    else if (page === 'games') { const result = await this.api.games(0); if (epoch === this.loadEpoch) { this.gamesData = result.games; this.moreGames = result.games.length === 20; } }
+    else if (page === 'rooms'||page === 'games') { const [rooms,games]=await Promise.all([this.api.rooms(),this.api.games(0)]);if(epoch===this.loadEpoch){this.roomsData=rooms.rooms;this.gamesData=games.games;this.moreGames=games.games.length===20;} }
     else if (page === 'codes') { const result = await this.api.codes(); if (epoch === this.loadEpoch) this.codesData = result.codes; }
     else if (page === 'settings') { const data = await this.api.settings() as Settings; if (epoch === this.loadEpoch){this.settingsData=data;this.rewardDraft=data.adRewardHours;this.announcementDraft={...data.announcement};} }
   }

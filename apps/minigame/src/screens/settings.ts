@@ -30,3 +30,16 @@ export function toggleSetting(settings: Settings, key: keyof Settings): Settings
     return { ...settings, [key]: !settings[key] };
   return settings;
 }
+
+export const settingOptions = {
+ captainMode:[['seat_order','按座位循环'],['random_order','开局打乱一次，整局循环']],
+ rejectionScope:[['game','全局累计，5 次判负'],['mission','单次任务累计，5 次判负']],
+ voiceChatEnabled:[['false','🏛️ 线下常规房（无语音，聚会面杀）'],['true','🎙️ 远端语音房（声网实时语音）']],
+} as const;
+export type SettingChoiceKey=keyof typeof settingOptions;
+export class SettingsChoice {
+ current?:{id:string;key:SettingChoiceKey;value:string};
+ open(id:string,settings:Settings){const key=id.split(':').at(-1) as SettingChoiceKey;if(!(key in settingOptions))return false;this.current={id,key,value:String(settings[key])};return true;}
+ choose(value:string){const current=this.current;this.current=undefined;if(!current||!settingOptions[current.key].some(o=>o[0]===value)||value===current.value)return;return current.id;}
+ close(){this.current=undefined;}
+}

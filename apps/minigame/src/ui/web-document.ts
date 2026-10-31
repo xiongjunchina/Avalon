@@ -2,6 +2,7 @@ import type { PlayerCodeAvailability, PlayerCodeAllocation, DedicatedRoom, Playe
 import type { RoleGalleryItem } from '../../../web/src/roles.js';
 
 export interface WebDocument {
+  settingChoice?:{id:string;key:"captainMode"|"rejectionScope"|"voiceChatEnabled";value:string};
   kind: 'admin-friends' | 'code-editor' | 'auth' | 'special-editor' | 'sound' | 'preferences' | 'identity' | 'vote' | 'treasures' | 'report' | 'history' | 'art' | 'confirm' | 'tools' | 'account' | 'presets' | 'friends' | 'chat' | 'guide' | 'guide-role' | 'admin' | 'replay' | 'settings';
   playerCodeEditor?:{user:AdminUserSummary;code:string;currentCode:string;check?:PlayerCodeAvailability;history:PlayerCodeAllocation[];expanded:boolean;notice:string};
   specialDraft?:{id?:string;code:string;name:string;managerCode:string;settings:Settings;password?:string|null};

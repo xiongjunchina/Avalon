@@ -10,6 +10,7 @@ const height=width===320?568:width===390?844:932;
 const out=join(root,'dist/web-parity-review'+suffix);await mkdir(out,{recursive:true});
 const browser=await chromium.launch({headless:true,...(process.env.MINIGAME_CHROMIUM_PATH?{executablePath:process.env.MINIGAME_CHROMIUM_PATH}:{})});
 const checks=[],coverage=[];
+const normalized=text=>text.replace(/\s+/gu,'');
 try {
   for(const scene of (process.env.PARITY_SCENES?.split(',')??['entry','game'])) {
     const web=JSON.parse(await readFile(join(root,'dist/web-reference'+suffix,scene+'-'+width+'.json'),'utf8'));
@@ -20,8 +21,8 @@ try {
       const error=Math.max(...['x','y','width','height'].map(k=>Math.abs(a[k]-b[k])));
       checks.push({scene,id,maxGeometryErrorPx:error});assert.ok(error<1,id+' geometry drift: '+error);
     }
-    const comparable=native.nodes.filter(n=>n.kind==='button'&&n.text&&n.y>=0&&n.y+n.height<=height&&web.some(w=>w.tag==='BUTTON'&&w.text===n.text));
-    const differences=comparable.flatMap(n=>{const candidates=web.filter(w=>w.tag==='BUTTON'&&w.text===n.text);const best=candidates.reduce((a,b)=>Math.abs(a.y-n.y)<Math.abs(b.y-n.y)?a:b);const error=Math.max(...['x','y','width','height'].map(k=>Math.abs(n[k]-best[k])));return error>1?[{id:n.id,text:n.text,error}]:[];});
+    const comparable=native.nodes.filter(n=>n.kind==='button'&&n.text&&n.y>=0&&n.y+n.height<=height&&web.some(w=>w.tag==='BUTTON'&&normalized(w.text)===normalized(n.text)));
+    const differences=comparable.flatMap(n=>{const candidates=web.filter(w=>w.tag==='BUTTON'&&normalized(w.text)===normalized(n.text));const best=candidates.reduce((a,b)=>Math.abs(a.y-n.y)<Math.abs(b.y-n.y)?a:b);const error=Math.max(...['x','y','width','height'].map(k=>Math.abs(n[k]-best[k])));return error>1?[{id:n.id,text:n.text,error}]:[];});
     coverage.push({scene,width,players,position:process.env.PARITY_BOTTOM==='1'?'bottom':'top',generated:true,viewed:false,passed:false,assertions:pairs.length,matchedButtons:comparable.length,differences,status:comparable.length||pairs.length?'needs-visual-review':'uncovered'});
     const left=(await readFile(join(root,'dist/web-reference'+suffix,scene+'-'+width+'.png'))).toString('base64');
     const right=(await readFile(join(root,'dist/minigame-preview'+suffix,scene+'-'+width+'.png'))).toString('base64');

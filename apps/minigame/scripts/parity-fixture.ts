@@ -3,6 +3,7 @@ import { createGame, projectGame, MISSION_SIZES } from '@avalon/game-core';
 
 // Deterministic, local-only fixture shared by both screenshot renderers.
 export function parityFixture(scene = 'game',playerCount=6) {
+  const publicReport=scene==='report-public';if(publicReport)scene='report';
   let user = { id: '11111111-1111-4111-8111-111111111111', nickname: '行者', playerCode: '123456', avatar: 'leaf' as const };
   const members = Array.from({ length: playerCount }, (_, index) => ({ id: index ? '00000000-0000-4000-8000-' + String(index).padStart(12, '0') : user.id, nickname: index ? '仙友' + index : user.nickname, seat: index + 1, ready: true, online: true, ...(index ? {} : { avatar: 'leaf' as const }) }));
   const settings={...defaultSettings,playerCount,...(scene==='preferences'?{rolePreferenceEnabled:true}:{}),...(scene.startsWith('treasures-')?{treasuresEnabled:true,guardianPerksEnabled:false}:{})};
@@ -25,6 +26,7 @@ export function parityFixture(scene = 'game',playerCount=6) {
     if(t.jinguSeal)t.jinguSeal={used:true,available:false};
     if(t.bananaFan)t.bananaFan={used:true,available:false,armed:false};
   }
+  if(publicReport){room.settings.anonymousTeamVote=false;room.game.rounds[0]!.vote!.ballots=Object.fromEntries(members.map((m,i)=>[m.id,i<playerCount-2?true:i===playerCount-2?false:'abstain']));}
   return { user, room };
 }
 
@@ -41,5 +43,5 @@ export function parityPlayerData() {
 
 export function parityAdminData(){
  const {user,room}=parityFixture('result'),createdAt='2026-10-22T00:00:00Z';
- return {users:[{...user,isBanned:false,isVip:false,gamesCount:12,friendsCount:3,createdAt},{...user,id:'fixture-user-2',nickname:'很长的测试仙友尊号',playerCode:'654321',isBanned:true,isVip:true,gamesCount:0,friendsCount:1,createdAt}],rooms:[{id:room.id,code:room.code,hostId:user.id,hostNickname:user.nickname,phase:'playing',memberCount:6,playerCount:6,voiceChatEnabled:false,createdAt}],games:[{id:room.game.id,roomId:room.id,roomCode:room.code,playerCount:6,winner:'blue',reason:'merlin_survived',createdAt,endedAt:'2026-10-22T00:25:00Z'}],codes:[{code:'TESTONLY',days:30,note:'仅本地渲染测试，不可兑换',createdAt}]};
+ return {users:[{...user,isBanned:false,isVip:false,gamesCount:12,friendsCount:3,createdAt},{...user,id:'fixture-user-2',nickname:'很长的测试仙友尊号',playerCode:'654321',isBanned:true,isVip:true,gamesCount:0,friendsCount:1,createdAt}],rooms:[{id:room.id,code:room.code,hostId:user.id,hostNickname:user.nickname,phase:'playing',memberCount:6,playerCount:6,voiceChatEnabled:false,createdAt}],games:[{id:room.game.id,roomId:room.id,roomCode:room.code,playerCount:6,winner:'blue',reason:'merlin_survived',createdAt,endedAt:'2026-10-22T00:25:00Z'}],dedicated:[{id:'dedicated-1',code:'888888',name:'取经朋友局',managerId:user.id,managerName:user.nickname,managerCode:user.playerCode,settings:room.settings,hasPassword:true,activeRoomId:room.id,activePhase:'finished' as const}],reservations:[{code:'666666',state:'reserved' as const,note:'朋友专属号'},{code:'888888',state:'assigned' as const,nickname:user.nickname,note:'测试分配',oldCode:'123456',assignedAt:createdAt}],allocations:[{id:'allocation-1',userId:user.id,nickname:user.nickname,oldCode:'123456',newCode:'888888',retained:true,note:'测试分配',createdAt}],codes:[{code:'TESTONLY',days:30,note:'仅本地渲染测试，不可兑换',createdAt}]};
 }

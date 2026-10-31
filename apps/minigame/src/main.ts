@@ -1,3 +1,4 @@
+import {RoomBubbles} from './screens/room-bubbles.js';
 import {configureDocumentMetrics,setBackdropCanvasFactory} from './ui/web-render.js';
 import {invitationUrl} from './net/urls.js';
 import {RolePreferenceDraft} from './screens/role-preferences.js';
@@ -14,7 +15,7 @@ import { askText, cancelTextInput } from './ui/input.js';
 import { hitTest, renderScreen, type ScreenModel } from './ui/widgets.js';
 import { entryScreen } from './screens/entry.js';
 import { LobbyController, lobbyScreen, readyReminder } from './screens/lobby.js';
-import { settingsScreen, toggleSetting } from './screens/settings.js';
+import { settingsScreen, toggleSetting, SettingsChoice } from './screens/settings.js';
 import { gameAction, gameScreen, handleGameOverlay, syncGameUi, type GameUiState } from './screens/game.js';
 import { layoutWebScreen } from './ui/web-layout.js';
 import { ALL_GALLERY_ROLES, formatRoleName } from '../../web/src/roles.js';
@@ -114,6 +115,8 @@ function feedback(result: ScreenModel): ScreenModel {
   return result;
 }
 
+const settingsChoice = new SettingsChoice();
+const roomBubbles = new RoomBubbles();
 function model(): ScreenModel {
   if (pendingConfirm) return feedback({ title: '确认操作',
     rows: [{ id: 'notice', text: pendingConfirm.label }, { id: 'confirm:yes', text: '确认执行' }, { id: 'confirm:no', text: '取消' }], web: { page: 'sheet', background:'sword',backId:'confirm:no',document:{kind:'confirm',modal:true},underlay:pendingConfirm.underlay } });
@@ -160,6 +163,9 @@ function model(): ScreenModel {
   else {result = entryScreen(user, error,!guestHomeVisible);if(!user&&guestHomeVisible)result.web={page:'home',guestHome:true};}
   if (result.web?.page === 'home') Object.assign(result.web, { roleIndex, nickname, switchCode, authMode, authIntent, freeAccess, friendRequests:playerPanel?.incomingFriendRequests??0, knownAccounts: knownAccounts.list() });
   result.web ??= { page: 'sheet', background: view === 'player' ? 'dawn' : 'library' };
+  if(result.web.document)result.web.document.settingChoice=settingsChoice.current;
+  result.web.friendRequests=playerPanel?.incomingFriendRequests??0;
+  if(view==='game'||view==='lobby')result.web.chatBubbles=roomBubbles.snapshot();
   result.web.freeAccess=freeAccess;
   result.web.waitingMissionsExpanded=waitingMissionsExpanded;
   result = feedback(result);
@@ -184,9 +190,10 @@ function render() {
   if (!suspended && view === 'game' && room?.game?.phase === 'dealing') countdownTimer = setTimeout(render, 1_000);
 }
 function refreshHomeFriends(){const panel=playerPanel;if(panel)void panel.refreshFriends().then(()=>{if(playerPanel===panel)render();}).catch(()=>{});}
-function navigate(next: typeof view) { view = next;if(next==='entry')refreshHomeFriends(); auxiliary = undefined; scroll = 0; error = ''; notice = ''; pendingConfirm = undefined; render(); }
+function navigate(next: typeof view) { settingsChoice.close();view = next;if(next==='entry')refreshHomeFriends(); auxiliary = undefined; scroll = 0; error = ''; notice = ''; pendingConfirm = undefined; render(); }
 
 function connect(next: RoomView) {
+  roomBubbles.sync(next.id);
   connection?.stop();
   nativeVoice.syncRoom(next.id, next.settings.playerCount);
   room = next;
@@ -214,7 +221,7 @@ function connect(next: RoomView) {
     error: value => { error = describeMiniGameError(new Error(value)); render(); },
     message: message => {
       if(message.type==='playerCodeChanged'&&user){user={...user,playerCode:message.playerCode};knownAccounts.remember(user);if(playerPanel)playerPanel.user=user;notice='管理员已更新你的仙友码';render();}
-      if (message.type === 'roomChat') { playerPanel?.onRoomChat(message); if (view === 'player') render(); }
+      if (message.type === 'roomChat') { playerPanel?.onRoomChat(message);roomBubbles.receive(message.fromUserId,message.text);render();setTimeout(()=>{if(!suspended)render();},3800); }
       if (message.type === 'directChat') { playerPanel?.onDirectChat(message); notice = `${message.fromUser.nickname}：${message.text}`; render(); }
       if (message.type === 'roomInvitation') { invites.receive(message.roomCode, message.fromUser.nickname); render(); }
       if (message.type === 'systemAnnouncement') { announcement = message.enabled ? message.text : ''; render(); }
@@ -249,6 +256,9 @@ async function select(id: string) {
     await copyWebEntry(id === 'web:copyPersonal' ? 'personal' : 'invite', api, wx, baseUrl, room!);
     notice = id === 'web:copyPersonal' ? '本人接续链接已复制，5分钟内在系统浏览器打开；请勿群发。' : '房间邀请链接已复制，可发给朋友。';
   });
+  if(id==='settingChoice:close'){settingsChoice.close();render();return;}
+  if(id.startsWith('settingChoice:value:')){const selected=settingsChoice.choose(id.slice(20));if(!selected){render();return;}id=selected;}
+  else {const settings=model().web?.document?.settings;if(settings&&settingsChoice.open(id,settings)){render();return;}settingsChoice.close();}
   if(id==='rolePreferences'&&room){rolePreferenceDraft.open(room);auxiliary='preferences';scroll=0;render();return;}
   if(auxiliary==='preferences'&&room){
     if(id.startsWith('pref:'))return run(async()=>{rolePreferenceDraft.toggle(id.slice(5) as Role,room!);});
@@ -448,7 +458,7 @@ attachTouchNavigation(wx, {
   scrollHorizontal(delta){const max=rows.find(r=>r.scrollMaxX!==undefined)?.scrollMaxX??0;horizontalScroll=Math.max(0,Math.min(max,horizontalScroll+delta));scheduleRender();},
   tap(x,y) { const row=hitTest(rows,x,y); if(row) void select(row.id); },
 });
-platform.onHide(() => { void nativeVoice.leave(); suspended = true; sound.foreground(false); cancelTextInput(); hideSensitiveView(gameUi); pendingConfirm = undefined; adminPanel.onHide(); if (view === 'admin') view = 'entry'; render(); });
+platform.onHide(() => { roomBubbles.clear();settingsChoice.close();void nativeVoice.leave(); suspended = true; sound.foreground(false); cancelTextInput(); hideSensitiveView(gameUi); pendingConfirm = undefined; adminPanel.onHide(); if (view === 'admin') view = 'entry'; render(); });
 platform.onShow(options => { suspended = false;retryWebFonts();refreshHomeFriends(); sound.foreground(true); hideSensitiveView(gameUi); invites.receive(options?.query?.invite); connection?.resume(); render(); });
 render();
 if (typeof wx.request === 'function') void extras.announcement().then(result => {
