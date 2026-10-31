@@ -303,7 +303,7 @@ async function select(id: string) {
   if (id === 'practiceSeats' && practice) { auxiliary = 'practiceSeats'; scroll = 0; render(); return; }
   if (id.startsWith('practiceSeat:') && practice) { practice.switchSeat(id.slice(13)); hideSensitiveView(gameUi); gameUi.snapshotKey = undefined; syncGameUi(gameUi, practice.view(), false, practice.user.id); auxiliary = undefined; scroll = 0; render(); return; }
   if ((view === 'game' || view === 'practice' || view === 'lobby' || view === 'settings') && id === 'guide') { guideReturn = view; navigate('guide'); return; }
-  if(id.startsWith('round-jump:')&&['replay','history'].includes(model().web?.document?.kind??'')){const l=layoutWebScreen({...model(),scroll:0},viewport),n=l.nodes.find(n=>n.id==='round:'+id.slice(11));if(n){activeRound=Number(id.slice(11));scroll=Math.min(l.maxScroll,Math.max(0,n.y-l.contentTop-(model().web?.document?.kind==='replay'?136:62)));}render();return;}
+  if(id.startsWith('round-jump:')&&['replay','history'].includes(model().web?.document?.kind??'')){const l=layoutWebScreen({...model(),scroll:0},viewport),n=l.nodes.find(n=>n.id==='round:'+id.slice(11));if(n){activeRound=Number(id.slice(11));scroll=Math.min(l.maxScroll,Math.max(0,n.y-l.contentTop-(model().web?.document?.kind==='replay'&&!model().web?.document?.adminReplay?136:62)));}render();return;}
   const activeRoom = view === 'practice' ? practice?.view() : view === 'game' ? room : undefined;
   const priorOverlay=gameUi.overlay;
   if (activeRoom && handleGameOverlay(gameUi, activeRoom, id)) { overlayScrolls[priorOverlay??'table']=scroll;scroll=priorOverlay===gameUi.overlay?scroll:overlayScrolls[gameUi.overlay??'table']??0;render();return; }

@@ -26,12 +26,15 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
   const drawer=doc.kind==='chat'&&doc.activeTab!=='direct';
   const adminFriends=doc.kind==='admin-friends',auth=doc.kind==='auth',sound=doc.kind==='sound',preferences=doc.kind==='preferences';
   const social=doc.kind==='friends'||doc.kind==='chat'&&doc.activeTab==='direct', socialPad=v.width<=380?17:23;
-  const modal=!!doc.modal, width=doc.kind==='art'?Math.min(v.width-32,v.width*.92,480):drawer?v.width:adminFriends?Math.min(v.width-40,500):sound?Math.min(v.width-44,420):modal?Math.min(doc.kind==='treasures'?v.width*.92:v.width-20,doc.kind==='guanyin-window'?450:doc.kind==='private-notice'?(doc.noticeKind==='jingu'?380:420):doc.kind==='treasures'?440:doc.kind==='identity'?500:doc.kind==='vote'?520:570):v.width;
-  const ox=(v.width-width)/2, pad=modal?(doc.profileEditing?17:doc.kind==='abort-confirm'?(v.width<=380?17:23):doc.kind==='guanyin-window'?17:doc.kind==='private-notice'?(doc.noticeKind==='bell'?21:doc.noticeKind==='jingu'?23:v.width<=360?15:1+clamp(16,v.width*.04,24)):doc.kind==='art'?22:adminFriends?19:doc.kind==='treasures'?16.5:auth?21:doc.kind==='presets'&&doc.presetEditing?21:preferences?13:sound?23:social?socialPad:doc.kind==='vote'?18:doc.kind==='report'?19:doc.kind==='special-editor'||doc.kind==='code-editor'?19:doc.kind==='history'?17:15):doc.kind==='guide'||doc.kind==='guide-role'?12:doc.kind==='replay'?31:18, x=ox+pad, w=width-pad*2;
+  const adminReplay=!!doc.adminReplay;
+  const modal=!!doc.modal, width=adminReplay?Math.min(v.width-24,720):doc.kind==='art'?Math.min(v.width-32,v.width*.92,480):drawer?v.width:adminFriends?Math.min(v.width-40,500):sound?Math.min(v.width-44,420):modal?Math.min(doc.kind==='treasures'?v.width*.92:v.width-20,doc.kind==='guanyin-window'?450:doc.kind==='private-notice'?(doc.noticeKind==='jingu'?380:420):doc.kind==='treasures'?440:doc.kind==='identity'?500:doc.kind==='vote'?520:570):v.width;
+  const ox=(v.width-width)/2, pad=modal?(adminReplay?17:doc.profileEditing?17:doc.kind==='abort-confirm'?(v.width<=380?17:23):doc.kind==='guanyin-window'?17:doc.kind==='private-notice'?(doc.noticeKind==='bell'?21:doc.noticeKind==='jingu'?23:v.width<=360?15:1+clamp(16,v.width*.04,24)):doc.kind==='art'?22:adminFriends?19:doc.kind==='treasures'?16.5:auth?21:doc.kind==='presets'&&doc.presetEditing?21:preferences?13:sound?23:social?socialPad:doc.kind==='vote'?18:doc.kind==='report'?19:doc.kind==='special-editor'||doc.kind==='code-editor'?19:doc.kind==='history'?17:15):doc.kind==='guide'||doc.kind==='guide-role'?12:doc.kind==='replay'?31:18, x=ox+pad, w=width-pad*2;
   const top=v.top, bottom=v.height-v.bottom, available=bottom-top;
+  let replayRoundEnd=0;
   let y=modal?(adminFriends?19:doc.kind==='treasures'?16.5:auth?21:sound?23:social?socialPad:doc.kind==='history'?17:13):18, headerH=39, footerH=0, bodyStart=0, bodyEnd=0;
   const add=(kind:WebNode['kind'],id:string,text:string,px:number,py:number,pw:number,ph:number,props:Partial<WebNode>={})=>{const n:WebNode={kind,id,text,x:px,y:py,width:pw,height:ph,skin:kind==='button'?'button':kind==='label'?'text':'surface',...props};nodes.push(n);return n;};
   const txt=(id:string,text:string,py:number,size=14,props:Partial<WebNode>={},px=x,pw=w)=>{
+    if(adminReplay)props={fontFace:'system',...props};
     if(['admin','admin-friends','special-editor','code-editor'].includes(doc.kind)){props={fontFace:'system',...props};if(props.fontFace==='display'){props={letterSpacing:.5,...props};if(size===15){size=16;props={weight:'700',lineHeight:24,...props};}}}
     if(doc.profileEditing)props={weight:'500',...props};
     const textWidth=(t:string)=>{
@@ -42,7 +45,7 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
     return add('label',id,text,px,py,pw,Math.max(lh,lines.length*lh),{fontSize:size,lineHeight:lh,lines,align:'left',...props});
   };
   const panel=(id:string,py:number,ph:number,skin='card',px=x,pw=w)=>add('panel',id,'',px,py,pw,ph,{skin});
-  const button=(id:string,text:string,py:number,props:Partial<WebNode>={},px=x,pw=w,ph=42)=>add('button',id,text,px,py,pw,ph,{fontSize:13,...props});
+  const button=(id:string,text:string,py:number,props:Partial<WebNode>={},px=x,pw=w,ph=42)=>add('button',id,text,px,py,pw,ph,{fontSize:13,...(adminReplay?{fontFace:'system' as const}:{}),...props});
   const para=(id:string,text:string,size=13,skin='hint')=>{const lines=wrapText(text,w-28,t=>measure(t,size)),h=lines.length*size*1.6+20;panel(id+':panel',y,h,skin);txt(id,text,y+10,size,{lineHeight:size*1.6},x+14,w-28);y+=h+10;};
   const heading=(id:string,text:string)=>{const lines=wrapText(text,w-16,t=>measure(t,17,'display')),h=Math.max(30,lines.length*25.5);add('label',id,text,x,y,w,h,{skin:'section-title',fontSize:16,fontFace:'display',align:'center',tone:'gold',lines,lineHeight:30});y+=h+8;};
   const token=(id:string,p:Player,px:number,py:number,pw:number,ph=72,badge?:string)=>add('portrait',id,p.nickname,px,py,pw,ph,{skin:'token',image:p.avatarUrl??p.wechatAvatarUrl??'emblems/'+(p.avatar??'cards')+'.png',count:p.seat,detail:badge});
@@ -59,10 +62,10 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
     y+=headerH+(sound?10:social?16:6);bodyStart=y;
   };
   const roundNavigation=(rounds:RoundView[])=>{
-    panel('round-navigation',y,50,'round-navigation');
+    panel('round-navigation',y,adminReplay?42.796875:50,'round-navigation');
     const jumps=[['round-jump:'+rounds.at(-1)?.number,'最近一轮'],...rounds.map(r=>['round-jump:'+r.number,'第'+r.number+'次 · 第'+r.mission+'难'])],widths=jumps.map(([,label])=>measure(label!,12,'sans','600')+22),max=Math.max(0,widths.reduce((a,b)=>a+b,0)+(jumps.length-1)*6-(w-14));
     let px=x+7-Math.min(max,Math.max(0,model.horizontalScroll??0));
-    for(const [i,[id,label]] of jumps.entries()){const bw=widths[i]!;button(id!,label!,y+7,{skin:'round-jump',fontSize:12,weight:'600',lines:[label!],selected:i>0&&model.activeRound===Number(id!.slice(11)),clipLeft:x+7,clipRight:x+w-7,scrollMaxX:max},px,bw,36);px+=bw+6;}
+    for(const [i,[id,label]] of jumps.entries()){const bw=widths[i]!;button(id!,label!,y+7,{skin:'round-jump',fontSize:12,weight:'600',lines:[label!],selected:i>0&&model.activeRound===Number(id!.slice(11)),clipLeft:x+7,clipRight:x+w-7,scrollMaxX:max},px,bw,adminReplay?28.796875:36);px+=bw+6;}
   };
   if(drawer){
     const messages=doc.messages??[], streamRows=messages.map(msg=>{const split=msg.name.indexOf(' '),seat=split<0?'旁观':msg.name.slice(0,split),name=(split<0?msg.name:msg.name.slice(split+1))+'：',seatWidth=measure(seat,11,'sans','700'),nw=measure(name,13,'sans','600'),textWidth=measure(msg.text,13),free=v.width-28-nw-32,sw=Math.max(11,Math.min(seatWidth,free*seatWidth/(seatWidth+textWidth))),mw=Math.max(30,v.width-28-sw-nw-16),lines=wrapText(msg.text,mw-16,t=>measure(t,13));return {msg,seat,name,sw,nw,mw,lines,h:lines.length*18.2+6};});
@@ -158,7 +161,7 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
       txt('admin-banner-text',bannerText,y+42,12.5,{lineHeight:18.75},ax+21,aw-42);
       button('admin:mode',a.freeAccessMode?'切换为商业化模式':'一键恢复全员免费模式',y+bh-53,{skin:'admin-primary',fontSize:14},ax+21,144,37);y+=bh+20;
       const metrics=[['👥 累计注册用户',a.totalUsers],['🌱 今日新增用户',a.todayNewUsers],['⚡ 未关闭房间',a.activeRoomsCount],['🔌 在线长连接 (WS)',a.onlineConnections],['📜 累计对局总数',a.totalGames],['⚔️ 今日对局场次',a.todayGames]];
-      metrics.forEach(([label,value],i)=>add('label','admin-metric:'+i,String(value),ax+i%2*(aw+12)/2,y+Math.floor(i/2)*86,(aw-12)/2,74,{skin:'admin-metric',detail:String(label)}));y+=258+8;
+      const metricCols=Math.max(1,Math.floor((aw+12)/162));metrics.forEach(([label,value],i)=>add('label','admin-metric:'+i,String(value),ax+i%metricCols*(aw+12)/metricCols,y+Math.floor(i/metricCols)*86,(aw-12*(metricCols-1))/metricCols,74,{skin:'admin-metric',detail:String(label)}));y+=Math.ceil(metrics.length/metricCols)*86+8;
       panel('admin-shortcuts',y,142,'admin-card',ax,aw);txt('admin-shortcuts-title','⚡ 运营快捷捷径',y+18,15,{fontFace:'display'},ax+19,aw-38);
       const actions=[['page:settings','📢 发送全服实时公告'],['page:users','🔍 查询与管理仙友'],['page:rooms','🏛️ 巡查未关闭法坛房间'],['page:codes','🎟️ 批量生成 VIP 兑换码']];
       let shortcutX=ax+19,shortcutY=y+56;for(const [id,label] of actions){const bw=measure(label!,12,'system','700')+24;if(shortcutX+bw>ax+aw-19){shortcutX=ax+19;shortcutY+=40;}button(id!,label!,shortcutY,{skin:'admin-tool',fontSize:12},shortcutX,bw,28);shortcutX+=bw+12;}y=shortcutY+46;
@@ -215,7 +218,7 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
           txt('admin-game-title:'+g.id,'房间 #'+g.roomCode+' ('+g.playerCount+'人局)',y+13,13,{weight:'700'},px,cw*.6);
           txt('admin-game-winner:'+g.id,g.winner==='blue'?'蓝方 · 取经正果':g.winner==='red'?'红方 · 群妖乱道':'平局/中止',y+13,13.5,{weight:'700',tone:g.winner==='red'?'red':g.winner==='blue'?'blue':'muted',align:'right'},px+cw*.6,cw*.4);y+=41;
           add('label','admin-game-rule:'+g.id,'',px,y,cw,1,{skin:'admin-rule'});y+=6;
-          for(const [key,value] of [['reason','结案原因：'+(g.reason||'—')],['ended','结束时间：'+(g.endedAt?new Date(g.endedAt).toLocaleString('zh-CN'):'—')],['id','对局ID：'+g.id]]){const n=txt('admin-game-'+key+':'+g.id,value!,y,key==='id'?11:12,{tone:key==='id'?'gold':'muted',lineHeight:18,lines:key==='id'?[value!]:undefined},px,cw);y+=n.height+3;}
+          for(const [key,value] of [['reason','结案原因：'+(g.reason||'—')],['ended','结束时间：'+(g.endedAt?new Date(g.endedAt).toLocaleString('zh-CN'):'—')],['id','对局ID：'+g.id]]){const n=txt('admin-game-'+key+':'+g.id,value!,y,key==='id'?11:12,{tone:key==='id'?'gold':'muted',lineHeight:18},px,cw);y+=n.height+3;}
           y+=3;add('label','admin-game-end-rule:'+g.id,'',px,y,cw,1,{skin:'admin-rule'});y+=9;
           button('replay:'+g.id,'🔍 查看本局完整复盘',y,{skin:'admin-primary',fontSize:14},px,cw,37);y+=50;card.height=y-start;y+=10;
         }
@@ -805,11 +808,11 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
     }
     else if(doc.kind==='replay'&&doc.replay){
       const g=doc.replay,name=(id:string)=>{const p=g.players.find(p=>p.id===id);return p?p.seat+' 号 '+p.nickname:'未知成员';};
-      y=124;const replayFrame=panel('replay-frame',22,1,'guide-section',13,v.width-26);nodes.splice(nodes.indexOf(replayFrame),1);nodes.unshift(replayFrame);
-      button(model.web?.backId??'back','返回记录',47,{skin:'pill',fixed:true,fontSize:14},x+w-102,94,48);
+      y=adminReplay?(v.width>=430?70:77):124;const replayFrame=panel('replay-frame',22,1,'guide-section',13,v.width-26);nodes.splice(nodes.indexOf(replayFrame),1);nodes.unshift(replayFrame);if(adminReplay)nodes.splice(nodes.indexOf(replayFrame),1);
+      if(!adminReplay)button(model.web?.backId??'back','返回记录',47,{skin:'pill',fixed:true,fontSize:14},x+w-102,94,48);
       for(const row of model.rows.filter(r=>r.id==='favorite')){button(row.id,row.text,y-.5,{skin:'pill'},x,90,45);y+=50;}
-      y+=19;panel('replay-result-panel',y,135,'replay-hero');txt('replay-result',g.result.winner===null?'本局中断':g.result.winner==='blue'?'蓝方获胜':'红方获胜',y+20,24,{fontFace:'display',tone:'gold'},x+24,w-48);txt('replay-reason',(reasons[g.result.reason]??g.result.reason)+(g.result.targetId?' · 刺杀目标：'+name(g.result.targetId):''),y+74,15,{},x+24,w-48);y+=155.5;
-      const metadataOpen=doc.expanded?.includes('metadata')||!doc.user,identitiesOpen=doc.expanded?.includes('identities')||!doc.user;
+      if(!adminReplay)y+=19;panel('replay-result-panel',y,adminReplay?118:135,adminReplay?'admin-replay-result':'replay-hero');txt('replay-result',g.result.winner===null?'本局中断':g.result.winner==='blue'?'蓝方获胜':'红方获胜',y+(adminReplay?15:20),adminReplay?25:24,{fontFace:'display',tone:adminReplay?undefined:'gold',align:adminReplay?'center':undefined,lineHeight:adminReplay?25:36},x+(adminReplay?15:24),w-(adminReplay?30:48));txt('replay-reason',(reasons[g.result.reason]??g.result.reason)+(g.result.targetId?' · 刺杀目标：'+name(g.result.targetId):''),y+(adminReplay?60:74),adminReplay?16:15,{align:adminReplay?'center':undefined,lineHeight:adminReplay?28:22.5},x+(adminReplay?15:24),w-(adminReplay?30:48));y+=adminReplay?132:155.5;
+      const metadataOpen=doc.expanded?.includes('metadata')||(!doc.user&&!adminReplay),identitiesOpen=doc.expanded?.includes('identities')||(!doc.user&&!adminReplay);
       const metadata=panel('replay-metadata',y,70,'replay-details');button('details:metadata',(metadataOpen?'▾':'▸')+' 时间、编号与规则配置',y+10,{skin:'plain-summary',fontSize:13},x+12,w-24,30);y+=70;
       if(metadataOpen){const result=g.result.winner===null?'中断':g.result.winner===g.self.team?'胜利':'失败';const date=txt('replay-date','开始 '+formatDate(g.startedAt)+'\n结束 '+formatDate(g.endedAt)+' · 你的结果：'+result,y+2,14,{lineHeight:25.1875},x+12,w-24);y=date.y+date.height+14;
         const uid=txt('replay-uid','对局编号 ID：'+g.id,y,11.5,{lineHeight:20.6875},x+12,w-24);y+=uid.height+14;
@@ -818,11 +821,23 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
       }y+=8;
       const identities=panel('replay-identities',y,70,'replay-details');button('details:identities',(identitiesOpen?'▾':'▸')+' 全员最终身份（'+g.players.length+' 人）',y+10,{skin:'plain-summary',fontSize:13},x+12,w-24,30);y+=70;
       const guardians=assignLoyalGuardians(g.id,g.players,g.roles,g.rulesetVersion),demons=assignFemaleDemons(g.id,g.players,g.roles);
-      if(identitiesOpen){for(const p of g.players){const role=g.roles[p.id];if(!role)continue;const item=getRoleGalleryItem(role,guardians[p.id],demons[p.id]);add('label','replay-player:'+p.id,name(p.id),x+12,y,w-24,76,{skin:'replay-identity',image:'roles/'+item.artPrefix+'-160.webp',detail:formatRoleName(role,guardians[p.id],demons[p.id]),team:item.team});y+=76;}y+=12;identities.height=y-identities.y;}y+=18;
+      if(identitiesOpen){for(const p of g.players){const role=g.roles[p.id];if(!role)continue;const item=getRoleGalleryItem(role,guardians[p.id],demons[p.id]);add('label','replay-player:'+p.id,name(p.id),x+12,y,w-24,adminReplay?64:76,{skin:adminReplay?'admin-replay-identity':'replay-identity',image:'roles/'+item.artPrefix+'-160.webp',detail:formatRoleName(role,guardians[p.id],demons[p.id]),team:item.team});y+=adminReplay?72:76;}y+=12;identities.height=y-identities.y;}y+=18;
       txt('replay-rounds','逐轮记录',y,21,{fontFace:'display'});y+=42;
-      roundNavigation(g.rounds);y+=78;
-      renderRounds(g.rounds,g.players,g.settings.anonymousTeamVote);
-      for(const row of model.rows.filter(r=>r.id.startsWith('audit:')))para(row.id,row.text,12);
+      roundNavigation(g.rounds);y+=adminReplay?70.796875:78;
+      renderRounds(g.rounds,g.players,g.settings.anonymousTeamVote);replayRoundEnd=y;
+      for(const [key,label,items] of [['inspections','宝镜查验记录',g.inspections.map(i=>'第'+i.afterMission+'难：'+name(i.inspectorId)+' 查验 '+name(i.targetId)+'，随后交接给被查验者。')],['earlyWindows','轮间确认记录',g.earlyWindows.map(e=>'第'+e.afterProposal+'次提案后：'+(e.decision==='skip'?'跳过提前刺杀':'发起提前刺杀')+'（完成任务 '+e.afterMission+' 后）')]] as const){if(!items.length)continue;const opened=doc.expanded?.includes(key),frame=panel('replay-'+key,y,70,'replay-details');button('details:'+key,(opened?'▾':'▸')+' '+label,y+10,{skin:'plain-summary',fontSize:13},x+12,w-24,30);y+=70;if(opened){for(const [i,value] of items.entries()){const n=txt('replay-'+key+':'+i,value,y,14,{lineHeight:25.1875},x+12,w-24);y+=n.height+14;}y+=12;frame.height=y-frame.y;}y+=8;}
+      const audit=adminReplay?g.roleAssignmentAudit:undefined;
+      if(audit&&g.endedAt&&g.result){
+        y+=14;const frame=panel('audit-frame',y,49,'admin-audit-frame'),opened=doc.expanded?.includes('audit');button('details:audit',(opened?'▾':'▸')+' 发牌依据',y+1,{skin:'plain-summary',fontSize:13,weight:'600'},x+12,w-24,48);y+=49;
+        if(opened){
+          const auditRows=(prefix:string,rows:[string,string][],px:number,pw:number)=>{for(const [i,[label,value]] of rows.entries()){const l=txt(prefix+'-label:'+i,label,y,13,{fontFace:'system',tone:'muted',lineHeight:19.5},px,71.5),r=txt(prefix+'-value:'+i,value,y,13,{fontFace:'system',lineHeight:19.5},px+79.5,pw-79.5);y+=Math.max(l.height,r.height)+4;}y-=4;};
+          auditRows('audit-meta',[['算法版本',audit.algorithmVersion],['权重版本',audit.weightVersion],['保护退让',['0 · 全部保护生效','1 · 放宽特殊角色冷却','2 · 同时放宽蓝方保护','3 · 同时放宽视野角色保护'][audit.protectionLevel]!],...(audit.roleOrder?.length?[['角色区间顺序',audit.roleOrder.map(r=>roleNames[r]).join(' → ')] as [string,string]]:[])],x+13,w-26);
+          y+=10;const note=txt('audit-note','以下为开局时保存的依据。权重是相对抽取机会，并非命中概率；完整分配还需满足本局角色数量与保护约束。',y,13,{fontFace:'system',tone:'muted',lineHeight:19.5},x+13,w-26);y+=note.height+10;
+          for(const id of audit.playerOrder){const e=audit.players[id];if(!e)continue;const p=g.players.find(p=>p.id===id),draw=audit.draws.find(d=>d.userId===id),card=panel('audit-player:'+id,y,1,'admin-audit-player',x+13,w-26),px=x+24,pw=w-48; y+=11;const title=p?p.seat+'号 '+p.nickname:'未知玩家',result='最终：'+roleNames[e.assignedRole],tw=measure(title,13,'system','600'),rw=measure(result,13,'system');txt('audit-player-name:'+id,title,y,13,{fontFace:'system',weight:'600',lineHeight:19.5},px,pw);if(tw+rw+12>pw)y+=23.5;txt('audit-player-role:'+id,result,y,13,{fontFace:'system',tone:'gold',align:tw+rw+12>pw?'left':'right',lineHeight:19.5},px,pw);y+=27.5;
+            auditRows('audit-player-data:'+id,[['心仪志愿',e.preferences.length?e.preferences.map((r,i)=>(i+1)+'. '+roleNames[r]).join(' / '):'未设置'],['最近角色',e.recentRoles.length?e.recentRoles.map(r=>roleNames[r]).join(' → ')+'（最近在前）':'无历史记录'],['保护条件',[e.protections.visionGuaranteed&&'视野角色保护',e.protections.blueGuaranteed&&'蓝方保护',e.protections.bossCooldown&&'特殊角色冷却'].filter(Boolean).join('、')||'无'],['相对权重',Object.entries(e.weights).map(([r,n])=>roleNames[r as Role]+' '+n).join(' / ')||'无'],...(draw?[['随机抽样','票值 '+draw.ticket+'\n区间总权重 '+draw.totalWeight] as [string,string]]:[])],px,pw);y+=11;card.height=y-card.y;y+=8;
+          }y+=5;frame.height=y-frame.y;
+        }y+=1;
+      }
 
       if(doc.user){const hint=txt('replay-favorite-hint','收藏只在你的个人中心可见，不会创建公开链接。取消收藏保留历史对局。',y,14,{lineHeight:25.1875,tone:'muted'});y+=hint.height+14;}replayFrame.height=y-4;
     }
@@ -836,6 +851,18 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
       button(model.web!.backId??'back','返回原页面',y,{skin:'pill'});y+=50;
     }
     bodyEnd=y;
+  }
+  if(adminReplay){
+    const h=Math.min(available*.92,y+17),fy=top+(available-h)/2,head=v.width>=430?53:60,clipTop=fy+head+1,clipBottom=fy+h-1,maxScroll=Math.max(0,y+17-h),scroll=Math.min(maxScroll,Math.max(0,model.scroll??0));
+    for(const n of nodes){n.y+=fy-scroll;n.clipTop=clipTop;n.clipBottom=clipBottom;}
+    const nav=nodes.find(n=>n.id==='round-navigation'),roundEnd=fy+replayRoundEnd-scroll;if(nav&&roundEnd>clipTop){const delta=Math.max(nav.y,Math.min(clipTop,roundEnd-nav.height))-nav.y;nav.y+=delta;nav.fixed=true;for(const n of nodes.filter(n=>n.id.startsWith('round-jump:'))){n.y+=delta;n.fixed=true;}}
+    const frame=add('panel','dialog-frame','',ox,fy,width,h,{skin:'admin-replay-frame',fixed:true});nodes.splice(nodes.indexOf(frame),1);nodes.unshift(frame);
+    add('panel','admin-replay-header','',ox+1,fy+1,width-2,head,{skin:'admin-replay-header',fixed:true});
+    const titleW=Math.max(80,w-72.671875),tw=titleW*.521,th=v.width>=430?20:35;
+    txt('admin-replay-title','📜 法坛对局全景复盘',fy+1+(head-th)/2,15,{fontFace:'display',weight:'700',tone:'gold',lineHeight:17.5,fixed:true},x,tw);
+    txt('admin-replay-summary','('+doc.replay!.playerCount+'人局 · 胜者：'+(doc.replay!.result.winner==='blue'?'蓝方':doc.replay!.result.winner==='red'?'红方':'中断')+')',fy+1+(head-(v.width>=430?13.5:27))/2,12,{fontFace:'display',weight:'500',tone:'gold',lineHeight:13.5,fixed:true},x+tw+14,titleW-tw-14);
+    button('page:games','✕ 关闭',fy+1+(head-28)/2,{skin:'admin-tool',fontSize:13,fixed:true},ox+width-73,56,28);
+    return {nodes,maxScroll,contentTop:clipTop,contentBottom:clipBottom};
   }
   const appendSettingChoices=()=>{
     const choice=doc.settingChoice;if(!choice)return;const anchor=nodes.find(n=>n.id===choice.id);if(!anchor)return;

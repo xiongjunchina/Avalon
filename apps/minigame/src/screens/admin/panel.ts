@@ -22,6 +22,7 @@ export class AdminPanel {
   private announcementDraft={enabled:false,text:""};
   private user?: AdminUserSummary;
   private replayData?: Replay;
+  private replayExpanded=new Set<string>();
   private friendNames: string[] = [];private friendDetails:{nickname:string;player_code:string;status:string}[]=[];
   private query = '';
   private pending?: { label: string; action: () => Promise<unknown> };
@@ -40,7 +41,7 @@ export class AdminPanel {
     this.loadEpoch++;
     this.api.onHide(); this.pending = undefined; this.page = 'overview'; this.overviewData = undefined;
     this.usersData = []; this.userTotal = 0; this.roomsData = []; this.gamesData = []; this.moreGames = false;
-    this.codesData = []; this.settingsData = undefined;this.rewardDraft=24;this.announcementDraft={enabled:false,text:''}; this.user = undefined; this.replayData = undefined;
+    this.codesData = []; this.settingsData = undefined;this.rewardDraft=24;this.announcementDraft={enabled:false,text:''}; this.user = undefined; this.replayData = undefined;this.replayExpanded.clear();
     this.friendNames = [];this.friendDetails=[]; this.query = ''; this.feedback = '';this.codeDraft={count:'5',days:'30',note:''};
   }
 
@@ -59,7 +60,7 @@ export class AdminPanel {
     const codeEditor=this.special.codeEditorModel();if(codeEditor)return codeEditor;
     if(this.page==='special')return this.special.model();
     if (this.page === 'user' && this.user) return adminUserScreen(this.user);
-    if (this.page === 'replay' && this.replayData) return adminReplayScreen(this.replayData);
+    if (this.page === 'replay' && this.replayData){const result=adminReplayScreen(this.replayData);result.web={page:'sheet',backId:'page:games',document:{kind:'replay',adminReplay:true,modal:true,replay:this.replayData,expanded:[...this.replayExpanded]},underlay:{...adminGamesScreen(this.gamesData),web:{page:'sheet',activeTab:'page:games',document:{kind:'admin',adminRooms:this.roomsData,adminGames:this.gamesData}}}};return result;}
     if (this.page === 'friends') return {title:'用户仙友',web:{page:'sheet',backId:'page:users',document:{kind:'admin-friends',modal:true,adminFriendOwner:this.user?.nickname,adminFriends:this.friendDetails},underlay:{...adminUsersScreen(this.usersData),web:{page:'sheet',activeTab:'page:users',document:{kind:'admin',adminUsers:this.usersData,adminUserTotal:this.userTotal}}}}, rows: [...this.friendNames.map((name, index) => ({ id: `friend:${index}`, text: name })), { id: 'page:users', text: '返回用户列表' }] };
     if (this.page === 'overview' && this.overviewData) return adminOverviewScreen(this.overviewData);
     if (this.page === 'users') return adminUsersScreen(this.usersData, this.query, this.usersData.length < this.userTotal);
@@ -83,6 +84,7 @@ export class AdminPanel {
   }
 
   async handle(id: string, input: Input): Promise<'back' | void> {
+    if(this.page==='replay'&&id.startsWith('details:')){const key=id.slice(8);if(this.replayExpanded.has(key))this.replayExpanded.delete(key);else this.replayExpanded.add(key);return;}
     if (id === 'back'||id==='admin:logout') {if(id==='admin:logout')this.onHide();return 'back';}
     if(id==='admin:refresh'){await this.load(this.page);return;}
     if(id==='admin:mode'){await this.load('settings');await this.handle('mode',input);return;}
@@ -134,7 +136,7 @@ export class AdminPanel {
       if (target) this.pending = { label: `确认强制解散房间【${target.code}】？此操作将立即结束该房并将全员送回大厅。`, action: () => this.api.killRoom(target.id, true) };
       return;
     }
-    if (this.page === 'games' && id.startsWith('replay:')) { const epoch = this.loadEpoch; const result = await this.api.replay(id.slice(7)); if (epoch === this.loadEpoch) { this.replayData = result; this.page = 'replay'; } return; }
+    if (this.page === 'games' && id.startsWith('replay:')) { const epoch = this.loadEpoch; const result = await this.api.replay(id.slice(7)); if (epoch === this.loadEpoch) { this.replayData = result;this.replayExpanded.clear(); this.page = 'replay'; } return; }
     if(id.startsWith('codeDraft:')){const key=id.slice(10) as keyof typeof this.codeDraft;if(['count','days','note'].includes(key)){const value=await input(key==='note'?'兑换码备注':key==='count'?'生成数量（1-100）':'有效天数（1-365）',key==='note'?100:3);if(value!==undefined)this.codeDraft[key]=value;}return;}
     if(id==='generateDraft'){const count=Number(this.codeDraft.count),days=Number(this.codeDraft.days);if(!Number.isInteger(count)||count<1||count>100||!Number.isInteger(days)||days<1||days>365){this.feedback='数量或天数超出范围';return;}const result=await this.api.generateCodes(count,days,this.codeDraft.note.trim()||undefined);await this.load('codes');this.feedback=`已生成 ${result.codes.length} 个兑换码`;return;}
     if (id === 'generate') {

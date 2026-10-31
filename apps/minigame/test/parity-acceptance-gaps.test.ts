@@ -326,3 +326,14 @@ test('admin confirmations retain their dashboard and cancel without executing wr
  const confirm=panel.model();assert.equal(confirm.web?.document?.kind,'confirm');assert.equal(confirm.web?.underlay?.web?.document?.kind,'admin');assert.equal(confirm.web?.underlay?.web?.activeTab,'page:users');assert.equal(confirm.web?.underlay?.web?.document?.adminUsers?.length,d.users.length);
  await panel.handle('confirm:no',async()=>undefined);assert.equal(deletes,0);assert.equal(panel.model().web?.document?.kind,'admin');
 });
+
+test('admin replay opens real replay sections and gates audit to admin views',async()=>{
+ const {parityAdminReplay}=await import('../scripts/parity-fixture.js');const replay=parityAdminReplay(),d=parityAdminData(),panel=new AdminPanel({verify:async()=>{},overview:async()=>({}),rooms:async()=>({rooms:d.rooms}),games:async()=>({games:d.games}),replay:async()=>replay} as any);
+ await panel.open('mock');await panel.handle('page:games',async()=>undefined);await panel.handle('replay:'+replay.id,async()=>undefined);
+ assert.equal(panel.model().web?.document?.adminReplay,true);assert.equal(panel.model().web?.underlay?.web?.activeTab,'page:games');
+ let layout=layoutWebScreen(panel.model(),viewport);assert.ok(layout.nodes.some(n=>n.id==='details:metadata'));assert.ok(!layout.nodes.some(n=>n.id==='audit-note'));
+ await panel.handle('details:audit',async()=>undefined);layout=layoutWebScreen(panel.model(),viewport);assert.ok(layout.nodes.some(n=>n.id==='audit-note'));assert.ok(layout.nodes.some(n=>n.text.includes('1234567890123456')));
+ await panel.handle('details:identities',async()=>undefined);layout=layoutWebScreen(panel.model(),viewport);assert.equal(layout.nodes.filter(n=>n.id.startsWith('replay-player:')).length,replay.players.length);
+ const publicModel=panel.model();publicModel.web!.document!.adminReplay=false;publicModel.web!.document!.modal=false;assert.ok(!layoutWebScreen(publicModel,viewport).nodes.some(n=>n.id==='audit-note'));
+ await panel.handle('page:games',async()=>undefined);assert.equal(panel.model().web?.activeTab,'page:games');
+});

@@ -2,6 +2,7 @@ import type { PlayerCodeAvailability, PlayerCodeAllocation, DedicatedRoom, Playe
 import type { RoleGalleryItem } from '../../../web/src/roles.js';
 
 export interface WebDocument {
+  adminReplay?:boolean;
   settingChoice?:{id:string;key:"captainMode"|"rejectionScope"|"voiceChatEnabled";value:string};
   noticeKind?:'mirror'|'bell'|'jingu';
   remainingSeconds?:number;

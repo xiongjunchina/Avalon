@@ -181,8 +181,11 @@ function drawDocumentNode(ctx:CanvasRenderingContext2D,n:WebNode,model:ScreenMod
   const cx=n.x+n.width/2,cy=n.y+n.height/2;
   const family=n.fontFace==='mono'?'monospace':n.fontFace==='home'?homeInterface:n.fontFace==='system'?'-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif':n.fontFace==='display'?display:n.fontFace==='calligraphy'?calligraphy:sans;
   const privateNotice=model.web?.document?.kind==='private-notice';
-  const color=n.id==='notice-proof:2'?'#9ca3af':n.id==='pref-help'?'#d1b88e':n.id.startsWith('special-label:')||n.id.startsWith('special-setting-label:')?'#cbd5e1':n.id==='mirror-footnote'?'#bfa882':n.id==='mirror-waiting'?'#fff4d0':n.id==='mirror-prompt'||n.id==='mirror-waiting-detail'?'#faebd7':privateNotice?(n.id==='notice-title'?'#ffe5ae':n.tone==='green'?'#9bf4cf':n.tone==='red'?'#ffc1b6':n.tone==='blue'?'#93c5fd':n.tone==='gold'?'#ffd875':n.tone==='muted'?'#eddcc4':'#fff8ef'):model.web?.document?.kind==='treasures'&&['treasure-role-description','treasure-role-note','bell-consumption','bell-unavailable'].includes(n.id)?'#e8d7b8':n.tone==='red'?'#f87171':n.tone==='green'?'#34d399':n.tone==='blue'?'#7dd3fc':n.tone==='gold'?'#ffd875':n.tone==='muted'?(['admin','admin-friends','special-editor','code-editor'].includes(model.web?.document?.kind??'')?'#94a3b8':'#cbdbe8'):['admin','admin-friends','special-editor','code-editor'].includes(model.web?.document?.kind??'')?'#e2e8f0':'#fff2d5';
+  const color=n.id==='notice-proof:2'?'#9ca3af':n.id==='pref-help'?'#d1b88e':n.id.startsWith('special-label:')||n.id.startsWith('special-setting-label:')?'#cbd5e1':n.id==='mirror-footnote'?'#bfa882':n.id==='mirror-waiting'?'#fff4d0':n.id==='mirror-prompt'||n.id==='mirror-waiting-detail'?'#faebd7':privateNotice?(n.id==='notice-title'?'#ffe5ae':n.tone==='green'?'#9bf4cf':n.tone==='red'?'#ffc1b6':n.tone==='blue'?'#93c5fd':n.tone==='gold'?'#ffd875':n.tone==='muted'?'#eddcc4':'#fff8ef'):model.web?.document?.kind==='treasures'&&['treasure-role-description','treasure-role-note','bell-consumption','bell-unavailable'].includes(n.id)?'#e8d7b8':n.tone==='red'?'#f87171':n.tone==='green'?'#34d399':n.tone==='blue'?'#7dd3fc':n.tone==='gold'?'#ffd875':n.tone==='muted'?(['admin','admin-friends','special-editor','code-editor'].includes(model.web?.document?.kind??'')||model.web?.document?.adminReplay?'#94a3b8':'#cbdbe8'):['admin','admin-friends','special-editor','code-editor'].includes(model.web?.document?.kind??'')||model.web?.document?.adminReplay?'#e2e8f0':'#fff2d5';
   const write=(value:string,x:number,y:number,w:number,size=n.fontSize??13,align:CanvasTextAlign=n.align??'center',font=family,weight=n.weight??'400',c=color)=>text(ctx,value,x,y,w,size,c,align,font,weight,n.letterSpacing??0);
+  if(n.skin==='admin-audit-frame'||n.skin==='admin-audit-player'){fill(ctx,n,'transparent',n.skin==='admin-audit-frame'?8:6,n.skin==='admin-audit-frame'?'#d4a3594d':'#ffffff1a');return;}
+  if(n.skin==='admin-replay-header'){ctx.save();cornerRect(ctx,n,13,13,0,0);ctx.fillStyle='#0f172afa';ctx.fill();rule(ctx,{...n,y:n.y+n.height,height:1},'#ffffff1a');ctx.restore();return;}
+  if(n.skin==='admin-replay-frame'||n.skin==='admin-replay-result'){fill(ctx,n,n.skin==='admin-replay-frame'?'#0d1527':'#141e30b3',n.skin==='admin-replay-frame'?14:10,'#d4a35973');return;}
   if(n.skin?.startsWith('chat-')){
     const skin=n.skin;
     if(skin==='chat-sheet'){ctx.save();shadow(ctx,'#000000d9',32,-8);fill(ctx,n,gradient(ctx,n,['#1b1524','#120e18'],180),20,'#ffd875');ctx.restore();return;}
@@ -248,7 +251,7 @@ function drawDocumentNode(ctx:CanvasRenderingContext2D,n:WebNode,model:ScreenMod
   if(n.skin==='admin-table-head'||n.skin==='admin-table-cell'){const head=n.skin==='admin-table-head';ctx.fillStyle=head?'#0f1520f2':'#0b0f1799';ctx.fillRect(n.x,n.y,n.width,n.height);rule(ctx,{...n,y:n.y+n.height},head?'#ffffff1a':'#ffffff0a');write(n.text,n.x+14,cy,n.width-28,n.fontSize??13,'left',family,n.weight??(head?'600':'400'),head?'#94a3b8':n.tone==='gold'?'#ffd875':n.tone==='green'?'#4ade80':n.tone==='muted'?'#94a3b8':'#cbd5e1');return;}
   if(n.skin==='admin-user-code'){fill(ctx,n,'#ffd8751f',4,'#ffd87540');write(n.text,cx,cy,n.width-10,12,'center','monospace','400','#ffd875');return;}
   if(n.skin==='admin-membership'){fill(ctx,n,n.selected?'#d4a35926':'#38bdf81a',4,n.selected?'#d4a35966':'#38bdf833');write(n.text,cx,cy,n.width-6,11,'center',family,'600',n.selected?'#ffd875':'#38bdf8');return;}
-  if(n.skin?.startsWith('admin-')){
+  if(n.skin?.startsWith('admin-')&&n.skin!=='admin-replay-identity'){
     const skin=n.skin,primary=skin==='admin-primary',banner=skin==='admin-banner',tab=skin==='admin-tab',header=skin==='admin-header',metric=skin==='admin-metric',status=skin==='admin-status';
     const bg=skin==='admin-back'?'#121826':skin==='admin-nav'?'#0b0f17fa':skin==='admin-user-card'?'#121826e6':primary?gradient(ctx,n,['#d4af37','#aa820a'],135):banner?gradient(ctx,n,['#143228e6','#0f231efa']):header?'#0f1520f5':status?'#4ade801f':tab?(n.selected?'#2b2722':'#151920'):skin==='admin-input'?'#0b0f17d9':metric||skin==='admin-card'?'#121826d9':'#1e293bbf';
     ctx.save();if(n.disabled)ctx.globalAlpha=primary?.6:.45;if(n.kind==='button'&&skin!=='admin-input'&&skin!=='admin-checkbox'){ctx.shadowColor=tab&&n.selected?'#d4a3591f':'#f5a62373';ctx.shadowBlur=tab&&n.selected?10:16;ctx.shadowOffsetY=tab&&n.selected?0:4;}
@@ -259,7 +262,7 @@ function drawDocumentNode(ctx:CanvasRenderingContext2D,n:WebNode,model:ScreenMod
     ctx.restore();return;
   }
   if(n.skin==='chapter-option'){fill(ctx,n,'#220b0af5',0,'#d4a35933');write(n.text,n.x+12,cy,n.width-24,13,'left',sans,'400','#fff2d5');return;}
-  if(n.skin==='plain-summary'){write(n.text,n.x,cy,n.width,13,'left',family,'400','#ffd875');return;}
+  if(n.skin==='plain-summary'){write(n.text,n.x,cy,n.width,13,'left',family,model.web?.document?.adminReplay?'600':'400','#ffd875');return;}
   if(n.skin==='battle-section'){fill(ctx,n,'#102b44b8',14,'#c6c8b8a6');return;}
   if(n.skin==='vote-submitted-card'){fill(ctx,n,'#10b9811f',12,'#10b981');return;}
   if(n.skin==='battle-vote-totals'){fill(ctx,n,'#254960a8',10,'#8dbaca88');return;}
@@ -346,7 +349,7 @@ function drawDocumentNode(ctx:CanvasRenderingContext2D,n:WebNode,model:ScreenMod
     image(n.image,px,py,diameter,diameter,true);
     for(const extra of [0,4]){ctx.beginPath();ctx.arc(px+diameter/2,cy,diameter/2+extra,0,Math.PI*2);ctx.strokeStyle=n.team==='blue'?(extra?'#52b0ff':'#9cd4ff'):(extra?'#ff5e57':'#ff9e96');ctx.lineWidth=2;ctx.stroke();}
     const tx=px+diameter+14,tw=n.x+n.width-tx-10,[title,motto]=n.detail?.split('|')??[];
-    const allegiance=(n.badge??(n.team==='blue'?'蓝方 · 取经正果':'红方 · 群妖乱道'))+' · '+(title??'');const badgeW=Math.min(tw,measureWebText(allegiance,11,'sans','600')+42+textGraphemes(allegiance).length*2);
+    const allegiance=(n.badge??(n.team==='blue'?'蓝方 · 取经正果':'红方 · 群妖乱道'))+' · '+(title??'');const badgeW=measureWebText(allegiance,11,'sans','600')+42+textGraphemes(allegiance).length*2;
     fill(ctx,{...n,x:tx,y:n.y+10,width:badgeW,height:24},'#00000073',8,'#dcbe7859');
     image('symbols/'+(n.team==='blue'?'blue':'red')+'-identity.png',tx+8,n.y+12,20,20);
     text(ctx,allegiance,tx+32,n.y+22,badgeW-40,11,'#eeddc4','left',sans,'600',2);
@@ -440,6 +443,7 @@ function drawDocumentNode(ctx:CanvasRenderingContext2D,n:WebNode,model:ScreenMod
   if(n.skin==='setup-access'){fill(ctx,n,'#2b1111db',12,'#e5b96480');const lines=n.text.split('\n');write(lines[0]!,n.x+12,n.y+24,n.width-24,13,'left',sans,'700','#ffd875');write(lines[1]??'',n.x+12,n.y+46,n.width-24,12,'left',sans,'400','#eddcc4');return;}
   if(n.skin==='replay-details'){fill(ctx,n,'#220b0ad9',12,'#d4a35966');return;}
   if(n.skin==='replay-notice'){fill(ctx,n,'#302b20',4,'#9d875f');return;}
+  if(n.skin==='admin-replay-identity'){const family='-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif';fill(ctx,n,'#ffffff0a',6,'transparent');write(n.text,n.x+10,cy,n.width*.55-18,14,'left',family,'400','#e2e8f0');const tw=measureWebText(n.detail??'',14,'system','500'),ix=n.x+n.width-10-tw-52;ctx.save();rect(ctx,ix,cy-24,48,48,4);ctx.clip();image(n.image,ix,cy-24,48,48);ctx.restore();write(n.detail??'',ix+52,cy,tw+.1,14,'left',family,'500',n.team==='blue'?'#b9e2ed':'#f0bea8');return;}
   if(n.skin==='replay-identity'){rule(ctx,{...n,y:n.y+n.height},'#d4a35966');write(n.text,n.x,cy,n.width*.55-8,14,'left',sans);const tw=measureWebText(n.detail??'',13,'sans','700'),ix=n.x+n.width-tw-54;ctx.save();rect(ctx,ix,cy-24,48,48,4);ctx.clip();fill(ctx,{...n,x:ix,y:cy-24,width:48,height:48},'#101e2b',4,n.team==='blue'?'#98c8e9':'#eea7a1');image(n.image,ix+1,cy-23,46,46);ctx.restore();write(n.detail??'',ix+54,cy,tw+.1,13,'left',sans,'700',n.team==='blue'?'#bfdbfe':'#fca5a5');return;}
   if(n.skin==='report-ballot'){
     const d=n.fontSize??40,py=n.y,c=n.tone==='green'?'#34d399':n.tone==='red'?'#f87171':'#fbbf24',edge=n.tone==='green'?'#059669':n.tone==='red'?'#dc2626':'#d97706';
@@ -832,7 +836,7 @@ export function renderWebScreen(model: ScreenModel, canvas: HTMLCanvasElement, v
   if (modal) {
     const underlay=model.web!.underlay??{title:'',rows:[],web:{page:'home' as const,user:model.web!.document?.user,guestHome:!model.web!.document?.user}};
     renderWebScreen(underlay,canvas,v,artwork);if(model.web!.document?.kind!=='admin-friends')drawBlurredBackdrop(canvas,ctx,v,underlay,artwork);
-    ctx.fillStyle = model.web!.document?.kind==='chat'&&model.web!.document?.activeTab!=='direct'?'rgba(0,0,0,.65)':model.web!.document?.kind==='art'?'rgba(4,9,16,.88)':model.web!.document?.kind==='admin-friends'?'rgba(0,0,0,.7)':'rgba(7, 26, 44, 0.78)';
+    ctx.fillStyle = model.web!.document?.adminReplay?'rgba(0,0,0,.82)':model.web!.document?.kind==='chat'&&model.web!.document?.activeTab!=='direct'?'rgba(0,0,0,.65)':model.web!.document?.kind==='art'?'rgba(4,9,16,.88)':model.web!.document?.kind==='admin-friends'?'rgba(0,0,0,.7)':'rgba(7, 26, 44, 0.78)';
     ctx.fillRect(0, 0, v.width, v.height);
   }
   const scene = model.web!.background ?? (model.web!.page === 'home' ? 'gate' : model.web!.page === 'setup' ? 'library' : model.web!.page === 'table' ? model.web!.room?.game ? 'sword' : 'pavilion' : 'library');
