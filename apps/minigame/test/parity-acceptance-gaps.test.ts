@@ -331,7 +331,7 @@ test('admin replay opens real replay sections and gates audit to admin views',as
  const {parityAdminReplay}=await import('../scripts/parity-fixture.js');const replay=parityAdminReplay(),d=parityAdminData(),panel=new AdminPanel({verify:async()=>{},overview:async()=>({}),rooms:async()=>({rooms:d.rooms}),games:async()=>({games:d.games}),replay:async()=>replay} as any);
  await panel.open('mock');await panel.handle('page:games',async()=>undefined);await panel.handle('replay:'+replay.id,async()=>undefined);
  assert.equal(panel.model().web?.document?.adminReplay,true);assert.equal(panel.model().web?.underlay?.web?.activeTab,'page:games');
- let layout=layoutWebScreen(panel.model(),viewport);assert.ok(layout.nodes.some(n=>n.id==='details:metadata'));assert.ok(!layout.nodes.some(n=>n.id==='audit-note'));
+ let layout=layoutWebScreen(panel.model(),viewport);assert.ok(layout.nodes.some(n=>n.id==='details:metadata'));assert.ok(!layout.nodes.some(n=>n.id.startsWith('replay:inspection:')||n.id.startsWith('replay:early:')));assert.ok(!layout.nodes.some(n=>n.id==='audit-note'));
  await panel.handle('details:audit',async()=>undefined);layout=layoutWebScreen(panel.model(),viewport);assert.ok(layout.nodes.some(n=>n.id==='audit-note'));assert.ok(layout.nodes.some(n=>n.text.includes('1234567890123456')));
  await panel.handle('details:identities',async()=>undefined);layout=layoutWebScreen(panel.model(),viewport);assert.equal(layout.nodes.filter(n=>n.id.startsWith('replay-player:')).length,replay.players.length);
  const publicModel=panel.model();publicModel.web!.document!.adminReplay=false;publicModel.web!.document!.modal=false;assert.ok(!layoutWebScreen(publicModel,viewport).nodes.some(n=>n.id==='audit-note'));
@@ -358,4 +358,17 @@ test('submitted vote explanation stays inside its responsive card',()=>{
 test('wide replay keeps captain and direction on one row while narrow screens wrap',async()=>{
  const {user}=parityFixture('game'),d=parityPlayerData(),panel=new PlayerPanel({replay:async()=>d.replay} as any,user);await panel.openReplay(d.replay.id,'page:history');
  for(const width of [320,430]){const nodes=layoutWebScreen(panel.model(),{...viewport,width}).nodes,frame=nodes.find(n=>n.id==='round-captain:1')!,captain=nodes.find(n=>n.id==='round-captain-token:1')!,direction=nodes.find(n=>n.id==='round-direction:1')!;if(width===430){assert.equal(frame.height,60);assert.ok(direction.x>=captain.x+captain.width);}else{assert.equal(frame.height,94.25);assert.ok(direction.y>=captain.y+captain.height);}}
+});
+
+
+test('direct chat scrolls messages independently and matches web input limit',async()=>{
+ const {user}=parityFixture('game'),d=parityPlayerData(),messages=Array.from({length:20},(_,i)=>({id:'message'+i,senderId:d.friends[0]!.id,receiverId:user.id,message:'很长的仙友消息，用于检查独立滚动。'.repeat(4),isSelf:false,createdAt:'2026-10-22T00:00:00Z'})),panel=new PlayerPanel({friends:async()=>({friends:d.friends}),directChat:async()=>({messages})} as any,user);
+ await panel.open('friends');await panel.handle('friend:'+d.friends[0]!.id,async()=>undefined);
+ const model=panel.model(),first=layoutWebScreen(model,{width:320,height:568,top:0,bottom:0}),last=layoutWebScreen({...model,scroll:first.maxScroll},{width:320,height:568,top:0,bottom:0});assert.ok(first.maxScroll>0);assert.equal(first.nodes.find(n=>n.id==='chat:send')!.y,last.nodes.find(n=>n.id==='chat:send')!.y);assert.ok(last.nodes.some(n=>n.id==='chat:input'&&n.text==='🎙️'));assert.ok(last.nodes.find(n=>n.id==='chat:message19')!.y<last.contentBottom);
+ let limit=0;await panel.handle('chat:input',async(_label,max)=>{limit=max??0;return '测试';});assert.equal(limit,300);
+});
+
+
+test('vote progress uses CSS auto-fill columns without cutting wrapped statuses',()=>{
+ const {room,user}=parityFixture('vote');for(const [width,columns] of [[320,2],[390,3],[430,4]]){const nodes=layoutWebScreen(gameScreen(room,user,{...state(),overlay:'vote'}),{...viewport,width:width!}).nodes,ballots=nodes.filter(n=>n.id.startsWith('ballot:')),first=ballots[0]!;assert.equal(ballots.filter(n=>n.y===first.y).length,columns);assert.ok(ballots.every(n=>n.width>=80));if(width===430)assert.equal(first.height,36);}
 });

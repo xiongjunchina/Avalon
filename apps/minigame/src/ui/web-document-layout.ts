@@ -118,7 +118,7 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
         }else{const hint=txt('round-vote-pending:'+r.number,'本次表决未完成，不展示未收齐的个人选择。',y,12.5,{align:'center',tone:'muted',lineHeight:17.5},x+sectionPad,w-sectionPad*2);y+=hint.height+(compact?9:13);}
         voteFrame.height=y-voteFrame.y;y+=sectionGap;
         if(r.result){const frame=panel('round-result:'+r.number,y,compact?105.140625:113.140625,'battle-section');txt('round-result-title:'+r.number,r.result.passed?'✓ 任务成功':'× 任务失败',y+(compact?15:19),19,{fontFace:'display',tone:r.result.passed?'green':'red',align:'center',lineHeight:25.640625},x+14,w-28);add('label','round-result-count:'+r.number,r.result.successes+'|'+r.result.failures,x+14,y+(compact?46.640625:50.640625),w-28,26,{skin:'battle-card-counts'});txt('round-result-privacy:'+r.number,'任务牌始终匿名，不对应个人。',y+(compact?78.640625:82.640625),12.5,{align:'center',tone:'muted',lineHeight:17.5},x+14,w-28);y=frame.y+frame.height+(doc.kind==='replay'?22:10);}
-        for(const row of model.rows.filter(row=>row.id.startsWith(`replay:inspection:${r.number}:`)||row.id.startsWith(`replay:early:${r.number}:`)))para(row.id,row.text);
+        // Replay inspection and early-window records are rendered once in the shared disclosure sections below.
       }
   };
   const game=doc.game;
@@ -456,9 +456,9 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
     txt('vote-history-heading','📜 往难功过簿（'+(completed.length?'已历 '+completed.length+' 难':'初难暂无记录')+'）',y,12,{tone:'gold',lineHeight:16.8});y+=30.8;
     if(!completed.length){txt('vote-history-empty','此乃西行首难，尚无往难战况记录，凭慧眼明断！',y+4,11,{align:'center'});y+=45.25;}
     else for(const r of completed){para('vote-history:'+r.number,'第'+r.mission+'难 · '+(r.result?.passed?'🪷 护经功成':'🔥 妖魔作祟')+'\n领队：'+(game.players.find(p=>p.id===r.captainId)?.nickname??'')+' · 出征：'+r.team.map(id=>game.players.find(p=>p.id===id)?.nickname??'').join('、'),12);}
-    const columnsV=v.width<360?2:3,rows=Math.ceil(game.players.length/columnsV),progressH=60.046875+rows*29.390625;
+    const columnsV=Math.max(1,Math.floor((w-20)/86)),rows=Math.ceil(game.players.length/columnsV),chipW=(w-26-(columnsV-1)*6)/columnsV,chipH=chipW<92?36:23.390625,progressH=60.046875+rows*(chipH+6);
     panel('vote-progress',y,progressH,'progress');txt('progress','投票进度',y+10,12,{},x+10,96);txt('progress-total',(game.teamVote?.votedIds.length??0)+' / '+game.players.length+' 人已投',y+10,13,{tone:'gold',weight:'700',align:'right'},x+110,w-120);
-    game.players.forEach((p,i)=>{const done=game.teamVote?.votedIds.includes(p.id),ballot=game.teamVote?.ballots?.[p.id];add('label','ballot:'+p.id,p.seat+'号 '+p.nickname+'  '+(ballot==='abstain'?'− 旁观':ballot===true?'✓ 准行':ballot===false?'× 封驳':done?'已落印':'待落印'),x+10+i%columnsV*((w-14)/columnsV),y+31.796875+Math.floor(i/columnsV)*29.390625,(w-20-(columnsV-1)*6)/columnsV,23.390625,{skin:'voter-chip',fontSize:9.5,tone:done?'green':'gold'});});
+    game.players.forEach((p,i)=>{const done=game.teamVote?.votedIds.includes(p.id),ballot=game.teamVote?.ballots?.[p.id];add('label','ballot:'+p.id,p.seat+'号 '+p.nickname+'  '+(ballot==='abstain'?'− 旁观':ballot===true?'✓ 准行':ballot===false?'× 封驳':done?'已落印':'待落印'),x+13+i%columnsV*(chipW+6),y+31.796875+Math.floor(i/columnsV)*(chipH+6),chipW,chipH,{skin:'voter-chip',fontSize:9.5,tone:done?'green':'gold'});});
     txt('vote-privacy',game.teamVote?.ballots?'🔓 公开表决：提交后全员可见票型':'🔒 匿名表决：仅公开落印进度，不公开个人票型',y+progressH-25,10.5,{align:'center'},x+5,w-10);y+=progressH+6;for(const n of nodes.slice(voteBodyStart)){if(n.x===x&&n.width===w){n.x+=2;n.width-=4;}if(n.id.startsWith('vote-choice:')){const i=['approve','reject','abstain'].indexOf(n.id.slice(12));n.x=x+2+i*(w+4)/3;n.width=(w-20)/3;}if(n.id==='vote-captain'){n.x+=2;n.width-=4;}}bodyEnd=y;
   } else if(doc.kind==='art'&&doc.roleItem) {
     const item=doc.roleItem,gallery=model.web?.backId==='guideArtClose';y=20;
@@ -694,16 +694,22 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
 
       y+=doc.friendTab==='friends'?-8:doc.friendTab==='add'?-4:6;
     } else if(doc.kind==='chat') {
-      const direct=doc.activeTab==='direct';modalHeader(direct?'仙友录 · 召集与好友':'法坛传音');
-      if(direct){panel('direct-topbar',y,104,'direct-topbar');button('page:friends','← 返回仙友录',y+34,{skin:'direct-back',fontSize:12},x+14,104,48);const f=doc.chatFriend;if(f){add('portrait','direct-friend','',x+118,y+8,92,92,{skin:'direct-avatar',image:f.avatarUrl??'emblems/'+(f.avatar??'cards')+'.png'});txt('direct-name',f.nickname,y+22,13.5,{tone:'gold',weight:'700'},x+214,24);}button('refresh:direct','🔄',y+34,{skin:'direct-back',fontSize:12},x+w-117.53125,103.53125,48);y+=104;}
-      const streamStart=y,streamMin=direct?142:120;
-      for(const msg of doc.messages??[]){const tw=Math.min(w*.78,Math.max(60,measure(msg.text,13)+26)),lines=wrapText(msg.text,tw-26,t=>measure(t,13)),h=lines.length*(direct?18.2:20)+(direct?18:38);add('label','chat:'+msg.id,msg.text,msg.self?x+w-tw-12:x+12,y+(direct?12:0),tw,h,{skin:direct?'direct-message':'message',lines,fontSize:13,detail:direct?'':msg.name,selected:msg.self,align:'left'});y+=h+(direct?15:0);if(direct&&msg.timestamp){const time=new Date(msg.timestamp).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit',hour12:false});txt('chat-time:'+msg.id,time,y,10.5,{tone:'muted',lineHeight:15},msg.self?x+w-tw-8:x+16,tw-8);y+=15;}y+=12;}
-      if(!doc.messages?.length){const n=txt('empty',direct?'📜 暂无密札往来，发送快捷密语或打字开始交谈吧！':'法坛尚无传音，发送文字与仙友论道。',y+20,12,{tone:'muted',align:'center'});y=n.y+n.height+12;}y=Math.max(y,streamStart+streamMin);
-      if(direct){const quick=model.rows.filter(r=>r.id.startsWith('quick:')),widths=quick.map(r=>measure(r.text,11.5)+20),max=Math.max(0,widths.reduce((a,b)=>a+b+6,0)-6-w+24),offset=Math.min(max,Math.max(0,model.horizontalScroll??0));let qx=x+12-offset;panel('direct-quick-strip',y,80,'direct-quick-strip');quick.forEach((r,i)=>{button(r.id,r.text,y+22,{skin:'direct-quick',fontSize:11.5,clipLeft:x+12,clipRight:x+w-12,scrollMaxX:max},qx,widths[i]!,48);qx+=widths[i]!+6;});y+=74;}
-      else if(doc.quickExpanded){let qx=x,qy=y;for(const r of model.rows.filter(r=>r.id.startsWith('quick:'))){const qw=Math.min(w,measure(r.text,11)+20);if(qx+qw>x+w){qx=x;qy+=40;}button(r.id,r.text,qy,{skin:'pill',fontSize:11},qx,qw,34);qx+=qw+6;}y=qy+46;}
-      else{button('quickToggle','📜 快捷密语',y,{skin:'accordion'});y+=48;}
-      if(direct)panel('direct-input-bar',y,54,'direct-input-bar');
-      button('chat:input',doc.chatDraft||(direct?'向 '+(doc.chatFriend?.nickname??'仙友')+' 发送密札…':'向仙友发送密札…'),y+(direct?8:0),{skin:direct?'direct-input':'input',fontSize:13.5},x+(direct?12:0),w-(direct?90:68),38);button(direct?'chat:send':'chat:sendroom',direct?'传札':'发送',y+(direct?8:0),{skin:direct?'direct-send':'gold-button',primary:true,fontSize:14,disabled:!doc.chatDraft?.trim()},x+w-(direct?70:60),58,38);y+=direct?54:50;
+      modalHeader('仙友录 · 召集与好友');
+      const sheetTop=y,sheetH=Math.min(380,v.height*.6),inner=w-28,targetNatural=256+8+measure(doc.chatFriend?.nickname??'',13.5,'sans','700'),avatarD=(inner-44)*targetNatural/(2*(inner-22)+targetNatural),backW=(inner-avatarD)/2,headH=avatarD+17;
+      panel('direct-topbar',y,headH,'direct-topbar');button('page:friends','← 返回仙友录',y+(headH-48)/2+7,{skin:'direct-back',fontSize:12},x+14,backW,48);
+      const f=doc.chatFriend;if(f){add('portrait','direct-friend','',x+14+backW,y+8,avatarD,avatarD,{skin:'direct-avatar',image:f.avatarUrl??'emblems/'+(f.avatar??'cards')+'.png'});const lines=wrapText(f.nickname,13.5,t=>measure(t,13.5,'sans','700'));txt('direct-name',f.nickname,y+8+(avatarD-lines.length*20)/2,13.5,{tone:'gold',weight:'700',lines,lineHeight:20},x+22+backW+avatarD,13.5);}
+      button('refresh:direct','🔄',y+(headH-48)/2+7,{skin:'direct-back',fontSize:12},x+14+backW+avatarD,backW,48);y+=headH;
+      const streamTop=y,streamBottom=sheetTop+sheetH-134;let messageY=streamTop+12;const messageStart=nodes.length;
+      for(const msg of doc.messages??[]){const tw=Math.min((w-24)*.78,Math.max(60,measure(msg.text,13)+26)),lines=wrapText(msg.text,tw-26,t=>measure(t,13)),h=lines.length*18.2+18,px=msg.self?x+w-tw-12:x+12;add('label','chat:'+msg.id,msg.text,px,messageY,tw,h,{skin:'direct-message',lines,fontSize:13,selected:msg.self});messageY+=h;if(msg.timestamp){txt('chat-time:'+msg.id,new Date(msg.timestamp).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit',hour12:false}),messageY+3,10.5,{tone:'muted',lineHeight:15},px+4,tw-8);messageY+=18;}messageY+=10;}
+      if(!doc.messages?.length){const empty=txt('direct-empty','📜 暂无密札往来，发送快捷密语或打字开始交谈吧！',messageY+30,12,{tone:'muted',align:'center'},x+42,w-84);messageY=empty.y+empty.height+30;}
+      const messageEnd=nodes.length,maxScroll=Math.max(0,messageY+2-streamBottom),scroll=Math.min(model.scroll??0,maxScroll);
+      y=streamBottom;const quick=model.rows.filter(r=>r.id.startsWith('quick:')),widths=quick.map(r=>measure(r.text,11.5)+20),maxX=Math.max(0,widths.reduce((a,b)=>a+b+6,0)-6-w+24);let qx=x+12-Math.min(maxX,Math.max(0,model.horizontalScroll??0));panel('direct-quick-strip',y,79,'direct-quick-strip');quick.forEach((r,i)=>{button(r.id,r.text,y+23,{skin:'direct-quick',fontSize:11.5,clipLeft:x+12,clipRight:x+w-12,scrollMaxX:maxX},qx,widths[i]!,48);qx+=widths[i]!+6;});y+=79;
+      panel('direct-input-bar',y,55,'direct-input-bar');button('chat:input','🎙️',y+9,{skin:'chat-mic',fontSize:18},x+12,38,38);button('chat:input',doc.chatDraft||'向 '+(f?.nickname??'仙友')+' 发送密札…',y+9,{skin:'direct-input',fontSize:13.5},x+58,w-136,38);button('chat:send','传札',y+9,{skin:'direct-send',fontSize:14,disabled:!doc.chatDraft?.trim()},x+w-70,58,38);y+=55;
+      const h=y+socialPad,fy=top+(available-h)/2;
+      nodes.forEach((n,i)=>{n.y+=fy;n.fixed=i<messageStart||i>=messageEnd;if(!n.fixed){n.y-=scroll;n.clipTop=fy+streamTop;n.clipBottom=fy+streamBottom;}});
+      const frame=add('panel','dialog-frame','',ox,fy,width,h,{skin:'dialog-frame',fixed:true});nodes.splice(nodes.indexOf(frame),1);nodes.unshift(frame);
+      feedback.slice(0,1).forEach(r=>button(r.id==='error'?'error':'dismissFeedback',r.text,fy+Math.min(60,h-70),{skin:'toast',tone:r.id==='error'?'red':'gold',fixed:true,fontSize:12},x,w,56));
+      add('hitbox','noop','',ox,fy,width,h,{skin:'hitbox',fixed:true});add('hitbox',model.web!.backId??'back','',0,top,v.width,available,{skin:'hitbox',fixed:true});return {nodes,maxScroll,contentTop:fy+streamTop,contentBottom:fy+streamBottom};
     } else if(doc.kind==='guide'||doc.kind==='guide-role') {
       y=14;
       panel('guide-toolbar',y,50,'card');
@@ -902,7 +908,7 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
     appendSettingChoices();
     return {nodes,maxScroll,contentTop:clipTop,contentBottom:clipBottom};
   }
-  const maxScroll=Math.max(0,y+(doc.kind==='guide'&&doc.activeTab!=='roles'?6:doc.kind==='guide'||doc.kind==='guide-role'?12:doc.kind==='account'&&['history','favorites'].includes(doc.activeTab??'')?8:doc.kind==='admin'?36:doc.kind==='replay'?39:40)-available),scroll=Math.min(model.scroll??0,maxScroll);
+  const maxScroll=Math.max(0,y+(doc.kind==='settings'&&doc.activeTab==='setup'?18:doc.kind==='guide'&&doc.activeTab!=='roles'?6:doc.kind==='guide'||doc.kind==='guide-role'?12:doc.kind==='account'&&['history','favorites'].includes(doc.activeTab??'')?8:doc.kind==='admin'?36:doc.kind==='replay'?39:40)-available),scroll=Math.min(model.scroll??0,maxScroll);
   if(doc.kind==='replay'){
     const heading=nodes.find(n=>n.id==='page-title'),back=nodes.find(n=>n.id===(model.web?.backId??'back')&&n.kind==='button'),nav=nodes.find(n=>n.id==='round-navigation');
     if(heading){heading.fixed=true;heading.y=Math.max(0,heading.y-scroll);if(back){back.fixed=true;back.y=heading.y+8;}}

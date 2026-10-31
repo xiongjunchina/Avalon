@@ -181,7 +181,7 @@ function model(): ScreenModel {
     : privateSelf?.femaleDemon ? `minion-${privateSelf.femaleDemon}` : privateSelf?.role;
   const nextHorizontalContext=[view,auxiliary,result.web?.document?.kind,result.web?.document?.activeTab,result.web?.document?.replay?.id].join('|');
   if(nextHorizontalContext!==horizontalContext){horizontalContext=nextHorizontalContext;horizontalScroll=0;activeRound=undefined;}
-  const chatDoc=result.web?.document,chatKey=chatDoc?.kind==='chat'&&chatDoc.activeTab!=='direct'?nextHorizontalContext+'|'+(chatDoc.messages?.at(-1)?.id??'empty'):'';
+  const chatDoc=result.web?.document,chatKey=chatDoc?.kind==='chat'?nextHorizontalContext+'|'+(chatDoc.chatFriend?.id??'room')+'|'+(chatDoc.messages?.at(-1)?.id??'empty'):'';
   if(chatKey!==roomChatScrollKey){roomChatScrollKey=chatKey;if(chatKey)scroll=Number.MAX_SAFE_INTEGER;}
   return { ...result, scroll, horizontalScroll, activeRound, scene: view === 'entry' ? 'entry' : view === 'game' || view === 'practice' || view === 'lobby' ? 'game' : view === 'admin' ? 'admin' : 'standard',
     ...(portraitRole ? { portrait: `${portraitRole}-160.webp` } : view === 'guide' && guideRoleId ? { portrait: `${guideRoleId}-160.webp` } : {}) };
