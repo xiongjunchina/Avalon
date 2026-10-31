@@ -20,7 +20,7 @@ export async function buildMiniGame({
   outDir = join(repoRoot, 'dist', 'minigame'),
   appId = process.env.WECHAT_MINIGAME_APP_ID,
   apiBaseUrl = process.env.WECHAT_MINIGAME_API_BASE_URL || DEFAULT_API_BASE_URL,
-  voiceEnabled = process.env.WECHAT_MINIGAME_VOICE_ENABLED === 'true',
+  voiceEnabled = process.env.WECHAT_MINIGAME_VOICE_ENABLED !== 'false',
   maxBytes = 4 * 1024 * 1024,
 } = {}) {
   const serviceUrl = normalizeServiceUrl(apiBaseUrl);

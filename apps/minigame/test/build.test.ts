@@ -31,8 +31,8 @@ test('default build uses the registered Mini Game AppID rather than tourist mode
   t.after(() => rm(outDir, { recursive: true, force: true }));
   const result = await buildMiniGame({ outDir });
   assert.equal(result.apiBaseUrl, 'https://game.ccnepower.com/avalon');
-  assert.equal(result.voiceEnabled, false);
-  assert.equal(JSON.parse(await readFile(join(outDir,'game.json'),'utf8')).permission?.['scope.record'], undefined);
+  assert.equal(result.voiceEnabled, true);
+  assert.ok(JSON.parse(await readFile(join(outDir,'game.json'),'utf8')).permission?.['scope.record']);
   const bundle = await readFile(join(outDir, 'bundle.js'), 'utf8');
   assert.match(bundle, /https:\/\/game\.ccnepower\.com\/avalon/);
   assert.doesNotMatch(bundle, /avalon\.ccnepower\.com:8443|\/mafia\/api/);
@@ -117,4 +117,12 @@ test('incremental builds remove only obsolete artwork and keep the new font budg
   assert.deepEqual(await readFile(join(outDir,'hd-art/merlin-640.jpg')),await readFile('apps/minigame/assets/hd-art/merlin-640.jpg'));
   assert.equal((await readdir(join(outDir,'art'))).includes('moonlit.png'),false);
   assert.ok((await readFile(join(outDir,'art/fonts/calligraphy.ttf'))).length>0);
+});
+
+test('explicitly disabled voice build omits microphone permission', async t => {
+  const outDir = await mkdtemp(join(tmpdir(), 'avalon-minigame-no-voice-'));
+  t.after(() => rm(outDir, {recursive:true, force:true}));
+  const result = await buildMiniGame({outDir, voiceEnabled:false});
+  assert.equal(result.voiceEnabled, false);
+  assert.equal(JSON.parse(await readFile(join(outDir, 'game.json'), 'utf8')).permission?.['scope.record'], undefined);
 });

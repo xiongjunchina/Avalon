@@ -18,13 +18,19 @@ test('built client logs in, opens a clean join form and creates the selected web
   const user = { id: '11111111-1111-4111-8111-111111111111', nickname: '行者', playerCode: '123456' };
   const storage = new Map(), requests: { path: string; data: any }[] = [];
   let frame: { text: string; x: number; y: number }[] = [];
+  const painted: string[] = [];
+  let chosenAvatars = 0;
+  let pendingHistory: any;
   const ctx = new Proxy({}, { get: (_target, key) => (key === 'createLinearGradient' || key === 'createRadialGradient') ? () => ({ addColorStop() {} })
     : key === 'measureText' ? (text: string) => ({ width: Array.from(text).reduce((sum, char) => sum + (/[^\u0020-\u007e]/.test(char) ? 1 : .6) * (Number(/([\d.]+)px/.exec(String((_target as any).font))?.[1]) || 12), 0) })
     : key === 'fillRect' ? (x: number, y: number, w: number, h: number) => { if (x === 0 && y === 0 && w === 390 && h === 844) frame = []; }
-    : key === 'fillText' ? (text: string, x: number, y: number) => frame.push({ text, x, y })
+    : key === 'fillText' ? (text: string, x: number, y: number) => (painted.push(text), frame.push({ text, x, y }))
     : () => {} });
   const wx = {
-    createCanvas: () => ({ getContext: () => ctx }),
+    createCanvas: () => ({ getContext: () => ctx, toTempFilePathSync: () => 'avatar.jpg' }),
+    chooseImage: (o: any) => { chosenAvatars++; o.success({tempFilePaths:['photo.jpg']}); },
+    createImage: () => ({width:200,height:200,set src(_s: string) { (this as any).onload?.(); }}),
+    getFileSystemManager: () => ({readFileSync: () => 'AAAA'}),
     getSystemInfoSync: () => ({ screenWidth: 390, screenHeight: 844, pixelRatio: 2, safeArea: { top: 44, bottom: 810 } }),
     getStorageSync: (key: string) => storage.get(key), setStorageSync: (key: string, value: unknown) => storage.set(key, value), removeStorageSync: (key: string) => storage.delete(key),
     login: (options: any) => options.success({ code: 'verified-on-server' }),
@@ -33,6 +39,9 @@ test('built client logs in, opens a clean join form and creates the selected web
       let data: any = {};
       if (path === '/system/announcement') data = { announcement: { enabled: false, text: '' }, freeAccessMode: true };
       else if (path === '/sessions/minigame') data = { user, token: 'test-token' };
+      else if (path === '/me/stats') data = {completed:0,wins:0,losses:0,byTeam:{},byRole:{}};
+      else if (path === '/me/games') { pendingHistory = options; return; }
+      else if (path === '/me' && options.method === 'PATCH') data = {user:{...user,...options.data}};
       else if (path === '/me') data = { user, roomId: null };
       else if (path === '/rooms') { room = { id: '22222222-2222-4222-8222-222222222222', code: '123456', hostId: user.id, version: 1, phase: 'waiting', settings: options.data.settings, members: [{ ...user, seat: 1, ready: false, online: true }], acceptingNewMembers: true }; data = { room }; }
       else if (path.startsWith('/rooms/')) data = { room };
@@ -78,6 +87,18 @@ test('built client logs in, opens a clean join form and creates the selected web
   }
   await settle(); await tap('登录 / 注册');await tap('例如：小陈、阿辉');confirmKeyboard({value:'行者'});await settle();await tap('取好昵称，继续游戏');
   assert.ok(frame.some(item => item.text === '开常规房'));
+  await tap('行者');
+  painted.length = 0;
+  await tap('历史对局');
+  assert.ok(!painted.some(text => /请稍候|正在处理/.test(text)), 'tab switches must not paint a global loading toast');
+  if (pendingHistory) { pendingHistory.success({statusCode:200,data:{games:[]}}); await settle(); }
+  await tap('我的战绩');
+  await tap('修改昵称与头像');
+  await tap('上传自定义头像');
+  assert.equal(chosenAvatars, 1, 'the visible upload button must invoke the native picker');
+  await tap('保存资料');
+  assert.equal(requests.find(item => item.path === '/me' && item.data?.avatarUrl)?.data.avatarUrl, 'data:image/jpeg;base64,AAAA');
+  await tap('返回原页面');
   await tap('加入房间');
   assert.ok(frame.some(item => item.text === '输入房间号或邀请链接'));
   await tap('入座取经');

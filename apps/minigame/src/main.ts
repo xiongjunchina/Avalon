@@ -112,7 +112,7 @@ const gameUi: GameUiState = { privateRoleVisible: false, ballotVisible: false, s
 function feedback(result: ScreenModel): ScreenModel {
   result = { ...result, rows: [...result.rows], scroll };
   if (error) result.rows.unshift({ id: 'error', text: error });
-  if (busy) result.rows.unshift({ id: 'status', text: status || '正在处理，请稍候…' });
+  if (busy && status) result.rows.unshift({ id: 'status', text: status });
   if (notice) result.rows.unshift({ id: 'notice', text: notice });
   if (announcement) result.rows.unshift({ id: 'announcement', text: announcement });
   if (invites.code) result.rows.unshift({ id: 'invitation', text: invites.label()! });
@@ -246,14 +246,14 @@ async function joinWithPassword(key:string):Promise<RoomView>{
   try{return await lobby!.join(key);}catch(cause){if(!(cause instanceof Error)||!['ROOM_PASSWORD_REQUIRED','ROOM_PASSWORD_INVALID'].includes(cause.message))throw cause;status='请输入房间密码';render();const password=await askText(wx,'',64);if(password===undefined)throw Error('已取消入房');return lobby!.join(key,password);}
 }
 
-async function run(action: () => Promise<void>) {
+async function run(action: () => Promise<void>, silent = false) {
   if (busy) return;
   busy = true;
   error = '';
-  status = '请稍候…';
+  status = silent ? '' : '请稍候…';
   render();
   try { await action(); }
-  catch (cause) { error = describeMiniGameError(cause); }
+  catch (cause) { if (!(cause instanceof Error && cause.message === 'AVATAR_CANCELLED')) error = describeMiniGameError(cause); }
   finally { busy = false; status = ''; render(); }
 }
 
@@ -352,7 +352,7 @@ async function select(id: string) {
     if (applied && room?.hostId === user.id) lobby?.updateSettings(applied);
     if (outcome === 'back') navigate(previousView);
     else if(outcome&&typeof outcome==='object')connect(await joinWithPassword(outcome.joinCode));
-  });
+  }, id.startsWith('page:') || id.startsWith('friendTab:') || id === 'profileToggle' || id.startsWith('profile:') && id !== 'profile:save' || id === 'uploadAvatar');
   if (view === 'admin') return run(async () => {
     try {
       const title = adminPanel.model().title;
