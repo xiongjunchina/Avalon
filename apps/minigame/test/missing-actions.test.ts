@@ -13,12 +13,12 @@ test('account has a reachable admin entry, not just a hidden action row',async()
  const admin=end.nodes.find(n=>n.id==='admin');assert.ok(admin);assert.ok(admin.y>=viewport.top&&admin.y+admin.height<=810);
 });
 test('friends list exposes and executes room invitations without opening private chat',async()=>{
- const d=parityPlayerData(),{user}=parityFixture();const invited:string[]=[];
- const panel=new PlayerPanel({friends:async()=>({friends:d.friends}),invite:async(roomId:string,id:string)=>{invited.push(roomId+':'+id);return {online:true};}} as unknown as PlayerExtras,user);
+ const d=parityPlayerData(),{user}=parityFixture();const invited:string[]=[];let reads=0;
+ const panel=new PlayerPanel({friends:async()=>{reads++;return {friends:d.friends};},invite:async(roomId:string,id:string)=>{invited.push(roomId+':'+id);return {online:true};}} as unknown as PlayerExtras,user);
  await panel.open('friends',{roomId:'room-1'});await panel.handle('friendTab:friends',async()=>undefined);
  const friend=d.friends.find(f=>f.status==='accepted')!;
  assert.ok(layoutWebScreen(panel.model(),viewport).nodes.some(n=>n.id==='inviteFriend:'+friend.id));
- assert.ok(layoutWebScreen(panel.model(),viewport).nodes.some(n=>n.id==='refresh:friends'));
+ assert.ok(layoutWebScreen(panel.model(),viewport).nodes.some(n=>n.id==='friendTab:friends'));const before=reads;await panel.handle('friendTab:friends',async()=>undefined);assert.equal(reads,before+1);
  await panel.handle('inviteFriend:'+friend.id,async()=>undefined);assert.deepEqual(invited,['room-1:'+friend.id]);
 });
 test('long account names do not grow through the help text or copy control',async()=>{

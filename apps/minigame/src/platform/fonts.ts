@@ -1,15 +1,31 @@
 import type { WxRuntime } from './wechat.js';
 import { setWebFonts } from '../ui/web-render.js';
 
-// wx.loadFont takes a packaged local TrueType path and returns a Canvas family.
-// https://developers.weixin.qq.com/minigame/dev/api/render/font/wx.loadFont.html
-export function installWebFonts(wx: Pick<WxRuntime, 'loadFont'|'loadSubpackage'>, redraw:()=>void=()=>{}): void {
-  if (!wx.loadFont) return;
+// Fonts use the same packaged TrueType sources as the web. Return a throttled
+// retry hook so a temporary download failure does not leave system fonts forever.
+export function installWebFonts(wx: Pick<WxRuntime, 'loadFont'|'loadSubpackage'>, redraw:()=>void=()=>{}, now:()=>number=Date.now): ()=>void {
+  if (!wx.loadFont) return ()=>{};
   const loaded: Record<string, string> = {};
   for (const name of ['calligraphy', 'sans']) {
     try { const family = wx.loadFont('art/fonts/' + name + '.ttf'); if (family) loaded[name] = family; }
-    catch { /* System font fallback keeps older runtimes usable. */ }
+    catch { /* Keep system fallback available on older runtimes. */ }
   }
   setWebFonts(loaded);
-  if(wx.loadSubpackage)try{wx.loadSubpackage({name:'web-fonts',success:()=>{try{const family=wx.loadFont!('web-fonts/display.ttf');if(family)loaded.display=family;}catch{}for(const weight of [500,600,700])try{const family=wx.loadFont!('web-fonts/sans'+weight+'.ttf');if(family)loaded['sans'+weight]=family;}catch{}try{const family=wx.loadFont!('web-fonts/homeInterface.ttf');if(family)loaded.homeInterface=family;}catch{}setWebFonts(loaded);redraw();},fail:()=>{}});}catch{}
+  let loading=false,ready=false,retryAt=0;
+  const retry=()=>{
+    if(!wx.loadSubpackage||loading||ready||now()<retryAt)return;
+    loading=true;
+    const fail=()=>{loading=false;retryAt=now()+30000;};
+    try{wx.loadSubpackage({name:'web-fonts',success:()=>{
+      loading=false;
+      for(const name of ['display','sans500','sans600','sans700','homeInterface']){
+        if(loaded[name])continue;
+        try{const family=wx.loadFont!('web-fonts/'+name+'.ttf');if(family)loaded[name]=family;}catch{}
+      }
+      ready=['display','sans500','sans600','sans700','homeInterface'].every(name=>!!loaded[name]);
+      if(!ready)retryAt=now()+30000;
+      setWebFonts(loaded);redraw();
+    },fail});}catch{fail();}
+  };
+  retry();return retry;
 }

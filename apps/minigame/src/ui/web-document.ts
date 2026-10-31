@@ -29,6 +29,7 @@ export interface WebDocument {
   voteChoice?: boolean | 'abstain';
   submitted?: boolean;
   historyExpanded?: boolean;
+  earlyHistoryExpanded?: boolean;
   reportMission?: number;
   roleItem?: RoleGalleryItem;
   activeTab?: string;

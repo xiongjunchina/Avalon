@@ -38,7 +38,7 @@ declare const wx: WxRuntime;
 declare const __MINIGAME_API_BASE_URL__: string;
 
 const baseUrl = __MINIGAME_API_BASE_URL__;
-installWebFonts(wx,()=>{setTimeout(render,0);});
+const retryWebFonts=installWebFonts(wx,()=>{setTimeout(render,0);});
 const platform = new WechatPlatform(wx);
 const canvas = drawShell(platform);
 setBackdropCanvasFactory(()=>wx.createCanvas() as unknown as HTMLCanvasElement);
@@ -167,6 +167,7 @@ function model(): ScreenModel {
     ...(portraitRole ? { portrait: `${portraitRole}-160.webp` } : view === 'guide' && guideRoleId ? { portrait: `${guideRoleId}-160.webp` } : {}) };
 }
 function render() {
+  retryWebFonts();
   clearTimeout(countdownTimer);
   sound.update(view === 'practice' ? practice?.view().game : view === 'game' ? room?.game : undefined, !suspended && (view === 'practice' || view === 'game' && connectionStatus === '已连接'));
   configureDocumentMetrics(canvas);
@@ -320,6 +321,7 @@ async function select(id: string) {
     const applied = playerPanel!.takeAppliedSettings();
     if (applied && room?.hostId === user.id) lobby?.updateSettings(applied);
     if (outcome === 'back') navigate(previousView);
+    else if(outcome&&typeof outcome==='object')connect(await joinWithPassword(outcome.joinCode));
   });
   if (view === 'admin') return run(async () => {
     try {
@@ -435,7 +437,7 @@ attachTouchNavigation(wx, {
   tap(x,y) { const row=hitTest(rows,x,y); if(row) void select(row.id); },
 });
 platform.onHide(() => { void nativeVoice.leave(); suspended = true; sound.foreground(false); cancelTextInput(); hideSensitiveView(gameUi); pendingConfirm = undefined; adminPanel.onHide(); if (view === 'admin') view = 'entry'; render(); });
-platform.onShow(options => { suspended = false;refreshHomeFriends(); sound.foreground(true); hideSensitiveView(gameUi); invites.receive(options?.query?.invite); connection?.resume(); render(); });
+platform.onShow(options => { suspended = false;retryWebFonts();refreshHomeFriends(); sound.foreground(true); hideSensitiveView(gameUi); invites.receive(options?.query?.invite); connection?.resume(); render(); });
 render();
 if (typeof wx.request === 'function') void extras.announcement().then(result => {
   announcement = result.announcement.enabled ? result.announcement.text : '';

@@ -30,8 +30,8 @@ export interface WebSurface {
 export interface WebNode extends HitRegion {
   kind: 'label' | 'button' | 'input' | 'portrait' | 'quest' | 'seat' | 'altar' | 'panel' | 'choice' | 'tab' | 'metric' | 'hitbox';
   fixed?: boolean; primary?: boolean; selected?: boolean; disabled?: boolean; muted?: boolean;
-  skin?: string; fontSize?: number; lineHeight?: number; fontFace?: 'sans'|'display'|'calligraphy'|'system'; weight?: string; align?: 'left'|'center'|'right'; tone?: 'blue'|'red'|'gold'|'muted'|'green';
-  image?: string; detail?: string; badge?: string; selfPlayer?: boolean; online?: boolean; team?: 'blue' | 'red'; passed?: boolean; count?: number;
+  skin?: string; letterSpacing?:number; fontSize?: number; lineHeight?: number; fontFace?: 'sans'|'display'|'calligraphy'|'system'; weight?: string; align?: 'left'|'center'|'right'; tone?: 'blue'|'red'|'gold'|'muted'|'green';
+  textRightInset?: number; image?: string; detail?: string; badge?: string; selfPlayer?: boolean; online?: boolean; team?: 'blue' | 'red'; passed?: boolean; count?: number;
   micState?: 'live' | 'speaking' | 'muted' | 'unjoined';
   teamStatus?: '已选' | '出征';
 }

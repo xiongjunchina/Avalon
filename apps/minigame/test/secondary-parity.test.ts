@@ -7,6 +7,14 @@ import { PlayerPanel, playerPanelScroll } from '../src/screens/player-panel.js';
 import { PlayerExtras } from '../src/screens/player-extras.js';
 
 const state=():GameUiState=>({privateRoleVisible:false,ballotVisible:false});
+test('battle history retains the web minimum sheet height even before the first proposal',()=>{
+ const {room,user}=parityFixture();const ui=state();handleGameOverlay(ui,room,'history');
+ for(const [width,height] of [[320,568],[390,844],[430,932]]){
+  const layout=layoutWebScreen(gameScreen(room,user,ui),{width:width!,height:height!,top:0,bottom:0});
+  assert.equal(layout.nodes.find(n=>n.id==='dialog-frame')!.height,Math.min(height!*.82,760));
+  assert.equal(layout.nodes.find(n=>n.id==='empty')!.text,'尚无已完成的组队提案。');
+ }
+});
 test('private identity is a masked horizontal card, and closing it removes private metadata',()=>{
  const {room,user}=parityFixture();const ui=state();handleGameOverlay(ui,room,'role');
  const model=gameScreen(room,user,ui);assert.equal(model.web?.document?.kind,'identity');
@@ -177,4 +185,26 @@ test('spent treasures expose their private result card and cannot be activated a
   assert.ok(!nodes.some(n=>n.id==='treasureTargets'),role);
   for(const r of model.rows.filter(r=>r.id.startsWith('treasure:')))assert.equal(gameAction(room,user,r.id,ui),undefined);
  }
+});
+
+test('battle history exposes the same completed early-assassination decisions as web',()=>{
+ const {room,user}=parityFixture();room.game.earlyAssassination={used:false,windows:[{afterMission:1,afterProposal:2,decision:'skip'}]};
+ const ui=state();handleGameOverlay(ui,room,'history');
+ const viewport={width:390,height:844,top:0,bottom:0};
+ assert.ok(layoutWebScreen(gameScreen(room,user,ui),viewport).nodes.some(n=>n.id==='earlyHistory'));
+ assert.ok(!layoutWebScreen(gameScreen(room,user,ui),viewport).nodes.some(n=>n.id==='early-window:0'));
+ handleGameOverlay(ui,room,'earlyHistory');
+ assert.match(layoutWebScreen(gameScreen(room,user,ui),viewport).nodes.find(n=>n.id==='early-window:0')!.text,/第 2 次提案后：本次跳过/);
+});
+
+test('friends can join an online accepted friend room only when not already seated',async()=>{
+ const {user}=parityFixture(),friends=parityPlayerData().friends;friends[0]={...friends[0],roomCode:'654321'} as any;
+ const panel=new PlayerPanel({friends:async()=>({friends})} as any,user);
+ await panel.open('friends');await panel.handle('friendTab:friends',async()=>undefined);
+ const id='joinFriend:'+friends[0]!.id;
+ assert.ok(layoutWebScreen(panel.model(),{width:390,height:844,top:0,bottom:0}).nodes.some(n=>n.id===id));
+ assert.deepEqual(await panel.handle(id,async()=>undefined),{joinCode:'654321'});
+ assert.equal(await panel.handle('joinFriend:unknown',async()=>undefined),undefined);
+ await panel.open('friends',{roomId:'already-seated'});
+ assert.equal(await panel.handle(id,async()=>undefined),undefined);
 });

@@ -20,6 +20,7 @@ export interface GameUiState {
   overlay?: 'identity' | 'vote' | 'mission' | 'history' | 'report' | 'treasures' | 'result' | 'more' | 'art';
   overlayReturn?: 'identity'|'treasures';
   historyExpanded?: boolean;
+  earlyHistoryExpanded?: boolean;
   voteChoice?: boolean | 'abstain';
   missionChoice?: boolean;
   reportMission?: number;
@@ -39,7 +40,7 @@ export function syncGameUi(ui: GameUiState, room: RoomView, allowAutoReveal = tr
     ui.selectedIds = [];
     ui.direction = 'clockwise';
     ui.snapshotKey = key;
-    ui.voteChoice = undefined; ui.missionChoice = undefined; ui.warning = undefined; ui.overlayReturn = undefined; ui.historyExpanded = false;
+    ui.voteChoice = undefined; ui.missionChoice = undefined; ui.warning = undefined; ui.overlayReturn = undefined; ui.historyExpanded = false; ui.earlyHistoryExpanded = false;
     if(allowAutoReveal&&game.phase==='guanyin_window'&&game.self?.treasures?.guanyinMirror?.available)ui.privateRoleVisible=true;
     ui.overlay = game.phase==='guanyin_window'&&ui.privateRoleVisible?'treasures':ui.privateRoleVisible ? 'identity' : game.phase === 'team_vote' && game.self ? 'vote' : undefined;
   }
@@ -176,6 +177,7 @@ export function handleGameOverlay(ui: GameUiState, room: RoomView, id: string): 
   if(id.startsWith('player:'))ui.treasureTargetsExpanded=false;
   if (id === 'overlayClose') { ui.overlay = ui.overlayReturn; ui.overlayReturn = undefined; ui.privateRoleVisible = ui.overlay === 'identity' || ui.overlay === 'treasures'; ui.ballotVisible = false; ui.warning = undefined; return true; }
   if (id === 'identityArt' && ui.privateRoleVisible && room.game?.self) { ui.overlayReturn='identity'; ui.overlay='art'; return true; }
+  if (id === 'earlyHistory') { ui.earlyHistoryExpanded=!ui.earlyHistoryExpanded; return true; }
   if (id === 'voteHistory') { ui.historyExpanded=!ui.historyExpanded; return true; }
   if (id === 'role') { ui.overlay = 'identity'; ui.privateRoleVisible = true; return true; }
   const overlays: Record<string, GameUiState['overlay']> = { openVote: 'vote', openMission: 'mission', history: 'history', treasures: 'treasures', more: 'more' };
@@ -259,10 +261,10 @@ function gameOverlayScreen(room: RoomView, user: User, ui: GameUiState, base: Sc
   const kind = ui.overlay === 'more' ? 'tools' : ui.overlay === 'mission' ? 'history' : ui.overlay === 'result' ? 'history' : ui.overlay!;
   const underlay = ui.overlayReturn === 'identity' && ui.overlay !== 'identity'
     ? gameOverlayScreen(room,user,{...ui,overlay:'identity',overlayReturn:undefined,privateRoleVisible:true},base) : base;
-  return { title, rows, portrait, web: { page:'sheet',sheet:ui.overlay,targetId:ui.targetId,background:ui.overlay==='identity'?'mirror':'sword',backId:'overlayClose',underlay,
+  return { title, rows, portrait, web: { page:'sheet',sheet:ui.overlay,targetId:ui.targetId,background:ui.overlay==='identity'?'mirror':game.phase==='finished'?'dawn':'sword',backId:'overlayClose',underlay,
     document: {kind,modal:true,treasureTargetsExpanded:ui.treasureTargetsExpanded,game:{...game,self:undefined},...(ui.privateRoleVisible && ['identity','treasures','art'].includes(ui.overlay??'')?{self}:{}),user,
       roleItem:ui.overlay==='art'&&self?getRoleGalleryItem(self.role,self.loyalGuardian,self.femaleDemon):undefined,
-      voteChoice:ui.voteChoice,submitted:self?.teamVoted,historyExpanded:ui.historyExpanded,reportMission:ui.reportMission} } };
+      voteChoice:ui.voteChoice,submitted:self?.teamVoted,historyExpanded:ui.historyExpanded,earlyHistoryExpanded:ui.earlyHistoryExpanded,reportMission:ui.reportMission} } };
 
 }
 

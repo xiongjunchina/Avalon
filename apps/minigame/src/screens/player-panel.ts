@@ -175,10 +175,10 @@ export class PlayerPanel {
     return { title: '玩家功能', rows: [{ id: 'back', text: '返回' }] };
   }
 
-  async handle(id: string, input: Input): Promise<'back' | void> {
+  async handle(id: string, input: Input): Promise<'back' | {joinCode:string} | void> {
     if(id.startsWith('details:')){const key=id.slice(8);if(this.expanded.has(key))this.expanded.delete(key);else this.expanded.add(key);return;}
     if(id==='dismissFeedback'){this.feedback='';return;}
-    if(id.startsWith('friendTab:')){this.friendTab=id.slice(10) as typeof this.friendTab;return;}
+    if(id.startsWith('friendTab:')){this.friendTab=id.slice(10) as typeof this.friendTab;if(this.friendTab==='friends')await this.refreshFriends();return;}
     if(id==='input:friend'){const text=await input('仙友码或尊号',50);if(text!==undefined)this.friendQuery=text;return;}
     if(id==='friend:add'){if(!this.friendQuery.trim())return;await this.api.requestFriend(this.friendQuery.trim());this.feedback='仙友申请已发送';this.friendQuery='';this.friends=(await this.api.friends()).friends;return;}
     if(id==='profileToggle'){this.profileEditing=!this.profileEditing;if(!this.profileDraft)this.profileDraft={nickname:this.user.nickname,avatar:this.user.avatar??'leaf',avatarUrl:this.user.avatarUrl,wechatAvatarUrl:this.user.wechatAvatarUrl};return;}
@@ -188,6 +188,7 @@ export class PlayerPanel {
     if(id==='profile:wechat'&&this.profileDraft){const idx=Number(/wx-(\d+)/.exec(this.profileDraft.wechatAvatarUrl??'')?.[1]??0)%12+1;this.profileDraft.wechatAvatarUrl='/art/avatars/wx-'+idx+'.webp?v=artifact1';this.profileDraft.avatarUrl=null;return;}
     if(id==='profile:save'&&this.profileDraft){if(!this.profileDraft.nickname.trim())throw new Error('请填写尊号');this.user=(await this.api.updateProfile(this.profileDraft)).user;this.profileDraft=undefined;this.profileEditing=false;this.feedback='资料已保存';return;}
     if(id==='uploadAvatar'&&this.profileEditing&&this.profileDraft){if(!this.avatarPicker)throw new Error('当前微信版本不支持上传头像');this.profileDraft.avatarUrl=await this.avatarPicker();this.profileDraft.wechatAvatarUrl=null;return;}
+    if(id.startsWith('joinFriend:')&&!this.roomId){const friend=this.friends.find(f=>f.id===id.slice(11)&&f.status==='accepted'&&f.online);if(friend?.roomCode)return {joinCode:friend.roomCode};return;}
     if(id.startsWith('acceptFriend:')){await this.api.acceptFriend(id.slice(13));await this.open('friends',{roomId:this.roomId});return;}
     if(id.startsWith('inviteFriend:')&&this.roomId){const friend=this.friends.find(f=>f.id===id.slice(13)&&f.status==='accepted');if(friend){const result=await this.api.invite(this.roomId,friend.id);this.feedback=result.online?'邀请已发送':'仙友暂不在线，可通过微信分享房间号';}return;}
     if(id.startsWith('removeFriend:')){const friend=this.friends.find(f=>f.id===id.slice(13));if(friend)this.pending={label:'删除仙友 '+friend.nickname+'？',action:()=>this.api.removeFriend(friend.id)};return;}
