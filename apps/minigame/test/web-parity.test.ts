@@ -108,3 +108,9 @@ test('home background remains unclipped behind the safe area while controls stay
  const bg=nodes.find(n=>n.id==='home-duel')!;assert.equal(bg.clipTop,0);assert.equal(bg.clipBottom,844);
  assert.ok(nodes.find(n=>n.id==='create')!.y>=44);
 });
+
+test('narrow live docks keep all six utility actions in two reachable rows', async()=>{
+ const {parityFixture}=await import('../scripts/parity-fixture.js');const {gameScreen}=await import('../src/screens/game.js');
+ const {room,user}=parityFixture();const model=gameScreen(room,user,{privateRoleVisible:false,ballotVisible:false,selectedIds:[]});
+ for(const width of [320,360]){const layout=layoutWebScreen(model,{width,height:568,top:0,bottom:0}),buttons=layout.nodes.filter(n=>n.badge==='utility');assert.equal(buttons.length,6);assert.equal(new Set(buttons.map(n=>n.y)).size,2);for(const b of buttons)assert.ok(b.width>=80);}
+});

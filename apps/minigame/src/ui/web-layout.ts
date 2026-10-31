@@ -94,7 +94,7 @@ export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout 
     const availableH = v.height - v.top - v.bottom;
     top = Math.max(6, v.top);
     add('button', web.practice ? 'exitPractice' : 'leave', '↶', 16, top + 3, 26, 26, { fixed: true });
-    add('button', 'copyRoom', web.practice ? '幻境演练' : '房号 ' + room.code, 45, top + 3, Math.min(112,w - 235), 26, { fixed: true, detail: room.members.length + '/' + count + '人 · 复制' });
+    add('button', 'copyRoom', web.practice ? '幻境演练' : '房号 ' + room.code, 45, top + 3, 111.5625, 26, { fixed: true, detail: room.members.length + '/' + count + '人 · 复制' });
     const toolScale = Math.min(1, (w - 175) / 195);
     let tx = w - 21 - 189.8 * toolScale;
     (web.practice ? [['bot','代操',26], ['rematch','重开',51.6], ['practiceSettings','配置',51.6], ['guide','📖 规则',51.6]] : [['sound','sound',26], ['chat','💬 传音',51.6], ['more','⚙️ 设置',51.6], ['guide','📖 规则',51.6]]).forEach(([id,title,width]) => {
@@ -194,9 +194,9 @@ export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout 
         }
         add('altar','altar','☯',(10+arenaInset+rightEnd-altarW)/2,arenaTop + (arenaH - altarW)/2,altarW,altarW,{ detail: (game?.draftTeam?.direction === 'counterclockwise' ? '⟲ 逆时针' : '⟳ 顺时针'), count: ended ? undefined : (game?.mission ?? 1) });
     const missionEligible=game?.phase==='mission'&&model.rows.some(row=>row.id==='mission-choice:success');
-    const dockY = arenaTop + arenaH + 4, dockH = ended?68:missionEligible?220.890625+(web.warning?44:0):w < 360 ? 170 : 154.890625;
+    const missionRule='—◇ '+(game?.failuresRequired===2?'需至少 2 张失败牌，任务方告失败':'只要出现 1 张失败牌，任务即失败')+' ◇—',missionRuleLines=wrapText(missionRule,w-58,t=>measureWebText(t,13,'display')+Array.from(t).length-1),missionRuleExtra=missionEligible?(missionRuleLines.length-1)*16.890625:0;const utilityExtra=!ended&&w<=360?50:0;const dockY = arenaTop + arenaH + 4, dockH = (ended?68:missionEligible?220.890625+missionRuleExtra+(web.warning?44:0):w < 360 ? 170 : 154.890625)+utilityExtra;
     add('panel','action-dock','',10,dockY,w-20,dockH);
-    const panelX = 20, panelW = w - 40, panelY = dockY + 8, panelH = dockH - 76;
+    const panelX = 20, panelW = w - 40, panelY = dockY + 8, panelH = dockH - 76 - utilityExtra;
     if(!ended)add('panel','dock-inner','',panelX,panelY,panelW,panelH);
     if(game?.result){
       const ry=ribbonY+126;
@@ -207,13 +207,13 @@ export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout 
       if(!web.practice)add('button','openReplay','查看完整复盘',22,ry+70,replayW,44,{skin:'pill',fontSize:13});
       if(room.hostId===web.user?.id)add('button','rematch','回到仙境等待区，再开一局',web.practice?22:30+replayW,ry+70,web.practice?w-44:Math.min(194,w-52-replayW),44,{skin:'gold-button',fontSize:14,weight:'700',primary:true});
     } else if(missionEligible&&game){
-      add('label','mission-hint','—◇ '+(game.failuresRequired===2?'需至少 2 张失败牌，任务方告失败':'只要出现 1 张失败牌，任务即失败')+' ◇—',panelX+4,panelY+8,panelW-8,22,{skin:'text',fontSize:13,fontFace:'display',tone:'gold',align:'center'});
-      const cw=(panelW-28)/2,cardY=panelY+29.890625;
+      add('label','mission-hint',missionRule,panelX+9,panelY+8,panelW-18,16.890625+missionRuleExtra,{skin:'text',fontSize:13,fontFace:'display',tone:'gold',align:'center',lines:missionRuleLines,lineHeight:16.890625,letterSpacing:1});
+      const cw=(panelW-28)/2,cardY=panelY+29.890625+missionRuleExtra;
       add('choice','mission-choice:success','任务成功',panelX+9,cardY,cw,54,{skin:'mission-card',selected:web.missionChoice===true,tone:'green',detail:'诚心助道 · 愿力圆满'});
       add('choice','mission-choice:fail','任务失败',panelX+19+cw,cardY,cw,54,{skin:'mission-card',selected:web.missionChoice===false,tone:'red',detail:web.ownTeam==='blue'?'蓝方阵营不可出失败牌':'妖魔作祟 · 破坏任务'});
       if(web.warning)add('label','mission-warning',web.warning,panelX+13,cardY+112,panelW-26,36,{skin:'warning',fontSize:11,tone:'red'});
       const submit=model.rows.find(row=>row.id==='submitMission');
-      add('button','submitMission',submit?.text??'确认提交任务牌',panelX+9,cardY+60+(web.warning?44:0),panelW-18,48,{skin:'dragon-button',primary:true,disabled:web.missionChoice===undefined});
+      add('button','submitMission',submit?.text??'确认提交任务牌',panelX+9,cardY+60+(web.warning?44:0),panelW-18,48,{skin:'dragon-button',primary:true,fontFace:'calligraphy',fontSize:17,letterSpacing:2,disabled:web.missionChoice===undefined});
     } else if (proposing && captain?.id === web.user?.id) {
       add('label','dock-rule',stage === 'proposing' ? '—◇ 点击头像选人 · 预选阵容后进入论道 ◇—' : '—◇ 真假论道 · 听取陈述后发起表决 ◇—',panelX+4,panelY+10,panelW-8,17);
       const directionW=cssClamp(100,w*.28,118), controlsX=panelX+13, controlsW=panelW-26;
@@ -224,22 +224,22 @@ export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout 
       if (actions.length) actions.forEach((action,index)=>add('button',action.id,action.text,panelX+10+index*(panelW-14)/actions.length,panelY+21,(panelW-20)/actions.length-4,48,{primary:true}));
       else add('label','dock-waiting',proposing ? '⏳ 候任静观 · 正在点将\n等待领队 '+(captain?.nickname??'')+' 钦点同行人，方案实时同步' : model.rows.find(row=>row.id==='submitted')?.text??'静候仙友完成当前操作',panelX+8,panelY+10,panelW-16,panelH-20);
     }
-    const utilityY=dockY+dockH-53;
+    const utilityY=dockY+dockH-53-utilityExtra;
     add('label','dock-divider','',26,utilityY-9,w-52,1);
     const utility=game ? [...(!ended?[['role','真身'],['treasures','法宝']]:[['treasures','法宝']]),['history','取经录'],['chat','传音'],[web.practice?'practiceSeats':'guide',web.practice?'切换视角':'识妖谱'],...(!ended?[[web.practice?'exitPractice':room.hostId===web.user?.id?'endGame':'requestAbort',web.practice?'结束演练':room.hostId===web.user?.id?'结束':'申请结束']]:[])]
       : [['settings','房间设置'],['share','邀请仙友'],['chat','传音'],['friends','仙友']];
-    const uw=(w-40-(utility.length-1)*6)/utility.length;
-    utility.forEach(([id,title],index)=>add('button',id!,title!,20+index*(uw+6),utilityY,uw,44,{badge:'utility'}));
+    const utilityCols=utilityExtra?3:utility.length,uw=(w-40-(utilityCols-1)*6)/utilityCols;
+    utility.forEach(([id,title],index)=>add('button',id!,title!,20+index%utilityCols*(uw+6),utilityY+Math.floor(index/utilityCols)*50,uw,44,{badge:'utility'}));
     const historyY=dockY+dockH+16.390625;
     add('label','mission-overview-heading','五难进度 · 点击任务查看记录',12,historyY,w-24,30,{skin:'current-summary',fontSize:12});
     drawQuests(historyY+41);
     drawScore(historyY+41+questH+8);
-    const maxScroll=Math.max(0,historyY+41+questH+8+scoreH+24-(v.height-v.bottom));
+    const maxScroll=Math.max(0,historyY+41+questH+8+scoreH+48-(v.height-v.bottom));
     const scroll=Math.min(model.scroll??0,maxScroll);
-    for(const node of nodes) if(!node.fixed){node.y-=scroll;node.clipTop=top+36;node.clipBottom=v.height-v.bottom;}
+    for(const node of nodes){node.fixed=false;node.y-=scroll;node.clipTop=v.top;node.clipBottom=v.height-v.bottom;}
     contentBottom=v.height-v.bottom;
     appendAlerts();
-    appendBubbles();return {nodes,maxScroll,contentTop:top+36,contentBottom};
+    appendBubbles();return {nodes,maxScroll,contentTop:v.top,contentBottom};
   }
   // Setup and secondary pages use the same lacquer sheet, tabs, fields and portrait cards as web.
   add('panel', 'sheet-frame', '', 8, top + 46, w - 16, bottom - top - 44, { fixed: true });

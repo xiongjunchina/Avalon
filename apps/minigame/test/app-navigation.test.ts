@@ -59,7 +59,18 @@ test('built client logs in, opens a clean join form and creates the selected web
   });
   const settle = () => new Promise<void>(resolve => setImmediate(resolve));
   async function tap(label: string) {
-    const target = [...frame].reverse().find(item => item.text === label && item.y >= 44 && item.y <= 800);
+    // Canvas text may be painted in runs to apply letter spacing and fallback-glyph widths.
+    const candidates = frame.flatMap((item, index) => {
+      let text = '', right = item.x;
+      for (const part of frame.slice(index)) {
+        if (part.y !== item.y || part.x < right) break;
+        text += part.text; right = part.x;
+        if (text === label) return [{ text, x: (item.x + right) / 2, y: item.y }];
+        if (!label.startsWith(text)) break;
+      }
+      return [];
+    });
+    const target = candidates.reverse().find(item => item.y >= 44 && item.y <= 800);
     assert.ok(target, 'visible control missing: ' + label);
     start({ touches: [{ clientX: target.x, clientY: target.y }] });
     end({ changedTouches: [{ clientX: target.x, clientY: target.y }] });
