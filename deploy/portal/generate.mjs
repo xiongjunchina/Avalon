@@ -15,6 +15,7 @@ export function validateGames(games) {
     if (game.path !== `/${game.id}/` || !game.healthPath?.startsWith(game.path + 'api/') || /[\s{}?#]/.test(game.healthPath)) throw Error('Invalid public game path');
     if (!/^[a-z][a-z0-9-]*:[1-9][0-9]{0,4}$/.test(game.upstream) || Number(game.upstream.split(':')[1]) > 65535 || !/^[a-z][a-z0-9-]*$/.test(game.network)) throw Error('Invalid internal game service');
     for (const key of ['name', 'label', 'description', 'players', 'status']) if (typeof game[key] !== 'string' || !game[key].trim()) throw Error(`Missing game ${key}`);
+    for (const key of ['hook', 'genre', 'action']) if (game[key] !== undefined && (typeof game[key] !== 'string' || !game[key].trim())) throw Error(`Invalid game ${key}`);
   }
   if (!ids.has('avalon')) throw Error('Avalon is required for legacy URL compatibility');
   return games;
@@ -25,8 +26,20 @@ const art = id => id === 'avalon'
   : id === 'mafia' ? '<rect x="29" y="33" width="68" height="88" rx="8" transform="rotate(-12 63 77)"/><rect x="66" y="30" width="68" height="88" rx="8" transform="rotate(12 100 74)"/><path d="M99 49 82 73l17 24 17-24Z"/><path d="M35 130h90"/>'
     : '<rect x="31" y="27" width="98" height="98" rx="12"/><path d="M58 76h44M80 54v44"/>';
 
+const illustratedGames = new Set(['avalon', 'mafia']);
+
+function gameCard(game, index) {
+  const illustrated = illustratedGames.has(game.id);
+  const illustration = illustrated
+    ? `<picture class="game-art" aria-hidden="true"><source media="(max-width:759px)" srcset="/portal-assets/art/${game.id}-mobile.webp"><img src="/portal-assets/art/${game.id}-desktop.webp" alt="" decoding="async"${index === 0 ? ' fetchpriority="high"' : ''}></picture>`
+    : `<div class="art" aria-hidden="true"><svg viewBox="0 0 160 150" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round">${art(game.id)}</svg></div>`;
+  const genre = game.genre ?? game.label;
+  const action = game.action ?? '进入游戏';
+  return `<article class="game${illustrated ? '' : ' game--fallback'}" data-game="${escapeHtml(game.id)}" aria-labelledby="game-${escapeHtml(game.id)}">${illustration}<div class="game-frame" aria-hidden="true"></div><div class="content"><h2 id="game-${escapeHtml(game.id)}">${escapeHtml(game.name)}</h2>${game.hook ? `<p class="hook">${escapeHtml(game.hook)}</p>` : ''}<p class="description">${escapeHtml(game.description)}</p><p class="meta"><span>${escapeHtml(game.players)}</span><span class="meta-separator" aria-hidden="true">·</span><span>${escapeHtml(genre)}</span></p><a class="enter" href="${escapeHtml(game.path)}" aria-label="${escapeHtml(`${action}：${game.name}`)}"><span>${escapeHtml(action)}</span><span aria-hidden="true">→</span></a></div></article>`;
+}
+
 export function portalHtml(games) {
-  return `<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><title>游戏大厅 · 好友桌游</title><link rel="icon" href="/portal-assets/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="/portal-assets/portal.css"><script src="/portal-assets/portal.js" defer></script></head><body><main><header><span class="brand" aria-hidden="true">局</span><p class="eyebrow">好友桌游 · 一起入局</p></header><div class="intro"><h1>游戏大厅</h1><p>选一款喜欢的游戏，邀请朋友一起开局。</p></div><section class="games" aria-label="选择游戏">${games.map(game => `<article class="game" data-game="${game.id}"><div class="art" aria-hidden="true"><svg viewBox="0 0 160 150" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round">${art(game.id)}</svg></div><div class="content"><div class="meta"><span>${escapeHtml(game.label)}</span><span>${escapeHtml(game.players)}</span><span class="status">${escapeHtml(game.status)}</span></div><h2>${escapeHtml(game.name)}</h2><p class="description">${escapeHtml(game.description)}</p><a class="enter" href="${game.path}" aria-label="进入${escapeHtml(game.name)}"><span>进入游戏</span><span aria-hidden="true">→</span></a></div></article>`).join('')}</section><footer>同桌讨论，在线入座。一起寻找藏在朋友中的另一重身份。</footer></main></body></html>\n`;
+  return `<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><meta name="description" content="每个人都在说话，谁在说真话？选择西游身份推理或雾港昼夜博弈，邀请好友一起入局。"><title>游戏大厅 · 好友桌游</title><link rel="icon" href="/portal-assets/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="/portal-assets/portal.css"><script src="/portal-assets/portal.js" defer></script></head><body><main class="portal-shell"><header class="portal-header"><span class="brand" aria-hidden="true">局</span><div class="brand-copy"><h1 class="sr-only">游戏大厅</h1><p class="brand-name">好友桌游 · 一起入局</p><p class="slogan">每个人都在说话，谁在说真话？</p></div></header><section class="games" aria-label="选择游戏">${games.map(gameCard).join('')}</section></main></body></html>\n`;
 }
 
 const proxy = upstream => `reverse_proxy ${upstream} {\n        header_up X-Forwarded-For {remote_host}\n        header_up -Forwarded\n        stream_close_delay 5m\n      }`;
