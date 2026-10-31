@@ -166,7 +166,8 @@ export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout 
       add('label','result-hero',headline,10,ribbonY-2,w-20,120,{skin:'result-hero',team:game.result!.winner??undefined,
         detail:JSON.stringify({won:game.result!.winner===ownTeam,self:role?formatRoleName(role,guardian[web.user?.id??''],demons[web.user?.id??''])+'（'+(ownTeam==='blue'?'蓝方':'红方')+'）':'',reason:reasons[game.result!.reason]??game.result!.reason,teams:['blue','red'].map(team=>({team,players:game.players.filter(p=>game.revealedRoles?.[p.id]&&teamOf(game.revealedRoles[p.id]!)===team).map(p=>p.seat+'号 '+p.nickname+' · '+formatRoleName(game.revealedRoles![p.id]!,guardian[p.id],demons[p.id]))}))})});
     }
-    const arenaTop = ended?ribbonY-2+120+138:ribbonY + ribbonH + 4;
+    const resultExtra=ended&&w<=380&&!web.practice&&room.hostId===web.user?.id?11.1875:0;
+    const arenaTop = ended?ribbonY-2+120+138.6875+resultExtra:ribbonY + ribbonH + 4;
     const flankRows = Math.ceil(count / 2), cellH = Math.floor(cssClamp(38,v.height*.05,46)*64)/64, gap = 10;
     const avatarSize = 40;
     const flankH = flankRows * cellH + (flankRows - 1) * gap;
@@ -202,12 +203,12 @@ export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout 
     if(!ended)add('panel','dock-inner','',panelX,panelY,panelW,panelH);
     if(game?.result){
       const ry=ribbonY+126;
-      add('panel','result-actions','',10,ry,w-20,126,{skin:'card'});
+      add('panel','result-actions','',10,ry,w-20,126.6875+resultExtra,{skin:'card'});
       add('label','result-summary',game.result.winner===null?'本局不计胜负':game.result.winner==='blue'?'蓝方获胜':'红方获胜',22,ry+12,w-44,25,{skin:'text',fontSize:18,fontFace:'display',tone:'gold',align:'left'});
       add('label','result-reason',reasons[game.result.reason]??'',22,ry+42,w-44,20,{skin:'text',fontSize:13,align:'left'});
-      const replayW=Math.min(112,(w-48)*.38);
-      if(!web.practice)add('button','openReplay','查看完整复盘',22,ry+70,replayW,44,{skin:'pill',fontSize:13});
-      if(room.hostId===web.user?.id)add('button','rematch','回到仙境等待区，再开一局',web.practice?22:30+replayW,ry+70,web.practice?w-44:Math.min(194,w-52-replayW),44,{skin:'gold-button',fontSize:14,weight:'700',primary:true});
+      const replayW=w<=380?(w-54)/2:110;
+      if(!web.practice)add('button','openReplay','查看完整复盘',23,ry+69.6875+resultExtra/2,replayW,44,{skin:'pill',fontSize:14,weight:'700'});
+      if(room.hostId===web.user?.id)add('button','rematch','回到仙境等待区，再开一局',web.practice?23:31+replayW,ry+69.6875,web.practice?w-46:w<=380?replayW:194,44+resultExtra,{skin:'gold-button',fontSize:14,weight:'700',primary:true});
     } else if(missionEligible&&game){
       add('label','mission-hint',missionRule,panelX+9,panelY+8,panelW-18,16.890625+missionRuleExtra,{skin:'text',fontSize:13,fontFace:'display',tone:'gold',align:'center',lines:missionRuleLines,lineHeight:16.890625,letterSpacing:1});
       const cw=(panelW-28)/2,cardY=panelY+29.890625+missionRuleExtra;

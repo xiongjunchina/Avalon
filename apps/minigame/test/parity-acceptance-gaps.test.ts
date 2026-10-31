@@ -337,3 +337,25 @@ test('admin replay opens real replay sections and gates audit to admin views',as
  const publicModel=panel.model();publicModel.web!.document!.adminReplay=false;publicModel.web!.document!.modal=false;assert.ok(!layoutWebScreen(publicModel,viewport).nodes.some(n=>n.id==='audit-note'));
  await panel.handle('page:games',async()=>undefined);assert.equal(panel.model().web?.activeTab,'page:games');
 });
+
+test('narrow social dialog wraps its complete title instead of ellipsizing it',async()=>{
+ const {user}=parityFixture('game'),panel=new PlayerPanel({friends:async()=>({friends:parityPlayerData().friends})} as any,user);await panel.open('friends');
+ const narrow=layoutWebScreen(panel.model(),{width:320,height:568,top:0,bottom:0}),title=narrow.nodes.find(n=>n.id==='dialog-title')!;
+ assert.equal(title.lines?.join(''),'仙友录 · 召集与好友');assert.equal(title.height,72);assert.ok(narrow.nodes.find(n=>n.id==='friendTab:invite')!.y>=title.y+title.height);
+});
+
+
+test('narrow avatar editor grows its preview and keeps presets below wrapped help',async()=>{
+ const {user}=parityFixture('game'),d=parityPlayerData(),panel=new PlayerPanel({statistics:async()=>d.stats} as any,user);await panel.open('account');await panel.handle('profileToggle',async()=>undefined);
+ for(const width of [320,390,430]){const layout=layoutWebScreen(panel.model(),{...viewport,width}),nodes=layout.nodes,frame=nodes.find(n=>n.id==='profile-preview')!,help=nodes.find(n=>n.id==='avatar-help')!,upload=nodes.find(n=>n.id==='uploadAvatar')!,hint=nodes.find(n=>n.id==='avatar-hint')!,first=nodes.find(n=>n.id==='profile:builtin:0')!;assert.ok(upload.y>=help.y+help.height+9);assert.ok(upload.y+upload.height<frame.y+frame.height);assert.ok(first.y>=hint.y+hint.height+7);}
+});
+
+test('submitted vote explanation stays inside its responsive card',()=>{
+ const {room,user}=parityFixture('vote-submitted');for(const width of [320,390,430]){const nodes=layoutWebScreen(gameScreen(room,user,{...state(),overlay:'vote'}),{...viewport,width}).nodes,card=nodes.find(n=>n.id==='vote-submitted')!,copy=nodes.find(n=>n.id==='submitted')!;assert.ok(card);assert.ok(copy.y+copy.height<=card.y+card.height-18);}
+});
+
+
+test('wide replay keeps captain and direction on one row while narrow screens wrap',async()=>{
+ const {user}=parityFixture('game'),d=parityPlayerData(),panel=new PlayerPanel({replay:async()=>d.replay} as any,user);await panel.openReplay(d.replay.id,'page:history');
+ for(const width of [320,430]){const nodes=layoutWebScreen(panel.model(),{...viewport,width}).nodes,frame=nodes.find(n=>n.id==='round-captain:1')!,captain=nodes.find(n=>n.id==='round-captain-token:1')!,direction=nodes.find(n=>n.id==='round-direction:1')!;if(width===430){assert.equal(frame.height,60);assert.ok(direction.x>=captain.x+captain.width);}else{assert.equal(frame.height,94.25);assert.ok(direction.y>=captain.y+captain.height);}}
+});
