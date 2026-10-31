@@ -3,7 +3,7 @@ import type { User } from '@avalon/contracts';
 import { Emblem, PlayerAvatar } from './Heraldry';
 import { assetUrl } from './deployment';
 
-export function LobbyHero({ freeAccess }: { freeAccess: boolean }) {
+export function LobbyHero() {
   return <>
     <div className="mp-logo-block">
       <h1 className="mp-avalon-logo">
@@ -12,9 +12,6 @@ export function LobbyHero({ freeAccess }: { freeAccess: boolean }) {
         <span className="logo-word">真假猴王</span>
       </h1>
       <p className="mp-avalon-sub">一念佛魔皆幻相，谁是修道取经人</p>
-      {freeAccess && <div className="lobby-banner-wrap">
-        <span className="lobby-free-access-banner">🎉 公测盛典 · 全特权限时免费畅玩中</span>
-      </div>}
     </div>
     <figure className="lobby-duel-art">
       <picture>
@@ -64,9 +61,9 @@ export function LobbyHome({
       </div>
     </header>
 
-    <LobbyHero freeAccess={freeAccess} />
+    <LobbyHero />
 
-    <footer className="mp-home-footer">
+    <footer className={`mp-home-footer${freeAccess ? ' has-promotion' : ''}`}>
       <div className="lobby-mode-switch" role="radiogroup" aria-label="建房模式">
         <button type="button" role="radio" aria-checked={!voiceEnabled}
           className={`lobby-mode-pill ${!voiceEnabled ? 'is-active' : ''}`}
@@ -93,6 +90,7 @@ export function LobbyHome({
         <button type="button" className={`lobby-link-btn ${user ? 'is-logout' : ''}`}
           onClick={user ? onLogout : onSignIn}>{user ? '🚪 退出登录' : '登录 / 注册'}</button>
       </nav>
+      {freeAccess && <p className="lobby-free-access-note">公测盛典 · 全特权限时免费畅玩中</p>}
     </footer>
   </div>;
 }

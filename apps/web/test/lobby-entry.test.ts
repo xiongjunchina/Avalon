@@ -55,6 +55,9 @@ test('both room modes retain room and practice entries and disable submissions w
 });
 
 test('the public promotion follows system configuration and invitation context has a visible entry', () => {
+  const promoted = renderToStaticMarkup(createElement(LobbyHome, { ...props, user: null }));
+  assert.doesNotMatch(promoted.slice(0, promoted.indexOf('<footer')), /公测盛典|lobby-free-access-banner/);
+  assert.ok(promoted.indexOf('公测盛典') > promoted.indexOf('</nav>'), 'promotion belongs after navigation, away from character portraits');
   const html = renderToStaticMarkup(createElement(LobbyHome, {
     ...props, user: null, freeAccess: false, hasInvitation: true,
   }));

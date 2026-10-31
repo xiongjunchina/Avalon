@@ -1,0 +1,1924 @@
+{
+  "development": [
+    {
+      "fixture": {
+        "width": 320,
+        "height": 568
+      },
+      "profile": {
+        "x": 12,
+        "y": 8,
+        "width": 86,
+        "height": 36,
+        "top": 8,
+        "right": 98,
+        "bottom": 44,
+        "left": 12
+      },
+      "sound": {
+        "x": 234,
+        "y": 8,
+        "width": 74,
+        "height": 36,
+        "top": 8,
+        "right": 308,
+        "bottom": 44,
+        "left": 234
+      },
+      "toolbar": [
+        {
+          "x": 12,
+          "y": 8,
+          "width": 86,
+          "height": 36,
+          "top": 8,
+          "right": 98,
+          "bottom": 44,
+          "left": 12
+        },
+        {
+          "x": 234,
+          "y": 8,
+          "width": 74,
+          "height": 36,
+          "top": 8,
+          "right": 308,
+          "bottom": 44,
+          "left": 234
+        }
+      ],
+      "nickname": {
+        "visible": 46,
+        "full": 46
+      },
+      "avatarLoaded": false,
+      "navigation": {
+        "x": 12,
+        "y": 511,
+        "width": 296,
+        "height": 35,
+        "top": 511,
+        "right": 308,
+        "bottom": 546,
+        "left": 12
+      },
+      "promotion": {
+        "box": {
+          "x": 82.71875,
+          "y": 547,
+          "width": 154.546875,
+          "height": 13,
+          "top": 547,
+          "right": 237.265625,
+          "bottom": 560,
+          "left": 82.71875
+        },
+        "background": "rgba(0, 0, 0, 0)",
+        "image": "none"
+      },
+      "actions": {
+        "x": 12,
+        "y": 417,
+        "width": 296,
+        "height": 46,
+        "top": 417,
+        "right": 308,
+        "bottom": 463,
+        "left": 12
+      },
+      "headline": {
+        "x": 12,
+        "y": 262.140625,
+        "width": 296,
+        "height": 61.46875,
+        "top": 262.140625,
+        "right": 308,
+        "bottom": 323.609375,
+        "left": 12
+      }
+    },
+    {
+      "fixture": {
+        "width": 375,
+        "height": 553
+      },
+      "profile": {
+        "x": 12,
+        "y": 8,
+        "width": 90,
+        "height": 36,
+        "top": 8,
+        "right": 102,
+        "bottom": 44,
+        "left": 12
+      },
+      "sound": {
+        "x": 289,
+        "y": 8,
+        "width": 74,
+        "height": 36,
+        "top": 8,
+        "right": 363,
+        "bottom": 44,
+        "left": 289
+      },
+      "toolbar": [
+        {
+          "x": 12,
+          "y": 8,
+          "width": 90,
+          "height": 36,
+          "top": 8,
+          "right": 102,
+          "bottom": 44,
+          "left": 12
+        },
+        {
+          "x": 289,
+          "y": 8,
+          "width": 74,
+          "height": 36,
+          "top": 8,
+          "right": 363,
+          "bottom": 44,
+          "left": 289
+        }
+      ],
+      "nickname": {
+        "visible": 50,
+        "full": 50
+      },
+      "avatarLoaded": false,
+      "navigation": {
+        "x": 12,
+        "y": 496,
+        "width": 351,
+        "height": 35,
+        "top": 496,
+        "right": 363,
+        "bottom": 531,
+        "left": 12
+      },
+      "promotion": {
+        "box": {
+          "x": 110.21875,
+          "y": 532,
+          "width": 154.546875,
+          "height": 13,
+          "top": 532,
+          "right": 264.765625,
+          "bottom": 545,
+          "left": 110.21875
+        },
+        "background": "rgba(0, 0, 0, 0)",
+        "image": "none"
+      },
+      "actions": {
+        "x": 12,
+        "y": 402,
+        "width": 351,
+        "height": 46,
+        "top": 402,
+        "right": 363,
+        "bottom": 448,
+        "left": 12
+      },
+      "headline": {
+        "x": 12,
+        "y": 238.671875,
+        "width": 351,
+        "height": 69.9375,
+        "top": 238.671875,
+        "right": 363,
+        "bottom": 308.609375,
+        "left": 12
+      }
+    },
+    {
+      "fixture": {
+        "width": 390,
+        "height": 740
+      },
+      "profile": {
+        "x": 16,
+        "y": 12,
+        "width": 101,
+        "height": 40,
+        "top": 12,
+        "right": 117,
+        "bottom": 52,
+        "left": 16
+      },
+      "sound": {
+        "x": 300,
+        "y": 12,
+        "width": 74,
+        "height": 40,
+        "top": 12,
+        "right": 374,
+        "bottom": 52,
+        "left": 300
+      },
+      "toolbar": [
+        {
+          "x": 16,
+          "y": 12,
+          "width": 101,
+          "height": 40,
+          "top": 12,
+          "right": 117,
+          "bottom": 52,
+          "left": 16
+        },
+        {
+          "x": 300,
+          "y": 12,
+          "width": 74,
+          "height": 40,
+          "top": 12,
+          "right": 374,
+          "bottom": 52,
+          "left": 300
+        }
+      ],
+      "nickname": {
+        "visible": 54,
+        "full": 54
+      },
+      "avatarLoaded": false,
+      "navigation": {
+        "x": 16,
+        "y": 670,
+        "width": 358,
+        "height": 39,
+        "top": 670,
+        "right": 374,
+        "bottom": 709,
+        "left": 16
+      },
+      "promotion": {
+        "box": {
+          "x": 117.71875,
+          "y": 713,
+          "width": 154.546875,
+          "height": 13,
+          "top": 713,
+          "right": 272.265625,
+          "bottom": 726,
+          "left": 117.71875
+        },
+        "background": "rgba(0, 0, 0, 0)",
+        "image": "none"
+      },
+      "actions": {
+        "x": 16,
+        "y": 558,
+        "width": 358,
+        "height": 52,
+        "top": 558,
+        "right": 374,
+        "bottom": 610,
+        "left": 16
+      },
+      "headline": {
+        "x": 16,
+        "y": 356.359375,
+        "width": 358,
+        "height": 89.28125,
+        "top": 356.359375,
+        "right": 374,
+        "bottom": 445.640625,
+        "left": 16
+      }
+    },
+    {
+      "fixture": {
+        "width": 430,
+        "height": 800
+      },
+      "profile": {
+        "x": 16,
+        "y": 12,
+        "width": 101,
+        "height": 40,
+        "top": 12,
+        "right": 117,
+        "bottom": 52,
+        "left": 16
+      },
+      "sound": {
+        "x": 340,
+        "y": 12,
+        "width": 74,
+        "height": 40,
+        "top": 12,
+        "right": 414,
+        "bottom": 52,
+        "left": 340
+      },
+      "toolbar": [
+        {
+          "x": 16,
+          "y": 12,
+          "width": 101,
+          "height": 40,
+          "top": 12,
+          "right": 117,
+          "bottom": 52,
+          "left": 16
+        },
+        {
+          "x": 340,
+          "y": 12,
+          "width": 74,
+          "height": 40,
+          "top": 12,
+          "right": 414,
+          "bottom": 52,
+          "left": 340
+        }
+      ],
+      "nickname": {
+        "visible": 54,
+        "full": 54
+      },
+      "avatarLoaded": false,
+      "navigation": {
+        "x": 16,
+        "y": 730,
+        "width": 398,
+        "height": 39,
+        "top": 730,
+        "right": 414,
+        "bottom": 769,
+        "left": 16
+      },
+      "promotion": {
+        "box": {
+          "x": 137.71875,
+          "y": 773,
+          "width": 154.546875,
+          "height": 13,
+          "top": 773,
+          "right": 292.265625,
+          "bottom": 786,
+          "left": 137.71875
+        },
+        "background": "rgba(0, 0, 0, 0)",
+        "image": "none"
+      },
+      "actions": {
+        "x": 16,
+        "y": 618,
+        "width": 398,
+        "height": 52,
+        "top": 618,
+        "right": 414,
+        "bottom": 670,
+        "left": 16
+      },
+      "headline": {
+        "x": 16,
+        "y": 411,
+        "width": 398,
+        "height": 93.25,
+        "top": 411,
+        "right": 414,
+        "bottom": 504.25,
+        "left": 16
+      }
+    },
+    {
+      "fixture": {
+        "width": 640,
+        "height": 900
+      },
+      "profile": {
+        "x": 16,
+        "y": 12,
+        "width": 101,
+        "height": 40,
+        "top": 12,
+        "right": 117,
+        "bottom": 52,
+        "left": 16
+      },
+      "sound": {
+        "x": 550,
+        "y": 12,
+        "width": 74,
+        "height": 40,
+        "top": 12,
+        "right": 624,
+        "bottom": 52,
+        "left": 550
+      },
+      "toolbar": [
+        {
+          "x": 16,
+          "y": 12,
+          "width": 101,
+          "height": 40,
+          "top": 12,
+          "right": 117,
+          "bottom": 52,
+          "left": 16
+        },
+        {
+          "x": 550,
+          "y": 12,
+          "width": 74,
+          "height": 40,
+          "top": 12,
+          "right": 624,
+          "bottom": 52,
+          "left": 550
+        }
+      ],
+      "nickname": {
+        "visible": 54,
+        "full": 54
+      },
+      "avatarLoaded": false,
+      "navigation": {
+        "x": 45,
+        "y": 830,
+        "width": 550,
+        "height": 39,
+        "top": 830,
+        "right": 595,
+        "bottom": 869,
+        "left": 45
+      },
+      "promotion": {
+        "box": {
+          "x": 242.71875,
+          "y": 873,
+          "width": 154.546875,
+          "height": 13,
+          "top": 873,
+          "right": 397.265625,
+          "bottom": 886,
+          "left": 242.71875
+        },
+        "background": "rgba(0, 0, 0, 0)",
+        "image": "none"
+      },
+      "actions": {
+        "x": 45,
+        "y": 718,
+        "width": 550,
+        "height": 52,
+        "top": 718,
+        "right": 595,
+        "bottom": 770,
+        "left": 45
+      },
+      "headline": {
+        "x": 16,
+        "y": 511,
+        "width": 608,
+        "height": 93.25,
+        "top": 511,
+        "right": 624,
+        "bottom": 604.25,
+        "left": 16
+      }
+    },
+    {
+      "fixture": {
+        "width": 760,
+        "height": 900
+      },
+      "profile": {
+        "x": 16,
+        "y": 12,
+        "width": 101,
+        "height": 40,
+        "top": 12,
+        "right": 117,
+        "bottom": 52,
+        "left": 16
+      },
+      "sound": {
+        "x": 670,
+        "y": 12,
+        "width": 74,
+        "height": 40,
+        "top": 12,
+        "right": 744,
+        "bottom": 52,
+        "left": 670
+      },
+      "toolbar": [
+        {
+          "x": 16,
+          "y": 12,
+          "width": 101,
+          "height": 40,
+          "top": 12,
+          "right": 117,
+          "bottom": 52,
+          "left": 16
+        },
+        {
+          "x": 670,
+          "y": 12,
+          "width": 74,
+          "height": 40,
+          "top": 12,
+          "right": 744,
+          "bottom": 52,
+          "left": 670
+        }
+      ],
+      "nickname": {
+        "visible": 54,
+        "full": 54
+      },
+      "avatarLoaded": false,
+      "navigation": {
+        "x": 105,
+        "y": 830,
+        "width": 550,
+        "height": 39,
+        "top": 830,
+        "right": 655,
+        "bottom": 869,
+        "left": 105
+      },
+      "promotion": {
+        "box": {
+          "x": 302.71875,
+          "y": 873,
+          "width": 154.546875,
+          "height": 13,
+          "top": 873,
+          "right": 457.265625,
+          "bottom": 886,
+          "left": 302.71875
+        },
+        "background": "rgba(0, 0, 0, 0)",
+        "image": "none"
+      },
+      "actions": {
+        "x": 105,
+        "y": 718,
+        "width": 550,
+        "height": 52,
+        "top": 718,
+        "right": 655,
+        "bottom": 770,
+        "left": 105
+      },
+      "headline": {
+        "x": 16,
+        "y": 511,
+        "width": 728,
+        "height": 93.25,
+        "top": 511,
+        "right": 744,
+        "bottom": 604.25,
+        "left": 16
+      }
+    },
+    {
+      "fixture": {
+        "width": 1440,
+        "height": 900
+      },
+      "profile": {
+        "x": 108,
+        "y": 20,
+        "width": 101,
+        "height": 40,
+        "top": 20,
+        "right": 209,
+        "bottom": 60,
+        "left": 108
+      },
+      "sound": {
+        "x": 1258,
+        "y": 20,
+        "width": 74,
+        "height": 40,
+        "top": 20,
+        "right": 1332,
+        "bottom": 60,
+        "left": 1258
+      },
+      "toolbar": [
+        {
+          "x": 108,
+          "y": 20,
+          "width": 101,
+          "height": 40,
+          "top": 20,
+          "right": 209,
+          "bottom": 60,
+          "left": 108
+        },
+        {
+          "x": 1258,
+          "y": 20,
+          "width": 74,
+          "height": 40,
+          "top": 20,
+          "right": 1332,
+          "bottom": 60,
+          "left": 1258
+        }
+      ],
+      "nickname": {
+        "visible": 54,
+        "full": 54
+      },
+      "avatarLoaded": false,
+      "navigation": {
+        "x": 420,
+        "y": 809,
+        "width": 600,
+        "height": 45,
+        "top": 809,
+        "right": 1020,
+        "bottom": 854,
+        "left": 420
+      },
+      "promotion": {
+        "box": {
+          "x": 642.71875,
+          "y": 863,
+          "width": 154.546875,
+          "height": 13,
+          "top": 863,
+          "right": 797.265625,
+          "bottom": 876,
+          "left": 642.71875
+        },
+        "background": "rgba(0, 0, 0, 0)",
+        "image": "none"
+      },
+      "actions": {
+        "x": 420,
+        "y": 661,
+        "width": 600,
+        "height": 68,
+        "top": 661,
+        "right": 1020,
+        "bottom": 729,
+        "left": 420
+      },
+      "headline": {
+        "x": 352.796875,
+        "y": 224,
+        "width": 734.390625,
+        "height": 57.59375,
+        "top": 224,
+        "right": 1087.1875,
+        "bottom": 281.59375,
+        "left": 352.796875
+      }
+    },
+    {
+      "fixture": {
+        "width": 320,
+        "height": 568,
+        "signedIn": true
+      },
+      "profile": {
+        "x": 12,
+        "y": 8,
+        "width": 86,
+        "height": 36,
+        "top": 8,
+        "right": 98,
+        "bottom": 44,
+        "left": 12
+      },
+      "sound": {
+        "x": 218.5,
+        "y": 8,
+        "width": 36,
+        "height": 36,
+        "top": 8,
+        "right": 254.5,
+        "bottom": 44,
+        "left": 218.5
+      },
+      "toolbar": [
+        {
+          "x": 12,
+          "y": 8,
+          "width": 86,
+          "height": 36,
+          "top": 8,
+          "right": 98,
+          "bottom": 44,
+          "left": 12
+        },
+        {
+          "x": 165,
+          "y": 8,
+          "width": 50.5,
+          "height": 36,
+          "top": 8,
+          "right": 215.5,
+          "bottom": 44,
+          "left": 165
+        },
+        {
+          "x": 218.5,
+          "y": 8,
+          "width": 36,
+          "height": 36,
+          "top": 8,
+          "right": 254.5,
+          "bottom": 44,
+          "left": 218.5
+        },
+        {
+          "x": 257.5,
+          "y": 8,
+          "width": 50.5,
+          "height": 36,
+          "top": 8,
+          "right": 308,
+          "bottom": 44,
+          "left": 257.5
+        }
+      ],
+      "nickname": {
+        "visible": 46,
+        "full": 46
+      },
+      "avatarLoaded": false,
+      "navigation": {
+        "x": 12,
+        "y": 511,
+        "width": 296,
+        "height": 35,
+        "top": 511,
+        "right": 308,
+        "bottom": 546,
+        "left": 12
+      },
+      "promotion": {
+        "box": {
+          "x": 82.71875,
+          "y": 547,
+          "width": 154.546875,
+          "height": 13,
+          "top": 547,
+          "right": 237.265625,
+          "bottom": 560,
+          "left": 82.71875
+        },
+        "background": "rgba(0, 0, 0, 0)",
+        "image": "none"
+      },
+      "actions": {
+        "x": 12,
+        "y": 417,
+        "width": 296,
+        "height": 46,
+        "top": 417,
+        "right": 308,
+        "bottom": 463,
+        "left": 12
+      },
+      "headline": {
+        "x": 12,
+        "y": 262.140625,
+        "width": 296,
+        "height": 61.46875,
+        "top": 262.140625,
+        "right": 308,
+        "bottom": 323.609375,
+        "left": 12
+      }
+    },
+    {
+      "fixture": {
+        "width": 390,
+        "height": 740,
+        "signedIn": true
+      },
+      "profile": {
+        "x": 16,
+        "y": 12,
+        "width": 101,
+        "height": 40,
+        "top": 12,
+        "right": 117,
+        "bottom": 52,
+        "left": 16
+      },
+      "sound": {
+        "x": 235.265625,
+        "y": 12,
+        "width": 74,
+        "height": 40,
+        "top": 12,
+        "right": 309.265625,
+        "bottom": 52,
+        "left": 235.265625
+      },
+      "toolbar": [
+        {
+          "x": 16,
+          "y": 12,
+          "width": 101,
+          "height": 40,
+          "top": 12,
+          "right": 117,
+          "bottom": 52,
+          "left": 16
+        },
+        {
+          "x": 170.53125,
+          "y": 12,
+          "width": 59.734375,
+          "height": 40,
+          "top": 12,
+          "right": 230.265625,
+          "bottom": 52,
+          "left": 170.53125
+        },
+        {
+          "x": 235.265625,
+          "y": 12,
+          "width": 74,
+          "height": 40,
+          "top": 12,
+          "right": 309.265625,
+          "bottom": 52,
+          "left": 235.265625
+        },
+        {
+          "x": 314.265625,
+          "y": 12,
+          "width": 59.734375,
+          "height": 40,
+          "top": 12,
+          "right": 374,
+          "bottom": 52,
+          "left": 314.265625
+        }
+      ],
+      "nickname": {
+        "visible": 54,
+        "full": 54
+      },
+      "avatarLoaded": false,
+      "navigation": {
+        "x": 16,
+        "y": 670,
+        "width": 358,
+        "height": 39,
+        "top": 670,
+        "right": 374,
+        "bottom": 709,
+        "left": 16
+      },
+      "promotion": {
+        "box": {
+          "x": 117.71875,
+          "y": 713,
+          "width": 154.546875,
+          "height": 13,
+          "top": 713,
+          "right": 272.265625,
+          "bottom": 726,
+          "left": 117.71875
+        },
+        "background": "rgba(0, 0, 0, 0)",
+        "image": "none"
+      },
+      "actions": {
+        "x": 16,
+        "y": 558,
+        "width": 358,
+        "height": 52,
+        "top": 558,
+        "right": 374,
+        "bottom": 610,
+        "left": 16
+      },
+      "headline": {
+        "x": 16,
+        "y": 356.359375,
+        "width": 358,
+        "height": 89.28125,
+        "top": 356.359375,
+        "right": 374,
+        "bottom": 445.640625,
+        "left": 16
+      }
+    },
+    {
+      "fixture": {
+        "width": 1440,
+        "height": 900,
+        "signedIn": true
+      },
+      "profile": {
+        "x": 108,
+        "y": 20,
+        "width": 101,
+        "height": 40,
+        "top": 20,
+        "right": 209,
+        "bottom": 60,
+        "left": 108
+      },
+      "sound": {
+        "x": 1193.265625,
+        "y": 20,
+        "width": 74,
+        "height": 40,
+        "top": 20,
+        "right": 1267.265625,
+        "bottom": 60,
+        "left": 1193.265625
+      },
+      "toolbar": [
+        {
+          "x": 108,
+          "y": 20,
+          "width": 101,
+          "height": 40,
+          "top": 20,
+          "right": 209,
+          "bottom": 60,
+          "left": 108
+        },
+        {
+          "x": 1128.53125,
+          "y": 20,
+          "width": 59.734375,
+          "height": 40,
+          "top": 20,
+          "right": 1188.265625,
+          "bottom": 60,
+          "left": 1128.53125
+        },
+        {
+          "x": 1193.265625,
+          "y": 20,
+          "width": 74,
+          "height": 40,
+          "top": 20,
+          "right": 1267.265625,
+          "bottom": 60,
+          "left": 1193.265625
+        },
+        {
+          "x": 1272.265625,
+          "y": 20,
+          "width": 59.734375,
+          "height": 40,
+          "top": 20,
+          "right": 1332,
+          "bottom": 60,
+          "left": 1272.265625
+        }
+      ],
+      "nickname": {
+        "visible": 54,
+        "full": 54
+      },
+      "avatarLoaded": false,
+      "navigation": {
+        "x": 420,
+        "y": 809,
+        "width": 600,
+        "height": 45,
+        "top": 809,
+        "right": 1020,
+        "bottom": 854,
+        "left": 420
+      },
+      "promotion": {
+        "box": {
+          "x": 642.71875,
+          "y": 863,
+          "width": 154.546875,
+          "height": 13,
+          "top": 863,
+          "right": 797.265625,
+          "bottom": 876,
+          "left": 642.71875
+        },
+        "background": "rgba(0, 0, 0, 0)",
+        "image": "none"
+      },
+      "actions": {
+        "x": 420,
+        "y": 661,
+        "width": 600,
+        "height": 68,
+        "top": 661,
+        "right": 1020,
+        "bottom": 729,
+        "left": 420
+      },
+      "headline": {
+        "x": 352.796875,
+        "y": 224,
+        "width": 734.390625,
+        "height": 57.59375,
+        "top": 224,
+        "right": 1087.1875,
+        "bottom": 281.59375,
+        "left": 352.796875
+      }
+    },
+    {
+      "fixture": {
+        "width": 360,
+        "height": 650,
+        "signedIn": true,
+        "nickname": "老熊",
+        "avatar": true,
+        "variant": "avatar"
+      },
+      "profile": {
+        "x": 12,
+        "y": 8,
+        "width": 65,
+        "height": 36,
+        "top": 8,
+        "right": 77,
+        "bottom": 44,
+        "left": 12
+      },
+      "sound": {
+        "x": 255.375,
+        "y": 8,
+        "width": 36,
+        "height": 36,
+        "top": 8,
+        "right": 291.375,
+        "bottom": 44,
+        "left": 255.375
+      },
+      "toolbar": [
+        {
+          "x": 12,
+          "y": 8,
+          "width": 65,
+          "height": 36,
+          "top": 8,
+          "right": 77,
+          "bottom": 44,
+          "left": 12
+        },
+        {
+          "x": 198.75,
+          "y": 8,
+          "width": 53.625,
+          "height": 36,
+          "top": 8,
+          "right": 252.375,
+          "bottom": 44,
+          "left": 198.75
+        },
+        {
+          "x": 255.375,
+          "y": 8,
+          "width": 36,
+          "height": 36,
+          "top": 8,
+          "right": 291.375,
+          "bottom": 44,
+          "left": 255.375
+        },
+        {
+          "x": 294.375,
+          "y": 8,
+          "width": 53.625,
+          "height": 36,
+          "top": 8,
+          "right": 348,
+          "bottom": 44,
+          "left": 294.375
+        }
+      ],
+      "nickname": {
+        "visible": 25,
+        "full": 25
+      },
+      "avatarLoaded": true,
+      "navigation": {
+        "x": 12,
+        "y": 593,
+        "width": 336,
+        "height": 35,
+        "top": 593,
+        "right": 348,
+        "bottom": 628,
+        "left": 12
+      },
+      "promotion": {
+        "box": {
+          "x": 102.71875,
+          "y": 629,
+          "width": 154.546875,
+          "height": 13,
+          "top": 629,
+          "right": 257.265625,
+          "bottom": 642,
+          "left": 102.71875
+        },
+        "background": "rgba(0, 0, 0, 0)",
+        "image": "none"
+      },
+      "actions": {
+        "x": 12,
+        "y": 499,
+        "width": 336,
+        "height": 46,
+        "top": 499,
+        "right": 348,
+        "bottom": 545,
+        "left": 12
+      },
+      "headline": {
+        "x": 12,
+        "y": 338.453125,
+        "width": 336,
+        "height": 67.15625,
+        "top": 338.453125,
+        "right": 348,
+        "bottom": 405.609375,
+        "left": 12
+      }
+    },
+    {
+      "fixture": {
+        "width": 360,
+        "height": 740,
+        "signedIn": true,
+        "nickname": "老熊",
+        "avatar": true,
+        "variant": "avatar-tall"
+      },
+      "profile": {
+        "x": 16,
+        "y": 12,
+        "width": 65,
+        "height": 36,
+        "top": 12,
+        "right": 81,
+        "bottom": 48,
+        "left": 16
+      },
+      "sound": {
+        "x": 251.375,
+        "y": 12,
+        "width": 36,
+        "height": 36,
+        "top": 12,
+        "right": 287.375,
+        "bottom": 48,
+        "left": 251.375
+      },
+      "toolbar": [
+        {
+          "x": 16,
+          "y": 12,
+          "width": 65,
+          "height": 36,
+          "top": 12,
+          "right": 81,
+          "bottom": 48,
+          "left": 16
+        },
+        {
+          "x": 194.75,
+          "y": 12,
+          "width": 53.625,
+          "height": 36,
+          "top": 12,
+          "right": 248.375,
+          "bottom": 48,
+          "left": 194.75
+        },
+        {
+          "x": 251.375,
+          "y": 12,
+          "width": 36,
+          "height": 36,
+          "top": 12,
+          "right": 287.375,
+          "bottom": 48,
+          "left": 251.375
+        },
+        {
+          "x": 290.375,
+          "y": 12,
+          "width": 53.625,
+          "height": 36,
+          "top": 12,
+          "right": 344,
+          "bottom": 48,
+          "left": 290.375
+        }
+      ],
+      "nickname": {
+        "visible": 25,
+        "full": 25
+      },
+      "avatarLoaded": true,
+      "navigation": {
+        "x": 16,
+        "y": 670,
+        "width": 328,
+        "height": 39,
+        "top": 670,
+        "right": 344,
+        "bottom": 709,
+        "left": 16
+      },
+      "promotion": {
+        "box": {
+          "x": 102.71875,
+          "y": 713,
+          "width": 154.546875,
+          "height": 13,
+          "top": 713,
+          "right": 257.265625,
+          "bottom": 726,
+          "left": 102.71875
+        },
+        "background": "rgba(0, 0, 0, 0)",
+        "image": "none"
+      },
+      "actions": {
+        "x": 16,
+        "y": 558,
+        "width": 328,
+        "height": 52,
+        "top": 558,
+        "right": 344,
+        "bottom": 610,
+        "left": 16
+      },
+      "headline": {
+        "x": 16,
+        "y": 364.8125,
+        "width": 328,
+        "height": 82.40625,
+        "top": 364.8125,
+        "right": 344,
+        "bottom": 447.21875,
+        "left": 16
+      }
+    },
+    {
+      "fixture": {
+        "width": 320,
+        "height": 568,
+        "signedIn": true,
+        "nickname": "昵称很长的一位内测仙友",
+        "avatar": true,
+        "variant": "long-name"
+      },
+      "profile": {
+        "x": 12,
+        "y": 8,
+        "width": 112,
+        "height": 36,
+        "top": 8,
+        "right": 124,
+        "bottom": 44,
+        "left": 12
+      },
+      "sound": {
+        "x": 218.5,
+        "y": 8,
+        "width": 36,
+        "height": 36,
+        "top": 8,
+        "right": 254.5,
+        "bottom": 44,
+        "left": 218.5
+      },
+      "toolbar": [
+        {
+          "x": 12,
+          "y": 8,
+          "width": 112,
+          "height": 36,
+          "top": 8,
+          "right": 124,
+          "bottom": 44,
+          "left": 12
+        },
+        {
+          "x": 165,
+          "y": 8,
+          "width": 50.5,
+          "height": 36,
+          "top": 8,
+          "right": 215.5,
+          "bottom": 44,
+          "left": 165
+        },
+        {
+          "x": 218.5,
+          "y": 8,
+          "width": 36,
+          "height": 36,
+          "top": 8,
+          "right": 254.5,
+          "bottom": 44,
+          "left": 218.5
+        },
+        {
+          "x": 257.5,
+          "y": 8,
+          "width": 50.5,
+          "height": 36,
+          "top": 8,
+          "right": 308,
+          "bottom": 44,
+          "left": 257.5
+        }
+      ],
+      "nickname": {
+        "visible": 72,
+        "full": 127
+      },
+      "avatarLoaded": true,
+      "navigation": {
+        "x": 12,
+        "y": 511,
+        "width": 296,
+        "height": 35,
+        "top": 511,
+        "right": 308,
+        "bottom": 546,
+        "left": 12
+      },
+      "promotion": {
+        "box": {
+          "x": 82.71875,
+          "y": 547,
+          "width": 154.546875,
+          "height": 13,
+          "top": 547,
+          "right": 237.265625,
+          "bottom": 560,
+          "left": 82.71875
+        },
+        "background": "rgba(0, 0, 0, 0)",
+        "image": "none"
+      },
+      "actions": {
+        "x": 12,
+        "y": 417,
+        "width": 296,
+        "height": 46,
+        "top": 417,
+        "right": 308,
+        "bottom": 463,
+        "left": 12
+      },
+      "headline": {
+        "x": 12,
+        "y": 262.140625,
+        "width": 296,
+        "height": 61.46875,
+        "top": 262.140625,
+        "right": 308,
+        "bottom": 323.609375,
+        "left": 12
+      }
+    },
+    {
+      "fixture": {
+        "width": 390,
+        "height": 740,
+        "invitation": true
+      },
+      "profile": {
+        "x": 16,
+        "y": 12,
+        "width": 101,
+        "height": 40,
+        "top": 12,
+        "right": 117,
+        "bottom": 52,
+        "left": 16
+      },
+      "sound": {
+        "x": 300,
+        "y": 12,
+        "width": 74,
+        "height": 40,
+        "top": 12,
+        "right": 374,
+        "bottom": 52,
+        "left": 300
+      },
+      "toolbar": [
+        {
+          "x": 16,
+          "y": 12,
+          "width": 101,
+          "height": 40,
+          "top": 12,
+          "right": 117,
+          "bottom": 52,
+          "left": 16
+        },
+        {
+          "x": 300,
+          "y": 12,
+          "width": 74,
+          "height": 40,
+          "top": 12,
+          "right": 374,
+          "bottom": 52,
+          "left": 300
+        }
+      ],
+      "nickname": {
+        "visible": 54,
+        "full": 54
+      },
+      "avatarLoaded": false,
+      "navigation": {
+        "x": 16,
+        "y": 670,
+        "width": 358,
+        "height": 39,
+        "top": 670,
+        "right": 374,
+        "bottom": 709,
+        "left": 16
+      },
+      "promotion": {
+        "box": {
+          "x": 117.71875,
+          "y": 713,
+          "width": 154.546875,
+          "height": 13,
+          "top": 713,
+          "right": 272.265625,
+          "bottom": 726,
+          "left": 117.71875
+        },
+        "background": "rgba(0, 0, 0, 0)",
+        "image": "none"
+      },
+      "actions": {
+        "x": 16,
+        "y": 558,
+        "width": 358,
+        "height": 52,
+        "top": 558,
+        "right": 374,
+        "bottom": 610,
+        "left": 16
+      },
+      "headline": {
+        "x": 16,
+        "y": 329.5625,
+        "width": 358,
+        "height": 89.28125,
+        "top": 329.5625,
+        "right": 374,
+        "bottom": 418.84375,
+        "left": 16
+      }
+    },
+    {
+      "fixture": {
+        "width": 390,
+        "height": 740,
+        "promotion": false
+      },
+      "profile": {
+        "x": 16,
+        "y": 12,
+        "width": 101,
+        "height": 40,
+        "top": 12,
+        "right": 117,
+        "bottom": 52,
+        "left": 16
+      },
+      "sound": {
+        "x": 300,
+        "y": 12,
+        "width": 74,
+        "height": 40,
+        "top": 12,
+        "right": 374,
+        "bottom": 52,
+        "left": 300
+      },
+      "toolbar": [
+        {
+          "x": 16,
+          "y": 12,
+          "width": 101,
+          "height": 40,
+          "top": 12,
+          "right": 117,
+          "bottom": 52,
+          "left": 16
+        },
+        {
+          "x": 300,
+          "y": 12,
+          "width": 74,
+          "height": 40,
+          "top": 12,
+          "right": 374,
+          "bottom": 52,
+          "left": 300
+        }
+      ],
+      "nickname": {
+        "visible": 54,
+        "full": 54
+      },
+      "avatarLoaded": false,
+      "navigation": {
+        "x": 16,
+        "y": 682,
+        "width": 358,
+        "height": 44,
+        "top": 682,
+        "right": 374,
+        "bottom": 726,
+        "left": 16
+      },
+      "promotion": null,
+      "actions": {
+        "x": 16,
+        "y": 562,
+        "width": 358,
+        "height": 52,
+        "top": 562,
+        "right": 374,
+        "bottom": 614,
+        "left": 16
+      },
+      "headline": {
+        "x": 16,
+        "y": 360.359375,
+        "width": 358,
+        "height": 89.28125,
+        "top": 360.359375,
+        "right": 374,
+        "bottom": 449.640625,
+        "left": 16
+      }
+    }
+  ],
+  "production": [
+    {
+      "fixture": {
+        "width": 1440,
+        "height": 900
+      },
+      "profile": {
+        "x": 108,
+        "y": 20,
+        "width": 101,
+        "height": 40,
+        "top": 20,
+        "right": 209,
+        "bottom": 60,
+        "left": 108
+      },
+      "sound": {
+        "x": 1258,
+        "y": 20,
+        "width": 74,
+        "height": 40,
+        "top": 20,
+        "right": 1332,
+        "bottom": 60,
+        "left": 1258
+      },
+      "toolbar": [
+        {
+          "x": 108,
+          "y": 20,
+          "width": 101,
+          "height": 40,
+          "top": 20,
+          "right": 209,
+          "bottom": 60,
+          "left": 108
+        },
+        {
+          "x": 1258,
+          "y": 20,
+          "width": 74,
+          "height": 40,
+          "top": 20,
+          "right": 1332,
+          "bottom": 60,
+          "left": 1258
+        }
+      ],
+      "nickname": {
+        "visible": 54,
+        "full": 54
+      },
+      "avatarLoaded": false,
+      "navigation": {
+        "x": 420,
+        "y": 809,
+        "width": 600,
+        "height": 45,
+        "top": 809,
+        "right": 1020,
+        "bottom": 854,
+        "left": 420
+      },
+      "promotion": {
+        "box": {
+          "x": 642.71875,
+          "y": 863,
+          "width": 154.546875,
+          "height": 13,
+          "top": 863,
+          "right": 797.265625,
+          "bottom": 876,
+          "left": 642.71875
+        },
+        "background": "rgba(0, 0, 0, 0)",
+        "image": "none"
+      },
+      "actions": {
+        "x": 420,
+        "y": 661,
+        "width": 600,
+        "height": 68,
+        "top": 661,
+        "right": 1020,
+        "bottom": 729,
+        "left": 420
+      },
+      "headline": {
+        "x": 352.796875,
+        "y": 224,
+        "width": 734.390625,
+        "height": 57.59375,
+        "top": 224,
+        "right": 1087.1875,
+        "bottom": 281.59375,
+        "left": 352.796875
+      }
+    },
+    {
+      "fixture": {
+        "width": 360,
+        "height": 650,
+        "signedIn": true,
+        "nickname": "老熊",
+        "avatar": true,
+        "variant": "avatar"
+      },
+      "profile": {
+        "x": 12,
+        "y": 8,
+        "width": 65,
+        "height": 36,
+        "top": 8,
+        "right": 77,
+        "bottom": 44,
+        "left": 12
+      },
+      "sound": {
+        "x": 255.375,
+        "y": 8,
+        "width": 36,
+        "height": 36,
+        "top": 8,
+        "right": 291.375,
+        "bottom": 44,
+        "left": 255.375
+      },
+      "toolbar": [
+        {
+          "x": 12,
+          "y": 8,
+          "width": 65,
+          "height": 36,
+          "top": 8,
+          "right": 77,
+          "bottom": 44,
+          "left": 12
+        },
+        {
+          "x": 198.75,
+          "y": 8,
+          "width": 53.625,
+          "height": 36,
+          "top": 8,
+          "right": 252.375,
+          "bottom": 44,
+          "left": 198.75
+        },
+        {
+          "x": 255.375,
+          "y": 8,
+          "width": 36,
+          "height": 36,
+          "top": 8,
+          "right": 291.375,
+          "bottom": 44,
+          "left": 255.375
+        },
+        {
+          "x": 294.375,
+          "y": 8,
+          "width": 53.625,
+          "height": 36,
+          "top": 8,
+          "right": 348,
+          "bottom": 44,
+          "left": 294.375
+        }
+      ],
+      "nickname": {
+        "visible": 25,
+        "full": 25
+      },
+      "avatarLoaded": true,
+      "navigation": {
+        "x": 12,
+        "y": 593,
+        "width": 336,
+        "height": 35,
+        "top": 593,
+        "right": 348,
+        "bottom": 628,
+        "left": 12
+      },
+      "promotion": {
+        "box": {
+          "x": 102.71875,
+          "y": 629,
+          "width": 154.546875,
+          "height": 13,
+          "top": 629,
+          "right": 257.265625,
+          "bottom": 642,
+          "left": 102.71875
+        },
+        "background": "rgba(0, 0, 0, 0)",
+        "image": "none"
+      },
+      "actions": {
+        "x": 12,
+        "y": 499,
+        "width": 336,
+        "height": 46,
+        "top": 499,
+        "right": 348,
+        "bottom": 545,
+        "left": 12
+      },
+      "headline": {
+        "x": 12,
+        "y": 338.453125,
+        "width": 336,
+        "height": 67.15625,
+        "top": 338.453125,
+        "right": 348,
+        "bottom": 405.609375,
+        "left": 12
+      }
+    },
+    {
+      "fixture": {
+        "width": 320,
+        "height": 568,
+        "signedIn": true,
+        "nickname": "昵称很长的一位内测仙友",
+        "avatar": true,
+        "variant": "long-name"
+      },
+      "profile": {
+        "x": 12,
+        "y": 8,
+        "width": 112,
+        "height": 36,
+        "top": 8,
+        "right": 124,
+        "bottom": 44,
+        "left": 12
+      },
+      "sound": {
+        "x": 218.5,
+        "y": 8,
+        "width": 36,
+        "height": 36,
+        "top": 8,
+        "right": 254.5,
+        "bottom": 44,
+        "left": 218.5
+      },
+      "toolbar": [
+        {
+          "x": 12,
+          "y": 8,
+          "width": 112,
+          "height": 36,
+          "top": 8,
+          "right": 124,
+          "bottom": 44,
+          "left": 12
+        },
+        {
+          "x": 165,
+          "y": 8,
+          "width": 50.5,
+          "height": 36,
+          "top": 8,
+          "right": 215.5,
+          "bottom": 44,
+          "left": 165
+        },
+        {
+          "x": 218.5,
+          "y": 8,
+          "width": 36,
+          "height": 36,
+          "top": 8,
+          "right": 254.5,
+          "bottom": 44,
+          "left": 218.5
+        },
+        {
+          "x": 257.5,
+          "y": 8,
+          "width": 50.5,
+          "height": 36,
+          "top": 8,
+          "right": 308,
+          "bottom": 44,
+          "left": 257.5
+        }
+      ],
+      "nickname": {
+        "visible": 72,
+        "full": 127
+      },
+      "avatarLoaded": true,
+      "navigation": {
+        "x": 12,
+        "y": 511,
+        "width": 296,
+        "height": 35,
+        "top": 511,
+        "right": 308,
+        "bottom": 546,
+        "left": 12
+      },
+      "promotion": {
+        "box": {
+          "x": 82.71875,
+          "y": 547,
+          "width": 154.546875,
+          "height": 13,
+          "top": 547,
+          "right": 237.265625,
+          "bottom": 560,
+          "left": 82.71875
+        },
+        "background": "rgba(0, 0, 0, 0)",
+        "image": "none"
+      },
+      "actions": {
+        "x": 12,
+        "y": 417,
+        "width": 296,
+        "height": 46,
+        "top": 417,
+        "right": 308,
+        "bottom": 463,
+        "left": 12
+      },
+      "headline": {
+        "x": 12,
+        "y": 262.140625,
+        "width": 296,
+        "height": 61.46875,
+        "top": 262.140625,
+        "right": 308,
+        "bottom": 323.609375,
+        "left": 12
+      }
+    }
+  ]
+}
