@@ -1,515 +1,1135 @@
-{
-  "viewports": [
-    {
-      "fixture": {
+[
+  {
+    "fixture": {
+      "width": 320,
+      "height": 568
+    },
+    "main": {
+      "x": 0,
+      "y": 0,
+      "width": 320,
+      "height": 568,
+      "top": 0,
+      "right": 320,
+      "bottom": 568,
+      "left": 0
+    },
+    "copy": {
+      "x": 12,
+      "y": 271.140625,
+      "width": 296,
+      "height": 84.859375,
+      "top": 271.140625,
+      "right": 308,
+      "bottom": 356,
+      "left": 12
+    },
+    "headline": {
+      "x": 12,
+      "y": 271.140625,
+      "width": 296,
+      "height": 61.46875,
+      "top": 271.140625,
+      "right": 308,
+      "bottom": 332.609375,
+      "left": 12
+    },
+    "headlineLines": [
+      271.140625,
+      301.875
+    ],
+    "actions": {
+      "x": 12,
+      "y": 426,
+      "width": 296,
+      "height": 46,
+      "top": 426,
+      "right": 308,
+      "bottom": 472,
+      "left": 12
+    },
+    "actionHeights": [
+      46,
+      46
+    ],
+    "footer": {
+      "x": 12,
+      "y": 367,
+      "width": 296,
+      "height": 193,
+      "top": 367,
+      "right": 308,
+      "bottom": 560,
+      "left": 12
+    },
+    "sound": {
+      "x": 234,
+      "y": 8,
+      "width": 74,
+      "height": 40,
+      "top": 8,
+      "right": 308,
+      "bottom": 48,
+      "left": 234
+    },
+    "image": {
+      "src": "/art/home/duel-mobile.webp",
+      "width": 640,
+      "height": 1280,
+      "fit": "cover",
+      "box": {
+        "x": 0,
+        "y": 0,
         "width": 320,
-        "height": 568
-      },
-      "actions": {
-        "x": 14,
-        "y": 381.390625,
-        "width": 292,
-        "height": 48,
-        "top": 381.390625,
-        "right": 306,
-        "bottom": 429.390625,
-        "left": 14
-      },
-      "image": {
-        "src": "/art/home/duel-mobile.webp",
-        "width": 640,
-        "height": 427,
-        "fit": "contain",
-        "box": {
-          "x": 14,
-          "y": 129.484375,
-          "width": 292,
-          "height": 136.3125,
-          "top": 129.484375,
-          "right": 306,
-          "bottom": 265.796875,
-          "left": 14
-        }
-      },
-      "fonts": [
-        "Home Calligraphy",
-        "Home Display"
-      ]
+        "height": 568,
+        "top": 0,
+        "right": 320,
+        "bottom": 568,
+        "left": 0
+      }
     },
-    {
-      "fixture": {
+    "fonts": [
+      "Home Calligraphy",
+      "Home Interface"
+    ]
+  },
+  {
+    "fixture": {
+      "width": 375,
+      "height": 553
+    },
+    "main": {
+      "x": 0,
+      "y": 0,
+      "width": 375,
+      "height": 553,
+      "top": 0,
+      "right": 375,
+      "bottom": 553,
+      "left": 0
+    },
+    "copy": {
+      "x": 12,
+      "y": 247.671875,
+      "width": 351,
+      "height": 93.328125,
+      "top": 247.671875,
+      "right": 363,
+      "bottom": 341,
+      "left": 12
+    },
+    "headline": {
+      "x": 12,
+      "y": 247.671875,
+      "width": 351,
+      "height": 69.9375,
+      "top": 247.671875,
+      "right": 363,
+      "bottom": 317.609375,
+      "left": 12
+    },
+    "headlineLines": [
+      247.671875,
+      282.640625
+    ],
+    "actions": {
+      "x": 12,
+      "y": 411,
+      "width": 351,
+      "height": 46,
+      "top": 411,
+      "right": 363,
+      "bottom": 457,
+      "left": 12
+    },
+    "actionHeights": [
+      46,
+      46
+    ],
+    "footer": {
+      "x": 12,
+      "y": 352,
+      "width": 351,
+      "height": 193,
+      "top": 352,
+      "right": 363,
+      "bottom": 545,
+      "left": 12
+    },
+    "sound": {
+      "x": 289,
+      "y": 8,
+      "width": 74,
+      "height": 40,
+      "top": 8,
+      "right": 363,
+      "bottom": 48,
+      "left": 289
+    },
+    "image": {
+      "src": "/art/home/duel-mobile.webp",
+      "width": 640,
+      "height": 1280,
+      "fit": "cover",
+      "box": {
+        "x": 0,
+        "y": 0,
         "width": 375,
-        "height": 553
-      },
-      "actions": {
-        "x": 14,
-        "y": 379.046875,
-        "width": 347,
-        "height": 48,
-        "top": 379.046875,
-        "right": 361,
-        "bottom": 427.046875,
-        "left": 14
-      },
-      "image": {
-        "src": "/art/home/duel-mobile.webp",
-        "width": 640,
-        "height": 427,
-        "fit": "contain",
-        "box": {
-          "x": 14,
-          "y": 129.484375,
-          "width": 347,
-          "height": 132.71875,
-          "top": 129.484375,
-          "right": 361,
-          "bottom": 262.203125,
-          "left": 14
-        }
-      },
-      "fonts": [
-        "Home Calligraphy",
-        "Home Display"
-      ]
+        "height": 553,
+        "top": 0,
+        "right": 375,
+        "bottom": 553,
+        "left": 0
+      }
     },
-    {
-      "fixture": {
+    "fonts": [
+      "Home Calligraphy",
+      "Home Interface"
+    ]
+  },
+  {
+    "fixture": {
+      "width": 390,
+      "height": 740
+    },
+    "main": {
+      "x": 0,
+      "y": 0,
+      "width": 390,
+      "height": 740,
+      "top": 0,
+      "right": 390,
+      "bottom": 740,
+      "left": 0
+    },
+    "copy": {
+      "x": 16,
+      "y": 360.359375,
+      "width": 358,
+      "height": 119.640625,
+      "top": 360.359375,
+      "right": 374,
+      "bottom": 480,
+      "left": 16
+    },
+    "headline": {
+      "x": 16,
+      "y": 360.359375,
+      "width": 358,
+      "height": 89.28125,
+      "top": 360.359375,
+      "right": 374,
+      "bottom": 449.640625,
+      "left": 16
+    },
+    "headlineLines": [
+      360.359375,
+      405
+    ],
+    "actions": {
+      "x": 16,
+      "y": 562,
+      "width": 358,
+      "height": 52,
+      "top": 562,
+      "right": 374,
+      "bottom": 614,
+      "left": 16
+    },
+    "actionHeights": [
+      52,
+      52
+    ],
+    "footer": {
+      "x": 16,
+      "y": 500,
+      "width": 358,
+      "height": 226,
+      "top": 500,
+      "right": 374,
+      "bottom": 726,
+      "left": 16
+    },
+    "sound": {
+      "x": 300,
+      "y": 12,
+      "width": 74,
+      "height": 40,
+      "top": 12,
+      "right": 374,
+      "bottom": 52,
+      "left": 300
+    },
+    "image": {
+      "src": "/art/home/duel-mobile.webp",
+      "width": 640,
+      "height": 1280,
+      "fit": "cover",
+      "box": {
+        "x": 0,
+        "y": 0,
         "width": 390,
-        "height": 740
-      },
-      "actions": {
-        "x": 14,
-        "y": 499.484375,
-        "width": 362,
-        "height": 48,
-        "top": 499.484375,
-        "right": 376,
-        "bottom": 547.484375,
-        "left": 14
-      },
-      "image": {
-        "src": "/art/home/duel-mobile.webp",
-        "width": 640,
-        "height": 427,
-        "fit": "contain",
-        "box": {
-          "x": 14,
-          "y": 136.65625,
-          "width": 362,
-          "height": 236.796875,
-          "top": 136.65625,
-          "right": 376,
-          "bottom": 373.453125,
-          "left": 14
-        }
-      },
-      "fonts": [
-        "Home Calligraphy",
-        "Home Display"
-      ]
+        "height": 740,
+        "top": 0,
+        "right": 390,
+        "bottom": 740,
+        "left": 0
+      }
     },
-    {
-      "fixture": {
+    "fonts": [
+      "Home Calligraphy",
+      "Home Interface"
+    ]
+  },
+  {
+    "fixture": {
+      "width": 430,
+      "height": 800
+    },
+    "main": {
+      "x": 0,
+      "y": 0,
+      "width": 430,
+      "height": 800,
+      "top": 0,
+      "right": 430,
+      "bottom": 800,
+      "left": 0
+    },
+    "copy": {
+      "x": 16,
+      "y": 415,
+      "width": 398,
+      "height": 125,
+      "top": 415,
+      "right": 414,
+      "bottom": 540,
+      "left": 16
+    },
+    "headline": {
+      "x": 16,
+      "y": 415,
+      "width": 398,
+      "height": 93.25,
+      "top": 415,
+      "right": 414,
+      "bottom": 508.25,
+      "left": 16
+    },
+    "headlineLines": [
+      415,
+      461.625
+    ],
+    "actions": {
+      "x": 16,
+      "y": 622,
+      "width": 398,
+      "height": 52,
+      "top": 622,
+      "right": 414,
+      "bottom": 674,
+      "left": 16
+    },
+    "actionHeights": [
+      52,
+      52
+    ],
+    "footer": {
+      "x": 16,
+      "y": 560,
+      "width": 398,
+      "height": 226,
+      "top": 560,
+      "right": 414,
+      "bottom": 786,
+      "left": 16
+    },
+    "sound": {
+      "x": 340,
+      "y": 12,
+      "width": 74,
+      "height": 40,
+      "top": 12,
+      "right": 414,
+      "bottom": 52,
+      "left": 340
+    },
+    "image": {
+      "src": "/art/home/duel-mobile.webp",
+      "width": 640,
+      "height": 1280,
+      "fit": "cover",
+      "box": {
+        "x": 0,
+        "y": 0,
         "width": 430,
-        "height": 800
-      },
-      "actions": {
-        "x": 14,
-        "y": 525.546875,
-        "width": 402,
-        "height": 48,
-        "top": 525.546875,
-        "right": 416,
-        "bottom": 573.546875,
-        "left": 14
-      },
-      "image": {
-        "src": "/art/home/duel-mobile.webp",
+        "height": 800,
+        "top": 0,
+        "right": 430,
+        "bottom": 800,
+        "left": 0
+      }
+    },
+    "fonts": [
+      "Home Calligraphy",
+      "Home Interface"
+    ]
+  },
+  {
+    "fixture": {
+      "width": 640,
+      "height": 900
+    },
+    "main": {
+      "x": 0,
+      "y": 0,
+      "width": 640,
+      "height": 900,
+      "top": 0,
+      "right": 640,
+      "bottom": 900,
+      "left": 0
+    },
+    "copy": {
+      "x": 16,
+      "y": 515,
+      "width": 608,
+      "height": 125,
+      "top": 515,
+      "right": 624,
+      "bottom": 640,
+      "left": 16
+    },
+    "headline": {
+      "x": 16,
+      "y": 515,
+      "width": 608,
+      "height": 93.25,
+      "top": 515,
+      "right": 624,
+      "bottom": 608.25,
+      "left": 16
+    },
+    "headlineLines": [
+      515,
+      561.625
+    ],
+    "actions": {
+      "x": 45,
+      "y": 722,
+      "width": 550,
+      "height": 52,
+      "top": 722,
+      "right": 595,
+      "bottom": 774,
+      "left": 45
+    },
+    "actionHeights": [
+      52,
+      52
+    ],
+    "footer": {
+      "x": 45,
+      "y": 660,
+      "width": 550,
+      "height": 226,
+      "top": 660,
+      "right": 595,
+      "bottom": 886,
+      "left": 45
+    },
+    "sound": {
+      "x": 550,
+      "y": 12,
+      "width": 74,
+      "height": 40,
+      "top": 12,
+      "right": 624,
+      "bottom": 52,
+      "left": 550
+    },
+    "image": {
+      "src": "/art/home/duel-mobile.webp",
+      "width": 640,
+      "height": 1280,
+      "fit": "cover",
+      "box": {
+        "x": 0,
+        "y": 0,
         "width": 640,
-        "height": 427,
-        "fit": "contain",
-        "box": {
-          "x": 14,
-          "y": 140.3125,
-          "width": 402,
-          "height": 256,
-          "top": 140.3125,
-          "right": 416,
-          "bottom": 396.3125,
-          "left": 14
-        }
-      },
-      "fonts": [
-        "Home Calligraphy",
-        "Home Display"
-      ]
-    },
-    {
-      "fixture": {
-        "width": 640,
-        "height": 900
-      },
-      "actions": {
-        "x": 60,
-        "y": 541.734375,
-        "width": 520,
-        "height": 48,
-        "top": 541.734375,
-        "right": 580,
-        "bottom": 589.734375,
-        "left": 60
-      },
-      "image": {
-        "src": "/art/home/duel-mobile.webp",
-        "width": 640,
-        "height": 427,
-        "fit": "contain",
-        "box": {
-          "x": 14,
-          "y": 141.890625,
-          "width": 612,
-          "height": 270,
-          "top": 141.890625,
-          "right": 626,
-          "bottom": 411.890625,
-          "left": 14
-        }
-      },
-      "fonts": [
-        "Home Calligraphy",
-        "Home Display"
-      ]
-    },
-    {
-      "fixture": {
-        "width": 760,
-        "height": 900
-      },
-      "actions": {
-        "x": 120,
-        "y": 587.515625,
-        "width": 520,
-        "height": 50,
-        "top": 587.515625,
-        "right": 640,
-        "bottom": 637.515625,
-        "left": 120
-      },
-      "image": {
-        "src": "/art/home/duel-desktop.webp",
-        "width": 1280,
-        "height": 640,
-        "fit": "contain",
-        "box": {
-          "x": 0,
-          "y": 120,
-          "width": 760,
-          "height": 576,
-          "top": 120,
-          "right": 760,
-          "bottom": 696,
-          "left": 0
-        }
-      },
-      "fonts": [
-        "Home Calligraphy",
-        "Home Display"
-      ]
-    },
-    {
-      "fixture": {
-        "width": 1440,
-        "height": 900
-      },
-      "actions": {
-        "x": 460,
-        "y": 594.78125,
-        "width": 520,
-        "height": 50,
-        "top": 594.78125,
-        "right": 980,
-        "bottom": 644.78125,
-        "left": 460
-      },
-      "image": {
-        "src": "/art/home/duel-desktop.webp",
-        "width": 1280,
-        "height": 640,
-        "fit": "contain",
-        "box": {
-          "x": 80,
-          "y": 120,
-          "width": 1280,
-          "height": 576,
-          "top": 120,
-          "right": 1360,
-          "bottom": 696,
-          "left": 80
-        }
-      },
-      "fonts": [
-        "Home Calligraphy",
-        "Home Display"
-      ]
-    },
-    {
-      "fixture": {
-        "width": 390,
-        "height": 740,
-        "signedIn": true
-      },
-      "actions": {
-        "x": 14,
-        "y": 499.484375,
-        "width": 362,
-        "height": 48,
-        "top": 499.484375,
-        "right": 376,
-        "bottom": 547.484375,
-        "left": 14
-      },
-      "image": {
-        "src": "/art/home/duel-mobile.webp",
-        "width": 640,
-        "height": 427,
-        "fit": "contain",
-        "box": {
-          "x": 14,
-          "y": 136.65625,
-          "width": 362,
-          "height": 236.796875,
-          "top": 136.65625,
-          "right": 376,
-          "bottom": 373.453125,
-          "left": 14
-        }
-      },
-      "fonts": [
-        "Home Calligraphy",
-        "Home Display"
-      ]
-    },
-    {
-      "fixture": {
-        "width": 1440,
         "height": 900,
-        "signedIn": true
-      },
-      "actions": {
-        "x": 460,
-        "y": 594.78125,
-        "width": 520,
-        "height": 50,
-        "top": 594.78125,
-        "right": 980,
-        "bottom": 644.78125,
-        "left": 460
-      },
-      "image": {
-        "src": "/art/home/duel-desktop.webp",
+        "top": 0,
+        "right": 640,
+        "bottom": 900,
+        "left": 0
+      }
+    },
+    "fonts": [
+      "Home Calligraphy",
+      "Home Interface"
+    ]
+  },
+  {
+    "fixture": {
+      "width": 760,
+      "height": 900
+    },
+    "main": {
+      "x": 0,
+      "y": 0,
+      "width": 760,
+      "height": 900,
+      "top": 0,
+      "right": 760,
+      "bottom": 900,
+      "left": 0
+    },
+    "copy": {
+      "x": 16,
+      "y": 515,
+      "width": 728,
+      "height": 125,
+      "top": 515,
+      "right": 744,
+      "bottom": 640,
+      "left": 16
+    },
+    "headline": {
+      "x": 16,
+      "y": 515,
+      "width": 728,
+      "height": 93.25,
+      "top": 515,
+      "right": 744,
+      "bottom": 608.25,
+      "left": 16
+    },
+    "headlineLines": [
+      515,
+      561.625
+    ],
+    "actions": {
+      "x": 105,
+      "y": 722,
+      "width": 550,
+      "height": 52,
+      "top": 722,
+      "right": 655,
+      "bottom": 774,
+      "left": 105
+    },
+    "actionHeights": [
+      52,
+      52
+    ],
+    "footer": {
+      "x": 105,
+      "y": 660,
+      "width": 550,
+      "height": 226,
+      "top": 660,
+      "right": 655,
+      "bottom": 886,
+      "left": 105
+    },
+    "sound": {
+      "x": 670,
+      "y": 12,
+      "width": 74,
+      "height": 40,
+      "top": 12,
+      "right": 744,
+      "bottom": 52,
+      "left": 670
+    },
+    "image": {
+      "src": "/art/home/duel-mobile.webp",
+      "width": 640,
+      "height": 1280,
+      "fit": "cover",
+      "box": {
+        "x": 0,
+        "y": 0,
+        "width": 760,
+        "height": 900,
+        "top": 0,
+        "right": 760,
+        "bottom": 900,
+        "left": 0
+      }
+    },
+    "fonts": [
+      "Home Calligraphy",
+      "Home Interface"
+    ]
+  },
+  {
+    "fixture": {
+      "width": 1440,
+      "height": 900
+    },
+    "main": {
+      "x": 80,
+      "y": 0,
+      "width": 1280,
+      "height": 900,
+      "top": 0,
+      "right": 1360,
+      "bottom": 900,
+      "left": 80
+    },
+    "copy": {
+      "x": 352.796875,
+      "y": 224,
+      "width": 734.390625,
+      "height": 93.6875,
+      "top": 224,
+      "right": 1087.1875,
+      "bottom": 317.6875,
+      "left": 352.796875
+    },
+    "headline": {
+      "x": 352.796875,
+      "y": 224,
+      "width": 734.390625,
+      "height": 57.59375,
+      "top": 224,
+      "right": 1087.1875,
+      "bottom": 281.59375,
+      "left": 352.796875
+    },
+    "headlineLines": [
+      228,
+      228
+    ],
+    "actions": {
+      "x": 420,
+      "y": 670,
+      "width": 600,
+      "height": 68,
+      "top": 670,
+      "right": 1020,
+      "bottom": 738,
+      "left": 420
+    },
+    "actionHeights": [
+      68,
+      68
+    ],
+    "footer": {
+      "x": 420,
+      "y": 593,
+      "width": 600,
+      "height": 283,
+      "top": 593,
+      "right": 1020,
+      "bottom": 876,
+      "left": 420
+    },
+    "sound": {
+      "x": 1258,
+      "y": 20,
+      "width": 74,
+      "height": 40,
+      "top": 20,
+      "right": 1332,
+      "bottom": 60,
+      "left": 1258
+    },
+    "image": {
+      "src": "/art/home/duel-desktop.webp",
+      "width": 1280,
+      "height": 901,
+      "fit": "cover",
+      "box": {
+        "x": 80,
+        "y": 0,
         "width": 1280,
-        "height": 640,
-        "fit": "contain",
-        "box": {
-          "x": 80,
-          "y": 120,
-          "width": 1280,
-          "height": 576,
-          "top": 120,
-          "right": 1360,
-          "bottom": 696,
-          "left": 80
-        }
-      },
-      "fonts": [
-        "Home Calligraphy",
-        "Home Display"
-      ]
+        "height": 900,
+        "top": 0,
+        "right": 1360,
+        "bottom": 900,
+        "left": 80
+      }
     },
-    {
-      "fixture": {
+    "fonts": [
+      "Home Calligraphy",
+      "Home Interface"
+    ]
+  },
+  {
+    "fixture": {
+      "width": 320,
+      "height": 568,
+      "signedIn": true
+    },
+    "main": {
+      "x": 0,
+      "y": 0,
+      "width": 320,
+      "height": 568,
+      "top": 0,
+      "right": 320,
+      "bottom": 568,
+      "left": 0
+    },
+    "copy": {
+      "x": 12,
+      "y": 271.140625,
+      "width": 296,
+      "height": 84.859375,
+      "top": 271.140625,
+      "right": 308,
+      "bottom": 356,
+      "left": 12
+    },
+    "headline": {
+      "x": 12,
+      "y": 271.140625,
+      "width": 296,
+      "height": 61.46875,
+      "top": 271.140625,
+      "right": 308,
+      "bottom": 332.609375,
+      "left": 12
+    },
+    "headlineLines": [
+      271.140625,
+      301.875
+    ],
+    "actions": {
+      "x": 12,
+      "y": 426,
+      "width": 296,
+      "height": 46,
+      "top": 426,
+      "right": 308,
+      "bottom": 472,
+      "left": 12
+    },
+    "actionHeights": [
+      46,
+      46
+    ],
+    "footer": {
+      "x": 12,
+      "y": 367,
+      "width": 296,
+      "height": 193,
+      "top": 367,
+      "right": 308,
+      "bottom": 560,
+      "left": 12
+    },
+    "sound": {
+      "x": 218.5,
+      "y": 8,
+      "width": 36,
+      "height": 40,
+      "top": 8,
+      "right": 254.5,
+      "bottom": 48,
+      "left": 218.5
+    },
+    "image": {
+      "src": "/art/home/duel-mobile.webp",
+      "width": 640,
+      "height": 1280,
+      "fit": "cover",
+      "box": {
+        "x": 0,
+        "y": 0,
+        "width": 320,
+        "height": 568,
+        "top": 0,
+        "right": 320,
+        "bottom": 568,
+        "left": 0
+      }
+    },
+    "fonts": [
+      "Home Calligraphy",
+      "Home Interface"
+    ]
+  },
+  {
+    "fixture": {
+      "width": 390,
+      "height": 740,
+      "signedIn": true
+    },
+    "main": {
+      "x": 0,
+      "y": 0,
+      "width": 390,
+      "height": 740,
+      "top": 0,
+      "right": 390,
+      "bottom": 740,
+      "left": 0
+    },
+    "copy": {
+      "x": 16,
+      "y": 360.359375,
+      "width": 358,
+      "height": 119.640625,
+      "top": 360.359375,
+      "right": 374,
+      "bottom": 480,
+      "left": 16
+    },
+    "headline": {
+      "x": 16,
+      "y": 360.359375,
+      "width": 358,
+      "height": 89.28125,
+      "top": 360.359375,
+      "right": 374,
+      "bottom": 449.640625,
+      "left": 16
+    },
+    "headlineLines": [
+      360.359375,
+      405
+    ],
+    "actions": {
+      "x": 16,
+      "y": 562,
+      "width": 358,
+      "height": 52,
+      "top": 562,
+      "right": 374,
+      "bottom": 614,
+      "left": 16
+    },
+    "actionHeights": [
+      52,
+      52
+    ],
+    "footer": {
+      "x": 16,
+      "y": 500,
+      "width": 358,
+      "height": 226,
+      "top": 500,
+      "right": 374,
+      "bottom": 726,
+      "left": 16
+    },
+    "sound": {
+      "x": 235.265625,
+      "y": 12,
+      "width": 74,
+      "height": 40,
+      "top": 12,
+      "right": 309.265625,
+      "bottom": 52,
+      "left": 235.265625
+    },
+    "image": {
+      "src": "/art/home/duel-mobile.webp",
+      "width": 640,
+      "height": 1280,
+      "fit": "cover",
+      "box": {
+        "x": 0,
+        "y": 0,
         "width": 390,
         "height": 740,
-        "invitation": true
-      },
-      "actions": {
-        "x": 14,
-        "y": 535.28125,
-        "width": 362,
-        "height": 48,
-        "top": 535.28125,
-        "right": 376,
-        "bottom": 583.28125,
-        "left": 14
-      },
-      "image": {
-        "src": "/art/home/duel-mobile.webp",
-        "width": 640,
-        "height": 427,
-        "fit": "contain",
-        "box": {
-          "x": 14,
-          "y": 136.65625,
-          "width": 362,
-          "height": 236.796875,
-          "top": 136.65625,
-          "right": 376,
-          "bottom": 373.453125,
-          "left": 14
-        }
-      },
-      "fonts": [
-        "Home Calligraphy",
-        "Home Display"
-      ]
+        "top": 0,
+        "right": 390,
+        "bottom": 740,
+        "left": 0
+      }
     },
-    {
-      "fixture": {
-        "width": 390,
-        "height": 740,
-        "promotion": false
-      },
-      "actions": {
-        "x": 14,
-        "y": 472.1875,
-        "width": 362,
-        "height": 48,
-        "top": 472.1875,
-        "right": 376,
-        "bottom": 520.1875,
-        "left": 14
-      },
-      "image": {
-        "src": "/art/home/duel-mobile.webp",
-        "width": 640,
-        "height": 427,
-        "fit": "contain",
-        "box": {
-          "x": 14,
-          "y": 109.359375,
-          "width": 362,
-          "height": 236.796875,
-          "top": 109.359375,
-          "right": 376,
-          "bottom": 346.15625,
-          "left": 14
-        }
-      },
-      "fonts": [
-        "Home Calligraphy",
-        "Home Display"
-      ]
-    }
-  ],
-  "production": [
-    {
-      "fixture": {
-        "width": 390,
-        "height": 740
-      },
-      "actions": {
-        "x": 14,
-        "y": 499.484375,
-        "width": 362,
-        "height": 48,
-        "top": 499.484375,
-        "right": 376,
-        "bottom": 547.484375,
-        "left": 14
-      },
-      "image": {
-        "src": "/avalon/art/home/duel-mobile.webp",
-        "width": 640,
-        "height": 427,
-        "fit": "contain",
-        "box": {
-          "x": 14,
-          "y": 136.65625,
-          "width": 362,
-          "height": 236.796875,
-          "top": 136.65625,
-          "right": 376,
-          "bottom": 373.453125,
-          "left": 14
-        }
-      },
-      "fonts": [
-        "Home Calligraphy",
-        "Home Display"
-      ]
+    "fonts": [
+      "Home Calligraphy",
+      "Home Interface"
+    ]
+  },
+  {
+    "fixture": {
+      "width": 1440,
+      "height": 900,
+      "signedIn": true
     },
-    {
-      "fixture": {
-        "width": 1440,
-        "height": 900
-      },
-      "actions": {
-        "x": 460,
-        "y": 594.78125,
-        "width": 520,
-        "height": 50,
-        "top": 594.78125,
-        "right": 980,
-        "bottom": 644.78125,
-        "left": 460
-      },
-      "image": {
-        "src": "/avalon/art/home/duel-desktop.webp",
+    "main": {
+      "x": 80,
+      "y": 0,
+      "width": 1280,
+      "height": 900,
+      "top": 0,
+      "right": 1360,
+      "bottom": 900,
+      "left": 80
+    },
+    "copy": {
+      "x": 352.796875,
+      "y": 224,
+      "width": 734.390625,
+      "height": 93.6875,
+      "top": 224,
+      "right": 1087.1875,
+      "bottom": 317.6875,
+      "left": 352.796875
+    },
+    "headline": {
+      "x": 352.796875,
+      "y": 224,
+      "width": 734.390625,
+      "height": 57.59375,
+      "top": 224,
+      "right": 1087.1875,
+      "bottom": 281.59375,
+      "left": 352.796875
+    },
+    "headlineLines": [
+      228,
+      228
+    ],
+    "actions": {
+      "x": 420,
+      "y": 670,
+      "width": 600,
+      "height": 68,
+      "top": 670,
+      "right": 1020,
+      "bottom": 738,
+      "left": 420
+    },
+    "actionHeights": [
+      68,
+      68
+    ],
+    "footer": {
+      "x": 420,
+      "y": 593,
+      "width": 600,
+      "height": 283,
+      "top": 593,
+      "right": 1020,
+      "bottom": 876,
+      "left": 420
+    },
+    "sound": {
+      "x": 1193.265625,
+      "y": 20,
+      "width": 74,
+      "height": 40,
+      "top": 20,
+      "right": 1267.265625,
+      "bottom": 60,
+      "left": 1193.265625
+    },
+    "image": {
+      "src": "/art/home/duel-desktop.webp",
+      "width": 1280,
+      "height": 901,
+      "fit": "cover",
+      "box": {
+        "x": 80,
+        "y": 0,
         "width": 1280,
-        "height": 640,
-        "fit": "contain",
-        "box": {
-          "x": 80,
-          "y": 120,
-          "width": 1280,
-          "height": 576,
-          "top": 120,
-          "right": 1360,
-          "bottom": 696,
-          "left": 80
-        }
-      },
-      "fonts": [
-        "Home Calligraphy",
-        "Home Display"
-      ]
+        "height": 900,
+        "top": 0,
+        "right": 1360,
+        "bottom": 900,
+        "left": 80
+      }
     },
-    {
-      "fixture": {
+    "fonts": [
+      "Home Calligraphy",
+      "Home Interface"
+    ]
+  },
+  {
+    "fixture": {
+      "width": 390,
+      "height": 740,
+      "invitation": true
+    },
+    "main": {
+      "x": 0,
+      "y": 0,
+      "width": 390,
+      "height": 740,
+      "top": 0,
+      "right": 390,
+      "bottom": 740,
+      "left": 0
+    },
+    "copy": {
+      "x": 16,
+      "y": 333.5625,
+      "width": 358,
+      "height": 119.640625,
+      "top": 333.5625,
+      "right": 374,
+      "bottom": 453.203125,
+      "left": 16
+    },
+    "headline": {
+      "x": 16,
+      "y": 333.5625,
+      "width": 358,
+      "height": 89.28125,
+      "top": 333.5625,
+      "right": 374,
+      "bottom": 422.84375,
+      "left": 16
+    },
+    "headlineLines": [
+      333.5625,
+      378.203125
+    ],
+    "actions": {
+      "x": 16,
+      "y": 562,
+      "width": 358,
+      "height": 52,
+      "top": 562,
+      "right": 374,
+      "bottom": 614,
+      "left": 16
+    },
+    "actionHeights": [
+      52,
+      52
+    ],
+    "footer": {
+      "x": 16,
+      "y": 473.203125,
+      "width": 358,
+      "height": 252.796875,
+      "top": 473.203125,
+      "right": 374,
+      "bottom": 726,
+      "left": 16
+    },
+    "sound": {
+      "x": 300,
+      "y": 12,
+      "width": 74,
+      "height": 40,
+      "top": 12,
+      "right": 374,
+      "bottom": 52,
+      "left": 300
+    },
+    "image": {
+      "src": "/art/home/duel-mobile.webp",
+      "width": 640,
+      "height": 1280,
+      "fit": "cover",
+      "box": {
+        "x": 0,
+        "y": 0,
         "width": 390,
         "height": 740,
-        "invitation": true
-      },
-      "actions": {
-        "x": 14,
-        "y": 523.28125,
-        "width": 362,
-        "height": 48,
-        "top": 523.28125,
-        "right": 376,
-        "bottom": 571.28125,
-        "left": 14
-      },
-      "image": {
-        "src": "/avalon/art/home/duel-mobile.webp",
-        "width": 640,
-        "height": 427,
-        "fit": "contain",
-        "box": {
-          "x": 14,
-          "y": 136.65625,
-          "width": 362,
-          "height": 236.796875,
-          "top": 136.65625,
-          "right": 376,
-          "bottom": 373.453125,
-          "left": 14
-        }
-      },
-      "fonts": [
-        "Home Calligraphy",
-        "Home Display"
-      ]
-    }
-  ]
-}
+        "top": 0,
+        "right": 390,
+        "bottom": 740,
+        "left": 0
+      }
+    },
+    "fonts": [
+      "Home Calligraphy",
+      "Home Interface"
+    ]
+  },
+  {
+    "fixture": {
+      "width": 390,
+      "height": 740,
+      "promotion": false
+    },
+    "main": {
+      "x": 0,
+      "y": 0,
+      "width": 390,
+      "height": 740,
+      "top": 0,
+      "right": 390,
+      "bottom": 740,
+      "left": 0
+    },
+    "copy": {
+      "x": 16,
+      "y": 360.359375,
+      "width": 358,
+      "height": 119.640625,
+      "top": 360.359375,
+      "right": 374,
+      "bottom": 480,
+      "left": 16
+    },
+    "headline": {
+      "x": 16,
+      "y": 360.359375,
+      "width": 358,
+      "height": 89.28125,
+      "top": 360.359375,
+      "right": 374,
+      "bottom": 449.640625,
+      "left": 16
+    },
+    "headlineLines": [
+      360.359375,
+      405
+    ],
+    "actions": {
+      "x": 16,
+      "y": 562,
+      "width": 358,
+      "height": 52,
+      "top": 562,
+      "right": 374,
+      "bottom": 614,
+      "left": 16
+    },
+    "actionHeights": [
+      52,
+      52
+    ],
+    "footer": {
+      "x": 16,
+      "y": 500,
+      "width": 358,
+      "height": 226,
+      "top": 500,
+      "right": 374,
+      "bottom": 726,
+      "left": 16
+    },
+    "sound": {
+      "x": 300,
+      "y": 12,
+      "width": 74,
+      "height": 40,
+      "top": 12,
+      "right": 374,
+      "bottom": 52,
+      "left": 300
+    },
+    "image": {
+      "src": "/art/home/duel-mobile.webp",
+      "width": 640,
+      "height": 1280,
+      "fit": "cover",
+      "box": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 740,
+        "top": 0,
+        "right": 390,
+        "bottom": 740,
+        "left": 0
+      }
+    },
+    "fonts": [
+      "Home Calligraphy",
+      "Home Interface"
+    ]
+  }
+]

@@ -11,7 +11,7 @@ await mkdir(output,{recursive:true});
 const browser=await chromium.launch({headless:true});
 const results=[];
 const fixtures=[...[ [320,568],[375,553],[390,740],[430,800],[640,900],[760,900],[1440,900] ].map(([width,height])=>({width,height})),
-  {width:390,height:740,signedIn:true},{width:1440,height:900,signedIn:true},
+  {width:320,height:568,signedIn:true},{width:390,height:740,signedIn:true},{width:1440,height:900,signedIn:true},
   {width:390,height:740,invitation:true},{width:390,height:740,promotion:false}];
 try {
   for(const fixture of fixtures) {
@@ -39,7 +39,9 @@ try {
       const box=s=>document.querySelector(s).getBoundingClientRect().toJSON();
       const art=document.querySelector('.lobby-duel-art img');
       return {overflow:document.documentElement.scrollWidth>innerWidth,main:box('main'),copy:box('.lobby-duel-copy'),
-        actions:box('.lobby-primary-actions'),footer:box('.mp-home-footer'),
+        headline:box('.lobby-duel-copy h2'),headlineLines:[...document.querySelectorAll('.lobby-duel-copy h2 span')].map(n=>n.getBoundingClientRect().top),
+        actionHeights:[...document.querySelectorAll('.lobby-primary-actions button')].map(n=>n.getBoundingClientRect().height),
+        actions:box('.lobby-primary-actions'),footer:box('.mp-home-footer'),sound:box('.sound-button'),
         image:{src:new URL(art.currentSrc).pathname,width:art.naturalWidth,height:art.naturalHeight,fit:getComputedStyle(art).objectFit,box:art.getBoundingClientRect().toJSON()},
         fonts:[...document.fonts].filter(f=>f.status==='loaded').map(f=>f.family),
         text:[...document.querySelectorAll('.home-duel-screen h1,.home-duel-screen h2,.home-duel-screen p,.home-duel-screen button')].map(n=>({text:n.textContent,overflow:n.scrollWidth>n.clientWidth+1,size:getComputedStyle(n).fontSize,font:getComputedStyle(n).fontFamily})),
@@ -50,11 +52,17 @@ try {
     await page.screenshot({path:join(output,`${label}.png`),fullPage:true,scale:'css'});
     assert.deepEqual(errors,[]);
     assert.equal(state.overflow,false,`${label}: page overflow`);
-    assert.equal(state.image.fit,'contain');
-    assert.ok(state.image.width===(width<760?640:1280));
+    assert.equal(state.image.fit,'cover');
+    assert.ok(state.image.width===(width<900?640:1280));
+    assert.ok(Math.abs(state.image.box.height-state.main.height)<1,'scene must fill home, not a small medallion');
     assert.ok(state.actions.bottom<=height,`${label}: main actions below first viewport: ${state.actions.bottom}`);
+    assert.ok(state.actionHeights.every(h=>h>=44));
+    if(!signedIn || width>=390)assert.ok(state.sound.width>=70,`${label}: approved oval sound label was squashed`);
+    assert.ok(state.main.bottom-state.footer.bottom<=40,`${label}: empty lower area returned`);
+    if(width<900)assert.ok(state.headlineLines[1]>state.headlineLines[0]+10,'approved mobile hook must occupy two lines');
+    else assert.ok(Math.abs(state.headlineLines[1]-state.headlineLines[0])<1,'desktop hook stays on one line');
     for(const text of state.text)assert.equal(text.overflow,false,`${label}: clipped ${text.text}`);
-    for(const family of ['Home Calligraphy','Home Display']) assert.ok(state.fonts.includes(family),`${label}: ${family} not loaded`);
+    for(const family of ['Home Calligraphy','Home Interface']) assert.ok(state.fonts.includes(family),`${label}: ${family} not loaded`);
     const images=state.resources.filter(r=>/\/art\/home\/duel-.*\.webp/.test(r.path));
     assert.equal(images.length,1);
     assert.equal(state.resources.some(r=>r.path.includes('/art/roles/')),false,'home must not rotate role portraits');
@@ -64,6 +72,9 @@ try {
     await page.getByRole('radio',{name:'线下常规房',exact:false}).click();
     assert.equal(await page.locator('.lobby-free-access-banner').count(),promotion?1:0);
     if(width===390 && !signedIn && !invitation && promotion) {
+      await page.getByRole('button',{name:'声音设置',exact:true}).click();
+      await page.getByRole('dialog',{name:'声音设置',exact:true}).waitFor();
+      await page.getByRole('button',{name:'关闭',exact:true}).click();
       // No profile creation or server mutation is performed: only inspect the deferred sign-in dialog.
       for(const selector of ['.lobby-primary-actions button:first-child','.lobby-primary-actions button:last-child','.practice-entry']) {
         await page.locator(selector).click();
@@ -71,7 +82,7 @@ try {
         await page.getByRole('button',{name:'关闭',exact:true}).click();
       }
       await page.waitForTimeout(4100);
-      assert.ok((await page.locator('.lobby-duel-art img').getAttribute('src')).endsWith('/art/home/duel-desktop.webp'));
+      assert.ok(new URL(await page.locator('.lobby-duel-art img').getAttribute('src'),origin).pathname.endsWith('/art/home/duel-desktop.webp'));
     }
     if(signedIn && width===390) {
       await page.locator('.lobby-primary-actions button:first-child').click();

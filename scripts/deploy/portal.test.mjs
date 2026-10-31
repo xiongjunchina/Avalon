@@ -42,8 +42,8 @@ test('portal presents the approved copy with responsive local artwork and direct
     assert.ok(html.includes(`aria-labelledby="game-${game.id}"`));
     assert.ok(html.includes(`id="game-${game.id}"`));
     assert.ok(html.includes(`href="${game.path}"`));
-    assert.ok(html.includes(`media="(max-width:759px)" srcset="/portal-assets/art/${game.id}-mobile.webp"`));
-    assert.ok(html.includes(`src="/portal-assets/art/${game.id}-desktop.webp" alt=""`));
+    assert.ok(html.includes(`media="(max-width:759px)" srcset="/portal-assets/art/${game.id}-mobile.webp?v=approved-scene-2"`));
+    assert.ok(html.includes(`src="/portal-assets/art/${game.id}-desktop.webp?v=approved-scene-2" alt=""`));
     assert.ok(html.includes(game.genre));
   }
   assert.doesNotMatch(html, /src="\/(avalon|mafia)\//);
@@ -119,27 +119,35 @@ test('portal artwork stays within separate mobile and desktop download budgets',
   }
 });
 
-test('portal ships a small licensed local font covering the current Chinese copy', async t => {
+test('portal ships small licensed calligraphy and interface fonts covering the approved copy', async t => {
   const root = new URL('../../deploy/portal/assets/fonts/', import.meta.url);
-  const metadata = JSON.parse(await readFile(new URL('source.json', root),'utf8'));
-  const font = await readFile(new URL('portal-display.woff2', root));
-  assert.equal(font.subarray(0,4).toString(),'wOF2');
-  assert.ok(font.length <= 30000, `font must stay below 30KB, got ${font.length}`);
-  assert.equal(font.length,metadata.bytes);
-  assert.equal(createHash('sha256').update(font).digest('hex'),metadata.sha256);
-  assert.match(await readFile(new URL('OFL.txt',root),'utf8'), /SIL OPEN FONT LICENSE Version 1.1/);
-  const copy = '游戏大厅好友桌游一起入局每个人都在说话谁在说真话进入游戏' +
+  const metadata = JSON.parse(await readFile(new URL('interface-source.json', root),'utf8'));
+  // Only visible fixed copy needs this display subset; the sr-only page heading can use a system fallback.
+  const copy = '好友桌游一起入局每个人都在说话谁在说真话进入游戏' +
     games.map(g => [g.name,g.hook,g.description,g.genre,g.action,g.players].join('')).join('');
   for (const char of new Set(copy)) {
     if (/\p{Script=Han}/u.test(char)) assert.ok(metadata.characters.includes(char), `missing game-font glyph: ${char}`);
   }
   const css = await readFile(new URL('../../deploy/portal/assets/portal.css', import.meta.url),'utf8');
-  assert.match(css,/url\("\/portal-assets\/fonts\/portal-display\.woff2"\)/);
   assert.doesNotMatch(css,/@import|https?:\/\//);
   const directory = await mkdtemp(join(tmpdir(),'avalon-portal-font-'));
   t.after(() => rm(directory,{recursive:true,force:true}));
   await generatePortal(directory);
-  assert.deepEqual(await readFile(join(directory,'www','portal-assets','fonts','portal-display.woff2')),font);
+  let bytes=0;
+  for (const [record,license] of [['interface-source.json','Interface-OFL.txt'],['calligraphy-source.json','Calligraphy-OFL.txt']]) {
+    const info=JSON.parse(await readFile(new URL(record,root),'utf8'));
+    const font=await readFile(new URL(info.file,root));
+    assert.equal(font.subarray(0,4).toString(),'wOF2');
+    assert.equal(font.length,info.bytes);
+    assert.equal(createHash('sha256').update(font).digest('hex'),info.sha256);
+    assert.match(await readFile(new URL(license,root),'utf8'),/SIL OPEN FONT LICENSE Version 1.1/);
+    assert.ok(css.includes(`/portal-assets/fonts/${info.file}`));
+    assert.deepEqual(await readFile(join(directory,'www','portal-assets','fonts',info.file)),font);
+    bytes+=font.length;
+  }
+  assert.ok(bytes<=40000,`active portal fonts exceed40KB: ${bytes}`);
+  const tabletop=await readFile(new URL('../../deploy/portal/assets/tabletop.webp',import.meta.url));
+  assert.ok(tabletop.length<=30000,`tabletop texture exceeds30KB: ${tabletop.length}`);
 });
 
 test('legacy invitation and administration bookmarks preserve query and fragment', async () => {

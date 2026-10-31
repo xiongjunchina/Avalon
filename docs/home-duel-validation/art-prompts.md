@@ -20,3 +20,23 @@ Use case: precise-object-edit / background-extraction. Reference1 is the transpa
 
 发布格式为 WebP quality60、alphaQuality75、effort6；整图按宽640px／1280px缩小，不裁切，不发布高DPR或原始超清版本。手机59,576B，电脑128,508B。浏览器按760px断点只下载一份图片；桌面素材保留更宽的中央空位，手机素材将两人靠近。未采用的试稿不进入发布目录。
 
+## 2026-10-31 高保真修订（取代上面的透明胸像素材）
+
+参考用户确认的方案1，使用内置image_gen直接提取完整无字场景。标题、宣传句和按钮由HTML绘制。
+
+### duel-mobile.webp
+
+源输出：exec-1eef2aa3-16b8-4092-9059-a503fb6d80ed.png
+
+```text
+Use case: precise-object-edit. Asset type: exact MOBILE GAME HOME BACKGROUND extracted from reference approved UI image. Reproduce ONLY the CONTINUOUS BACKGROUND AND TWO CHARACTERS from this exact approved mobile image, removing EVERY letter/title/word/button/profile icon/sound badge/divider/UI. This is an artwork extraction, NOT a redesign. Preserve the close-up character scale and exact positions: golden genuine Monkey King's huge profile on LEFT edge, red false Monkey King's huge profile on RIGHT edge. Faces about x20% and80%, centers y40%, BOTH EYES/NOSE/MOUTH/CHIN clear; forehead-to-chin height each about22%-24% of total canvas height (roughly40%-45% of width). Upper chests/shoulders and plumes NATURALLY extend beyond side edges like the approved close-up. Do NOT shrink people or add margins to fit all armor/plumes; framing matches reference. Keep all expressions, likenesses, crowns, ornate armor. The two characters visually span top20% through60% of canvas, NOT tiny busts centered in a horizontal strip. Preserve GOLDEN COLUMN/GATE CORNERS on left/right, vivid blue sky in upper20%, exact dreamy golden cloud palace and distant towers between faces, natural bright cloud sea where words and buttons were, purple-blue mist only in last7%-10% at bottom. Remove title, slogan, headline and ALL controls by filling ONLY their pixels with coherent natural cloud/sky/palace extension. NO new opaque text backgrounds, no blank flat beige slab, no borders, no abstract gradient field. Full-bleed opaque scene, tall approx768x1536 (1:2) matching reference, no surrounding phone or white margin. Real HTML type/buttons are added separately. Output should look like this exact reference with all UI hidden, not a new illustration.
+```
+
+### duel-desktop.webp
+
+源输出：exec-a382b386-26cd-4754-9a93-f635a388b9b2.png
+
+```text
+Use case: precise-object-edit. Asset type: production DESKTOP GAME HOME BACKGROUND extracted from an approved UI design. Reference is a design board: left LARGE DESKTOP panel and right narrow MOBILE panel. Work ONLY from the LEFT desktop rectangle, exclude its surrounding white board and all mobile panel. Reproduce that desktop scene's composition and character scale very faithfully, NOT a new design: two HUGE close-up opposing Monkey Kings, golden genuine Wukong on far left and red false Monkey King far right. Faces and chests dominate both sides, heads around x18% and83%, face centers y37%-42%, armor extending to y67%; gold crown and long plumes may naturally continue beyond left/top outer edge as the approved close-up framing. Keep entire eyes/nose/mouth/chin readable. Retain the SAME continuous golden cloud palace scenery with bright blue sky, ornate golden gate corners/columns at the two outer sides, distant towers at center, golden clouds lower portion and soft blue-purple mist only at bottom. Main scene should fill the WHOLE image, no floating small chest figurines or transparent cutouts. IMPORTANT: REMOVE ALL UI and ALL TEXT: title, slogan, body words, profile badge, sound badge, mode selector, all buttons, dividers and bottom links. Fill removed areas with natural CONTINUOUS original scene, preserving remaining composition exactly. Keep natural quiet blue sky top center (y7%-24%) for real HTML title; quiet bright palace/cloud center(y25%-43%) for real HTML hook and supporting line; cloudy lower center(y64%-94%) for real HTML controls. NO opaque cream/colored text slabs. NO text/letters/logos/controls, NO frame around whole image, NO image inside a tablet or browser. Output one opaque landscape background around1536x1080, roughly10:7, preserving both very large profiles exactly as approved. NOT a whole UI screenshot. Full-bleed scene only.
+```
+

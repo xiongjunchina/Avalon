@@ -1031,7 +1031,7 @@ function App() {
           <>
             <LobbyHome user={user} freeAccess={freeAccessMode} busy={busy}
               voiceEnabled={setupSettings.voiceChatEnabled} hasInvitation={Boolean(inviteKey)}
-              friendRequests={incomingFriendRequestsCount} soundControl={<SoundButton />}
+              friendRequests={incomingFriendRequestsCount} soundControl={<SoundButton showLabel />}
               onVoiceChange={enabled => setSetupSettings(s => ({ ...s, voiceChatEnabled: enabled }))}
               onAccount={() => openEntry({ type: 'account' })}
               onSignIn={() => openEntry({ type: 'home' })}

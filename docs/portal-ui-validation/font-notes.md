@@ -1,32 +1,19 @@
-# 门户风格字体与体积记录
+# 门户最终字体与体积
 
-为使 Android 等未安装楷体／小薇体的设备也能显示一致的游戏风格，门户使用项目既有字体家族 **ZCOOL XiaoWei Regular（站酷小薇体）** 的本地 WOFF2 子集。网页无需请求 Google Fonts 或其他第三方字库。
-
-## 来源与许可
-
-- 家族与原小游戏 `apps/minigame/assets/fonts/display.ttf` 相同。
-- 原小游戏文件已经过字符裁剪，缺少门户所用的“博、夜、弈、昼、绽、黑”等字；没有改写该文件。
-- 构建阶段从官方 [google/fonts 原字库](https://raw.githubusercontent.com/google/fonts/main/ofl/zcoolxiaowei/ZCOOLXiaoWei-Regular.ttf) 取得完整字体，只保留在临时目录，不放进门户发布目录。
-- 原字库 SHA-256：`a42b620140f493db42f741351dfbf343c0936d58588ee8004b8b2a218d997ff1`。
-- 许可为 **SIL Open Font License 1.1**。原项目版权说明与许可全文保留在 `deploy/portal/assets/fonts/OFL.txt`。
-
-## 发布文件
+本轮按确认稿重建字体层级：标题使用 **Ma Shan Zheng Regular（马善政毛笔楷书）**，辅助文字使用 **Noto Sans SC 静态650字重**，不用小薇体常规字重模拟粗体。
 
 | 文件 | 字节 | 用途 |
 | --- | ---: | --- |
-| `portal-display.woff2` | **21,520** | 浏览器实际加载的字体，Regular／400，111 个所需字符 |
-| `OFL.txt` | 4,399 | 随发布保留的字体许可，不由页面主动请求 |
-| `source.json` | 2,763 | 来源、校验值和覆盖字符记录，不由页面主动请求 |
+| portal-calligraphy.woff2 | 4,716 | 局、嘻游、真假猴王、暗局 |
+| portal-interface.woff2 | 23,984 | 品牌、口号、玩法说明、人数、类型、入口按钮 |
 
-WOFF2 SHA-256：`bc99765097f3fd4dbd1f64dc087c1346b50547ab362dd3d291e03fd817555e13`。
+总计 **28,700B**，仅本地请求，`font-display:swap`。原门户小薇体文件已移除。实际650静态轮廓来自官方Noto Sans SC可变字体，不合成粗体；参考已确认稿的清晰、较厚辅助文字。动态／额外游戏名缺字可用系统后备字体，隐藏的页面大标题不扩充字库。
 
-子集使用 fonttools 4.60.2、WOFF2/Brotli 编码，保留 kerning，移除 hinting 指令；字符轮廓不改变。字体资源低于 **30,000B** 预算，没有把原始 6.31MB 字库加入网站。
+两字体均为 **SIL Open Font License 1.1**：`Calligraphy-OFL.txt` 与 `Interface-OFL.txt` 随资产保留。`calligraphy-source.json`、`interface-source.json` 记录官方原字库URL、源hash、最终字节/hash及字符覆盖。
 
-## 字符与回退
+- 马善政官方来源：https://raw.githubusercontent.com/google/fonts/main/ofl/mashanzheng/MaShanZheng-Regular.ttf
+- Noto Sans SC官方来源：https://raw.githubusercontent.com/google/fonts/main/ofl/notosanssc/NotoSansSC%5Bwght%5D.ttf
 
-- 包含当前登记表的游戏名、宣传句、说明、人数、类型、入口文字，以及品牌、总口号、旧登记表回退词、必要数字和标点。
-- 以保存后的 WOFF2 `cmap` 再次检查，全部所需中文和中文标点均覆盖。
-- ZCOOL XiaoWei 原字体本身不包含中点 `·` 和箭头 `→`，这两个符号由 CSS 后备字体绘制；`source.json` 对应 `fallbackCharacters` 已明确记录。
-- 新增游戏或修改文案时，应把新字符加入本子集，验证覆盖与字体总量，再替换 WOFF2；无需重新发布完整字库。
+生成仅在本机临时目录使用完整TTF，字体通过fonttools裁剪为WOFF2；未把完整中文字库加入网页，也不依赖浏览器访问Google Fonts。Noto650子集复用同任务首页字体产物，复制到门户自身目录，避免门户依赖另一游戏服务。
 
-建议 CSS 使用本地 `@font-face`、`font-display: swap`、`font-weight: 400`。不合成粗体，让宣传文字以游戏风格的常规字重显示；页面首次绘制可以先使用后备字体，不等待字体下载。
+对应测试检查wOF2头、许可、SHA-256、可见固定中文覆盖、两字体总量≤40,000B，并验证门户生成产物确实复制同一字体文件。

@@ -16,7 +16,7 @@ test('home artwork stays within separate mobile and desktop transfer budgets', a
 });
 
 test('home theme fonts use small local WOFF2 subsets', async () => {
-  const fonts = await Promise.all(['home-calligraphy.woff2', 'home-display.woff2'].map(async name => {
+  const fonts = await Promise.all(['home-calligraphy.woff2', 'home-interface.woff2'].map(async name => {
     const font = await readFile(new URL(`fonts/${name}`, root));
     assert.equal(font.subarray(0, 4).toString(), 'wOF2');
     assert.ok(font.length <= 35_000, `${name}: ${font.length} bytes exceeds 35KB`);

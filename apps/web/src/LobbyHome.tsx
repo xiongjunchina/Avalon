@@ -18,13 +18,13 @@ export function LobbyHero({ freeAccess }: { freeAccess: boolean }) {
     </div>
     <figure className="lobby-duel-art">
       <picture>
-        <source media="(max-width: 759px)" srcSet={assetUrl('/art/home/duel-mobile.webp')} />
-        <img src={assetUrl('/art/home/duel-desktop.webp')} width={1280} height={640}
+        <source media="(max-width: 899px)" srcSet={assetUrl('/art/home/duel-mobile.webp?v=approved-scene-2')} />
+        <img src={assetUrl('/art/home/duel-desktop.webp?v=approved-scene-2')} width={1280} height={901}
           alt="孙悟空与六耳猕猴相对而立" loading="eager" fetchPriority="high" decoding="async" />
       </picture>
     </figure>
     <section className="lobby-duel-copy" aria-label="游戏介绍">
-      <h2>两个悟空，你信哪一个？</h2>
+      <h2><span>两个悟空，</span><span>你信哪一个？</span></h2>
       <p>组队、表决、暗中试探，找出取经路上的妖。</p>
     </section>
   </>;

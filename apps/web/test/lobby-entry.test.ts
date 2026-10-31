@@ -20,11 +20,11 @@ test('visitor and signed-in home expose the same hero and public guide without a
   }));
   const hero = (html: string) => html.slice(html.indexOf('<div class="mp-logo-block">'), html.indexOf('<footer'));
   assert.equal(hero(visitor), hero(signedIn));
-  assert.match(visitor, /<h2>两个悟空，你信哪一个？<\/h2>/);
+  assert.match(visitor, /<h2><span>两个悟空，<\/span><span>你信哪一个？<\/span><\/h2>/);
   assert.match(visitor, /<p>组队、表决、暗中试探，找出取经路上的妖。<\/p>/);
   assert.match(visitor, /一念佛魔皆幻相，谁是修道取经人/);
-  assert.match(visitor, /<source media="\(max-width: 759px\)" srcSet="\/art\/home\/duel-mobile\.webp"/);
-  assert.match(visitor, /<img[^>]+src="\/art\/home\/duel-desktop\.webp"[^>]+alt="孙悟空与六耳猕猴相对而立"/);
+  assert.match(visitor, /<source media="\(max-width: 899px\)" srcSet="\/art\/home\/duel-mobile\.webp\?v=approved-scene-2"/);
+  assert.match(visitor, /<img[^>]+src="\/art\/home\/duel-desktop\.webp\?v=approved-scene-2"[^>]+alt="孙悟空与六耳猕猴相对而立"/);
   assert.doesNotMatch(visitor, /mp-medallion|\/art\/roles\//);
   assert.match(visitor, /玩法与角色/);
   assert.match(visitor, /加入房间/);

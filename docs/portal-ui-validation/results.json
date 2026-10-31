@@ -1,0 +1,737 @@
+[
+  {
+    "width": 320,
+    "height": 700,
+    "firstLoadBytes": 215407,
+    "fonts": [
+      "Portal Calligraphy",
+      "Portal Interface"
+    ],
+    "cards": [
+      {
+        "rect": {
+          "x": 8,
+          "y": 58,
+          "width": 304,
+          "height": 273.59375,
+          "top": 58,
+          "right": 312,
+          "bottom": 331.59375,
+          "left": 8
+        },
+        "content": {
+          "x": 21,
+          "y": 185.609375,
+          "width": 278,
+          "height": 134.984375,
+          "top": 185.609375,
+          "right": 299,
+          "bottom": 320.59375,
+          "left": 21
+        },
+        "meta": {
+          "x": 73.375,
+          "y": 259.59375,
+          "width": 173.25,
+          "height": 13,
+          "top": 259.59375,
+          "right": 246.625,
+          "bottom": 272.59375,
+          "left": 73.375
+        },
+        "button": {
+          "x": 32.125,
+          "y": 276.59375,
+          "width": 255.75,
+          "height": 44,
+          "top": 276.59375,
+          "right": 287.875,
+          "bottom": 320.59375,
+          "left": 32.125
+        },
+        "image": {
+          "url": "/portal-assets/art/avalon-mobile.webp",
+          "width": 640,
+          "height": 640
+        }
+      },
+      {
+        "rect": {
+          "x": 8,
+          "y": 343.59375,
+          "width": 304,
+          "height": 273.59375,
+          "top": 343.59375,
+          "right": 312,
+          "bottom": 617.1875,
+          "left": 8
+        },
+        "content": {
+          "x": 21,
+          "y": 462.390625,
+          "width": 278,
+          "height": 143.796875,
+          "top": 462.390625,
+          "right": 299,
+          "bottom": 606.1875,
+          "left": 21
+        },
+        "meta": {
+          "x": 73.375,
+          "y": 545.1875,
+          "width": 173.25,
+          "height": 13,
+          "top": 545.1875,
+          "right": 246.625,
+          "bottom": 558.1875,
+          "left": 73.375
+        },
+        "button": {
+          "x": 32.125,
+          "y": 562.1875,
+          "width": 255.75,
+          "height": 44,
+          "top": 562.1875,
+          "right": 287.875,
+          "bottom": 606.1875,
+          "left": 32.125
+        },
+        "image": {
+          "url": "/portal-assets/art/mafia-mobile.webp",
+          "width": 640,
+          "height": 640
+        }
+      }
+    ]
+  },
+  {
+    "width": 375,
+    "height": 740,
+    "firstLoadBytes": 215407,
+    "fonts": [
+      "Portal Calligraphy",
+      "Portal Interface"
+    ],
+    "cards": [
+      {
+        "rect": {
+          "x": 12,
+          "y": 58.078125,
+          "width": 351,
+          "height": 315.890625,
+          "top": 58.078125,
+          "right": 363,
+          "bottom": 373.96875,
+          "left": 12
+        },
+        "content": {
+          "x": 27,
+          "y": 214.859375,
+          "width": 321,
+          "height": 148.109375,
+          "top": 214.859375,
+          "right": 348,
+          "bottom": 362.96875,
+          "left": 27
+        },
+        "meta": {
+          "x": 90.34375,
+          "y": 298.375,
+          "width": 194.3125,
+          "height": 15.59375,
+          "top": 298.375,
+          "right": 284.65625,
+          "bottom": 313.96875,
+          "left": 90.34375
+        },
+        "button": {
+          "x": 39.84375,
+          "y": 318.96875,
+          "width": 295.3125,
+          "height": 44,
+          "top": 318.96875,
+          "right": 335.15625,
+          "bottom": 362.96875,
+          "left": 39.84375
+        },
+        "image": {
+          "url": "/portal-assets/art/avalon-mobile.webp",
+          "width": 640,
+          "height": 640
+        }
+      },
+      {
+        "rect": {
+          "x": 12,
+          "y": 385.96875,
+          "width": 351,
+          "height": 315.890625,
+          "top": 385.96875,
+          "right": 363,
+          "bottom": 701.859375,
+          "left": 12
+        },
+        "content": {
+          "x": 27,
+          "y": 533.671875,
+          "width": 321,
+          "height": 157.1875,
+          "top": 533.671875,
+          "right": 348,
+          "bottom": 690.859375,
+          "left": 27
+        },
+        "meta": {
+          "x": 90.34375,
+          "y": 626.265625,
+          "width": 194.3125,
+          "height": 15.59375,
+          "top": 626.265625,
+          "right": 284.65625,
+          "bottom": 641.859375,
+          "left": 90.34375
+        },
+        "button": {
+          "x": 39.84375,
+          "y": 646.859375,
+          "width": 295.3125,
+          "height": 44,
+          "top": 646.859375,
+          "right": 335.15625,
+          "bottom": 690.859375,
+          "left": 39.84375
+        },
+        "image": {
+          "url": "/portal-assets/art/mafia-mobile.webp",
+          "width": 640,
+          "height": 640
+        }
+      }
+    ]
+  },
+  {
+    "width": 390,
+    "height": 740,
+    "firstLoadBytes": 215407,
+    "fonts": [
+      "Portal Calligraphy",
+      "Portal Interface"
+    ],
+    "cards": [
+      {
+        "rect": {
+          "x": 12,
+          "y": 58.078125,
+          "width": 366,
+          "height": 329.390625,
+          "top": 58.078125,
+          "right": 378,
+          "bottom": 387.46875,
+          "left": 12
+        },
+        "content": {
+          "x": 27,
+          "y": 225.59375,
+          "width": 336,
+          "height": 150.875,
+          "top": 225.59375,
+          "right": 363,
+          "bottom": 376.46875,
+          "left": 27
+        },
+        "meta": {
+          "x": 97.84375,
+          "y": 311.875,
+          "width": 194.3125,
+          "height": 15.59375,
+          "top": 311.875,
+          "right": 292.15625,
+          "bottom": 327.46875,
+          "left": 97.84375
+        },
+        "button": {
+          "x": 40.4375,
+          "y": 332.46875,
+          "width": 309.109375,
+          "height": 44,
+          "top": 332.46875,
+          "right": 349.546875,
+          "bottom": 376.46875,
+          "left": 40.4375
+        },
+        "image": {
+          "url": "/portal-assets/art/avalon-mobile.webp",
+          "width": 640,
+          "height": 640
+        }
+      },
+      {
+        "rect": {
+          "x": 12,
+          "y": 399.46875,
+          "width": 366,
+          "height": 329.390625,
+          "top": 399.46875,
+          "right": 378,
+          "bottom": 728.859375,
+          "left": 12
+        },
+        "content": {
+          "x": 27,
+          "y": 557.546875,
+          "width": 336,
+          "height": 160.3125,
+          "top": 557.546875,
+          "right": 363,
+          "bottom": 717.859375,
+          "left": 27
+        },
+        "meta": {
+          "x": 97.84375,
+          "y": 653.265625,
+          "width": 194.3125,
+          "height": 15.59375,
+          "top": 653.265625,
+          "right": 292.15625,
+          "bottom": 668.859375,
+          "left": 97.84375
+        },
+        "button": {
+          "x": 40.4375,
+          "y": 673.859375,
+          "width": 309.109375,
+          "height": 44,
+          "top": 673.859375,
+          "right": 349.546875,
+          "bottom": 717.859375,
+          "left": 40.4375
+        },
+        "image": {
+          "url": "/portal-assets/art/mafia-mobile.webp",
+          "width": 640,
+          "height": 640
+        }
+      }
+    ]
+  },
+  {
+    "width": 430,
+    "height": 800,
+    "firstLoadBytes": 215407,
+    "fonts": [
+      "Portal Calligraphy",
+      "Portal Interface"
+    ],
+    "cards": [
+      {
+        "rect": {
+          "x": 12,
+          "y": 58.078125,
+          "width": 406,
+          "height": 365.390625,
+          "top": 58.078125,
+          "right": 418,
+          "bottom": 423.46875,
+          "left": 12
+        },
+        "content": {
+          "x": 27,
+          "y": 257.140625,
+          "width": 376,
+          "height": 155.328125,
+          "top": 257.140625,
+          "right": 403,
+          "bottom": 412.46875,
+          "left": 27
+        },
+        "meta": {
+          "x": 117.84375,
+          "y": 347.875,
+          "width": 194.3125,
+          "height": 15.59375,
+          "top": 347.875,
+          "right": 312.15625,
+          "bottom": 363.46875,
+          "left": 117.84375
+        },
+        "button": {
+          "x": 42.046875,
+          "y": 368.46875,
+          "width": 345.90625,
+          "height": 44,
+          "top": 368.46875,
+          "right": 387.953125,
+          "bottom": 412.46875,
+          "left": 42.046875
+        },
+        "image": {
+          "url": "/portal-assets/art/avalon-mobile.webp",
+          "width": 640,
+          "height": 640
+        }
+      },
+      {
+        "rect": {
+          "x": 12,
+          "y": 435.46875,
+          "width": 406,
+          "height": 365.390625,
+          "top": 435.46875,
+          "right": 418,
+          "bottom": 800.859375,
+          "left": 12
+        },
+        "content": {
+          "x": 27,
+          "y": 625.234375,
+          "width": 376,
+          "height": 164.625,
+          "top": 625.234375,
+          "right": 403,
+          "bottom": 789.859375,
+          "left": 27
+        },
+        "meta": {
+          "x": 117.84375,
+          "y": 725.265625,
+          "width": 194.3125,
+          "height": 15.59375,
+          "top": 725.265625,
+          "right": 312.15625,
+          "bottom": 740.859375,
+          "left": 117.84375
+        },
+        "button": {
+          "x": 42.046875,
+          "y": 745.859375,
+          "width": 345.90625,
+          "height": 44,
+          "top": 745.859375,
+          "right": 387.953125,
+          "bottom": 789.859375,
+          "left": 42.046875
+        },
+        "image": {
+          "url": "/portal-assets/art/mafia-mobile.webp",
+          "width": 640,
+          "height": 640
+        }
+      }
+    ]
+  },
+  {
+    "width": 760,
+    "height": 900,
+    "firstLoadBytes": 217055,
+    "fonts": [
+      "Portal Calligraphy",
+      "Portal Interface"
+    ],
+    "cards": [
+      {
+        "rect": {
+          "x": 24,
+          "y": 90,
+          "width": 712,
+          "height": 237.328125,
+          "top": 90,
+          "right": 736,
+          "bottom": 327.328125,
+          "left": 24
+        },
+        "content": {
+          "x": 25,
+          "y": 91,
+          "width": 333.6875,
+          "height": 235.328125,
+          "top": 91,
+          "right": 358.6875,
+          "bottom": 326.328125,
+          "left": 25
+        },
+        "meta": {
+          "x": 47,
+          "y": 216.984375,
+          "width": 195.78125,
+          "height": 14.296875,
+          "top": 216.984375,
+          "right": 242.78125,
+          "bottom": 231.28125,
+          "left": 47
+        },
+        "button": {
+          "x": 47,
+          "y": 238.28125,
+          "width": 271.515625,
+          "height": 44,
+          "top": 238.28125,
+          "right": 318.515625,
+          "bottom": 282.28125,
+          "left": 47
+        },
+        "image": {
+          "url": "/portal-assets/art/avalon-desktop.webp",
+          "width": 1280,
+          "height": 427
+        }
+      },
+      {
+        "rect": {
+          "x": 24,
+          "y": 351.328125,
+          "width": 712,
+          "height": 237.328125,
+          "top": 351.328125,
+          "right": 736,
+          "bottom": 588.65625,
+          "left": 24
+        },
+        "content": {
+          "x": 25,
+          "y": 352.328125,
+          "width": 333.6875,
+          "height": 235.328125,
+          "top": 352.328125,
+          "right": 358.6875,
+          "bottom": 587.65625,
+          "left": 25
+        },
+        "meta": {
+          "x": 47,
+          "y": 486.1875,
+          "width": 195.78125,
+          "height": 14.296875,
+          "top": 486.1875,
+          "right": 242.78125,
+          "bottom": 500.484375,
+          "left": 47
+        },
+        "button": {
+          "x": 47,
+          "y": 507.484375,
+          "width": 271.515625,
+          "height": 44,
+          "top": 507.484375,
+          "right": 318.515625,
+          "bottom": 551.484375,
+          "left": 47
+        },
+        "image": {
+          "url": "/portal-assets/art/mafia-desktop.webp",
+          "width": 1280,
+          "height": 427
+        }
+      }
+    ]
+  },
+  {
+    "width": 768,
+    "height": 900,
+    "firstLoadBytes": 217055,
+    "fonts": [
+      "Portal Calligraphy",
+      "Portal Interface"
+    ],
+    "cards": [
+      {
+        "rect": {
+          "x": 24,
+          "y": 90,
+          "width": 720,
+          "height": 240,
+          "top": 90,
+          "right": 744,
+          "bottom": 330,
+          "left": 24
+        },
+        "content": {
+          "x": 25,
+          "y": 91,
+          "width": 337.453125,
+          "height": 238,
+          "top": 91,
+          "right": 362.453125,
+          "bottom": 329,
+          "left": 25
+        },
+        "meta": {
+          "x": 47,
+          "y": 218.3125,
+          "width": 195.78125,
+          "height": 14.296875,
+          "top": 218.3125,
+          "right": 242.78125,
+          "bottom": 232.609375,
+          "left": 47
+        },
+        "button": {
+          "x": 47,
+          "y": 239.609375,
+          "width": 274.90625,
+          "height": 44,
+          "top": 239.609375,
+          "right": 321.90625,
+          "bottom": 283.609375,
+          "left": 47
+        },
+        "image": {
+          "url": "/portal-assets/art/avalon-desktop.webp",
+          "width": 1280,
+          "height": 427
+        }
+      },
+      {
+        "rect": {
+          "x": 24,
+          "y": 354,
+          "width": 720,
+          "height": 240,
+          "top": 354,
+          "right": 744,
+          "bottom": 594,
+          "left": 24
+        },
+        "content": {
+          "x": 25,
+          "y": 355,
+          "width": 337.453125,
+          "height": 238,
+          "top": 355,
+          "right": 362.453125,
+          "bottom": 593,
+          "left": 25
+        },
+        "meta": {
+          "x": 47,
+          "y": 490.1875,
+          "width": 195.78125,
+          "height": 14.296875,
+          "top": 490.1875,
+          "right": 242.78125,
+          "bottom": 504.484375,
+          "left": 47
+        },
+        "button": {
+          "x": 47,
+          "y": 511.484375,
+          "width": 274.90625,
+          "height": 44,
+          "top": 511.484375,
+          "right": 321.90625,
+          "bottom": 555.484375,
+          "left": 47
+        },
+        "image": {
+          "url": "/portal-assets/art/mafia-desktop.webp",
+          "width": 1280,
+          "height": 427
+        }
+      }
+    ]
+  },
+  {
+    "width": 1440,
+    "height": 900,
+    "firstLoadBytes": 217055,
+    "fonts": [
+      "Portal Calligraphy",
+      "Portal Interface"
+    ],
+    "cards": [
+      {
+        "rect": {
+          "x": 104,
+          "y": 90,
+          "width": 1232,
+          "height": 362.34375,
+          "top": 90,
+          "right": 1336,
+          "bottom": 452.34375,
+          "left": 104
+        },
+        "content": {
+          "x": 105,
+          "y": 91,
+          "width": 541.1875,
+          "height": 360.34375,
+          "top": 91,
+          "right": 646.1875,
+          "bottom": 451.34375,
+          "left": 105
+        },
+        "meta": {
+          "x": 139,
+          "y": 299.265625,
+          "width": 248.40625,
+          "height": 20.796875,
+          "top": 299.265625,
+          "right": 387.40625,
+          "bottom": 320.0625,
+          "left": 139
+        },
+        "button": {
+          "x": 139,
+          "y": 330.0625,
+          "width": 442.0625,
+          "height": 51.828125,
+          "top": 330.0625,
+          "right": 581.0625,
+          "bottom": 381.890625,
+          "left": 139
+        },
+        "image": {
+          "url": "/portal-assets/art/avalon-desktop.webp",
+          "width": 1280,
+          "height": 427
+        }
+      },
+      {
+        "rect": {
+          "x": 104,
+          "y": 476.34375,
+          "width": 1232,
+          "height": 362.34375,
+          "top": 476.34375,
+          "right": 1336,
+          "bottom": 838.6875,
+          "left": 104
+        },
+        "content": {
+          "x": 105,
+          "y": 477.34375,
+          "width": 541.1875,
+          "height": 360.34375,
+          "top": 477.34375,
+          "right": 646.1875,
+          "bottom": 837.6875,
+          "left": 105
+        },
+        "meta": {
+          "x": 139,
+          "y": 695.59375,
+          "width": 248.40625,
+          "height": 20.796875,
+          "top": 695.59375,
+          "right": 387.40625,
+          "bottom": 716.390625,
+          "left": 139
+        },
+        "button": {
+          "x": 139,
+          "y": 726.390625,
+          "width": 442.0625,
+          "height": 51.828125,
+          "top": 726.390625,
+          "right": 581.0625,
+          "bottom": 778.21875,
+          "left": 139
+        },
+        "image": {
+          "url": "/portal-assets/art/mafia-desktop.webp",
+          "width": 1280,
+          "height": 427
+        }
+      }
+    ]
+  }
+]

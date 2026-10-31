@@ -1,8 +1,8 @@
 # 首页对峙主视觉：本地字体记录
 
-首页采用项目现有的两款游戏字体家族：**Ma Shan Zheng Regular（马善政毛笔楷书）**与 **ZCOOL XiaoWei Regular（站酷小薇体）**。只发布首页所需字符的本地 WOFF2，不向浏览器发送完整字库，也不新增字体 CDN 请求。
+当前首页使用 **Ma Shan Zheng Regular（马善政毛笔楷书）**绘制标题／主口号，使用 **Noto Sans SC 650** 绘制辅助文字与控件。两份实际字体共36,724B。下方保留首版小薇体记录，旧文件不再由首页请求；新Noto字库详见文末修订。网页不发送完整字库，也不新增字体CDN请求。
 
-## 发布资源与用途
+## 首版资源记录（保留以备追溯）
 
 目录：`apps/web/public/art/home/fonts/`。放在 `/art/` 下，以兼容现有 `assetUrl` 的子路径发布规则。
 
@@ -30,3 +30,13 @@
 ## 处理与验证
 
 使用 fonttools 4.60.2、WOFF2/Brotli，保留 kerning、移除 hinting，不改变字符轮廓。检查最终 `wOF2` 文件头、两项体积预算、全部请求中文覆盖、保存后 `cmap`、SHA-256 和随附许可；均通过。原完整 TTF 仅留临时目录，不进入 Git。
+
+## 本轮按确认稿修正：清晰的界面字重
+
+为匹配确认稿中较粗、清晰的辅助文案与按钮文字，新增 **Noto Sans SC 固定650字重** `home-interface.woff2`，**23,984B、167个字符**。标题与主口号继续使用已有马善政书法字库；前述小薇体来源记录保留，但辅助界面可改用这份真实650字重字体，不依赖浏览器合成加粗。
+
+- 来源为 [Google Fonts 官方 Noto Sans SC 可变字库](https://raw.githubusercontent.com/google/fonts/main/ofl/notosanssc/NotoSansSC%5Bwght%5D.ttf)，原文件只下载至临时目录，不发布。
+- 从可变字体实例化为 `wght=650`，移除未用汉字和 hinting，再编码为本地 WOFF2；发布文件不含 `fvar`，`OS/2.usWeightClass=650`。
+- 覆盖首页固定可见文案，以及统一入口登记表中两款游戏的名称、主宣传语、说明、人数、类别、按钮与品牌口号。全部所需汉字、数字、中文标点、中点和箭头均经最终 `cmap` 验证，未遗漏字符。
+- 许可全文随 `interface-OFL.txt` 保留；源文件和最终子集的 SHA-256、字节数、覆盖字符记录在 `home-interface-source.json`。门户可复制同一字库到自身资源目录，保持两个站点独立发布。
+- 动态昵称和 Emoji 仍按后备字体显示；没有引入完整中文字库、字体 CDN 或新前端依赖。

@@ -27,15 +27,20 @@ const art = id => id === 'avalon'
     : '<rect x="31" y="27" width="98" height="98" rx="12"/><path d="M58 76h44M80 54v44"/>';
 
 const illustratedGames = new Set(['avalon', 'mafia']);
+const sceneVersion = 'approved-scene-2';
+const entranceOrnament = '<svg class="enter-ornament" viewBox="0 0 300 52" preserveAspectRatio="none" fill="none" stroke="currentColor" aria-hidden="true"><path vector-effect="non-scaling-stroke" d="M15 4H285Q286 9 295 11V41Q286 43 285 48H15Q14 43 5 41V11Q14 9 15 4Z"/><path vector-effect="non-scaling-stroke" d="M12 9q7-5 10 0q-7 0-9 7q-5-5-1-7Zm276 0q-7-5-10 0q7 0 9 7q5-5 1-7ZM12 43q7 5 10 0q-7 0-9-7q-5 5-1 7Zm276 0q-7 5-10 0q7 0 9-7q5 5 1 7Z"/></svg>';
 
 function gameCard(game, index) {
   const illustrated = illustratedGames.has(game.id);
   const illustration = illustrated
-    ? `<picture class="game-art" aria-hidden="true"><source media="(max-width:759px)" srcset="/portal-assets/art/${game.id}-mobile.webp"><img src="/portal-assets/art/${game.id}-desktop.webp" alt="" decoding="async"${index === 0 ? ' fetchpriority="high"' : ''}></picture>`
+    ? `<picture class="game-art" aria-hidden="true"><source media="(max-width:759px)" srcset="/portal-assets/art/${game.id}-mobile.webp?v=${sceneVersion}"><img src="/portal-assets/art/${game.id}-desktop.webp?v=${sceneVersion}" alt="" decoding="async"${index === 0 ? ' fetchpriority="high"' : ''}></picture>`
     : `<div class="art" aria-hidden="true"><svg viewBox="0 0 160 150" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round">${art(game.id)}</svg></div>`;
   const genre = game.genre ?? game.label;
   const action = game.action ?? '进入游戏';
-  return `<article class="game${illustrated ? '' : ' game--fallback'}" data-game="${escapeHtml(game.id)}" aria-labelledby="game-${escapeHtml(game.id)}">${illustration}<div class="game-frame" aria-hidden="true"></div><div class="content"><h2 id="game-${escapeHtml(game.id)}">${escapeHtml(game.name)}</h2>${game.hook ? `<p class="hook">${escapeHtml(game.hook)}</p>` : ''}<p class="description">${escapeHtml(game.description)}</p><p class="meta"><span>${escapeHtml(game.players)}</span><span class="meta-separator" aria-hidden="true">·</span><span>${escapeHtml(genre)}</span></p><a class="enter" href="${escapeHtml(game.path)}" aria-label="${escapeHtml(`${action}：${game.name}`)}"><span>${escapeHtml(action)}</span><span aria-hidden="true">→</span></a></div></article>`;
+  const title = game.id === 'avalon' && game.name === '嘻游 · 真假猴王'
+    ? '<span class="title-lead">嘻游 · </span><span>真假猴王</span>'
+    : escapeHtml(game.name);
+  return `<article class="game${illustrated ? '' : ' game--fallback'}" data-game="${escapeHtml(game.id)}" aria-labelledby="game-${escapeHtml(game.id)}">${illustration}<div class="game-frame" aria-hidden="true"></div><div class="content"><h2 id="game-${escapeHtml(game.id)}">${title}</h2>${game.hook ? `<p class="hook">${escapeHtml(game.hook)}</p>` : ''}<p class="description">${escapeHtml(game.description)}</p><p class="meta"><span>${escapeHtml(game.players)}</span><span class="meta-separator" aria-hidden="true">·</span><span>${escapeHtml(genre)}</span></p><a class="enter" href="${escapeHtml(game.path)}" aria-label="${escapeHtml(`${action}：${game.name}`)}"><span>${escapeHtml(action)}</span><span aria-hidden="true">→</span>${entranceOrnament}</a></div></article>`;
 }
 
 export function portalHtml(games) {

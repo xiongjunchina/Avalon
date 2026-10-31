@@ -104,12 +104,13 @@ export function SoundControls() {
     {error && <p role="status" className="error">{error}</p>}
   </div>;
 }
-export function SoundButton() {
+export function SoundButton({ showLabel = false }: { showLabel?: boolean } = {}) {
   const [open, setOpen] = useState(false), { preferences } = useSound();
   const enabled = preferences.music || preferences.effects;
   return <>
-    <button type="button" className={`secondary sound-button${enabled ? ' is-on' : ''}`} aria-label="声音设置" aria-haspopup="dialog" aria-expanded={open} title="声音设置" onClick={() => setOpen(true)}>
+    <button type="button" className={`secondary sound-button${enabled ? ' is-on' : ''}${showLabel ? ' has-label' : ''}`} aria-label="声音设置" aria-haspopup="dialog" aria-expanded={open} title="声音设置" onClick={() => setOpen(true)}>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"/>{enabled ? <><path d="M15 8a6 6 0 0 1 0 8M18 5a10 10 0 0 1 0 14"/></> : <path d="m16 9 5 6m0-6-5 6"/>}</svg>
+      {showLabel && <span>{enabled ? '声音' : '静音'}</span>}
     </button>
     {open && <Modal label="声音设置" scene="library" onClose={() => setOpen(false)}><section className="sound-dialog"><div className="section-head"><h2>天宫仙乐</h2><button type="button" className="secondary compact-button" onClick={() => setOpen(false)}>关闭</button></div><SoundControls /></section></Modal>}
   </>;
