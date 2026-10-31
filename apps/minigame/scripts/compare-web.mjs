@@ -9,7 +9,7 @@ const players=Number(process.env.PARITY_PLAYERS??6),width=Number(process.env.PAR
 const height=width===320?568:width===390?844:932;
 const out=join(root,'dist/web-parity-review'+suffix);await mkdir(out,{recursive:true});
 const browser=await chromium.launch({headless:true,...(process.env.MINIGAME_CHROMIUM_PATH?{executablePath:process.env.MINIGAME_CHROMIUM_PATH}:{})});
-const checks=[];
+const checks=[],coverage=[];
 try {
   for(const scene of (process.env.PARITY_SCENES?.split(',')??['entry','game'])) {
     const web=JSON.parse(await readFile(join(root,'dist/web-reference'+suffix,scene+'-'+width+'.json'),'utf8'));
@@ -20,6 +20,9 @@ try {
       const error=Math.max(...['x','y','width','height'].map(k=>Math.abs(a[k]-b[k])));
       checks.push({scene,id,maxGeometryErrorPx:error});assert.ok(error<1,id+' geometry drift: '+error);
     }
+    const comparable=native.nodes.filter(n=>n.kind==='button'&&n.text&&n.y>=0&&n.y+n.height<=height&&web.some(w=>w.tag==='BUTTON'&&w.text===n.text));
+    const differences=comparable.flatMap(n=>{const candidates=web.filter(w=>w.tag==='BUTTON'&&w.text===n.text);const best=candidates.reduce((a,b)=>Math.abs(a.y-n.y)<Math.abs(b.y-n.y)?a:b);const error=Math.max(...['x','y','width','height'].map(k=>Math.abs(n[k]-best[k])));return error>1?[{id:n.id,text:n.text,error}]:[];});
+    coverage.push({scene,width,players,position:process.env.PARITY_BOTTOM==='1'?'bottom':'top',generated:true,viewed:false,passed:false,assertions:pairs.length,matchedButtons:comparable.length,differences,status:comparable.length||pairs.length?'needs-visual-review':'uncovered'});
     const left=(await readFile(join(root,'dist/web-reference'+suffix,scene+'-'+width+'.png'))).toString('base64');
     const right=(await readFile(join(root,'dist/minigame-preview'+suffix,scene+'-'+width+'.png'))).toString('base64');
     const title=(({ entry:'首页',game:'牌局 · 6人 · 队长组队 · 已选0/2',identity:'私密身份 · 孙悟空 · 6人',vote:'组队表决 · 首难 · 2人队伍 · 未提交',mission:'任务出牌 · 首难 · 蓝方 · 未提交',report:'首难战报 · 成功2/失败0',result:'终局 · 蓝方获胜',account:'个人中心 · 战绩'})[scene]??scene).replaceAll('6人',players+'人').replace('已选0/2','已选0/'+(players>=8?3:2)).replace('2人队伍',(players>=8?3:2)+'人队伍');
@@ -29,5 +32,9 @@ try {
     await page.setContent(html);await page.screenshot({path:join(out,scene+'-comparison.png'),fullPage:true});await page.close();
   }
   await writeFile(join(out,'geometry-checks.json'),JSON.stringify(checks,null,2));
-  console.log(JSON.stringify({out,checks},null,2));
+  const previous=await readFile(join(out,'acceptance-'+width+'.json'),'utf8').then(JSON.parse).catch(()=>({coverage:[]}));
+  const allCoverage=[...previous.coverage.filter(old=>!coverage.some(current=>current.scene===old.scene)),...coverage];
+  await writeFile(join(out,'acceptance-'+width+'.json'),JSON.stringify({accepted:false,reason:'Generated comparisons require visual review; unmatched states are not accepted.',coverage:allCoverage},null,2));
+  console.log(JSON.stringify({out,checks,accepted:false,pending:coverage.length},null,2));
+  if(process.env.PARITY_REQUIRE_ACCEPTANCE==='1')process.exitCode=1;
 } finally {await browser.close();}

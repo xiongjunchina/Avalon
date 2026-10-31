@@ -24,11 +24,11 @@ test('private identity is a masked horizontal card, and closing it removes priva
  assert.ok(layout.nodes.some(n=>n.id==='identityArt'));
  handleGameOverlay(ui,room,'overlayClose');assert.equal(gameScreen(room,user,ui).web?.document,undefined);
 });
-test('vote choices retain selection while expanding past missions and submit only explicitly',()=>{
+test('vote choices remain selected and expose inline past missions before explicit submission',()=>{
  const {room,user}=parityFixture('vote');const ui=state();syncGameUi(ui,room,true,user.id);
  assert.equal(gameScreen(room,user,ui).web?.document?.kind,'vote');
  handleGameOverlay(ui,room,'vote-choice:approve');assert.equal(gameAction(room,user,'submitVote',ui)?.type,'teamVote');
- handleGameOverlay(ui,room,'voteHistory');assert.equal(ui.voteChoice,true);assert.equal(gameScreen(room,user,ui).web?.document?.historyExpanded,true);
+ assert.equal(ui.voteChoice,true);assert.ok(layoutWebScreen(gameScreen(room,user,ui),{width:390,height:844,top:0,bottom:0}).nodes.some(n=>n.id==='vote-history-heading'));
 });
 test('mission decisions remain inside the web action dock and blue failure clears an earlier success',()=>{
  const {room,user}=parityFixture('mission');const ui=state();syncGameUi(ui,room,true,user.id);

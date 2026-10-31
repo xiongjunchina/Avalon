@@ -3,9 +3,9 @@ import { ALL_GALLERY_ROLES, WUYUE_MISSIONS } from '../../../web/src/roles.js';
 import { roleDescriptions, roleTreasures } from '../../../web/src/role-descriptions.js';
 import { ROLE_CONFIG, MISSION_SIZES } from '@avalon/game-core';
 
-export function guideScreen(roleId?: string, section: 'rules'|'roles'|'config' = 'rules', art=false,guideChaptersOpen=false): ScreenModel {
+export function guideScreen(roleId?: string, section: 'rules'|'roles'|'config' = 'rules', art=false,guideChaptersOpen=false,galleryScroll=0): ScreenModel {
   const role = ALL_GALLERY_ROLES.find(item => item.id === roleId);
-  if(art&&role)return {title:role.fullName,rows:[],web:{page:'sheet',background:'library',backId:'guideArtClose',underlay:guideScreen(undefined,section),document:{kind:'art',modal:true,roleItem:role}}};
+  if(art&&role)return {title:role.fullName,rows:[],web:{page:'sheet',background:'library',backId:'guideArtClose',underlay:{...guideScreen(undefined,section),scroll:galleryScroll},document:{kind:'art',modal:true,roleItem:role}}};
   if (role) return { title: role.fullName, portrait: role.artPrefix + '-160.webp', web: { page: 'sheet', background: 'library', backId: 'guide:roles', document:{kind:'guide-role',roleItem:role,activeTab:section} }, subtitle: role.team === 'blue' ? '取经阵营' : '妖魔阵营', rows: [
     { id: 'role-title', text: role.title }, { id: 'role-motto', text: role.motto },
     { id: 'role-story', text: role.story },

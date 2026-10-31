@@ -3,48 +3,48 @@
     "file": "calligraphy.ttf",
     "family": "Ma Shan Zheng",
     "source": "https://fonts.gstatic.com/s/mashanzheng/v18/NaPecZTRCLxvwo41b4gvzkXaRMQ.ttf",
-    "sha256": "8cc169130f706ed89f37bd5fef8fd453313805c9687877da85e3f64a6fc621ce",
-    "glyphs": 1208,
-    "bytes": 829996
+    "sha256": "bcef9bff702df37b91af56f83b502326adeace4574c1a9f60be18e2a208e445a",
+    "glyphs": 1210,
+    "bytes": 831228
   },
   {
     "file": "display.ttf",
     "family": "ZCOOL XiaoWei",
     "source": "https://fonts.gstatic.com/s/zcoolxiaowei/v15/i7dMIFFrTRywPpUVX9_RJyM1YFI.ttf",
-    "sha256": "27e3e1e5484071b1c05945fff666a467a1a1cc3b0c47fbf1dd5cf4ad85348336",
-    "glyphs": 1208,
-    "bytes": 846180
+    "sha256": "4ddf770c0d1e3796530e907d4336c20ea7f4b6d32dbcc6f199bf36776fd31f57",
+    "glyphs": 1210,
+    "bytes": 847160
   },
   {
     "file": "sans.ttf",
     "family": "Noto Sans SC",
     "source": "https://fonts.gstatic.com/s/notosanssc/v41/k3kCo84MPvpLmixcA63oeAL7Iqp5IZJF9bmaG9_FnYw.ttf",
-    "sha256": "88582d60c528b1601bba3ab560058ae30e7cd739e56b8e74f5d326944ab112e6",
-    "glyphs": 1208,
-    "bytes": 320960
+    "sha256": "d2e35821d2fca7f0f9d21cc77b56f3b567199fb3d8ec17e9e1719ee1ae6da235",
+    "glyphs": 1210,
+    "bytes": 321392
   },
   {
     "file": "sans500.ttf",
     "family": "Noto Sans SC:wght@500",
     "source": "https://fonts.gstatic.com/s/notosanssc/v41/k3kCo84MPvpLmixcA63oeAL7Iqp5IZJF9bmaG-3FnYw.ttf",
-    "sha256": "7bcb19b857714e648ef789b8c40eb564a318e7575234924e29ec91e6cefa45cf",
-    "glyphs": 1208,
-    "bytes": 320812
+    "sha256": "709cc92ab20cec9d018da509e5b25cb20833ca3be358343734fb7a21bd80e4a8",
+    "glyphs": 1210,
+    "bytes": 321244
   },
   {
     "file": "sans600.ttf",
     "family": "Noto Sans SC:wght@600",
     "source": "https://fonts.gstatic.com/s/notosanssc/v41/k3kCo84MPvpLmixcA63oeAL7Iqp5IZJF9bmaGwHCnYw.ttf",
-    "sha256": "ba9a62a0e06a5127d706f81c1e5dd3edcbd18e65319cab2f3cb7a421279c85c0",
-    "glyphs": 1208,
-    "bytes": 320720
+    "sha256": "21f2c48bd6c92312c1200a9fb3c5821ac9b4a11d615c5b0e6f4be9f35dcb3600",
+    "glyphs": 1210,
+    "bytes": 321156
   },
   {
     "file": "sans700.ttf",
     "family": "Noto Sans SC:wght@700",
     "source": "https://fonts.gstatic.com/s/notosanssc/v41/k3kCo84MPvpLmixcA63oeAL7Iqp5IZJF9bmaGzjCnYw.ttf",
-    "sha256": "9b53e19b8da0f454bf20e1ed6b749d02c0664013ba6345fd0ecdba3757f64347",
-    "glyphs": 1208,
-    "bytes": 320788
+    "sha256": "113c023dde88dd554d1b02f6614b9e0c3a0da6a91806f678bb6e4fb0621119cd",
+    "glyphs": 1210,
+    "bytes": 321220
   }
 ]

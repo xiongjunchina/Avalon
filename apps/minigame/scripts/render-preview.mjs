@@ -62,7 +62,7 @@ try {
         if (scene === 'lobby') model = { ...app.lobbyScreen({...parityRoom,game:undefined,phase:'waiting'}, user, '已连接'), scene: 'game' };
         if (['game','identity','vote','vote-submitted','mission','mission-submitted','report','result','art','treasures','battle'].includes(scene)) {
           const overlay=['identity','art','treasures'].includes(scene)?scene:scene.startsWith('vote')?'vote':scene==='report'?'report':scene==='battle'?'history':undefined;
-          model=app.gameScreen(parityRoom,user,{privateRoleVisible:['identity','art','treasures'].includes(scene),ballotVisible:false,overlay,reportMission:1,overlayReturn:['art','treasures'].includes(scene)?'identity':undefined});
+          model=app.gameScreen(parityRoom,user,{privateRoleVisible:['identity','art','treasures'].includes(scene),ballotVisible:false,overlay,reportMission:scene==='report'?1:undefined,overlayReturn:['art','treasures'].includes(scene)?'identity':undefined});
         }
         if(scene==='setup')model={...app.settingsScreen(app.defaultSettings),rows:[{id:'chooseDedicated',text:'普通房 · 随机房号'},{id:'creationPassword',text:'入房密码：不设置'},{id:'createRoom',text:'创建房间'},{id:'startPractice',text:'演练'}],web:{page:'setup',settings:app.defaultSettings,document:{kind:'settings',activeTab:'setup',settings:app.defaultSettings}}};
         if(['account','profile','history','favorites','presets','friends','friends-list','friends-add','replay','direct'].includes(scene)){
