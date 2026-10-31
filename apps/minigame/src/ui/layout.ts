@@ -11,7 +11,14 @@ export function wrapText(text: string, width: number, measure = textWidth): stri
   const lines: string[] = [];
   for (const paragraph of text.split('\n')) {
     let line = '';
-    for (const char of Array.from(paragraph)) {
+    const units=paragraph.match(/[A-Za-z0-9_]+|[^]/gu)??[];
+    for (const unit of units) {
+      // CSS keeps an ordinary Latin word together; oversized IDs still break.
+      if(unit.length>1&&measure(unit)<=width){
+        if(line&&measure(line+unit)>width){lines.push(line.trimEnd());line='';}
+        line+=unit;continue;
+      }
+      for (const char of Array.from(unit)) {
       if (line && measure(line + char) > width) {
         const chars=Array.from(line);
         // Match CSS line breaking: opening brackets cannot end a line and
@@ -19,9 +26,10 @@ export function wrapText(text: string, width: number, measure = textWidth): stri
         const carry=chars.length>1&&(/[（《「『【“‘]$/.test(line)||/^[，。！？；：、）》」』】”’]/.test(char))?chars.pop()!:'';
         lines.push(chars.join('')); line=carry;
       }
-      line += char;
+      if(line||char!==' ')line += char;
+      }
     }
-    lines.push(line);
+    lines.push(line.trimEnd());
   }
   return lines;
 }

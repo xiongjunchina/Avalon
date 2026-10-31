@@ -25,6 +25,7 @@ export class PlayerPanel {
   private presetEditing=false;
   private presetName = '';
   private profileEditing = false;
+  private redeemCode = '';
   private profileDraft?: {nickname:string;avatar:Avatar;avatarUrl?:string|null;wechatAvatarUrl?:string|null};
   private replayBack = 'page:history';
   private page: Page = 'account';
@@ -106,7 +107,7 @@ export class PlayerPanel {
       result.web={...result.web!,backId:this.page==='direct'?'page:friends':this.page==='replay'?this.replayBack:'back',document:{kind,modal:['friends','chat'].includes(kind),
         user:this.user,expanded:[...this.expanded],activeTab:this.page==='account'||this.page==='stats'?'stats':this.page==='history'&&this.favoritesOnly?'favorites':this.page,
         stats:this.stats,games:this.games,presets:this.presets,settings:this.roomSettings??this.presetSettings,presetName:this.presetName,presetEditing:this.presetEditing,canApplyPreset:this.canApplyPreset,roomPreset:!!this.roomSettings,
-        profileEditing:this.profileEditing,profileDraft:this.profileDraft,friends:this.friends,friendTab:this.friendTab,friendQuery:this.friendQuery,canInvite:!!this.roomId,roomMemberIds:this.roomMemberIds,roomCode:this.roomId?this.roomCode:undefined,
+        profileEditing:this.profileEditing,profileDraft:this.profileDraft,redeemCode:this.redeemCode,friends:this.friends,friendTab:this.friendTab,friendQuery:this.friendQuery,canInvite:!!this.roomId,roomMemberIds:this.roomMemberIds,roomCode:this.roomId?this.roomCode:undefined,
         chatDraft:this.chatDraft,chatFriend:this.selectedFriend,quickExpanded:this.quickExpanded,replay:this.replay,
         messages:this.page==='direct'?this.direct.map(m=>({id:m.id,text:m.message,name:m.isSelf?'我':this.selectedFriend?.nickname??'',self:Boolean(m.isSelf),timestamp:m.createdAt})):this.roomMessages.map(m=>({id:m.messageId,text:m.text,name:m.seat+'号 '+m.nickname,self:m.fromUserId===this.user.id,timestamp:m.timestamp}))}};
       if(['direct','roomchat'].includes(this.page))result.rows.push(...(this.page==='direct'?['来开一局？','马上上线！','稍等我两分钟','今晚几点开战？','速来，三缺一！','上局打得漂亮！']:['我是取经好人','建议本轮流局','队长选我，必是红心','我看见假猴了！','刺客别急，听我一言','全票准行，即刻出征','有人在浑水摸鱼','这局必须查验他！','平票也算流局，谨慎投！','相信我，我带飞']).map((text,i)=>({id:'quick:'+i,text})));
@@ -212,6 +213,8 @@ export class PlayerPanel {
     if (id === 'nickname') { const nickname = await input('新昵称', 20); if (nickname) this.user = (await this.api.updateProfile({ nickname, avatar: this.user.avatar ?? 'leaf', avatarUrl: this.user.avatarUrl ?? null, wechatAvatarUrl: this.user.wechatAvatarUrl ?? null })).user; return; }
     if (id === 'avatar') { const next = avatarOrder[(avatarOrder.indexOf(this.user.avatar ?? 'leaf') + 1) % avatarOrder.length]!; this.user = (await this.api.updateProfile({ nickname: this.user.nickname, avatar: next, avatarUrl: null, wechatAvatarUrl: null })).user; return; }
     if (id === 'uploadAvatar') { if (!this.avatarPicker) throw new Error('当前微信版本不支持上传头像'); const avatarUrl = await this.avatarPicker(); this.user = (await this.api.updateProfile({ nickname: this.user.nickname, avatar: this.user.avatar ?? 'leaf', avatarUrl, wechatAvatarUrl: null })).user; return; }
+    if(id==='redeem:input'){const code=await input('输入 VIP 授权兑换码',16);if(code!==undefined)this.redeemCode=code.toUpperCase().slice(0,16);return;}
+    if(id==='redeem:submit'){const code=this.redeemCode.trim();if(!code)return;const result=await this.api.redeem(code);this.user={...this.user,isVip:true,vipUntil:result.vipUntil};this.redeemCode='';this.feedback=`兑换成功，增加 ${result.days} 天 VIP`;return;}
     if (id === 'redeem') { const code = await input('兑换码', 64); if (code) { const result = await this.api.redeem(code); this.user = { ...this.user, isVip: true, vipUntil: result.vipUntil }; this.feedback = `兑换成功，增加 ${result.days} 天 VIP`; } return; }
     if (id === 'favorites') { this.favoritesOnly = !this.favoritesOnly; await this.open('history'); return; }
     if (id === 'more' && this.cursor) { const result = await this.api.history(this.cursor, this.favoritesOnly); this.games.push(...result.games.filter(game => !this.games.some(existing => existing.id === game.id))); this.cursor = result.nextCursor; return; }

@@ -130,7 +130,7 @@ export function gameScreen(room: RoomView, user: User, ui: GameUiState, now = Da
   if (game.phase === 'mission' && self && round?.team.includes(user.id) && !self.missionVoted) rows.push(
     { id:'mission-choice:success',text:(ui.missionChoice===true?'✓ ':'')+'任务成功' },
     { id:'mission-choice:fail',text:(ui.missionChoice===false?'✓ ':'')+'任务失败' },
-    { id:'submitMission',text:ui.missionChoice===undefined?'请先点击选择【任务成功】或【任务失败】':ui.missionChoice?'✨ 确认提交【任务成功】':'🔥 确认提交【任务失败】' },
+    { id:'submitMission',text:ui.missionChoice===undefined?'请先选择任务牌':ui.missionChoice?'✨ 确认提交【任务成功】':'🔥 确认提交【任务失败】' },
     ...(ui.warning?[{id:'error',text:ui.warning}]:[]),
   );
   const ballots = game.teamVote?.ballots ?? round?.vote?.ballots;

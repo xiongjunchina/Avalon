@@ -7,6 +7,7 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 const { chromium } = await import(process.env.MINIGAME_PLAYWRIGHT_PATH
   ? pathToFileURL(process.env.MINIGAME_PLAYWRIGHT_PATH).href : 'playwright');
 const result = await build({ stdin: { contents: `
+export { setWebFonts } from './apps/minigame/src/ui/web-render.ts';
 export { layoutWebScreen } from './apps/minigame/src/ui/web-layout.ts';
 export { PlayerPanel } from './apps/minigame/src/screens/player-panel.ts';
 export { parityFixture, parityPlayerData, parityAdminData } from './apps/minigame/scripts/parity-fixture.ts';
@@ -45,8 +46,9 @@ try {
     const height = width === 320 ? 568 : width === 390 ? 844 : 932;
     const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: dpr });
     await page.setContent('<style>body{margin:0;background:#0a1024}</style><canvas id="preview"></canvas>');
-    await page.evaluate(async fonts => { for (const [name,source] of Object.entries(fonts)) { const family = {calligraphy:'Ma Shan Zheng',display:'ZCOOL XiaoWei',sans:'Noto Sans SC',sans500:'Noto Sans SC',sans600:'Noto Sans SC',sans700:'Noto Sans SC',homeInterface:'Home Interface'}[name]; const font=new FontFace(family, 'url('+source+')',{weight:/sans[567]00/.test(name)?name.slice(4):'400'}); document.fonts.add(await font.load()); } }, fonts);
+    await page.evaluate(async fonts => { for (const [name,source] of Object.entries(fonts)) { const family='Packaged-'+name; const font=new FontFace(family, 'url('+source+')',{weight:'400'}); document.fonts.add(await font.load()); } }, fonts);
     await page.addScriptTag({ content: result.outputFiles[0].text });
+    await page.evaluate(names=>AvalonPreview.setWebFonts(Object.fromEntries(names.map(name=>[name,'Packaged-'+name]))),Object.keys(fonts));
     for (const captureScene of (process.env.PARITY_SCENES?.split(',')??['entry','setup','game','identity','vote','vote-submitted','mission','report','result','account','profile','history','favorites','presets','friends','friends-list','friends-add','guide','guide-role'])) {
       const scene=captureScene.startsWith('mirror-window')?'guanyin-window':captureScene.startsWith('notice-')?'private-notice':captureScene.startsWith('treasures-')?'treasures':({'report-public':'report','preset-editor':'presets','profile-vip':'profile','history-expanded':'history','replay-expanded':'replay','admin-special-editor':'admin-special','admin-code-editor':'admin-users','admin-friends':'admin-users'})[captureScene]??captureScene.replace('-populated','');
       const layout = await page.evaluate(async ({ width, height, scene, assets, dpr,playerCount,captureScene,bottomCapture }) => {
@@ -92,7 +94,7 @@ try {
         if(bottomCapture||scene==='mission'||scene==='result')model.scroll=app.layoutWebScreen(model,{width,height,top:0,bottom:0}).maxScroll;
         if(model.web){model.web.freeAccess=true;if(scene==='lobby')model.web.friendRequests=1;}
         app.renderScreen(model, canvas, { width, height, top: 0, bottom: 0 }, { get: name => cache.get(name) });
-        return app.layoutWebScreen(model,{width,height,top:0,bottom:0});
+        const layout=app.layoutWebScreen(model,{width,height,top:0,bottom:0});return layout;
       }, { width, height, scene, assets, dpr,playerCount,captureScene,bottomCapture:process.env.PARITY_BOTTOM==='1' });
       await writeFile(join(out, `${captureScene}-${width}.json`), JSON.stringify(layout,null,2));
       await page.screenshot({ path: join(out, `${captureScene}-${width}.png`) });

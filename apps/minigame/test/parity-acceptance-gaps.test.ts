@@ -189,3 +189,46 @@ test('vote progress keeps all twelve participants above the privacy footer at ev
   for(const voter of voters)assert.ok(voter.y+voter.height<=footer.y,`participant ${voter.id} overlaps privacy footer at ${width}`);
  }
 });
+
+
+test('VIP redemption edits without submitting, preserves failed codes and clears only on success',async()=>{
+ const {user}=parityFixture();let calls=0,fail=true;
+ const panel=new PlayerPanel({statistics:async()=>parityPlayerData().stats,redeem:async(code:string)=>{calls++;assert.equal(code,'ABCD1234');if(fail)throw Error('兑换码无效');return {days:30,vipUntil:'2027-01-01T00:00:00Z'};}} as any,user);
+ await panel.open('account');await panel.handle('profileToggle',async()=>undefined);
+ await panel.handle('redeem:submit',async()=>undefined);assert.equal(calls,0);
+ await panel.handle('redeem:input',async()=> ' abcd1234 ');assert.equal(calls,0);
+ await assert.rejects(panel.handle('redeem:submit',async()=>undefined),/兑换码无效/);assert.equal(calls,1);assert.equal(panel.model().web!.document!.redeemCode,' ABCD1234 ');
+ await panel.handle('redeem:input',async()=>undefined);assert.equal(panel.model().web!.document!.redeemCode,' ABCD1234 ');
+ fail=false;await panel.handle('redeem:submit',async()=>undefined);assert.equal(calls,2);assert.equal(panel.model().web!.document!.redeemCode,'');assert.equal(panel.user.isVip,true);
+});
+
+test('replay title and round navigation stay visible when the document reaches its end',async()=>{
+ const {user}=parityFixture(),data=parityPlayerData();const panel=new PlayerPanel({replay:async()=>data.replay} as any,user);await panel.openReplay(data.replay.id,'page:history');
+ for(const width of [320,390,430]){
+  const view={...viewport,width,height:width===320?568:width===430?932:844},initial=layoutWebScreen(panel.model(),view),nodes=layoutWebScreen({...panel.model(),scroll:100000},view).nodes;
+  const title=nodes.find(n=>n.id==='page-title')!,nav=nodes.find(n=>n.id==='round-navigation')!,back=nodes.find(n=>n.id==='page:history')!;
+  assert.equal(title.y,0);assert.ok(title.fixed&&nav.fixed&&back.fixed);assert.equal(nav.y,Math.max(72,initial.nodes.find(n=>n.id==='round-navigation')!.y-initial.maxScroll));assert.equal(back.y,8);
+  for(const n of nodes.filter(n=>n.id.startsWith('round-jump:')))assert.ok(n.fixed&&n.y>=nav.y&&n.y+n.height<=nav.y+nav.height);
+ }
+});
+
+
+test('replay six-member missions retain a single row and readable labels on narrow screens',async()=>{
+ const {user}=parityFixture(),data=parityPlayerData();
+ data.replay.rounds[0]!.team=data.replay.players.slice(0,6).map(p=>p.id);
+ const panel=new PlayerPanel({replay:async()=>data.replay} as any,user);await panel.openReplay(data.replay.id,'page:history');
+ for(const width of [320,390,430]){
+  const nodes=layoutWebScreen(panel.model(),{...viewport,width}).nodes,team=nodes.filter(n=>n.id.startsWith('round-team:1:'));
+  assert.equal(team.length,6);assert.equal(new Set(team.map(n=>n.y)).size,1);
+  const frame=nodes.find(n=>n.id==='round-party:1')!;
+  for(const n of team){assert.ok(n.x>=frame.x&&n.x+n.width<=frame.x+frame.width);assert.ok(n.y+n.height<=frame.y+frame.height);}
+ }
+});
+
+
+test('mixed Chinese copy wraps Latin words intact while oversized identifiers remain readable',()=>{
+ const measure=(s:string)=>Array.from(s).length;
+ assert.deepEqual(wrapText('在线服务的 WebSocket 端口',12,measure),['在线服务的','WebSocket 端口']);
+ const lines=wrapText('编号 ABCDEFGHIJKLMNOP',8,measure);
+ assert.ok(lines.every(line=>line.length<=8));assert.equal(lines.join('').replaceAll(' ',''),'编号ABCDEFGHIJKLMNOP');
+});

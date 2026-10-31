@@ -34,7 +34,7 @@ export function toggleSetting(settings: Settings, key: keyof Settings): Settings
 export const settingOptions = {
  captainMode:[['seat_order','按座位循环'],['random_order','开局打乱一次，整局循环']],
  rejectionScope:[['game','全局累计，5 次判负'],['mission','单次任务累计，5 次判负']],
- voiceChatEnabled:[['false','🏛️ 线下常规房（无语音，聚会面杀）'],['true','🎙️ 远端语音房（声网实时语音）']],
+ voiceChatEnabled:[['false','普通房（线下或自行通话）'],['true','网页语音房（声网实时语音）']],
 } as const;
 export type SettingChoiceKey=keyof typeof settingOptions;
 export class SettingsChoice {

@@ -1,6 +1,6 @@
 import { reasons } from '../../../web/src/game-presentation.js';
 import type { WebDocument } from './web-document.js';
-import { layoutDocument } from './web-document-layout.js';
+import { layoutDocument, measureWebText } from './web-document-layout.js';
 import type { RoomView, Settings, User } from '@avalon/contracts';
 import { MISSION_SIZES, ROLE_CONFIG, failuresRequiredFor, teamOf, assignLoyalGuardians, assignFemaleDemons } from '@avalon/game-core';
 import { defaultRoleArtPrefix, roleNames, roleMottos, WUYUE_MISSIONS, getRoleGalleryItem, formatRoleName } from '../../../web/src/roles.js';
@@ -31,7 +31,7 @@ export interface WebSurface {
 export interface WebNode extends HitRegion {
   kind: 'label' | 'button' | 'input' | 'portrait' | 'quest' | 'seat' | 'altar' | 'panel' | 'choice' | 'tab' | 'metric' | 'hitbox';
   fixed?: boolean; primary?: boolean; selected?: boolean; disabled?: boolean; muted?: boolean;
-  skin?: string; letterSpacing?:number; fontSize?: number; lineHeight?: number; fontFace?: 'sans'|'display'|'calligraphy'|'system'; weight?: string; align?: 'left'|'center'|'right'; tone?: 'blue'|'red'|'gold'|'muted'|'green';
+  skin?: string; letterSpacing?:number; fontSize?: number; lineHeight?: number; fontFace?: 'sans'|'display'|'calligraphy'|'system'|'home'; weight?: string; align?: 'left'|'center'|'right'; tone?: 'blue'|'red'|'gold'|'muted'|'green';
   textRightInset?: number; image?: string; detail?: string; badge?: string; selfPlayer?: boolean; online?: boolean; team?: 'blue' | 'red'; passed?: boolean; count?: number;
   micState?: 'live' | 'speaking' | 'muted' | 'unjoined';
   teamStatus?: '已选' | '出征';
@@ -56,7 +56,7 @@ export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout 
     add('button',web.user?'account':'loginOpen',web.user?.nickname??'游客浏览',homePad,top,avatarW,toolbarH,{fixed:true,badge:'home-avatar',image:web.user?.avatarUrl??web.user?.wechatAvatarUrl??'emblems/'+(web.user?.avatar??'cards')+'.png'});
     const soundW=web.user&&w<=380?36:74,friendW=w<=380?65:80,switchW=w<=380?53:61.2,toolsW=web.user?friendW+soundW+switchW+12:soundW;
     let toolX=w-homePad-toolsW;
-    for(const [id,title,width] of (web.user?[['friends','♟ 仙友',friendW],['sound','静音',soundW],['switch','▣ 换号',switchW]]:[['sound','静音',soundW]]) as [string,string,number][]){add('button',id,title,toolX,top,width,toolbarH,{fixed:true,fontSize:13,count:id==='friends'?web.friendRequests:undefined});toolX+=width+6;}
+    for(const [id,title,width] of (web.user?[['friends','👥 仙友',friendW],['sound','静音',soundW],['switch','🚪 换号',switchW]]:[['sound','静音',soundW]]) as [string,string,number][]){add('button',id,title,toolX,top,width,toolbarH,{fixed:true,fontSize:13,count:id==='friends'?web.friendRequests:undefined});toolX+=width+6;}
     const logoTop=top+(compact?36:40)+(compact?5:8),logoSize=compact?28:cssClamp(28,w*.088,36),logoH=logoSize*1.2,subSize=compact?11:cssClamp(11,w*.033,14);
     add('label','brand','嘻游 · 真假猴王',homePad,logoTop,homeW,logoH,{fontSize:logoSize});
     add('label','home-subtitle','一念佛魔皆幻相，谁是修道取经人',homePad,logoTop+logoH+(compact?5:8),homeW,subSize*1.45,{skin:'home-copy',fontSize:subSize});
@@ -73,13 +73,11 @@ export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout 
     add('button','create','开常规房',homePad,actionsY,(homeW-10)/2,actionH,{primary:true,fontSize:actionSize,image:'emblems/mountain.png'});
     add('button',hasInvitation?'invitation':'join',hasInvitation?'加入邀请房间':'加入房间',homePad+(homeW+10)/2,actionsY,(homeW-10)/2,actionH,{fontSize:actionSize,image:'emblems/crown.png'});
     add('button','practice','🐒 幻境单人试玩 ›',w/2-72,actionsY+actionH+fg,144,practiceH,{fontSize:14});
-    const linksY=actionsY+actionH+fg+practiceH+fg+1,linkW=Math.min(homeW,280),linkX=(w-linkW)/2,linkSize=cssClamp(11,w*.0325,14),linkH=compact?34:38;
-    add('label','footer-rule','',homePad,linksY-1,homeW,1);
-    add('button','guide','玩法与角色',linkX,linksY,linkW*.3,linkH,{muted:true,fontSize:linkSize});
-    add('label','footer-dot','·',linkX+linkW*.3,linksY,12,linkH);
-    add('button',web.user?'account':'loginOpen','📜 功果簿',linkX+linkW*.35,linksY,linkW*.3,linkH,{muted:true,fontSize:linkSize});
-    add('label','footer-dot','·',linkX+linkW*.63,linksY,12,linkH);
-    add('button',web.user?'logout':'loginOpen',web.user?'🚪 退出登录':'登录 / 注册',linkX+linkW*.68,linksY,linkW*.32,linkH,{muted:true,fontSize:linkSize});
+    const linksY=actionsY+actionH+fg+practiceH+fg+1,linkSize=cssClamp(11,w*.0325,14),linkH=compact?34:38;
+    const links=[['guide','玩法与角色'],[web.user?'account':'loginOpen','📜 功果簿'],[web.user?'logout':'loginOpen',web.user?'🚪 退出登录':'登录 / 注册']];
+    const widths=links.map(([,t])=>measureWebText(t!,linkSize,'home','400')+10),linkW=widths.reduce((a,b)=>a+b,0)+40;
+    let linkX=(w-linkW)/2;add('label','footer-rule','',homePad,linksY-1,homeW,1);
+    links.forEach(([id,t],i)=>{add('button',id!,t!,linkX,linksY,widths[i]!,linkH,{muted:true,fontSize:linkSize});linkX+=widths[i]!;if(i<2){add('label','footer-dot:'+i,'·',linkX+4,linksY,12,linkH);linkX+=20;}});
     if(promotion)add('label','home-promotion','公测盛典 · 全特权限时免费畅玩中',homePad,linksY+linkH+4,homeW,13,{skin:'home-copy',fontSize:10});
     const last = nodes.filter(n=>n.id!=='home-duel').reduce((max, node) => Math.max(max, node.y + node.height), 0);
     const maxScroll = Math.max(0, last - (v.height - v.bottom));

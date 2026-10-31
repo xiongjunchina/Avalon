@@ -45,6 +45,7 @@ export interface WebDocument {
   canApplyPreset?: boolean;
   roomPreset?:boolean;
   profileEditing?: boolean;
+  redeemCode?: string;
   profileDraft?: { nickname: string; avatar: Avatar; avatarUrl?: string|null; wechatAvatarUrl?: string|null };
   friends?: FriendSummary[];
   friendTab?: 'invite' | 'friends' | 'add';
