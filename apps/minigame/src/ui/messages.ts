@@ -3,7 +3,7 @@ import { errors } from '../../../web/src/api.js';
 const miniGameErrors: Record<string, string> = {
   HANDOFF_EXPIRED: '接续链接已过期或已使用，请返回小游戏重新复制。',
   HANDOFF_ROOM_CHANGED: '房间状态已变化，请返回当前房间重新复制接续链接。',
-  WECHAT_VOICE_DISABLED: '微信语音尚未开放，对局不受影响；需要语音时请全员转到网页版。',
+  WECHAT_VOICE_DISABLED: '服务器尚未启用微信语音，请管理员检查语音配置；对局不受影响。',
   WECHAT_VOICE_LIMIT: '微信原生语音每房最多10人，11～12人牌局不能加入原生语音。',
   WECHAT_VOICE_IDENTITY: '原生语音需使用当前微信绑定的游戏账号；请退出并重新微信登录，不要切换仙友码账号。',
   WECHAT_VOICE_SESSION: '未取得微信语音签名所需的会话，请重新加入语音。',

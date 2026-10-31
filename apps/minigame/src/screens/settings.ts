@@ -10,7 +10,7 @@ export function settingsScreen(settings: Settings): ScreenModel {
     { id: 'ladyEnabled', text: `照妖宝镜：${settings.ladyEnabled ? '开' : '关'}` },
     { id: 'earlyAssassinationEnabled', text: `提前刺杀：${settings.earlyAssassinationEnabled ? '开' : '关'}` },
     { id: 'guardianPerksEnabled', text: `护法天机：${settings.guardianPerksEnabled ? '开' : '关'}` },
-    { id: 'voiceChatEnabled', text: `房间类型：${settings.voiceChatEnabled ? '网页语音房（全员转到网页交流）' : '普通房（线下或外部通话）'}` },
+    { id: 'voiceChatEnabled', text: `网页端声网兼容：${settings.voiceChatEnabled ? '开启' : '关闭'}（不影响微信语音）` },
     { id: 'autoRevealRoleEnabled', text: `自动亮身份：${settings.autoRevealRoleEnabled ? '开' : '关'}` },
     { id: 'treasuresEnabled', text: `8–12人法宝：${settings.treasuresEnabled ? '开' : '关'}（仅8人以上生效）` },
     ...(settings.treasuresEnabled && settings.playerCount >= 8 ? [{ id: 'treasureRule', text: settings.guardianPerksEnabled ? '新局法宝：护法天机已开，蓝方禁用、红方保留' : '新局法宝：护法天机未开，双方按角色保留' }] : []),
@@ -34,7 +34,7 @@ export function toggleSetting(settings: Settings, key: keyof Settings): Settings
 export const settingOptions = {
  captainMode:[['seat_order','按座位循环'],['random_order','开局打乱一次，整局循环']],
  rejectionScope:[['game','全局累计，5 次判负'],['mission','单次任务累计，5 次判负']],
- voiceChatEnabled:[['false','普通房（线下或自行通话）'],['true','网页语音房（声网实时语音）']],
+ voiceChatEnabled:[['false','关闭（不影响微信语音）'],['true','开启（仅网页声网）']],
 } as const;
 export type SettingChoiceKey=keyof typeof settingOptions;
 export class SettingsChoice {

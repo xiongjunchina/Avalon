@@ -5,9 +5,9 @@ import type { WxRuntime } from '../platform/wechat.js';
 import type { ScreenModel } from '../ui/widgets.js';
 
 export function roomVoiceGuidance(room: Pick<RoomView, 'settings'>): string {
-  return room.settings.voiceChatEnabled
-    ? '本房使用网页语音。请全员在手机系统浏览器打开网页版，才能互相听见；小游戏不会接入网页语音。'
-    : '本房不使用内置语音，可面对面交流或自行使用外部通话。网页与小游戏均可进行 5–12 人对局。';
+  return room.settings.playerCount > 10
+    ? '本房可正常进行对局，但微信原生语音最多10人，当前人数不支持；网页声网独立，两端不互通。'
+    : '小游戏内可直接使用微信原生语音，无需跳转网页；网页声网独立，两端不互通。';
 }
 
 export function webHandoffScreen(room: RoomView, user: User): ScreenModel {
@@ -20,7 +20,7 @@ export function webHandoffScreen(room: RoomView, user: User): ScreenModel {
       { id: 'web:copyPersonal', text: '复制本人接续链接' },
       { id: 'guide:web-invite', text: '邀请朋友：只发送下面的房间邀请链接。朋友使用自己的账号入座，不会接管你的账号。' },
       { id: 'web:copyInvite', text: '复制房间邀请链接' },
-      { id: 'guide:web-continue', text: '复制或返回不会退房。接续成功后，请留在网页版操作；无需重新建房。微信语音当前保持关闭，不影响对局。' },
+      { id: 'guide:web-continue', text: '复制或返回不会退房。接续成功后，请留在网页版操作；无需重新建房。网页与小游戏语音不互通，请勿同时开启两端麦克风。' },
     ],
     web: { page: 'sheet', background: 'library', backId: 'auxiliaryClose', document: { kind: 'tools', modal: true } },
   };

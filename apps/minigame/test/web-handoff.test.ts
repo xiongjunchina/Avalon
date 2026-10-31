@@ -55,11 +55,11 @@ test('copy failures and unavailable clipboard leave the game state untouched', a
 test('web voice guidance applies to smaller mixed rooms as well as twelve-player rooms', () => {
   for (const playerCount of [5, 8, 10, 11, 12]) {
     const r = { ...room, settings: { ...room.settings, playerCount } };
-    assert.match(roomVoiceGuidance(r), /全员/);
-    assert.match(roomVoiceGuidance(r), /小游戏不会接入网页语音/);
+    assert.match(roomVoiceGuidance(r), playerCount<=10 ? /无需跳转网页/ : /最多10人/);
+    assert.match(roomVoiceGuidance(r), /两端不互通/);
   }
-  assert.match(roomVoiceGuidance({ settings: defaultSettings }), /线下|面对面/);
-  assert.match(roomVoiceGuidance({ settings: defaultSettings }), /外部通话/);
+  assert.match(roomVoiceGuidance({ settings: defaultSettings }), /微信原生语音/);
+  assert.match(roomVoiceGuidance({ settings: defaultSettings }), /无需跳转网页/);
 });
 
 test('handoff sheet keeps personal and friend actions distinct and long instructions readable on mobile', () => {
@@ -86,8 +86,8 @@ test('waiting room and settings offer web routing without restricting twelve-pla
   const model = lobbyScreen(room, user);
   assert.ok(model.rows.some(r => r.id === 'web:open'));
   const layout = layoutWebScreen(model, { width: 390, height: 844, top: 44, bottom: 34 });
-  assert.ok(layout.nodes.some(n => n.id === 'web:open' && n.kind === 'button'));
-  assert.ok(!layout.nodes.some(n => n.text.includes('微信语音房')));
+  assert.ok(layout.nodes.some(n => n.id === 'sound' && n.kind === 'button'));
+  assert.ok(!layout.nodes.some(n => /去网页|全员使用网页/.test(n.text)));
   const setup = settingsScreen(room.settings);
   setup.web = { page: 'setup', document: { kind: 'settings', activeTab: 'setup', settings: room.settings } };
   const settings = layoutWebScreen(setup, { width: 390, height: 844, top: 44, bottom: 34 });

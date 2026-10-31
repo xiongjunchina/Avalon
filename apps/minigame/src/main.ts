@@ -36,7 +36,7 @@ import { installWebFonts } from './platform/fonts.js';
 import { NativeVoice, type VoiceTicket } from './platform/native-voice.js';
 import { MINI_GAME_VOICE_ENABLED } from './features.js';
 import { KnownAccounts } from './net/known-accounts.js';
-import { copyWebEntry, roomVoiceGuidance, webHandoffScreen } from './screens/web-handoff.js';
+import { copyWebEntry, webHandoffScreen } from './screens/web-handoff.js';
 
 declare const wx: WxRuntime;
 declare const __MINIGAME_API_BASE_URL__: string;
@@ -143,7 +143,6 @@ function model(): ScreenModel {
     { id: 'sound:music', text: '背景音乐：' + (sound.preferences.music ? '开' : '关') },
     { id: 'sound:effects', text: '游戏音效：' + (sound.preferences.effects ? '开' : '关') },
     ...nativeVoice.rows(),
-    ...(room && user ? [{ id: 'guide:web-voice', text: roomVoiceGuidance(room) }, { id: 'web:open', text: '转到网页版' }] : []),
   ], web: { page: 'sheet', background: 'library', backId: 'auxiliaryClose',document:{kind:'sound',modal:true,soundPreferences:sound.preferences},underlay:view==='practice'&&practice?gameScreen(practice.view(),practice.user,{privateRoleVisible:false,ballotVisible:false}):room&&user?(room.game?gameScreen(room,user,{privateRoleVisible:false,ballotVisible:false}):lobbyScreen(room,user)):entryScreen(user,'',false) } });
   if (auxiliary === 'practiceSeats' && practice) return feedback({ title: '选择演练视角', rows: practice.perspectives().map(player => ({ id: 'practiceSeat:' + player.id, text: `${player.seat}号 · ${player.nickname} · ${formatRoleName(player.role)}` })), web: { page: 'sheet', background: 'sword', backId: 'auxiliaryClose',document:{kind:'tools',modal:true},underlay:gameScreen(practice.view(),practice.user,{privateRoleVisible:false,ballotVisible:false}) } });
   if (auxiliary === 'roomTools' && room && user) return feedback({ ...lobbyScreen(room, user), title: '房间工具', web: { page: 'sheet', backId: 'auxiliaryClose', background: 'pavilion',document:{kind:'tools',modal:true},underlay:lobbyScreen(room,user) } });
