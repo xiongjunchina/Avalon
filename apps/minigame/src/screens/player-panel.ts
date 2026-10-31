@@ -195,7 +195,7 @@ export class PlayerPanel {
     if(id.startsWith('removeFriend:')){const friend=this.friends.find(f=>f.id===id.slice(13));if(friend)this.pending={label:'删除仙友 '+friend.nickname+'？',action:()=>this.api.removeFriend(friend.id)};return;}
     if(id==='quickToggle'){this.quickExpanded=!this.quickExpanded;return;}
     if(id.startsWith('quick:')){if(this.chatSending)return;const text=this.model().rows.find(r=>r.id===id)?.text;if(text){this.chatDraft=text;return this.handle(this.page==='direct'?'chat:send':'chat:sendroom',input);}return;}
-    if(id==='chat:input'){const text=await input('写下你要说的话',this.page==='direct'?500:200);if(text!==undefined)this.chatDraft=text;return;}
+    if(id==='chat:input'){const text=await input('写下你要说的话',this.page==='direct'?500:100);if(text!==undefined)this.chatDraft=text;return;}
     if(id==='chat:send'&&this.selectedFriend){if(!this.chatDraft.trim()||this.chatSending)return;this.chatSending=true;const friendId=this.selectedFriend.id;try{await this.api.sendDirect(friendId,this.chatDraft.trim());this.chatDraft='';const result=await this.api.directChat(friendId);if(this.selectedFriend?.id===friendId)this.direct=result.messages;}finally{this.chatSending=false;}return;}
     if(id==='chat:sendroom'&&this.chatRoomId){if(!this.chatDraft.trim()||this.chatSending)return;this.chatSending=true;try{await this.api.roomChat(this.chatRoomId,this.chatDraft.trim());this.chatDraft='';return 'back';}finally{this.chatSending=false;}}
     if(id==='preset:new'){this.presetEditing=true;this.presetName='';this.presetSettings={...defaultSettings};return;}

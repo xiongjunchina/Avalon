@@ -45,15 +45,17 @@ export class AdminPanel {
   }
 
   inputValue(id:string):string {if(id.startsWith('special:')||id.startsWith('codeEditor:'))return this.special.inputValue(id);if(id==='broadcast:input')return this.announcementDraft.text;if(id==='reward:input')return String(this.rewardDraft);if(id==='search:input')return this.query;if(id.startsWith('codeDraft:'))return this.codeDraft[id.slice(10) as keyof typeof this.codeDraft]??'';return '';}
-  model(): ScreenModel {
-    const result = this.pageModel();
-    result.web ??= { page:'sheet',background:'library',activeTab:'page:'+this.page,backId:this.pending?'confirm:no':'back',document:{kind:this.pending?'confirm':'admin',modal:!!this.pending} };
+  model(includePending=true): ScreenModel {
+    const pending=includePending&&this.pending;
+    const result = this.pageModel(includePending);
+    result.web ??= { page:'sheet',background:'library',activeTab:'page:'+this.page,backId:pending?'confirm:no':'back',document:{kind:pending?'confirm':'admin',modal:!!pending} };
     if(result.web.document?.kind==='admin'){result.web.document.adminOverview=this.overviewData;if(this.page==='special')result.web.document.adminSpecial=this.special.data();result.web.document.adminUsers=this.usersData;result.web.document.adminUserTotal=this.userTotal;result.web.document.adminUserQuery=this.query;result.web.document.adminRooms=this.roomsData;result.web.document.adminGames=this.gamesData;result.web.document.adminCodes=this.codesData;result.web.document.adminCodeDraft=this.codeDraft;if(this.settingsData)result.web.document.adminSettings={...this.settingsData,adRewardHours:this.rewardDraft,announcement:this.announcementDraft};}
-    if(this.page==='codes'&&!this.pending){result.rows=result.rows.filter(r=>r.id!=='generate');result.rows.splice(6,0,{id:'codeDraft:count',text:'生成数量：'+this.codeDraft.count},{id:'codeDraft:days',text:'有效天数：'+this.codeDraft.days},{id:'codeDraft:note',text:'备注：'+(this.codeDraft.note||'未填写')},{id:'generateDraft',text:'生成兑换码'});}
+    if(this.page==='codes'&&!pending){result.rows=result.rows.filter(r=>r.id!=='generate');result.rows.splice(6,0,{id:'codeDraft:count',text:'生成数量：'+this.codeDraft.count},{id:'codeDraft:days',text:'有效天数：'+this.codeDraft.days},{id:'codeDraft:note',text:'备注：'+(this.codeDraft.note||'未填写')},{id:'generateDraft',text:'生成兑换码'});}
+    if(pending)result.web.underlay=this.model(false);
     return result;
   }
-  private pageModel(): ScreenModel {
-    if (this.pending) return { title: '确认管理操作', rows: [{ id: 'notice', text: this.pending.label }, { id: 'confirm:yes', text: '确认执行' }, { id: 'confirm:no', text: '取消' }] };
+  private pageModel(includePending=true): ScreenModel {
+    if (includePending&&this.pending) return { title: '确认管理操作', rows: [{ id: 'notice', text: this.pending.label }, { id: 'confirm:yes', text: '确认执行' }, { id: 'confirm:no', text: '取消' }] };
     const codeEditor=this.special.codeEditorModel();if(codeEditor)return codeEditor;
     if(this.page==='special')return this.special.model();
     if (this.page === 'user' && this.user) return adminUserScreen(this.user);
@@ -88,7 +90,7 @@ export class AdminPanel {
     if (id === 'confirm:yes' && this.pending) { const action = this.pending.action; this.pending = undefined; await action(); this.user = undefined; await this.load(this.page === 'user' ? 'users' : this.page); return; }
     if (id === 'more:users' && this.page === 'users' && this.usersData.length < this.userTotal) { const epoch = this.loadEpoch; const result = await this.api.users(this.query, this.usersData.length); if (epoch === this.loadEpoch) { this.usersData.push(...result.users); this.userTotal = result.total; } return; }
     if (id === 'more:games' && this.page === 'games' && this.moreGames) { const epoch = this.loadEpoch; const result = await this.api.games(this.gamesData.length); if (epoch === this.loadEpoch) { this.gamesData.push(...result.games); this.moreGames = result.games.length === 20; } return; }
-    if (id === 'cleanup' && this.page === 'users') { this.pending = { label: '清理所有无对局的空账户？', action: () => this.api.deleteEmptyUsers(true) }; return; }
+    if (id === 'cleanup' && this.page === 'users') { this.pending = { label: '确定要清理所有无对局战绩的账户吗？有对局记录的玩家不会删除；无战绩账户将被清理并释放，此操作不可恢复。', action: () => this.api.deleteEmptyUsers(true) }; return; }
     if (id === 'copy:unused' && this.page === 'codes') {
       const unused = this.codesData.filter(code => !code.redeemedAt).map(code => `${code.code} (${code.days}天 - ${code.note || '无备注'})`);
       if (!unused.length) { this.feedback = '当前没有未使用兑换码'; return; }
@@ -126,10 +128,10 @@ export class AdminPanel {
       return;
     }
     if (id.startsWith('reset:') && this.user) { const target = this.user; this.pending = { label: `重置 ${target.nickname} 的资料？`, action: () => this.api.resetProfile(target.id, true, true) }; return; }
-    if (id.startsWith('delete:') && this.user) { const target = this.user; this.pending = { label: `永久删除 ${target.nickname}？`, action: () => this.api.deleteUser(target.id, true) }; return; }
+    if (id.startsWith('delete:') && this.user) { const target = this.user; this.pending = { label: `确定永久删除【${target.nickname}】（仙友码 #${target.playerCode}）吗？该账号及仙友码将被彻底注销，不可恢复。`, action: () => this.api.deleteUser(target.id, true) }; return; }
     if (id.startsWith('room:')) {
       const target = this.roomsData.find(room => room.id === id.slice(5));
-      if (target) this.pending = { label: `强制关闭房间 ${target.code}？`, action: () => this.api.killRoom(target.id, true) };
+      if (target) this.pending = { label: `确认强制解散房间【${target.code}】？此操作将立即结束该房并将全员送回大厅。`, action: () => this.api.killRoom(target.id, true) };
       return;
     }
     if (this.page === 'games' && id.startsWith('replay:')) { const epoch = this.loadEpoch; const result = await this.api.replay(id.slice(7)); if (epoch === this.loadEpoch) { this.replayData = result; this.page = 'replay'; } return; }

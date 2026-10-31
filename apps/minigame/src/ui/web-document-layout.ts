@@ -64,6 +64,28 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
     let px=x+7-Math.min(max,Math.max(0,model.horizontalScroll??0));
     for(const [i,[id,label]] of jumps.entries()){const bw=widths[i]!;button(id!,label!,y+7,{skin:'round-jump',fontSize:12,weight:'600',lines:[label!],selected:i>0&&model.activeRound===Number(id!.slice(11)),clipLeft:x+7,clipRight:x+w-7,scrollMaxX:max},px,bw,36);px+=bw+6;}
   };
+  if(drawer){
+    const messages=doc.messages??[], streamRows=messages.map(msg=>{const split=msg.name.indexOf(' '),seat=split<0?'旁观':msg.name.slice(0,split),name=(split<0?msg.name:msg.name.slice(split+1))+'：',seatWidth=measure(seat,11,'sans','700'),nw=measure(name,13,'sans','600'),textWidth=measure(msg.text,13),free=v.width-28-nw-32,sw=Math.max(11,Math.min(seatWidth,free*seatWidth/(seatWidth+textWidth))),mw=Math.max(30,v.width-28-sw-nw-16),lines=wrapText(msg.text,mw-16,t=>measure(t,13));return {msg,seat,name,sw,nw,mw,lines,h:lines.length*18.2+6};});
+    const emptyLines=wrapText('暂无法坛发言，点击上方密语或输入打字传音',v.width-28,t=>measure(t,12)),streamNatural=messages.length?Math.max(70,20+streamRows.reduce((sum,r)=>sum+r.h+8,0)):52+emptyLines.length*17.4;
+    const h=Math.min(available*.6,195+streamNatural),fy=bottom-h,streamTop=fy+140,streamBottom=bottom-55,streamH=streamBottom-streamTop,maxScroll=Math.max(0,streamNatural-streamH),scroll=Math.min(maxScroll,Math.max(0,model.scroll??0));
+    add('panel','dialog-frame','',0,fy,v.width,h,{skin:'chat-sheet',fixed:true});
+    button('overlayClose','',fy+10,{skin:'chat-handle',fixed:true},v.width/2-20,40,4);
+    txt('chat-title','💬 法坛传音',fy+30,15,{skin:'chat-copy',weight:'700',tone:'gold',fixed:true,lineHeight:22.5},16,111);
+    txt('chat-hint','（实时全场冒泡）',fy+33,11,{skin:'chat-copy',tone:'muted',fixed:true,lineHeight:16.5},114,110);
+    button('overlayClose','✕ 关闭',fy+26,{skin:'chat-close',fontSize:12.5,weight:'600',fixed:true},v.width-80.05,64.05,30);
+    add('panel','chat-tactical-section','',0,fy+67,v.width,73,{skin:'chat-tactical',fixed:true});
+    txt('chat-tactical-label','⚡ 常用密语（横滑浏览 · 点击直接秒发）：',fy+75,11,{skin:'chat-copy',weight:'600',tone:'muted',fixed:true,lineHeight:16},14,v.width-28);
+    const quick=model.rows.filter(r=>r.id.startsWith('quick:')),widths=quick.map(r=>measure(r.text,12,'sans','500')+24),maxX=Math.max(0,widths.reduce((sum,n)=>sum+n+6,0)-6-v.width+28);let qx=14-Math.min(maxX,Math.max(0,model.horizontalScroll??0));
+    quick.forEach((r,i)=>{button(r.id,r.text,fy+99,{skin:'chat-quick',fontSize:12,weight:'500',fixed:true,clipLeft:14,clipRight:v.width-14,scrollMaxX:maxX},qx,widths[i]!,28);qx+=widths[i]!+6;});
+    let my=streamTop+10-scroll;
+    for(const r of streamRows){const clip={clipTop:streamTop,clipBottom:streamBottom};txt('chat-seat:'+r.msg.id,r.seat,my+5,11,{skin:'chat-copy',weight:'700',tone:'blue',lineHeight:15.4,...clip},14,r.sw);txt('chat-name:'+r.msg.id,r.name,my+3,13,{skin:'chat-copy',weight:'600',tone:'gold',lineHeight:18.2,...clip},22+r.sw,r.nw);add('label','chat:'+r.msg.id,r.msg.text,30+r.sw+r.nw,my,Math.min(r.mw,Math.max(...r.lines.map(t=>measure(t,13)))+16),r.h,{skin:'chat-bubble',lines:r.lines,fontSize:13,lineHeight:18.2,...clip});my+=r.h+8;}
+    if(!messages.length)add('label','chat-empty','暂无法坛发言，点击上方密语或输入打字传音',14,streamTop+26-scroll,v.width-28,emptyLines.length*17.4,{skin:'chat-copy',tone:'muted',fontSize:12,lines:emptyLines,lineHeight:17.4,align:'center',clipTop:streamTop,clipBottom:streamBottom});
+    add('panel','chat-input-bar','',0,bottom-55,v.width,55,{skin:'chat-input-bar',fixed:true});
+    button('chat:input','🎙️',bottom-46,{skin:'chat-mic',fontSize:18,fixed:true},12,38,38);
+    button('chat:input',doc.chatDraft||'输入传音，或用手机键盘语音输入…',bottom-46,{skin:'chat-input',fontSize:13.5,fixed:true,muted:!doc.chatDraft},58,v.width-136,38);
+    button('chat:sendroom','发送',bottom-46,{skin:'chat-send',fontSize:14,weight:'700',fixed:true,disabled:!doc.chatDraft?.trim()},v.width-70,58,38);
+    return {nodes,maxScroll,contentTop:streamTop,contentBottom:streamBottom};
+  }
   const renderRounds=(rounds:RoundView[],players:Player[],anonymous:boolean)=>{
       for(const r of rounds){
         txt('round:'+r.number,'第 '+r.number+' 次提案 · '+(WUYUE_MISSIONS[r.mission-1]?.title??'任务 '+r.mission),y,18,{fontFace:'display',weight:'700',letterSpacing:.5,lineHeight:25.1875,tone:'gold',align:'center'});y+=33.1875;
@@ -695,18 +717,18 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
       if(doc.roleItem){const item=doc.roleItem;add('button','guideArt',item.fullName,x,y,w,142,{skin:'identity-card',image:'roles/'+item.artPrefix+'-160.webp',detail:item.title+'|'+item.motto,team:item.team});y+=156;
         for(const r of model.rows.filter(r=>r.id.startsWith('role-')))para(r.id,r.text,14);
       } else if(doc.activeTab==='roles') {
-        const introPrivacy=txt('guide-privacy','这里介绍《嘻游 · 真假猴王》全部神魔人物的通用规则，不显示本局谁拿到了什么身份。准确角色仅由本人查看，终局才公开。点击任意法相可鉴赏高清立绘大图。',y-4,13,{lineHeight:19.5});y+=introPrivacy.height+4;
-        for(const team of ['blue','red'] as const){add('label','guide-faction:'+team,team==='blue'?'蓝方 · 取经正果':'红方 · 群妖乱道',x,y,w,38,{skin:'guide-faction',team});y+=48;
+        const introPrivacy=txt('guide-privacy','这里介绍《嘻游 · 真假猴王》全部神魔人物的通用规则，不显示本局谁拿到了什么身份。准确角色仅由本人查看，终局才公开。点击任意法相可鉴赏高清立绘大图。',y-2,12.5,{lineHeight:18.125});y=introPrivacy.y+introPrivacy.height+12;
+        for(const team of ['blue','red'] as const){add('label','guide-faction:'+team,team==='blue'?'蓝方 · 取经正果':'红方 · 群妖乱道',x,y,w,40,{skin:'guide-faction',team});y+=48;
           for(const role of Object.keys(roleNames).filter(r=>teamOf(r as Role)===team) as Role[]){
-            const item=getRoleGalleryItem(role),frame=panel('guide-anchor:'+role,y,1,team==='blue'?'guide-role-blue':'guide-role-red');y+=10;
-            const title=roleNames[role]+(role==='loyal'?'（白龙 / 猪八戒 / 沙悟净 / 金刚）':role==='minion'?'（玉兔精 / 白骨精 / 老鼠精 / 蜘蛛精）':''),titleLines=wrapText(title,w-82,v=>measure(v,18)),headH=90+(titleLines.length-1)*21;add('button','guide-role:'+item.id,title,x+12,y,w-24,headH,{skin:'guide-role-heading',image:'roles/'+defaultRoleArtPrefix(role)+'-160.webp',team,detail:roleTitles[role]+'|'+roleMottos[role],lines:titleLines});y+=headH+6;
+            const item=getRoleGalleryItem(role),frame=panel('guide-anchor:'+role,y,1,team==='blue'?'guide-role-blue':'guide-role-red');y+=5;
+            const title=roleNames[role]+(role==='loyal'?'（白龙 / 猪八戒 / 沙悟净 / 金刚）':role==='minion'?'（玉兔精 / 白骨精 / 老鼠精 / 蜘蛛精）':''),titleLines=wrapText(title,w-84,v=>measure(v,18,'display')+Math.max(0,textGraphemes(v).length-1)),headH=95.53125+(titleLines.length-1)*20.6875;add('button','guide-role:'+item.id,title,x+5,y,w-10,headH,{skin:'guide-role-heading',image:'roles/'+defaultRoleArtPrefix(role)+'-160.webp',team,detail:roleTitles[role]+'|'+roleMottos[role],lines:titleLines});y+=headH+6;
             for(const [key,label] of [['ability','能力与视野'],['visibility','谁能看见你'],['treasure','专属法宝'],['tip','玩法提示']] as const){
-              const value=key==='treasure'?roleTreasures[role]:roleDescriptions[role][key],lines=wrapText(value,w-116,t=>measure(t,12.5)),h=10+lines.length*17.25;
-              panel('guide:'+role+':'+key+':frame',y,h,'guide-step',x+12,w-24);txt('guide:'+role+':'+key+':label',label,y+5,11.5,{tone:'gold'},x+20,64);txt('guide:'+role+':'+key,value,y+5,12.5,{lineHeight:17.25},x+92,w-112);y+=h+4;
+              const value=key==='treasure'?roleTreasures[role]:roleDescriptions[role][key],lines=wrapText(value,w-116,t=>measure(t,12.5)),h=10+Math.max(17.515625,lines.length*17.25);
+              panel('guide:'+role+':'+key+':frame',y,h,'guide-role-detail',x+13,w-26);txt('guide:'+role+':'+key+':label',label,y+7,11.5,{tone:'gold',weight:'700',letterSpacing:.5,lineHeight:15.525},x+22,64);txt('guide:'+role+':'+key,value,y+5,12.5,{lineHeight:17.25},x+94,w-116);y+=h+4;
             }
-            const variants=ALL_GALLERY_ROLES.filter(r=>r.role===role);if(variants.length>1){y+=14;const gallery=panel('guide-variants-frame:'+role,y,1,'guide-gallery',x+13,w-26);y+=13;const n=txt('guide-variants:'+role,'✦ '+(role==='loyal'?'四位取经护法使者':'四位绝色妖仙')+'法相（点击鉴赏高清立绘大图）：',y,13,{tone:'gold',weight:'600',lineHeight:18.2,letterSpacing:.5},x+26,w-52);y+=n.height+24;variants.forEach((r,i)=>add('button','guide-role:'+r.id,r.name,x+26+i%2*(w-44)/2,y+Math.floor(i/2)*176.53125,(w-60)/2,154.53125,{skin:'guide-variant',image:'roles/'+r.artPrefix+'-160.webp',team,detail:r.title}));y+=Math.ceil(variants.length/2)*176.53125-9;gallery.height=y-gallery.y;}
-            y+=6;frame.height=y-frame.y;y+=16;
-          }
+            const variants=ALL_GALLERY_ROLES.filter(r=>r.role===role);if(variants.length>1){y+=14;const gallery=panel('guide-variants-frame:'+role,y,1,'guide-gallery',x+13,w-26);y+=13;const n=txt('guide-variants:'+role,'✦ '+(role==='loyal'?'四位取经护法使者':'四位绝色妖仙')+'法相（点击鉴赏高清立绘大图）：',y,13,{tone:'gold',weight:'600',lineHeight:18.2,letterSpacing:.5},x+26,w-52);y+=n.height+24;variants.forEach((r,i)=>add('button','guide-role:'+r.id,r.name,x+26+i%2*(w-44)/2,y+Math.floor(i/2)*176.53125,(w-60)/2,154.53125,{skin:'guide-variant',image:'roles/'+r.artPrefix+'-160.webp',team,detail:r.title}));y+=Math.ceil(variants.length/2)*176.53125-3;gallery.height=y-gallery.y;}
+            y+=7;frame.height=y-frame.y;y+=8;
+          }y+=4;
         }
         const privacy=txt('guide-end-privacy','蓝方所有角色的任务牌都只能选成功，红方所有角色都可以选成功或失败。红方互认仅显示阵营，不揭示队友的具体角色。',y,12.5,{tone:'muted'});y+=privacy.height+12;
       }

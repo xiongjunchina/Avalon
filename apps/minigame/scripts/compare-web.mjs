@@ -26,6 +26,12 @@ try {
       const a=native.nodes.find(n=>n.id===id),b=web.filter(n=>n.class===css)[index];assert.ok(a&&b,id);
       const error=Math.max(...['x','y','width','height'].map(k=>Math.abs(a[k]-b[k])));checks.push({scene,id,maxGeometryErrorPx:error});assert.ok(error<1,id+' geometry drift: '+error);
     }
+    if(scene==='guide-role'&&!suffix){
+      const cards=web.filter(n=>n.class.startsWith('guide-role allegiance'));
+      const nodes=native.nodes.filter(n=>n.id.startsWith('guide-anchor:'));
+      assert.equal(nodes.length,cards.length);
+      nodes.forEach((a,i)=>{const b=cards[i],error=Math.max(...['x','y','width','height'].map(k=>Math.abs(a[k]-b[k])));checks.push({scene,id:a.id,maxGeometryErrorPx:error});assert.ok(error<1,a.id+' geometry drift: '+error);});
+    }
     const comparable=native.nodes.filter(n=>n.kind==='button'&&n.text&&n.y>=0&&n.y+n.height<=height&&web.some(w=>w.tag==='BUTTON'&&normalized(w.text)===normalized(n.text)));
     const differences=comparable.flatMap(n=>{const candidates=web.filter(w=>w.tag==='BUTTON'&&normalized(w.text)===normalized(n.text));const best=candidates.reduce((a,b)=>Math.abs(a.y-n.y)<Math.abs(b.y-n.y)?a:b);const error=Math.max(...['x','y','width','height'].map(k=>Math.abs(n[k]-best[k])));return error>1?[{id:n.id,text:n.text,error}]:[];});
     coverage.push({scene,width,players,position:process.env.PARITY_BOTTOM==='1'?'bottom':'top',generated:true,viewed:false,passed:false,assertions:pairs.length+guidePairs.length,matchedButtons:comparable.length,differences,status:comparable.length||pairs.length?'needs-visual-review':'uncovered'});

@@ -183,6 +183,17 @@ function drawDocumentNode(ctx:CanvasRenderingContext2D,n:WebNode,model:ScreenMod
   const privateNotice=model.web?.document?.kind==='private-notice';
   const color=n.id==='notice-proof:2'?'#9ca3af':n.id==='pref-help'?'#d1b88e':n.id.startsWith('special-label:')||n.id.startsWith('special-setting-label:')?'#cbd5e1':n.id==='mirror-footnote'?'#bfa882':n.id==='mirror-waiting'?'#fff4d0':n.id==='mirror-prompt'||n.id==='mirror-waiting-detail'?'#faebd7':privateNotice?(n.id==='notice-title'?'#ffe5ae':n.tone==='green'?'#9bf4cf':n.tone==='red'?'#ffc1b6':n.tone==='blue'?'#93c5fd':n.tone==='gold'?'#ffd875':n.tone==='muted'?'#eddcc4':'#fff8ef'):model.web?.document?.kind==='treasures'&&['treasure-role-description','treasure-role-note','bell-consumption','bell-unavailable'].includes(n.id)?'#e8d7b8':n.tone==='red'?'#f87171':n.tone==='green'?'#34d399':n.tone==='blue'?'#7dd3fc':n.tone==='gold'?'#ffd875':n.tone==='muted'?(['admin','admin-friends','special-editor','code-editor'].includes(model.web?.document?.kind??'')?'#94a3b8':'#cbdbe8'):['admin','admin-friends','special-editor','code-editor'].includes(model.web?.document?.kind??'')?'#e2e8f0':'#fff2d5';
   const write=(value:string,x:number,y:number,w:number,size=n.fontSize??13,align:CanvasTextAlign=n.align??'center',font=family,weight=n.weight??'400',c=color)=>text(ctx,value,x,y,w,size,c,align,font,weight,n.letterSpacing??0);
+  if(n.skin?.startsWith('chat-')){
+    const skin=n.skin;
+    if(skin==='chat-sheet'){ctx.save();shadow(ctx,'#000000d9',32,-8);fill(ctx,n,gradient(ctx,n,['#1b1524','#120e18'],180),20,'#ffd875');ctx.restore();return;}
+    if(skin==='chat-handle'){fill(ctx,n,'#ffffff40',2,'transparent');return;}
+    if(skin==='chat-tactical'||skin==='chat-input-bar'){fill(ctx,n,skin==='chat-tactical'?'#0000002e':'#120e18fa',0,'transparent');ctx.fillStyle=skin==='chat-tactical'?'#ffd87533':'#ffd87540';ctx.fillRect(n.x,n.y,n.width,1);return;}
+    if(skin==='chat-copy'){const c=n.tone==='blue'?'#38bdf8':n.tone==='gold'?'#ffd875':n.id==='chat-empty'?'#64748b':n.id==='chat-tactical-label'?'#ffd875':'#cbd5e1';(n.lines??[n.text]).forEach((line,i)=>write(line,n.align==='center'?cx:n.x,n.y+(n.lineHeight??18)/2+i*(n.lineHeight??18),n.width,n.fontSize,n.align??'left',sans,n.weight,c));return;}
+    if(skin==='chat-bubble'){fill(ctx,n,'#ffffff0d',6,'transparent');(n.lines??[n.text]).forEach((line,i)=>write(line,n.x+8,n.y+12.1+i*18.2,n.width-16,13,'left',sans,'400','#f1f5f9'));return;}
+    const bg=skin==='chat-send'?(n.disabled?'#ffffff1a':gradient(ctx,n,['#ffd875','#e6a728'],135)):skin==='chat-quick'?'#ffd8751a':skin==='chat-mic'?'#1e293bd9':'#ffffff14';
+    fill(ctx,n,bg,skin==='chat-close'?15:skin==='chat-quick'?14:19,skin==='chat-send'?'transparent':'#ffd87559');
+    write(n.text,skin==='chat-input'?n.x+12:cx,cy,skin==='chat-input'?n.width-24:n.width-12,n.fontSize,skin==='chat-input'?'left':'center',sans,n.weight,skin==='chat-send'?(n.disabled?'#ffffff66':'#2b0e01'):n.muted?'#94a3b8':'#ffd875');return;
+  }
   const playerCaption=(seat:number|undefined,name:string,px:number,py:number,pw:number,size:number)=>{
     const number=String(seat)+'号',value=number+' '+name,chars=textGraphemes(value),glyphWidth=(char:string,i:number)=>measureWebText(char,size,'sans',i<number.length?'700':'400');
     let visible=chars.length,total=chars.reduce((sum,char,i)=>sum+glyphWidth(char,i),0),truncated=total>pw;
@@ -319,13 +330,15 @@ function drawDocumentNode(ctx:CanvasRenderingContext2D,n:WebNode,model:ScreenMod
   }
   if(n.skin==='guide-gallery'){ctx.save();ctx.setLineDash([3,3]);fill(ctx,n,'#00000040',12,'#e5b96459');ctx.restore();return;}
   if(n.skin==='guide-variant'){ctx.save();shadow(ctx,'#d4a35966',14,4);fill(ctx,n,'#102b4399',10,n.team==='blue'?'#5aa0f073':'#f05a5a73');ctx.restore();ctx.save();ctx.lineWidth=2;circle(ctx,cx,n.y+36,26,'#091326','#e5b964');ctx.restore();image(n.image,cx-25,n.y+11,50,50,true);write(n.detail??'',cx,n.y+83,n.width-12,10.5,'center',sans,'700',n.team==='blue'?'#bfdbfe':'#fca5a5');write(n.text,cx,n.y+110,n.width-12,13,'center',sans,'700');fill(ctx,{...n,x:cx-24,y:n.y+130,width:48,height:16},'#fbbf2426',8,'transparent');write('🔍 大图',cx,n.y+138,n.width-12,9.5,'center',sans,'700','#ffd875');return;}
+  if(n.skin==='guide-role-detail'){fill(ctx,n,'#0910176b',6,'#ffffff0d');return;}
+  if(n.skin==='guide-role-blue'||n.skin==='guide-role-red'){ctx.save();shadow(ctx,'#00000059',22,8);fill(ctx,n,n.skin==='guide-role-blue'?'#18354cdb':'#3a2e41d6',14,n.skin==='guide-role-blue'?'#557f94':'#a16f65');ctx.restore();return;}
   if(n.skin==='guide-role-heading'){
-    const d=48,tx=n.x+58,tw=n.width-58,[title,motto]=n.detail?.split('|')??[];
-    circle(ctx,n.x+d/2,n.y+41,d/2,'#102b43','#d4a359');image(n.image,n.x+1,n.y+18,d-2,d-2,true);
-    const faction=n.team==='blue'?'蓝方 · 取经正果':'红方 · 群妖乱道';ctx.font='400 10.5px '+sans;const fw=ctx.measureText(faction).width+12,twBadge=Math.min(tw-fw-6,ctx.measureText(title??'').width+12);
-    fill(ctx,{...n,x:tx,y:n.y,width:fw,height:16},'#ffffff0d',8,'#d4a35955');write(faction,tx+fw/2,n.y+8,fw-6,10.5,'center',sans,'400',n.team==='blue'?'#b9e2ed':'#f0bea8');
-    fill(ctx,{...n,x:tx+fw+6,y:n.y,width:twBadge,height:16},'#d4a35926',8,'#d4a35966');write(title??'',tx+fw+6+twBadge/2,n.y+8,twBadge-6,10.5,'center',sans,'400','#ffd875');
-    const lines=n.lines??[n.text];lines.forEach((line,i)=>write(line,tx,n.y+34+i*21,tw,18,'left',display));write(motto??'',tx,n.y+54+(lines.length-1)*21,tw,12,'left',sans,'400','#b9e2ed');write('🔍 点击赏析完整法相大图 ›',tx,n.y+73+(lines.length-1)*21,tw,10,'left',sans,'400','#ffd875');rule(ctx,{...n,y:n.y+n.height,height:1},'#ffffff1a');return;
+    const d=48,tx=n.x+66,tw=n.width-74,[title,motto]=n.detail?.split('|')??[],lines=n.lines??[n.text],extra=(lines.length-1)*20.6875;
+    circle(ctx,n.x+32,n.y+(n.height-1)/2,d/2,'#102b43','#d4a359');image(n.image,n.x+9,n.y+(n.height-1)/2-23,d-2,d-2,true);
+    const faction=n.team==='blue'?'蓝方 · 取经正果':'红方 · 群妖乱道',fw=measureWebText(faction,10.5,'sans','600')+(textGraphemes(faction).length-1)*.5+14,twBadge=measureWebText(title??'',10.5,'sans','600')+Math.max(0,textGraphemes(title??'').length-1)*.5+14;
+    fill(ctx,{...n,x:tx,y:n.y+6,width:fw,height:17.640625},'#162d3b',9,'#557f94');text(ctx,faction,tx+fw/2,n.y+14.8203125,fw-12,10.5,n.team==='blue'?'#b9e2ed':'#f0bea8','center',sans,'600',.5);
+    fill(ctx,{...n,x:tx+fw+4,y:n.y+6,width:twBadge,height:17.640625},'#dfbd7d24',9,'#dfbd7d66');text(ctx,title??'',tx+fw+4+twBadge/2,n.y+14.8203125,twBadge-12,10.5,'#f3dcb1','center',sans,'600',.5);
+    lines.forEach((line,i)=>text(ctx,line,tx,n.y+36.984375+i*20.6875,tw,18,'#fff4dc','left',display,'600',1));write(motto??'',tx,n.y+57.125+extra,tw,12,'left',sans,'500','#b9e2ed');write('🔍 点击赏析完整法相大图 ›',tx,n.y+81.14+extra,tw,10,'left',sans,'400','#ffd875');rule(ctx,{...n,y:n.y+n.height-1,height:1},'#ffffff1a');return;
   }
   if(n.skin==='identity-card') {
     fill(ctx,n,gradient(ctx,n,['#102b43e0','#081826f5'],135),14,n.team==='blue'?'#52b0ff88':'#ff5e5788');
@@ -384,7 +397,7 @@ function drawDocumentNode(ctx:CanvasRenderingContext2D,n:WebNode,model:ScreenMod
   if(n.skin==='preference-submit'||n.skin==='preference-cancel'){const submit=n.skin==='preference-submit';ctx.save();ctx.globalAlpha=n.disabled?.5:1;shadow(ctx,submit?'#b8863b66':'#00000066',submit?14:6,submit?4:2);fill(ctx,n,submit?gradient(ctx,n,['#d4a359','#b8863b','#946522'],135):'#2d1418d9',20,submit?'#ffe5a3':'#dcbe7866');write(n.text,cx,cy,n.width-16,13,'center',sans,submit?'700':'600',submit?'#1a0805':'#f5e6c8');ctx.restore();return;}
   if(n.skin==='preference-clear'){fill(ctx,n,'#7f1d1d40',12,'#f8717199');write(n.text,cx,cy,n.width-12,10.5,'center',sans,'700','#fca5a5');return;}
   if(n.skin==='preference-note'){ctx.save();ctx.setLineDash([3,2]);fill(ctx,n,'#00000033',8,'#dcbe7840');ctx.restore();return;}
-  if(n.skin==='guide-faction'){art(ctx,artwork,(n.team??'blue')+'-faction',n.x+6,cy-20,40,40);write(n.text,n.x+56,cy,n.width-64,20,'left',display,'400','#ffd875');return;}
+  if(n.skin==='guide-faction'){art(ctx,artwork,(n.team??'blue')+'-faction',n.x,cy-20,40,40);text(ctx,n.text,n.x+48,cy,n.width-48,18,'#ffd875','left',display,'600',.5);return;}
   if(n.skin==='preference-slot'){
     const color=['#f59e0b','#38bdf8','#c084fc'][(n.count??1)-1]!;
     ctx.save();if(!n.selected)ctx.setLineDash([3,2]);fill(ctx,n,n.selected?'#261016e6':'#1a0c108c',10,n.selected?color:'#dcbe784d');ctx.restore();write(['① 志愿','② 志愿','③ 志愿'][(n.count??1)-1]!,n.x+7,cy,37,10.5,'left',sans,'700',['#ffd875','#7dd3fc','#e9d5ff'][(n.count??1)-1]!);
@@ -819,7 +832,7 @@ export function renderWebScreen(model: ScreenModel, canvas: HTMLCanvasElement, v
   if (modal) {
     const underlay=model.web!.underlay??{title:'',rows:[],web:{page:'home' as const,user:model.web!.document?.user,guestHome:!model.web!.document?.user}};
     renderWebScreen(underlay,canvas,v,artwork);if(model.web!.document?.kind!=='admin-friends')drawBlurredBackdrop(canvas,ctx,v,underlay,artwork);
-    ctx.fillStyle = model.web!.document?.kind==='art'?'rgba(4,9,16,.88)':model.web!.document?.kind==='admin-friends'?'rgba(0,0,0,.7)':'rgba(7, 26, 44, 0.78)';
+    ctx.fillStyle = model.web!.document?.kind==='chat'&&model.web!.document?.activeTab!=='direct'?'rgba(0,0,0,.65)':model.web!.document?.kind==='art'?'rgba(4,9,16,.88)':model.web!.document?.kind==='admin-friends'?'rgba(0,0,0,.7)':'rgba(7, 26, 44, 0.78)';
     ctx.fillRect(0, 0, v.width, v.height);
   }
   const scene = model.web!.background ?? (model.web!.page === 'home' ? 'gate' : model.web!.page === 'setup' ? 'library' : model.web!.page === 'table' ? model.web!.room?.game ? 'sword' : 'pavilion' : 'library');
@@ -838,7 +851,7 @@ export function renderWebScreen(model: ScreenModel, canvas: HTMLCanvasElement, v
     // Clipping alone still issues all text/image draw calls for long documents.
     if (node.y + node.height < (node.clipTop ?? v.top) - 24 || node.y > (node.clipBottom ?? v.height-v.bottom) + 24) continue;
     ctx.save();
-    if (!node.fixed) { ctx.beginPath(); ctx.rect(node.clipLeft??0, node.clipTop ?? layout.contentTop, (node.clipRight??v.width)-(node.clipLeft??0), (node.clipBottom ?? layout.contentBottom) - (node.clipTop ?? layout.contentTop)); ctx.clip(); }
+    if (!node.fixed || node.clipLeft!==undefined || node.clipRight!==undefined) { ctx.beginPath(); ctx.rect(node.clipLeft??0, node.clipTop ?? (node.fixed?v.top:layout.contentTop), (node.clipRight??v.width)-(node.clipLeft??0), (node.clipBottom ?? (node.fixed?v.height-v.bottom:layout.contentBottom)) - (node.clipTop ?? (node.fixed?v.top:layout.contentTop))); ctx.clip(); }
     drawNode(ctx, node, model, v.width, artwork); ctx.restore();
   }
   // Web mobile surfaces scroll by touch without a persistent decorative scrollbar.

@@ -87,7 +87,7 @@ let suspended = false;
 let busy = false;
 let commandBusy = false;
 let roleIndex = 0;
-let horizontalScroll=0, horizontalContext="";
+let horizontalScroll=0, horizontalContext="", roomChatScrollKey="";
 let activeRound:number|undefined;
 let setupAccessExpanded=false;
 let nickname = '';
@@ -144,7 +144,7 @@ function model(): ScreenModel {
     { id: 'sound:effects', text: '游戏音效：' + (sound.preferences.effects ? '开' : '关') },
     ...nativeVoice.rows(),
     ...(room && user ? [{ id: 'guide:web-voice', text: roomVoiceGuidance(room) }, { id: 'web:open', text: '转到网页版' }] : []),
-  ], web: { page: 'sheet', background: 'library', backId: 'auxiliaryClose',document:{kind:'sound',modal:true,soundPreferences:sound.preferences} } });
+  ], web: { page: 'sheet', background: 'library', backId: 'auxiliaryClose',document:{kind:'sound',modal:true,soundPreferences:sound.preferences},underlay:view==='practice'&&practice?gameScreen(practice.view(),practice.user,{privateRoleVisible:false,ballotVisible:false}):room&&user?(room.game?gameScreen(room,user,{privateRoleVisible:false,ballotVisible:false}):lobbyScreen(room,user)):entryScreen(user,'',false) } });
   if (auxiliary === 'practiceSeats' && practice) return feedback({ title: '选择演练视角', rows: practice.perspectives().map(player => ({ id: 'practiceSeat:' + player.id, text: `${player.seat}号 · ${player.nickname} · ${formatRoleName(player.role)}` })), web: { page: 'sheet', background: 'sword', backId: 'auxiliaryClose',document:{kind:'tools',modal:true},underlay:gameScreen(practice.view(),practice.user,{privateRoleVisible:false,ballotVisible:false}) } });
   if (auxiliary === 'roomTools' && room && user) return feedback({ ...lobbyScreen(room, user), title: '房间工具', web: { page: 'sheet', backId: 'auxiliaryClose', background: 'pavilion',document:{kind:'tools',modal:true},underlay:lobbyScreen(room,user) } });
   if (view === 'admin') result = adminPanel.model();
@@ -181,6 +181,8 @@ function model(): ScreenModel {
     : privateSelf?.femaleDemon ? `minion-${privateSelf.femaleDemon}` : privateSelf?.role;
   const nextHorizontalContext=[view,auxiliary,result.web?.document?.kind,result.web?.document?.activeTab,result.web?.document?.replay?.id].join('|');
   if(nextHorizontalContext!==horizontalContext){horizontalContext=nextHorizontalContext;horizontalScroll=0;activeRound=undefined;}
+  const chatDoc=result.web?.document,chatKey=chatDoc?.kind==='chat'&&chatDoc.activeTab!=='direct'?nextHorizontalContext+'|'+(chatDoc.messages?.at(-1)?.id??'empty'):'';
+  if(chatKey!==roomChatScrollKey){roomChatScrollKey=chatKey;if(chatKey)scroll=Number.MAX_SAFE_INTEGER;}
   return { ...result, scroll, horizontalScroll, activeRound, scene: view === 'entry' ? 'entry' : view === 'game' || view === 'practice' || view === 'lobby' ? 'game' : view === 'admin' ? 'admin' : 'standard',
     ...(portraitRole ? { portrait: `${portraitRole}-160.webp` } : view === 'guide' && guideRoleId ? { portrait: `${guideRoleId}-160.webp` } : {}) };
 }

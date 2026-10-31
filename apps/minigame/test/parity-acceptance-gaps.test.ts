@@ -312,3 +312,17 @@ test('populated battle history keeps public ballots inside its frame and anonymo
   assert.ok(!layoutWebScreen(gameScreen(room,user,{...state(),overlay:'history'}),{...viewport,width}).nodes.some(n=>n.id.startsWith('public-ballot:')));
  }
 });
+
+test('room chat pins composer and tactical strip while long messages scroll',async()=>{
+ const {user,room}=parityFixture('game');const panel=new PlayerPanel({} as any,user);await panel.open('roomchat',{roomId:room.id});
+ for(let i=0;i<30;i++)panel.onRoomChat({messageId:'m'+i,fromUserId:user.id,nickname:'行者',seat:1,text:'这是用于验证窄屏长消息换行和滚动的文字。'.repeat(3),timestamp:'2026-10-22T00:00:00Z'});
+ for(const width of [320,390,430]){const model=panel.model(),v={...viewport,width};const first=layoutWebScreen(model,v);assert.ok(first.maxScroll>0);model.scroll=first.maxScroll;model.horizontalScroll=100;const last=layoutWebScreen(model,v);assert.equal(last.nodes.find(n=>n.id==='chat:sendroom')!.y,first.nodes.find(n=>n.id==='chat:sendroom')!.y);assert.equal(last.nodes.find(n=>n.id==='chat:m29')!.clipBottom,last.contentBottom);assert.ok(last.nodes.find(n=>n.id==='quick:0')!.scrollMaxX!>0);assert.equal(last.nodes.find(n=>n.id==='dialog-frame')!.fixed,true);assert.ok(last.nodes.find(n=>n.id==='chat:sendroom')!.disabled);}
+ let limit=0;await panel.handle('chat:input',async(_prompt,max)=>{limit=max??0;return '测试';});assert.equal(limit,100);assert.equal(layoutWebScreen(panel.model(),viewport).nodes.find(n=>n.id==='chat:sendroom')!.disabled,false);
+});
+
+test('admin confirmations retain their dashboard and cancel without executing writes',async()=>{
+ let deletes=0;const d=parityAdminData(),panel=new AdminPanel({verify:async()=>{},overview:async()=>({}),users:async()=>({users:d.users,total:d.users.length}),deleteEmptyUsers:async()=>{deletes++;}} as any);
+ await panel.open('mock');await panel.handle('page:users',async()=>undefined);await panel.handle('cleanup',async()=>undefined);
+ const confirm=panel.model();assert.equal(confirm.web?.document?.kind,'confirm');assert.equal(confirm.web?.underlay?.web?.document?.kind,'admin');assert.equal(confirm.web?.underlay?.web?.activeTab,'page:users');assert.equal(confirm.web?.underlay?.web?.document?.adminUsers?.length,d.users.length);
+ await panel.handle('confirm:no',async()=>undefined);assert.equal(deletes,0);assert.equal(panel.model().web?.document?.kind,'admin');
+});
