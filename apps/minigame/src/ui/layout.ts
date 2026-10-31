@@ -3,6 +3,18 @@ export interface HitRegion { id: string; x: number; y: number; width: number; he
 export type Scene = 'entry' | 'standard' | 'game' | 'admin';
 type Row = { id: string; text: string };
 
+// Keep emoji presentation selectors, modifiers and joined emoji together when
+// Canvas paints letter-spaced labels; splitting them changes the icon itself.
+export function textGraphemes(value:string):string[]{
+  const result:string[]=[];
+  for(const char of Array.from(value)){
+    const previous=result.at(-1);
+    if(previous&&(/^[\p{Mark}\u200d\u{1f3fb}-\u{1f3ff}]$/u.test(char)||previous.endsWith('\u200d')||/^\p{Regional_Indicator}$/u.test(previous)&&/^\p{Regional_Indicator}$/u.test(char)))result[result.length-1]+=char;
+    else result.push(char);
+  }
+  return result;
+}
+
 // Conservative widths keep CJK readable before device fonts have loaded.
 export function textWidth(text: string): number {
   return Array.from(text).reduce((sum, char) => sum + (/[^\u0020-\u007e]/.test(char) ? 17 : 9), 0);

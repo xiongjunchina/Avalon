@@ -19,6 +19,9 @@ export function parityFixture(scene = 'game',playerCount=6) {
     if(scene==='report'||scene==='result') {game.rounds[0]!.result={successes:MISSION_SIZES[playerCount]![0],failures:0,passed:true};game.phase='proposing';game.mission=2;}
     if(scene==='result') {game.phase='finished';game.result={winner:'blue',reason:'merlin_survived'};}
   }
+  if(scene.startsWith('treasures-')&&scene.endsWith('-available')){
+    game.rounds=[1,2].map(mission=>({number:mission,mission,captainId:members[0]!.id,team:members.slice(0,MISSION_SIZES[playerCount]![mission-1]).map(p=>p.id),direction:'clockwise' as const,vote:{approvals:playerCount,rejections:0,abstentions:0,passed:true},result:{successes:MISSION_SIZES[playerCount]![mission-1]!-1,failures:1,passed:false}}));
+  }
   const room = { id: '22222222-2222-4222-8222-222222222222', code: '123456', version: 1, hostId: user.id, settings, acceptingNewMembers: true, members, phase: 'playing' as const, serverTime: '2026-10-22T00:00:00Z', game: projectGame(game, user.id) };
   if(scene.endsWith('-used')&&room.game.self?.treasures){const t=room.game.self.treasures,targetId=members[1]!.id;
     if(t.tinStaff)t.tinStaff={used:true,available:false,result:{targetId,team:'blue'}};

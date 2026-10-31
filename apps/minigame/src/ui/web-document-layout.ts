@@ -11,7 +11,7 @@ import { roleTreasures } from '../../../web/src/role-descriptions.js';
 import { reasons } from '../../../web/src/game-presentation.js';
 import { identityKnowledge, identityTreasure } from '../../../web/src/identity-presentation.js';
 import { roleDescriptions } from '../../../web/src/role-descriptions.js';
-import { wrapText, type SafeViewport } from './layout.js';
+import { wrapText, textGraphemes, type SafeViewport } from './layout.js';
 import type { ScreenModel } from './widgets.js';
 import type { WebLayout, WebNode } from './web-layout.js';
 
@@ -34,7 +34,7 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
   const txt=(id:string,text:string,py:number,size=14,props:Partial<WebNode>={},px=x,pw=w)=>{
     if(['admin','admin-friends','special-editor','code-editor'].includes(doc.kind)){props={fontFace:'system',...props};if(props.fontFace==='display'){props={letterSpacing:.5,...props};if(size===15){size=16;props={weight:'700',lineHeight:24,...props};}}}
     if(doc.profileEditing)props={weight:'500',...props};
-    const lines=wrapText(text,pw,t=>measure(t,size,props.fontFace,props.weight)+Math.max(0,Array.from(t).length-1)*(props.letterSpacing??0)),lh=props.lineHeight??size*1.5;
+    const textWidth=(t:string)=>measure(t,size,props.fontFace,props.weight)+Math.max(0,textGraphemes(t).length-1)*(props.letterSpacing??0);let lines=wrapText(text,pw,textWidth);if(props.fontFace==='display'&&lines.length>1&&lines.length<=6){const count=lines.length;let low=0,high=pw;for(let i=0;i<12;i++){const mid=(low+high)/2;if(wrapText(text,mid,textWidth).length<=count)high=mid;else low=mid;}lines=wrapText(text,high,textWidth);}const lh=props.lineHeight??size*1.5;
     return add('label',id,text,px,py,pw,Math.max(lh,lines.length*lh),{fontSize:size,lineHeight:lh,lines,align:'left',...props});
   };
   const panel=(id:string,py:number,ph:number,skin='card',px=x,pw=w)=>add('panel',id,'',px,py,pw,ph,{skin});
@@ -112,6 +112,8 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
     add('label','admin-status','● 系统正常',v.width-88,10,72,21,{skin:'admin-status',fontSize:11});
     const toolW=[94.625,81.765625,69.625],toolText=['🔄 刷新数据','‹ 返回大厅','🚪 登出'],toolIds=['admin:refresh','back','admin:logout'];let tx=(v.width-262.015625)/2;
     toolIds.forEach((id,i)=>{button(id,toolText[i]!,41.59375,{skin:'admin-tool',fontSize:12.5,tone:i===2?'red':undefined},tx,toolW[i],28);tx+=toolW[i]!+8;});
+    // The web admin header stays pinned while the navigation and cards scroll.
+    for(const node of nodes)node.fixed=true;
     const tabs=[['page:overview','📊 运营看板'],['page:settings','⚙️ 运营策略'],['page:users','👥 仙友用户 ('+(doc.adminUserTotal??0)+')'],['page:rooms','🏛️ 法坛对局 ('+(doc.adminRooms?.length??0)+')'],['page:codes','🎟️ 兑换码 ('+(doc.adminCodes?.length??0)+')'],['page:special','专属房与靓号']];
     y=86.59375;const navFrame=panel('admin-nav',80.59375,1,'admin-nav',0,v.width);let nx=12;for(const [id,label] of tabs){const tw=measure(label!,12.5,'system','600')+22;if(nx+tw>v.width-12){nx=12;y+=36;}button(id!,label!,y,{skin:'admin-tab',selected:model.web?.activeTab===id||id==='page:rooms'&&model.web?.activeTab==='page:games',fontSize:12.5,weight:'600'},nx,tw,30);nx+=tw+6;}navFrame.height=y+37-80.59375;y+=53;
     const aw=v.width-32,ax=16;
@@ -196,13 +198,13 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
       const copyWidth=157.1,title=txt('admin-code-list-title','兑换码库存与核销记录 ('+(doc.adminCodes?.length??0)+')',y,15,{fontFace:'display',lineHeight:16},px,iw-copyWidth-12);
       button('copy:unused','📋 一键复制全部可用码',y+2,{skin:'admin-tool',fontSize:12.5},px+iw-copyWidth,copyWidth,28);y+=Math.max(30,title.height)+16;
       const codes=doc.adminCodes??[],labels=['兑换码','VIP 天数','备注说明','核销状态','兑换玩家','兑换时间','创建时间'];
-      const values=codes.map(c=>[c.code,c.days+' 天',c.note||'—',c.redeemedAt?'已核销':'● 可使用',c.redeemerNickname||'—',c.redeemedAt?new Date(c.redeemedAt).toLocaleString('zh-CN'):'—',new Date(c.createdAt).toLocaleString('zh-CN')]);
-      const widths=labels.map((label,i)=>Math.max(measure(label,13,'system','600'),...values.map(row=>measure(row[i]!,13,'system')))+28),total=Math.max(700,widths.reduce((a,b)=>a+b,0));widths[2]!+=total-widths.reduce((a,b)=>a+b,0);
+      const values=codes.map(c=>[c.code,c.days+' 天',c.note||'—',c.redeemedAt?'已核销':'● 可使用',c.redeemerNickname||'—',c.redeemedAt?new Date(c.redeemedAt).toLocaleString('zh-CN'):'—',new Date(c.createdAt).toLocaleDateString('zh-CN')]);
+      const widths=labels.map((label,i)=>Math.max(measure(label,13,'system','600'),...values.map(row=>i===0?measure(row[i]!,14,'mono','700')+row[i]!.length:measure(row[i]!,i>=3?12:13,'system')))+28),total=Math.max(700,widths.reduce((a,b)=>a+b,0));const naturalTotal=widths.reduce((a,b)=>a+b,0);widths.forEach((value,i)=>widths[i]=value*total/naturalTotal);
       const max=Math.max(0,total-iw+2),offset=Math.min(max,Math.max(0,model.horizontalScroll??0)),clip={clipLeft:px+1,clipRight:px+iw-1,scrollMaxX:max};
       panel('codes-table',y,38+Math.max(1,codes.length)*39,'admin-card',px,iw);let colX=px+1-offset;
       labels.forEach((label,i)=>{add('button','codes-heading:'+i,label,colX,y+1,widths[i]!,37,{skin:'admin-table-head',fontSize:13,...clip});colX+=widths[i]!;});y+=38;
       if(!codes.length){txt('admin-code-empty','暂无兑换码记录，请在上方批量生成',y+12,13,{tone:'muted',align:'center'},px,iw);y+=48;}
-      values.forEach((row,r)=>{let cellX=px+1-offset;row.forEach((value,i)=>{add('button',i===0?'code:'+codes[r]!.code:'codes-cell:'+r+':'+i,value,cellX,y,widths[i]!,39,{skin:'admin-table-cell',fontSize:13,tone:i===0?'gold':i===3&&!codes[r]!.redeemedAt?'green':undefined,...clip});cellX+=widths[i]!;});y+=39;});y+=19;list.height=y-list.y;
+      values.forEach((row,r)=>{let cellX=px+1-offset;row.forEach((value,i)=>{add('button',i===0?'code:'+codes[r]!.code:'codes-cell:'+r+':'+i,value,cellX,y,widths[i]!,39,{skin:'admin-table-cell',fontSize:i===0?14:i>=3?12:13,fontFace:i===0?'mono':'system',weight:i===0?'700':i===3&&!codes[r]!.redeemedAt?'600':'400',letterSpacing:i===0?1:0,tone:i===0?'gold':i===3&&!codes[r]!.redeemedAt?'green':i>=5?'muted':undefined,...clip});cellX+=widths[i]!;});y+=39;});y+=19;list.height=y-list.y;
     }else if(model.web?.activeTab==='page:users'){
       const frame=panel('admin-users-panel',y,1,'admin-card',ax,aw);y+=18;
       y+=1;txt('admin-users-title','👥 仙友用户列表 ('+(doc.adminUserTotal??0)+')',y,15,{fontFace:'display'},ax+19,aw-38);y+=35;
@@ -246,7 +248,7 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
         y+=h+12;
       }
     }
-    for(const node of nodes)if(node.fontFace!=='display')node.fontFace='system';
+    for(const node of nodes)if(node.fontFace!=='display'&&node.fontFace!=='mono')node.fontFace='system';
     bodyEnd=y;
   } else if(doc.kind==='special-editor'&&doc.specialDraft){
     const d=doc.specialDraft;y=19;bodyStart=19;
@@ -265,10 +267,10 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
   } else if(doc.kind==='account'&&doc.profileEditing&&doc.user){
     y=11;modalHeader('修改昵称与头像');y+=6;
     const user=doc.user,draft=doc.profileDraft;
-    panel('profile-preview',y,150,'knowledge');
+    panel('profile-preview',y,150,'profile-preview');
     add('portrait','profile-avatar','',x+16,y+14,64,64,{skin:'avatar',image:draft?.avatarUrl??draft?.wechatAvatarUrl??'emblems/'+(draft?.avatar??user.avatar??'leaf')+'.png'});
     const builtin=BUILTIN_AVATARS.find(a=>a.src===draft?.avatarUrl),source=builtin?'法宝头像（'+builtin.name+'）':draft?.avatarUrl?'自定义头像':draft?.wechatAvatarUrl?'微信头像':'法宝头像（'+BUILTIN_AVATARS[0]!.name+'）';add('label','avatar-source','头像预览：'+source,x+92,y+14,w-108,23.25,{skin:'profile-source',fontSize:11.5});
-    txt('avatar-help','选择下方法宝头像，或上传自己的照片；头像只用于朋友之间辨认。',y+43,13,{},x+90,w-102);
+    txt('avatar-help','选择下方法宝头像，或上传自己的照片；头像只用于朋友之间辨认。',y+40.25,14,{lineHeight:21},x+91,w-104);
     button('uploadAvatar','上传自定义头像',y+92,{skin:'pill',fontSize:13},x+12,w-24,44);y+=166;
     txt('nickname-label','昵称',y,14);y+=28;
     button('profile:nickname',draft?.nickname??user.nickname,y,{skin:'input'},x,w,44);y+=60;
@@ -303,7 +305,7 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
       txt('pref-team:'+team,(team==='blue'?'🔵 护经正道 · 神佛仙圣':'🔴 乱道妖魔 · 混世群妖')+' ('+roles.length+')',y,12.5,{tone:team});y+=24.9375;
       for(const [i,role] of roles.entries()){const item=getRoleGalleryItem(role);add('button','pref:'+role,roleNames[role],x+(i%2)*(w+6)/2,y+Math.floor(i/2)*56,(w-6)/2,50,{skin:'preference-choice',image:'roles/'+defaultRoleArtPrefix(role)+'-160.webp',team,selected:doc.preferences?.includes(role),disabled:doc.preferencesDisabled,detail:roleTitles[role]+'|'+roleMottos[role],badge:doc.preferences?.includes(role)?['①','②','③'][doc.preferences.indexOf(role)]+' 志愿':''});}y+=Math.ceil(roles.length/2)*56+6;
     }
-    add('label','pref-help-icon','💡',x+11,y+14,20,20,{fontSize:14});const help=txt('pref-help','心仪角色加权说明：第一、第二、第三志愿及其他角色的基础权重为 8 / 4 / 2 / 1。近期重复角色会降低权重，系统结合本局角色数量与保护条件随机发牌，不保证命中志愿。选角意向不向其他玩家公开。',y+13,11,{lineHeight:15.95},x+38.234375,w-49.234375);const helpFrame=panel('pref-help-frame',y+4,help.height+18,'preference-note');nodes.splice(nodes.indexOf(helpFrame),1);nodes.splice(nodes.findIndex(n=>n.id==='pref-help-icon'),0,helpFrame);y+=helpFrame.height+14;bodyEnd=y;
+    add('label','pref-help-icon','💡',x+11,y+14,20,20,{fontSize:14});const help=txt('pref-help','心仪角色加权说明：第一、第二、第三志愿及其他角色的基础权重为 8 / 4 / 2 / 1。近期重复角色会降低权重，系统结合本局角色数量与保护条件随机发牌，不保证命中志愿。选角意向不向其他玩家公开。',y+13,11,{lineHeight:15.95,emphasis:[{text:'心仪角色加权说明：',weight:'700',color:'#ffd875'},{text:'选角意向不向其他玩家公开。',weight:'700',color:'#ffd875'}]},x+38.234375,w-49.234375);const helpFrame=panel('pref-help-frame',y+4,help.height+18,'preference-note');nodes.splice(nodes.indexOf(helpFrame),1);nodes.splice(nodes.findIndex(n=>n.id==='pref-help-icon'),0,helpFrame);y+=helpFrame.height+14;bodyEnd=y;
   } else if(doc.kind==='guanyin-window'&&game){
     y=19;bodyStart=y;const active=doc.self?.role==='guinevere',seconds=doc.remainingSeconds??0;
     txt('mirror-kicker',active?'✨ 慈航至宝 · 照妖神镜':'🪞 佛光初现 · 仙魔辨察',y,11.5,{weight:'700',tone:'gold',letterSpacing:.5,lineHeight:16.1},x,w-78);
@@ -348,8 +350,8 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
       txt('notice-seat',(ally?.seat??'')+' 号位',y+11,11,{tone:'gold',weight:'700',lineHeight:15.5},x+73,w-88);txt('notice-name',ally?.nickname??'护法同修',y+28.5,15,{weight:'700',lineHeight:21},x+73,w-88);txt('notice-role','🌟 取经护法同修（纯正蓝方）',y+51.5,11.5,{tone:'blue',weight:'600',lineHeight:16},x+73,w-88);y+=90.5;
       const block=panel('notice-proof',y,1,'jingu-proof');y+=12;
       for(const [i,copy] of ['仙友 '+(ally?ally.seat+' 号 '+ally.nickname+(ally.id===doc.user?.id?'（你）':''):'护法同修')+' 已在暗中捏动紧箍佛印向你自证！','唐三藏圣僧慧眼洞开：此仙友确系百分之百纯正取经护法同修，绝非妖魔潜伏！','💡 提示：该仙友头上已标注【📿 护法】金印，请全力倚重其发言与投票，护送车队通关。'].entries()){
-        if(i===2){add('label','notice-tip-rule','',x+12,y,w-24,1,{skin:'rule'});y+=7;}
-        const n=txt('notice-proof:'+i,copy,y,i===2?12:13.5,{tone:i===1?'blue':i===2?'muted':undefined,lineHeight:i===2?21:23.625},x+12,w-24);y+=n.height+(i===2?0:8);
+        if(i===2){add('label','notice-tip-rule','',x+12,y,w-24,1,{skin:'dashed-rule'});y+=7;}
+        const n=txt('notice-proof:'+i,copy,y,i===2?12:13.5,{tone:i===1?'blue':i===2?'muted':undefined,lineHeight:i===2?21:23.625,emphasis:i===0&&ally?[{text:ally.seat+' 号 '+ally.nickname,weight:'700'}]:i===1?[{text:'百分之百纯正取经护法同修',weight:'700'}]:undefined},x+12,w-24);y+=n.height+(i===2?0:8);
       }y+=12;block.height=y-block.y;y+=52;
       button('overlayClose','阿弥陀佛，贫僧知晓了',y,{skin:'jingu-confirm',fontSize:14.5},x,w,48);y+=66;
     }else{
@@ -483,10 +485,21 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
       add('label','treasure-header-rule','',x+15,y+45,w-30,1,{skin:'rule'});
       const [intro,...notes]=(copy.description||roleTreasures[self.role]).split('\n');
       const description=txt('treasure-role-description',intro!,y+56,self.role==='minion'?14:13,{lineHeight:self.role==='minion'?21.7:20.15,tone:'muted'},x+15,w-30);y=description.y+description.height;
-      if(notes.length){const note=txt('treasure-role-note',notes.join('\n'),y,14,{lineHeight:21.7,tone:'muted'},x+15,w-30);y+=note.height;}y+=12;
+      if(notes.length){const note=txt('treasure-role-note',notes.join('\n'),y,14,{lineHeight:25.2,tone:'muted'},x+15,w-30);y+=note.height;}y+=12;
       let actionBox:WebNode|undefined;
+      if(self.role==='loyal'&&t?.jinguSeal?.available&&!t.jinguSeal.used){
+        actionBox=panel('treasure-action-box',y,1,'treasure-action-box',x+15.5,w-31);y+=27;
+        const alert=txt('jingu-alert','取经队伍濒临绝境！紧箍信物已发光激活：',y,16,{lineHeight:28},x+26.5,w-53);
+        // The web paragraph uses text-wrap:pretty: avoid a two-character orphan.
+        if(alert.lines&&alert.lines.length>1&&Array.from(alert.lines.at(-1)!).length<3){const previous=Array.from(alert.lines.at(-2)!);alert.lines[alert.lines.length-1]=previous.pop()+alert.lines.at(-1)!;alert.lines[alert.lines.length-2]=previous.join('');}
+        y+=alert.height+26;
+      }
+      if(self.role==='oberon'&&!t?.bananaFan?.used){
+        const status=t?.bananaFan?.armed?'🌪️ 聚风待发（若投票通过则立刻吹散）':'🍃 平息放行（按兵不动）';
+        const indicator=txt('fan-status','当前预设状态：'+status,y,13,{lineHeight:20.15,emphasis:[{text:status,weight:'700',color:t?.bananaFan?.armed?'#f87171':'#60a5fa'}]},x+15,w-30);y+=indicator.height+10;
+      }
       const targets=model.rows.filter(r=>r.id.startsWith('player:')),selected=targets.find(r=>r.id==='player:'+model.web?.targetId);
-      if(targets.length&&self.role!=='minion'){actionBox=panel('treasure-action-box',y,1,'treasure-action-box',x+15,w-30);y+=26;txt('treasure-target-label',self.role==='assassin'?'请选择刺杀目标：':self.role==='mordred'?'请选择欲收入袋中禁选的仙友：':'请选择查验目标（盲区仙友）：',y,13,{},x+25,w-50);y+=28;button('treasureTargets',(selected?.text.replace(' · 已选目标','')??(self.role==='mordred'?'点击选择禁锢目标':'点击选择待查验仙友'))+' ▾',y,{skin:'treasure-select',fontSize:13},x+25,w-50,48);y+=58;
+      if(targets.length&&self.role!=='minion'){actionBox=panel('treasure-action-box',y,1,'treasure-action-box',x+15.5,w-31);y+=26;txt('treasure-target-label',self.role==='assassin'?'请选择刺杀目标：':self.role==='mordred'?'请选择欲收入袋中禁选的仙友：':'请选择查验目标（盲区仙友）：',y,12,{tone:'gold',weight:'600',lineHeight:17},x+26.5,w-53);y+=33;button('treasureTargets',(selected?.text.replace(' · 已选目标','')??(self.role==='mordred'?'点击选择禁锢目标':'点击选择待查验仙友'))+' ▾',y,{skin:'treasure-select',fontSize:13},x+26.5,w-53,48);y+=58;
         if(doc.treasureTargetsExpanded){for(const r of targets){button(r.id,r.text,y,{skin:'target',selected:r===selected,fontSize:12},x+25,w-50,36);y+=42;}}
       }
       if(self.role==='minion'&&!t?.heartBell?.sent){
@@ -501,7 +514,7 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
       }
       const resultRows=new Set<string>();
       const treasureName=(id:string)=>{const p=game.players.find(p=>p.id===id);return p?String(p.seat).padStart(2,'0')+'号 · '+p.nickname:'未知仙友';};
-      const treasureResult=(id:string,title:string,content:string)=>{const box=panel(id+':result',y,1,'treasure-result',x+15,w-30);txt(id+':result-title',title,y+10,12,{tone:'gold',weight:'700'},x+27,w-54);const body=txt(id+':result-body',content,y+32,13,{lineHeight:19.5,tone:'muted'},x+27,w-54);y=body.y+body.height+10;box.height=y-box.y;y+=10;resultRows.add(id);};
+      const treasureResult=(id:string,title:string,content:string)=>{const box=panel(id+':result',y,1,'treasure-result',x+15,w-30);txt(id+':result-title',title,y+11,12,{tone:'gold',weight:'700'},x+28,w-56);const emphasis:NonNullable<WebNode['emphasis']>=[];for(const p of game.players){const name=treasureName(p.id);if(content.includes(name))emphasis.push({text:name,weight:'700'});}for(const phrase of ['✨ 取经正道（蓝方）','✨ 心性纯良（好人）'])if(content.includes(phrase))emphasis.push({text:phrase,weight:'700',color:'#60a5fa'});for(const phrase of ['🔥 混世妖魔（红方）','🔥 妖气内伏（恶妖）'])if(content.includes(phrase))emphasis.push({text:phrase,weight:'700',color:'#f87171'});if(id==='treasure:jinguSeal')emphasis.push({text:content.split('\n')[1]!,color:'#60a5fa'});const body=txt(id+':result-body',content,y+33,13,{lineHeight:19.5,tone:'muted',emphasis},x+28,w-56);y=body.y+body.height+11;box.height=y-box.y;y+=10;resultRows.add(id);};
       if(t?.tinStaff?.result)treasureResult('treasure:tinStaff','【锡杖显灵秘录】','仙友：'+treasureName(t.tinStaff.result.targetId)+'\n气息：'+(t.tinStaff.result.team==='blue'?'✨ 取经正道（蓝方）':'🔥 混世妖魔（红方）'));
       if(t?.guanyinMirror?.result)treasureResult('treasure:guanyinMirror','【照妖镜显圣】','车队队员：'+treasureName(t.guanyinMirror.result.targetId)+'\n心性照映：'+(t.guanyinMirror.result.alignment==='pure'?'✨ 心性纯良（好人）':'🔥 妖气内伏（恶妖）'));
       if(t?.humanBag?.used)treasureResult('treasure:humanBag','【袋中乾坤】','已在本局祭出后天人种袋！\n禁锢仙友：'+treasureName(t.humanBag.targetId??''));
@@ -513,12 +526,12 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
       for(const row of rows){
         const actionable=row.id==='treasure:tinStaff'?t?.tinStaff?.available:row.id==='treasure:guanyinMirror'?t?.guanyinMirror?.available:row.id==='treasure:humanBag'?t?.humanBag?.available:row.id==='treasure:jinguSeal'?t?.jinguSeal?.available:row.id==='treasure:bananaFan'?t?.bananaFan?.available:/^(early|assassinate|treasure:heart|treasure:guanyinSkip)/.test(row.id);
         const idle=row.id==='treasure:tinStaff'&&!t?.tinStaff?.used&&!t?.tinStaff?.result||row.id==='treasure:guanyinMirror'&&!t?.guanyinMirror?.used&&!t?.guanyinMirror?.result||row.id==='treasure:humanBag'&&!t?.humanBag?.used||row.id==='treasure:jinguSeal'&&!t?.jinguSeal?.used;
-        const text=!actionable&&idle&&copy.idle?copy.idle:row.text,lines=wrapText(text,w-50,v=>measure(v,actionable?13:12)),h=Math.max(38,lines.length*(actionable?20:18)+16);
-        if(actionable)button(row.id,({'treasure:humanBag':'🎒 祭起后天人种袋 · 禁选上车','treasure:tinStaff':'📿 祭出九环锡杖 · 私密查验'} as Record<string,string>)[row.id]??text,y,{skin:'treasure-confirm',fontSize:13,lines,disabled:targets.length>0&&!selected&& !['earlyAttempt','earlySkip','treasure:guanyinSkip'].includes(row.id)},x+(actionBox?25:15),w-(actionBox?50:30),h);
+        const text=!actionable&&idle&&copy.idle?copy.idle:row.text,lines=wrapText(text,w-50,v=>measure(v,actionable?13:12)),h=actionable?Math.max(36,lines.length*16.8+8):Math.max(38,lines.length*18+16);
+        if(actionable)button(row.id,({'treasure:humanBag':'🎒 祭起后天人种袋 · 禁选上车','treasure:tinStaff':'📿 祭出九环锡杖 · 私密查验','treasure:jinguSeal':'👑 默念紧箍佛印 · 向圣僧明示真身','treasure:bananaFan':t?.bananaFan?.armed?'🍃 取消聚风（改为平息放行）':'🌪️ 聚风待发（预设吹散本次通过）'} as Record<string,string>)[row.id]??text,y,{skin:'treasure-confirm',detail:row.id==='treasure:jinguSeal'?'gold':row.id==='treasure:bananaFan'?(t?.bananaFan?.armed?'cancel-fan':'arm-fan'):undefined,fontSize:12,disabled:targets.length>0&&!selected&& !['earlyAttempt','earlySkip','treasure:guanyinSkip'].includes(row.id)},x+(actionBox?26.5:15),w-(actionBox?53:30),h);
         else{panel(row.id+':frame',y,h,'treasure-idle',x+15,w-30);txt(row.id,text,y+8,12,{lineHeight:18,align:'center',tone:'muted'},x+25,w-50);}y+=h+10;
       }
       if(actionBox){y+=1;actionBox.height=y-actionBox.y;y+=15;}
-      y+=5;card.height=y-card.y;y+=1;
+      y+=actionBox?1.5:5;card.height=y-card.y;y+=1;
     }bodyEnd=y;
   } else if(doc.kind==='abort-confirm'){
     y=pad;bodyStart=y;
@@ -609,8 +622,8 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
         }else para('no-room','🏯 当前尚未进入对局房间\n先创建或加入房间，再邀请仙友一起取经。',16);
       } else if(doc.friendTab==='add') {
         panel('friend-code-card',y,152,'friend-code-card');txt('friend-code-label','我的专属仙友号',y+18,13,{align:'center',tone:'muted'});
-        txt('friend-code',doc.user?.playerCode??'------',y+54,28,{skin:'friend-code-digits',tone:'gold'},x+16,118.375);button('copyCode','复制仙友号',y+45,{skin:'social-copy',fontSize:12},x+139.375,w-156.375,48);
-        txt('friend-code-tip','把你的仙友号分享给好友，好友可直接搜索添加你！',y+101,12,{lineHeight:21,align:'center',tone:'muted'},x+17,w-34);y+=165;
+        txt('friend-code',doc.user?.playerCode??'------',y+54,28,{skin:'friend-code-digits',tone:'gold'},x+16,118.375);button('copyCode','复制仙友号',y+55,{skin:'social-copy',fontSize:12},x+139.375,w-156.375,48);
+        txt('friend-code-tip','把你的仙友号分享给好友，好友可直接搜索添加你！',y+111,12,{lineHeight:21,align:'center',tone:'muted'},x+17,w-34);y+=175;
         txt('friend-search-label','搜索添加仙友',y,13.5,{tone:'gold',weight:'700',lineHeight:20});y+=36;
         button('input:friend',doc.friendQuery||'输入好友 6 位数字仙友号 或 完整昵称',y,{skin:'friend-input',fontSize:13.5,selected:!!doc.friendQuery},x,w-94,40);button('friend:add','发送申请',y,{skin:'friend-submit',fontSize:13,primary:true,disabled:!doc.friendQuery?.trim()},x+w-86,86,40);y+=42;
       }
@@ -629,7 +642,7 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
         if(!doc.friends?.length)para('empty','还没有仙友，前往「添加仙友」发送申请吧。');
       }
 
-      y+=doc.friendTab==='friends'?-8:6;
+      y+=doc.friendTab==='friends'?-8:doc.friendTab==='add'?-4:6;
     } else if(doc.kind==='chat') {
       const direct=doc.activeTab==='direct';modalHeader(direct?'仙友录 · 召集与好友':'法坛传音');
       if(direct){panel('direct-topbar',y,104,'direct-topbar');button('page:friends','← 返回仙友录',y+34,{skin:'direct-back',fontSize:12},x+14,104,48);const f=doc.chatFriend;if(f){add('portrait','direct-friend','',x+118,y+8,92,92,{skin:'direct-avatar',image:f.avatarUrl??'emblems/'+(f.avatar??'cards')+'.png'});txt('direct-name',f.nickname,y+22,13.5,{tone:'gold',weight:'700'},x+214,24);}button('refresh:direct','🔄',y+34,{skin:'direct-back',fontSize:12},x+w-110,96,48);y+=104;}

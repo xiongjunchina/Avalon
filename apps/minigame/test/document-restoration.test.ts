@@ -8,6 +8,48 @@ import {renderScreen} from '../src/ui/widgets.js';
 import {layoutWebScreen} from '../src/ui/web-layout.js';
 import {setDocumentTextMeasurer} from '../src/ui/web-document-layout.js';
 import {AdminPanel} from '../src/screens/admin/panel.js';
+import {gameScreen} from '../src/screens/game.js';
+import {textGraphemes} from '../src/ui/layout.js';
+
+test('letter-spaced labels preserve full emoji rather than painting detached selectors',()=>{
+ assert.deepEqual(textGraphemes('⛩️ 法坛🎟️⚙️'),['⛩️',' ','法','坛','🎟️','⚙️']);
+ assert.deepEqual(textGraphemes('👩🏽‍💻🇨🇳e\u0301'),['👩🏽‍💻','🇨🇳','e\u0301']);
+});
+
+test('admin header actions remain visible and tappable after scrolling a long page',async()=>{
+ const p=new AdminPanel({authorized:true,verify:async()=>{},overview:async()=>({}),special:async()=>({rooms:[],codes:[],history:[]})} as any);
+ await p.open('fixture');await p.load('special');
+ const model=p.model();model.scroll=10000;
+ for(const width of [320,390,430]){
+  const layout=layoutWebScreen(model,{width,height:568,top:24,bottom:0});
+  for(const id of ['admin-header','admin:refresh','back','admin:logout']){
+   const node=layout.nodes.find(n=>n.id===id)!;assert.ok(node.fixed);assert.ok(node.y>=24&&node.y+node.height<=105);
+  }
+ }
+});
+
+test('available treasure panels preserve the alert and current fan setting before an action',()=>{
+ for(const width of [320,390,430])for(const role of ['loyal','oberon']){
+  const {room,user}=parityFixture('treasures-'+role+'-available',12);
+  const model=gameScreen(room,user,{privateRoleVisible:true,ballotVisible:false,overlay:'treasures',overlayReturn:'identity'});
+  const nodes=layoutWebScreen(model,{width,height:844,top:0,bottom:0}).nodes;
+  const action=nodes.find(n=>n.id===(role==='loyal'?'treasure:jinguSeal':'treasure:bananaFan'))!;
+  assert.ok(action&&!action.disabled);
+  const explanation=nodes.find(n=>n.id===(role==='loyal'?'jingu-alert':'fan-status'))!;
+  assert.ok(explanation&&explanation.y+explanation.height<=action.y);
+  assert.match(action.text,role==='loyal'?/默念紧箍佛印/:/聚风待发/);
+ }
+});
+
+test('used private treasure results preserve disclosed player and alignment emphasis',()=>{
+ const {room,user}=parityFixture('treasures-percival-used',12);
+ const model=gameScreen(room,user,{privateRoleVisible:true,ballotVisible:false,overlay:'treasures',overlayReturn:'identity'});
+ const nodes=layoutWebScreen(model,{width:390,height:844,top:0,bottom:0}).nodes;
+ const result=nodes.find(n=>n.id==='treasure:tinStaff:result-body')!;
+ assert.ok(result.emphasis?.some(e=>e.color==='#60a5fa'&&e.text.includes('取经正道')));
+ assert.ok(result.emphasis?.some(e=>e.weight==='700'&&e.text.includes('号')));
+ assert.ok(!nodes.some(n=>n.kind==='button'&&n.id==='treasure:tinStaff'));
+});
 
 test('public guide preserves every chapter, five steps and eight player-count configurations',()=>{
  assert.equal(webGuideSections.length,6);

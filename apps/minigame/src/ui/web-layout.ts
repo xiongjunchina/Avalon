@@ -31,7 +31,7 @@ export interface WebSurface {
 export interface WebNode extends HitRegion {
   kind: 'label' | 'button' | 'input' | 'portrait' | 'quest' | 'seat' | 'altar' | 'panel' | 'choice' | 'tab' | 'metric' | 'hitbox';
   fixed?: boolean; primary?: boolean; selected?: boolean; disabled?: boolean; muted?: boolean;
-  skin?: string; letterSpacing?:number; fontSize?: number; lineHeight?: number; fontFace?: 'sans'|'display'|'calligraphy'|'system'|'home'; weight?: string; align?: 'left'|'center'|'right'; tone?: 'blue'|'red'|'gold'|'muted'|'green';
+  skin?: string; emphasis?:{text:string;weight?:string;color?:string}[]; letterSpacing?:number; fontSize?: number; lineHeight?: number; fontFace?: 'sans'|'display'|'calligraphy'|'system'|'home'|'mono'; weight?: string; align?: 'left'|'center'|'right'; tone?: 'blue'|'red'|'gold'|'muted'|'green';
   textRightInset?: number; image?: string; detail?: string; badge?: string; selfPlayer?: boolean; online?: boolean; team?: 'blue' | 'red'; passed?: boolean; count?: number;
   micState?: 'live' | 'speaking' | 'muted' | 'unjoined';
   teamStatus?: '已选' | '出征';
@@ -93,6 +93,7 @@ export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout 
     const room = web.room, game = room.game, count = room.settings.playerCount;
     const availableH = v.height - v.top - v.bottom;
     top = Math.max(6, v.top);
+    add('panel','table-toolbar-frame','',10,top,w-20,32,{fixed:true,skin:'table-toolbar-frame'});
     add('button', web.practice ? 'exitPractice' : 'leave', '↶', 16, top + 3, 26, 26, { fixed: true });
     add('button', 'copyRoom', web.practice ? '幻境演练' : '房号 ' + room.code, 45, top + 3, 111.5625, 26, { fixed: true, detail: room.members.length + '/' + count + '人 · 复制' });
     const toolScale = Math.min(1, (w - 175) / 195);
@@ -100,6 +101,7 @@ export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout 
     (web.practice ? [['bot','代操',26], ['rematch','重开',51.6], ['practiceSettings','配置',51.6], ['guide','📖 规则',51.6]] : [['sound','sound',26], ['chat','💬 传音',51.6], ['more','⚙️ 设置',51.6], ['guide','📖 规则',51.6]]).forEach(([id,title,width]) => {
       add('button', String(id), String(title), tx, top + 3, Number(width) * toolScale, 26, { fixed: true }); tx += (Number(width) + 3) * toolScale;
     });
+    for(const node of nodes)node.badge='table-toolbar';
     y = top + (game?34:48);
     const boardX = 12, boardW = w - 24, questW = (boardW - 24) / 5;
     const questH = 67.3 + cssClamp(36, availableH * .055, 44);
@@ -213,7 +215,7 @@ export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout 
       add('choice','mission-choice:fail','任务失败',panelX+19+cw,cardY,cw,54,{skin:'mission-card',selected:web.missionChoice===false,tone:'red',detail:web.ownTeam==='blue'?'蓝方阵营不可出失败牌':'妖魔作祟 · 破坏任务'});
       if(web.warning)add('label','mission-warning',web.warning,panelX+13,cardY+112,panelW-26,36,{skin:'warning',fontSize:11,tone:'red'});
       const submit=model.rows.find(row=>row.id==='submitMission');
-      add('button','submitMission',submit?.text??'确认提交任务牌',panelX+9,cardY+60+(web.warning?44:0),panelW-18,48,{skin:'dragon-button',primary:true,fontFace:'calligraphy',fontSize:17,letterSpacing:2,disabled:web.missionChoice===undefined});
+      add('button','submitMission',submit?.text??'确认提交任务牌',panelX+9,cardY+60+(web.warning?44:0),panelW-18,48,{skin:'dragon-button',primary:true,fontFace:'calligraphy',fontSize:17,letterSpacing:.5,disabled:web.missionChoice===undefined});
     } else if (proposing && captain?.id === web.user?.id) {
       add('label','dock-rule',stage === 'proposing' ? '—◇ 点击头像选人 · 预选阵容后进入论道 ◇—' : '—◇ 真假论道 · 听取陈述后发起表决 ◇—',panelX+4,panelY+10,panelW-8,17);
       const directionW=cssClamp(100,w*.28,118), controlsX=panelX+13, controlsW=panelW-26;
