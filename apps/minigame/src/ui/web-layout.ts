@@ -73,7 +73,7 @@ export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout 
     for(const [id,title,width] of (web.user?[['friends','👥 仙友',friendW],['sound','静音',soundW],['switch','🚪 换号',switchW]]:[['sound','静音',soundW]]) as [string,string,number][]){add('button',id,title,toolX,top,width,toolbarH,{fixed:true,fontSize:13,count:id==='friends'?web.friendRequests:undefined});toolX+=width+6;}
     const logoTop=homeBrandTop,logoSize=compact?28:cssClamp(28,w*.088,36),logoH=logoSize*1.2,subSize=compact?11:cssClamp(11,w*.033,14);
     add('label','brand','嘻游 · 真假猴王',homePad,logoTop,homeW,logoH,{fontSize:logoSize,fixed:true});
-    add('label','home-subtitle','一念佛魔皆幻相，谁是修道取经人',homePad,logoTop+logoH+(compact?5:8),homeW,subSize*1.45,{skin:'home-copy',fontSize:subSize,fixed:true});
+    add('label','home-subtitle','一念佛魔皆幻相，谁是修道取经人',homePad,top+toolbarH+(compact?8:12),homeW,subSize*1.45,{skin:'home-copy',fontSize:subSize,fixed:true});
     const hasInvitation=model.rows.some(r=>r.id==='invitation'),promotion=web.freeAccess!==false,inviteH=hasInvitation?16.8+fg:0,footerH=(compact?202:230)+inviteH+(promotion?0:-5),footer=v.height-v.bottom-(compact?8:14)-footerH;
     const headlineSize=compact?cssClamp(29,w*.088,34):cssClamp(34,w*.108,44),headlineH=headlineSize*1.06*2,descSize=compact?12:cssClamp(12,w*.036,15),copyH=headlineH+(compact?6:10)+descSize*1.45,copyY=footer-(compact?11:20)-copyH;
     add('label','home-headline','两个悟空，\n你信哪一个？',homePad,copyY,homeW,headlineH,{skin:'home-copy',fontFace:'calligraphy',fontSize:headlineSize});

@@ -12,7 +12,8 @@ test('home preserves latest web duel artwork, paired room actions and compact ac
   const nodes = layoutWebScreen(model, { width: 390, height: 844, top: 44, bottom: 34 }).nodes;
   assert.ok(nodes.some(node => node.id === 'home-duel' && node.image === 'home/duel-mobile.jpg'));
   assert.equal(nodes.find(node => node.id === 'create')?.y, nodes.find(node => node.id === 'join')?.y);
-  assert.ok(nodes.find(node=>node.id==='home-subtitle')!.y+nodes.find(node=>node.id==='home-subtitle')!.height<nodes.find(node=>node.id==='account')!.y);
+  assert.ok(nodes.find(node=>node.id==='brand')!.y<nodes.find(node=>node.id==='account')!.y);
+  assert.ok(nodes.find(node=>node.id==='home-subtitle')!.y>nodes.find(node=>node.id==='account')!.y+nodes.find(node=>node.id==='account')!.height);
 });
 
 test('waiting table folds mission details after readiness and preserves vacant seats', () => {
