@@ -27,6 +27,13 @@ test('builds an importable project without server or admin secrets', async t => 
 });
 
 test('default build uses the registered Mini Game AppID rather than tourist mode', async t => {
+  // Exercise the unset default independently of the release command's voice setting.
+  const voiceEnvironment = process.env.WECHAT_MINIGAME_VOICE_ENABLED;
+  delete process.env.WECHAT_MINIGAME_VOICE_ENABLED;
+  t.after(() => {
+    if (voiceEnvironment === undefined) delete process.env.WECHAT_MINIGAME_VOICE_ENABLED;
+    else process.env.WECHAT_MINIGAME_VOICE_ENABLED = voiceEnvironment;
+  });
   const outDir = await mkdtemp(join(tmpdir(), 'avalon-minigame-appid-'));
   t.after(() => rm(outDir, { recursive: true, force: true }));
   const result = await buildMiniGame({ outDir });
@@ -40,6 +47,34 @@ test('default build uses the registered Mini Game AppID rather than tourist mode
   assert.equal(config.appid, 'wxdb4e422c14adab3f');
   assert.equal(config.compileType, 'game');
   assert.equal(config.setting.urlCheck, true);
+});
+
+test('voice release environment and explicit overrides keep recording permission in sync', async t => {
+  const voiceEnvironment = process.env.WECHAT_MINIGAME_VOICE_ENABLED;
+  process.env.WECHAT_MINIGAME_VOICE_ENABLED = 'true';
+  t.after(() => {
+    if (voiceEnvironment === undefined) delete process.env.WECHAT_MINIGAME_VOICE_ENABLED;
+    else process.env.WECHAT_MINIGAME_VOICE_ENABLED = voiceEnvironment;
+  });
+  const outDir = await mkdtemp(join(tmpdir(), 'avalon-minigame-native-voice-'));
+  t.after(() => rm(outDir, { recursive: true, force: true }));
+  const enabled = await buildMiniGame({ outDir });
+  assert.equal(enabled.voiceEnabled, true);
+  const game = JSON.parse(await readFile(join(outDir, 'game.json'), 'utf8'));
+  assert.match(game.permission['scope.record'].desc, /主动加入语音/);
+  assert.doesNotMatch(await readFile(join(outDir, 'bundle.js'), 'utf8'), /WECHAT_MINIGAME_APP_SECRET|ADMIN_KEY/);
+
+  const disabled = await buildMiniGame({ outDir, voiceEnabled: false });
+  assert.equal(disabled.voiceEnabled, false);
+  assert.equal(JSON.parse(await readFile(join(outDir, 'game.json'), 'utf8')).permission?.['scope.record'], undefined);
+
+  process.env.WECHAT_MINIGAME_VOICE_ENABLED = 'false';
+  const disabledByEnvironment = await buildMiniGame({ outDir });
+  assert.equal(disabledByEnvironment.voiceEnabled, false);
+  assert.equal(JSON.parse(await readFile(join(outDir, 'game.json'), 'utf8')).permission?.['scope.record'], undefined);
+  const explicitlyEnabled = await buildMiniGame({ outDir, voiceEnabled: true });
+  assert.equal(explicitlyEnabled.voiceEnabled, true);
+  assert.ok(JSON.parse(await readFile(join(outDir, 'game.json'), 'utf8')).permission?.['scope.record']);
 });
 
 test('build embeds the configured HTTPS API origin only', async t => {
@@ -69,12 +104,13 @@ test('rejects a package that exceeds its declared limit', async t => {
   await assert.rejects(buildMiniGame({ outDir, appId: 'wx1111111111111111', maxBytes: 10 }), /PACKAGE_TOO_LARGE/);
 });
 
-test('built bundle starts with only WeChat Mini Game APIs available', async t => {
+for (const voiceEnabled of [false, true]) test(`built bundle starts and allows practice with native voice ${voiceEnabled ? 'enabled' : 'disabled'}`, async t => {
   const outDir = await mkdtemp(join(tmpdir(), 'avalon-minigame-runtime-'));
   t.after(() => rm(outDir, { recursive: true, force: true }));
-  await buildMiniGame({ outDir });
+  await buildMiniGame({ outDir, voiceEnabled });
   const calls: string[] = [];
   const labels: string[] = [];
+  const voiceEvents: string[] = [];
   let touchStart: ((event: any) => void) | undefined;
   let touchEnd: ((event: any) => void) | undefined;
   const ctx = new Proxy({}, { get: (_target, name) => (name === 'createLinearGradient' || name === 'createRadialGradient')
@@ -87,10 +123,16 @@ test('built bundle starts with only WeChat Mini Game APIs available', async t =>
     getStorageSync: () => undefined,
     onShow() {}, onHide() {}, onTouchStart(callback: typeof touchStart) { touchStart = callback; },
     onTouchEnd(callback: typeof touchEnd) { touchEnd = callback; }, onShareAppMessage() {},
+    onVoIPChatMembersChanged() { voiceEvents.push('members'); },
+    onVoIPChatSpeakersChanged() { voiceEvents.push('speakers'); },
+    onVoIPChatInterrupted() { voiceEvents.push('interrupted'); },
+    authorize() { assert.fail('startup or practice must not request microphone access'); },
+    joinVoIPChat() { assert.fail('startup or practice must not join voice automatically'); },
   };
   const bundle = await readFile(join(outDir, 'bundle.js'), 'utf8');
   assert.doesNotThrow(() => runInNewContext(bundle, { wx, console, setTimeout, clearTimeout, crypto: globalThis.crypto }));
   assert.ok(calls.includes('fillText'));
+  assert.deepEqual(voiceEvents, voiceEnabled ? ['members', 'speakers', 'interrupted'] : []);
   assert.ok(labels.some(label => label.includes('幻境单人试玩')));
   const button = layoutWebScreen(entryScreen(), { width: 390, height: 844, top: 88, bottom: 34 }).nodes.find(node => node.id === 'practice')!;
   touchStart?.({ touches: [{ clientX: button.x + 10, clientY: button.y + 15 }] });

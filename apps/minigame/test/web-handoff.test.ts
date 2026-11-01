@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { defaultSettings, type RoomView, type User } from '@avalon/contracts';
 import { copyWebEntry, personalHandoffUrl, roomVoiceGuidance, webHandoffScreen } from '../src/screens/web-handoff.js';
+import { entryScreen } from '../src/screens/entry.js';
 import { lobbyScreen, LobbyController } from '../src/screens/lobby.js';
 import { layoutWebScreen } from '../src/ui/web-layout.js';
 import { settingsScreen } from '../src/screens/settings.js';
@@ -52,14 +53,45 @@ test('copy failures and unavailable clipboard leave the game state untouched', a
   assert.equal(JSON.stringify(room), before);
 });
 
-test('web voice guidance applies to smaller mixed rooms as well as twelve-player rooms', () => {
+test('native voice guidance remains independent of the web Agora compatibility switch', () => {
   for (const playerCount of [5, 8, 10, 11, 12]) {
     const r = { ...room, settings: { ...room.settings, playerCount } };
-    assert.match(roomVoiceGuidance(r), playerCount<=10 ? /无需跳转网页/ : /最多10人/);
-    assert.match(roomVoiceGuidance(r), /两端不互通/);
+    assert.match(roomVoiceGuidance(r,true), playerCount<=10 ? /无需跳转网页/ : /最多10人/);
+    assert.match(roomVoiceGuidance(r,true), /两端不互通/);
   }
-  assert.match(roomVoiceGuidance({ settings: defaultSettings }), /微信原生语音/);
-  assert.match(roomVoiceGuidance({ settings: defaultSettings }), /无需跳转网页/);
+  assert.match(roomVoiceGuidance({ settings: defaultSettings },true), /微信原生语音/);
+  assert.match(roomVoiceGuidance({ settings: defaultSettings },true), /无需跳转网页/);
+});
+
+test('voice-enabled and disabled candidates describe their actual capability without changing game entry actions', () => {
+  for(const currentUser of [undefined,user]){
+    const disabled=entryScreen(currentUser,undefined,false,false),enabled=entryScreen(currentUser,undefined,false,true);
+    assert.match(disabled.subtitle!,/当前版本不含实时语音/);
+    assert.match(enabled.subtitle!,/最多10人.*主动加入/);
+    assert.doesNotMatch(enabled.subtitle!,/不含实时语音|当前关闭/);
+    assert.deepEqual(enabled.rows,disabled.rows);
+  }
+  const disabled=webHandoffScreen(room,user,false),enabled=webHandoffScreen(room,user,true);
+  assert.match(disabled.rows.find(r=>r.id==='guide:web-continue')!.text,/微信语音当前保持关闭/);
+  assert.match(enabled.rows.find(r=>r.id==='guide:web-continue')!.text,/不互通.*全房统一.*不影响对局/);
+  assert.doesNotMatch(enabled.rows.map(r=>r.text).join('\n'),/微信语音当前.*关闭/);
+});
+
+test('native voice guidance preserves small-room WeChat calls and routes oversized rooms to whole-room web calls', () => {
+  for(const playerCount of [5,10,11,12]){
+    const ordinary={settings:{...defaultSettings,playerCount,voiceChatEnabled:false}};
+    const enabled=roomVoiceGuidance(ordinary,true);
+    if(playerCount<=10){
+      assert.match(enabled,/主动加入微信原生语音.*默认闭麦.*最多10人/);
+      assert.match(enabled,/不互通.*语音失败不影响对局/);
+    }else{
+      assert.match(enabled,/游戏照常进行.*最多10人.*全员转到网页版.*开启网页端声网兼容/);
+    }
+    const web={settings:{...ordinary.settings,voiceChatEnabled:true}};
+    assert.match(roomVoiceGuidance(web,true),playerCount<=10?/主动加入微信原生语音.*无需跳转网页/:/全员转到网页版/);
+    assert.match(roomVoiceGuidance(web,false),/全员.*网页版.*小游戏当前不接入此语音/);
+    assert.match(roomVoiceGuidance(ordinary,false),/微信语音当前关闭.*对局照常进行/);
+  }
 });
 
 test('handoff sheet keeps personal and friend actions distinct and long instructions readable on mobile', () => {

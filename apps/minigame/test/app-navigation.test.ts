@@ -7,10 +7,10 @@ import { runInNewContext } from 'node:vm';
 import { parityFixture } from '../scripts/parity-fixture.js';
 import { buildMiniGame } from '../scripts/build.mjs';
 
-test('built client logs in, opens a clean join form and creates the selected web room configuration', async t => {
+test('voice-enabled client logs in and creates the selected room without requiring native voice permission', async t => {
   const outDir = await mkdtemp(join(tmpdir(), 'avalon-parity-app-'));
   t.after(() => rm(outDir, { recursive: true, force: true }));
-  await buildMiniGame({ outDir });
+  await buildMiniGame({ outDir, voiceEnabled:true });
   const timers = new Set<ReturnType<typeof setTimeout>>();
   t.after(() => { for (const timer of timers) clearTimeout(timer); });
   let start: any, end: any, confirmKeyboard: any, room: any, socketMessage: any;
@@ -108,10 +108,10 @@ test('built client logs in, opens a clean join form and creates the selected web
   await tap('返回法坛'); await tap('加入房间');
   assert.ok(frame.some(item => item.text === '输入房间号或邀请链接'));
   await tap('返回法坛'); await tap('开常规房'); await tap('9');
-  for (let index = 0; index < 8 && !frame.some(item => item.text === '开启线下常规房' && item.y < 790); index++) {
+  for (let index = 0; index < 8 && !frame.some(item => item.text === '创建游戏房间' && item.y < 790); index++) {
     start({ touches: [{ clientX: 350, clientY: 760 }] }); end({ changedTouches: [{ clientX: 350, clientY: 240 }] }); await settle();
   }
-  await tap('开启线下常规房');
+  await tap('创建游戏房间');
   assert.equal(requests.find(item => item.path === '/rooms')?.data.settings.playerCount, 9);
   assert.ok(frame.some(item => item.text.includes('房号 123456')));
   room = parityFixture().room; room.version = 2;

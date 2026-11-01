@@ -31,9 +31,17 @@ await record(project);
 const manifest = { version, revision: git(['rev-parse', 'HEAD']), sourceDirty: Boolean(git(['status', '--porcelain'])),
   appId: result.appId, apiOrigin: new URL(result.apiBaseUrl).origin, apiBaseUrl: result.apiBaseUrl,
   webEntryUrl: result.apiBaseUrl + '/',
-  voiceEnabled: result.voiceEnabled, ...(result.voiceEnabled ? {voiceProvider:'wechat-native',voiceMaxPlayers:10} : {}), bytes: result.size, files };
+  releasePurpose: result.voiceEnabled ? 'wechat-voice-device-test' : 'minigame-candidate',
+  voiceEnabled: result.voiceEnabled, ...(result.voiceEnabled ? {voiceProvider:'wechat-native',voiceMaxPlayers:10,voiceInteroperability:'minigame-only',realDeviceVoiceVerified:false} : {}), bytes: result.size, files };
 await writeFile(join(releaseRoot, 'release.json'), JSON.stringify(manifest, null, 2));
-await writeFile(join(releaseRoot, 'README.txt'), `微信开发者工具选择小游戏，导入本目录下 project 文件夹。\n版本 ${version}\nAppID ${result.appId}\n服务地址 ${manifest.apiBaseUrl}\n${result.voiceEnabled ? '包含微信原生语音，仅同房小游戏玩家互通，最多10人。' : '当前版本不含实时语音。'}真实登录、同房对局及上传回执需在发布前另行验收。本命令不会上传或发布。\n`);
+await writeFile(join(releaseRoot, 'README.txt'), `微信开发者工具选择小游戏，导入本目录下 project 文件夹。\n版本 ${version}\nAppID ${result.appId}\n服务地址 ${manifest.apiBaseUrl}\n${result.voiceEnabled ? [
+  '用途：微信原生语音体验版候选包，供真机联调；尚未完成真机通话验收。',
+  '仅同房小游戏玩家互通，最多10人；与网页声网语音不互通。11–12人需要内置语音时请全员使用网页版。',
+  'ECS 服务端必须同时启用 WECHAT_MINIGAME_VOICE_ENABLED=true，并配置正确的 AppID/AppSecret；AppSecret 仅留在服务端，不放入本工程。',
+  '合作伙伴需核对微信实时语音能力权限与隐私指引中的麦克风用途声明。',
+  '使用当前微信绑定的游戏账号进入5–10人房，打开声音设置并主动加入微信语音；加入默认闭麦，需主动开启麦克风。',
+  '至少两台手机验证双向通话、静音和恢复、拒绝授权、退后台再进入、断线和退房；语音失败不应妨碍准备与对局。',
+].join('\n') : '当前版本不含实时语音。'}\n真实登录、同房对局及上传回执需在发布前另行验收。本命令不会上传、提审或发布。\n`);
 if (process.platform === 'win32') {
   // Windows ships bsdtar. Direct arguments avoid shell quoting and PowerShell module dependencies.
   execFileSync('tar.exe', ['-a', '-c', '-f', releaseRoot + '.zip', '-C', releaseRoot, 'project', 'release.json', 'README.txt'],

@@ -31,6 +31,7 @@ export class NativeVoice {
   private count=0;
   private epoch=0;
   private busy=false;
+  private nativeJoinStarted=false;
   private nativeOutstanding=false;
   private cleanupFailed=false;
   private exiting?:Promise<void>;
@@ -63,6 +64,7 @@ export class NativeVoice {
       if(epoch!==this.epoch)return;
       const ticket=await this.ticket(roomId);
       if(epoch!==this.epoch)return;
+      this.nativeJoinStarted=true;
       this.nativeOutstanding=true;
       const result=await invoke<{openIdList?:string[]}>(cb=>this.wx.joinVoIPChat!({...ticket,...cb,roomType:'voice',muteConfig:{muteMicrophone:true,muteEarphone:false},success:value=>{
         if(epoch!==this.epoch){
@@ -75,7 +77,7 @@ export class NativeVoice {
       if(epoch!==this.epoch)return;
       this.joined=true;this.members=result.openIdList?.length??1;this.microphoneMuted=true;this.message='已加入微信语音（默认闭麦）';
     }catch(error){if(epoch===this.epoch){await this.leave();if(error instanceof Error&&error.message==='RATE_LIMITED'){this.retryAt=Date.now()+60000;this.message='语音请求过于频繁，请约1分钟后重试';}else this.message=error instanceof Error?error.message:'语音加入失败';throw error;}}
-    finally{this.busy=false;this.changed();}
+    finally{this.nativeJoinStarted=false;this.busy=false;this.changed();}
   }
   async toggleMicrophone(){await this.mute(!this.microphoneMuted,this.speakerMuted);}
   async toggleSpeaker(){await this.mute(this.microphoneMuted,!this.speakerMuted);}
@@ -98,7 +100,8 @@ export class NativeVoice {
     this.microphoneMuted=microphone;this.speakerMuted=speaker;this.changed();
   }
   async leave(){
-    const active=this.joined||this.busy||this.nativeOutstanding||this.cleanupFailed;this.epoch++;this.reset();this.message='未加入微信语音';
+    // Authorization and ticket requests can be cancelled without a native call to clean up.
+    const active=this.joined||this.nativeJoinStarted||this.nativeOutstanding||this.cleanupFailed;this.epoch++;this.reset();this.message='未加入微信语音';
     if(active&&!this.exiting){
       this.exiting=invoke<void>(cb=>this.wx.exitVoIPChat?this.wx.exitVoIPChat(cb):cb.success()).then(()=>{this.cleanupFailed=false;}).catch(()=>{this.cleanupFailed=true;this.message='语音退出未确认，请关闭小游戏检查麦克风';}).finally(()=>{this.exiting=undefined;this.changed();});
     }
@@ -108,8 +111,8 @@ export class NativeVoice {
     ...(!this.enabled ? [{id:'guide:voice',text:'当前小游戏版本不支持实时语音，5–12 人牌局照常进行；需要内置语音时请全员转到网页版。'}] : this.voiceRows()),
   ];}
   private voiceRows(){return [
-    {id:'guide:voice',text:this.cleanupFailed?this.message:!this.roomId?'入房后可加入微信原生语音':this.count>10?'本房为'+this.count+'人局；微信原生语音最多10人，暂不可用':this.message},
-    {id:'guide:voice-scope',text:'仅同房小游戏玩家互通；网页声网语音独立。'},
+    {id:'guide:voice',text:this.cleanupFailed?this.message:!this.roomId?'入房后可加入微信原生语音':this.count>10?'本房为'+this.count+'人局；微信原生语音最多10人。需要内置语音时，请全员转到网页版。':this.message},
+    {id:'guide:voice-scope',text:'仅同房小游戏玩家互通，与网页声网语音不互通；语音连接或权限失败不影响对局。'},
     ...(this.cleanupFailed?[{id:'voice:leave',text:'重试退出语音；仍失败请关闭小游戏'}]:this.roomId&&this.count<=10?(this.joined?[
       {id:'guide:voice-members',text:`语音成员 ${this.members} 人 · 正在说话 ${this.speakers} 人`},
       {id:'voice:microphone',text:this.microphoneMuted?'开启麦克风':'关闭麦克风'},

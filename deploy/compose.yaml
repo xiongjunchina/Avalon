@@ -32,6 +32,7 @@ services:
       ADMIN_KEY: ${ADMIN_KEY:-}
       WECHAT_MINIGAME_APP_ID: ${WECHAT_MINIGAME_APP_ID:-}
       WECHAT_MINIGAME_APP_SECRET: ${WECHAT_MINIGAME_APP_SECRET:-}
+      WECHAT_MINIGAME_VOICE_ENABLED: ${WECHAT_MINIGAME_VOICE_ENABLED:-false}
     depends_on:
       postgres: { condition: service_healthy }
     init: true
