@@ -1,3 +1,5 @@
+import {createScrollLayoutCache} from './ui/scroll-layout-cache.js';
+import {webFontRevision} from './ui/web-render.js';
 import { chooseWechatProfile, WechatProfileButton } from './platform/wechat-profile.js';
 import { installPrivacyAuthorization } from './platform/privacy.js';
 import {ServerClock} from './net/server-clock.js';
@@ -188,13 +190,14 @@ function model(): ScreenModel {
     ...(portraitRole ? { portrait: `${portraitRole}-160.webp` } : view === 'guide' && guideRoleId ? { portrait: `${guideRoleId}-160.webp` } : {}) };
 }
 const wechatProfileButton=new WechatProfileButton(wx,profile=>{playerPanel?.applyWechatProfile(profile);render();},message=>{error=message;render();});
+const cachedWebLayout=createScrollLayoutCache();
 function render() {
   retryWebFonts();
   clearTimeout(countdownTimer);
   sound.update(view === 'practice' ? practice?.view().game : view === 'game' ? room?.game : undefined, !suspended && (view === 'practice' || view === 'game' && connectionStatus === '已连接'));
   configureDocumentMetrics(canvas);
   const current = model();
-  const layout = current.web ? layoutWebScreen(current, viewport) : undefined;
+  const layout = current.web ? cachedWebLayout(current, viewport,webFontRevision()) : undefined;
   scroll = layout ? Math.max(0, Math.min(scroll, layout.maxScroll)) : clampScroll(current.rows, viewport, scroll, current.scene);
   rows = renderScreen({ ...current, scroll }, canvas, viewport, artwork, layout);
   const authRegion=layout?.nodes.find(n=>n.id==='profile:wechat');

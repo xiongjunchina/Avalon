@@ -13,12 +13,13 @@ let backdropFactory:(()=>HTMLCanvasElement)|undefined,fontRevision=0;
 const disabledTreasureButtons=new Map<string,HTMLCanvasElement>();
 const backdrops=new WeakMap<HTMLCanvasElement,{key:string;canvas:HTMLCanvasElement}>();
 export function setBackdropCanvasFactory(factory:()=>HTMLCanvasElement){backdropFactory=factory;}
-function drawBlurredBackdrop(canvas:HTMLCanvasElement,ctx:CanvasRenderingContext2D,v:SafeViewport,underlay:ScreenModel,artwork?:Artwork){
+function drawBlurredBackdrop(canvas:HTMLCanvasElement,ctx:CanvasRenderingContext2D,v:SafeViewport,underlay:ScreenModel,artwork?:Artwork,reuseOnly=false){
   const factory=backdropFactory??(canvas.ownerDocument?()=>canvas.ownerDocument.createElement('canvas'):undefined);if(!factory)return;
   const key=JSON.stringify([underlay,v.width,v.height,v.top,v.bottom,artwork?.revision??0,fontRevision]);let cached=backdrops.get(canvas);
-  if(cached?.key!==key){const buffer=cached?.canvas??factory();buffer.width=Math.round(v.width);buffer.height=Math.round(v.height);const bc=buffer.getContext('2d');if(!bc||!bc.getImageData||!bc.putImageData)return;
+  if(cached?.key!==key&&reuseOnly)return false;
+  if(cached?.key!==key){const buffer=cached?.canvas??factory();buffer.width=Math.max(1,Math.round(v.width*.4));buffer.height=Math.max(1,Math.round(v.height*.4));const bc=buffer.getContext('2d');if(!bc||!bc.getImageData||!bc.putImageData)return;
     try{bc.drawImage(canvas,0,0,canvas.width,canvas.height,0,0,buffer.width,buffer.height);const pixels=bc.getImageData(0,0,buffer.width,buffer.height);if(!pixels?.data)return;blurBackdrop(pixels.data,buffer.width,buffer.height);bc.putImageData(pixels,0,0);}catch{return;}cached={key,canvas:buffer};backdrops.set(canvas,cached);}
-  ctx.drawImage(cached.canvas,0,0,v.width,v.height);
+  ctx.drawImage(cached.canvas,0,0,v.width,v.height);return true;
 }
 let sans = cnSans;
 let homeInterface='"Home Interface",'+cnSans;
@@ -26,6 +27,7 @@ let nativeSans=false;
 const sansWeights:Record<string,string>={};
 let display = '"ZCOOL XiaoWei",' + cnSans;
 let calligraphy = '"Ma Shan Zheng",' + cnKaiti;
+export function webFontRevision(){return fontRevision;}
 export function setWebFonts(fonts: { homeInterface?:string;sans500?:string;sans600?:string;sans700?:string;sans?: string; display?: string; calligraphy?: string }) {
   documentWidths.clear();disabledTreasureButtons.clear();fontRevision++;if(fonts.homeInterface)homeInterface=JSON.stringify(fonts.homeInterface)+','+cnSans;
   if(fonts.sans){sans=JSON.stringify(fonts.sans)+','+cnSans;nativeSans=true;}
@@ -55,10 +57,12 @@ function cornerRect(ctx:CanvasRenderingContext2D,n:WebNode,tl:number,tr:number,b
 function fill(ctx: CanvasRenderingContext2D, n: WebNode, color: string | CanvasGradient, radius = 14, border = webTheme.border) {
   rect(ctx, n.x, n.y, n.width, n.height, radius); ctx.fillStyle = color; ctx.fill(); ctx.strokeStyle = border; ctx.lineWidth = n.selected ? 2 : 1; ctx.stroke();
 }
+const gradientCache=new WeakMap<CanvasRenderingContext2D,Map<string,CanvasGradient>>();
 function gradient(ctx: CanvasRenderingContext2D, n: WebNode, colors: string[],angle=155) {
+  let cache=gradientCache.get(ctx);if(!cache){cache=new Map();gradientCache.set(ctx,cache);}const key=JSON.stringify([n.x,n.y,n.width,n.height,colors,angle]);const cached=cache.get(key);if(cached)return cached;
   const rad=angle*Math.PI/180,dx=Math.sin(rad),dy=-Math.cos(rad),length=Math.abs(n.width*dx)+Math.abs(n.height*dy),cx=n.x+n.width/2,cy=n.y+n.height/2;
   const value = ctx.createLinearGradient(cx-dx*length/2,cy-dy*length/2,cx+dx*length/2,cy+dy*length/2);
-  colors.forEach((color, index) => value.addColorStop(index / (colors.length - 1), color)); return value;
+  colors.forEach((color, index) => value.addColorStop(index / (colors.length - 1), color));if(cache.size>=256)cache.clear();cache.set(key,value); return value;
 }
 function inlineWidth(ctx:CanvasRenderingContext2D,value:string,size:number,narrowDot=false){return ctx.measureText(value).width-(narrowDot?(value.match(/·/g)?.length??0)*(ctx.measureText('·').width-size*.24072):0);}
 function text(ctx: CanvasRenderingContext2D, value: string, x: number, y: number, width: number, size = 14, color = webTheme.text, align: CanvasTextAlign = 'center', family = sans, weight = '400', spacing = 0) {
@@ -105,7 +109,7 @@ function art(ctx: CanvasRenderingContext2D, artwork: Artwork | undefined, name: 
   const img = artwork?.get('symbols/' + name + '.png');
   if (img) ctx.drawImage(img as CanvasImageSource,x,y,w,h);
 }
-function shadow(ctx: CanvasRenderingContext2D, color = 'rgba(0,0,0,.65)', blur = 12, dy = 4) { ctx.shadowColor=color; ctx.shadowBlur=blur; ctx.shadowOffsetY=dy; }
+function shadow(ctx: CanvasRenderingContext2D, color = 'rgba(0,0,0,.65)', blur = 12, dy = 4) { ctx.shadowColor=color; ctx.shadowBlur=Math.min(blur,5); ctx.shadowOffsetY=Math.min(dy,2); }
 function edge(ctx: CanvasRenderingContext2D, n: WebNode, r=14) {
   rect(ctx,n.x+1.5,n.y+1.5,n.width-3,n.height-3,r);ctx.strokeStyle='rgba(255,230,160,.24)';ctx.lineWidth=1;ctx.stroke();
 }
@@ -855,7 +859,8 @@ export function renderWebScreen(model: ScreenModel, canvas: HTMLCanvasElement, v
   const modal = model.web!.document?.modal;
   if (modal) {
     const underlay=model.web!.underlay??{title:'',rows:[],web:{page:'home' as const,user:model.web!.document?.user,guestHome:!model.web!.document?.user}};
-    renderWebScreen(underlay,canvas,v,artwork);if(model.web!.document?.kind!=='admin-friends')drawBlurredBackdrop(canvas,ctx,v,underlay,artwork);
+    if(model.web!.document?.kind==='admin-friends')renderWebScreen(underlay,canvas,v,artwork);
+    else if(!drawBlurredBackdrop(canvas,ctx,v,underlay,artwork,true)){renderWebScreen(underlay,canvas,v,artwork);drawBlurredBackdrop(canvas,ctx,v,underlay,artwork);}
     ctx.fillStyle = model.web!.document?.adminReplay?'rgba(0,0,0,.82)':model.web!.document?.kind==='chat'&&model.web!.document?.activeTab!=='direct'?'rgba(0,0,0,.65)':model.web!.document?.kind==='art'?'rgba(4,9,16,.88)':model.web!.document?.kind==='admin-friends'?'rgba(0,0,0,.7)':'rgba(7, 26, 44, 0.78)';
     ctx.fillRect(0, 0, v.width, v.height);
   }
