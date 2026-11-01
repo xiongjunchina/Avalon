@@ -19,3 +19,18 @@ export async function chooseWechatProfile(wx:ProfileRuntime):Promise<WechatProfi
  });
 }
 
+
+export class WechatProfileButton {
+ private button?:ReturnType<NonNullable<ProfileRuntime['createUserInfoButton']>>;
+ private key='';
+ constructor(private wx:ProfileRuntime,private accept:(profile:WechatProfile)=>void,private fail:(message:string)=>void){}
+ sync(region?:{x:number;y:number;width:number;height:number}){
+  const key=JSON.stringify(region);if(key===this.key)return;this.button?.destroy();this.button=undefined;this.key=key;
+  if(!region||!this.wx.createUserInfoButton)return;
+  const button=this.wx.createUserInfoButton({type:'text',text:'',withCredentials:false,lang:'zh_CN',style:{left:region.x,top:region.y,width:region.width,height:region.height,lineHeight:region.height,backgroundColor:'#00000000',color:'#00000000',fontSize:13,borderRadius:20}});this.button=button;
+  button.onTap(r=>{if(this.button!==button)return;const nickname=r.userInfo?.nickName?.trim(),avatarUrl=r.userInfo?.avatarUrl;
+   if(!nickname||!avatarUrl||nickname==='微信用户'||!/^https:\/\//.test(avatarUrl)){this.fail('微信未提供个人头像昵称，可重试授权或自行上传头像');return;}
+   this.accept({nickname,avatarUrl});
+  });
+ }
+}

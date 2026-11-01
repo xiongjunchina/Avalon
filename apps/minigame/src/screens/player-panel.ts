@@ -49,6 +49,7 @@ export class PlayerPanel {
   private pending?: { label: string; action: () => Promise<unknown> };
   constructor(private readonly api: PlayerExtras, public user: User, private readonly avatarPicker?: AvatarPicker, private readonly wechatPicker?:()=>Promise<{nickname:string;avatarUrl:string}>) {}
 
+  applyWechatProfile(profile:{nickname:string;avatarUrl:string}){if(!this.profileEditing||!this.profileDraft)return;this.profileDraft.nickname=profile.nickname;this.profileDraft.wechatAvatarUrl=profile.avatarUrl;this.profileDraft.avatarUrl=null;}
   get incomingFriendRequests(){return this.friends.filter(f=>f.status==='pending'&&!f.isSender).length;}
   async refreshFriends(){const result=await this.api.friends();if(Array.isArray(result.friends))this.friends=result.friends;}
 

@@ -1,4 +1,4 @@
-import { chooseWechatProfile } from './platform/wechat-profile.js';
+import { chooseWechatProfile, WechatProfileButton } from './platform/wechat-profile.js';
 import { installPrivacyAuthorization } from './platform/privacy.js';
 import {ServerClock} from './net/server-clock.js';
 import {abortConfirmation} from './screens/abort-confirm.js';
@@ -187,6 +187,7 @@ function model(): ScreenModel {
   return { ...result, scroll, horizontalScroll, activeRound, scene: view === 'entry' ? 'entry' : view === 'game' || view === 'practice' || view === 'lobby' ? 'game' : view === 'admin' ? 'admin' : 'standard',
     ...(portraitRole ? { portrait: `${portraitRole}-160.webp` } : view === 'guide' && guideRoleId ? { portrait: `${guideRoleId}-160.webp` } : {}) };
 }
+const wechatProfileButton=new WechatProfileButton(wx,profile=>{playerPanel?.applyWechatProfile(profile);render();},message=>{error=message;render();});
 function render() {
   retryWebFonts();
   clearTimeout(countdownTimer);
@@ -196,6 +197,8 @@ function render() {
   const layout = current.web ? layoutWebScreen(current, viewport) : undefined;
   scroll = layout ? Math.max(0, Math.min(scroll, layout.maxScroll)) : clampScroll(current.rows, viewport, scroll, current.scene);
   rows = renderScreen({ ...current, scroll }, canvas, viewport, artwork, layout);
+  const authRegion=layout?.nodes.find(n=>n.id==='profile:wechat');
+  wechatProfileButton.sync(!suspended&&!busy&&authRegion&&authRegion.y>=(authRegion.clipTop??0)&&authRegion.y+authRegion.height<=(authRegion.clipBottom??viewport.height)?authRegion:undefined);
   // Static duel artwork needs no idle animation timer.
   if (!suspended && view === 'game' && ['dealing','guanyin_window'].includes(room?.game?.phase??'')) countdownTimer = setTimeout(render, 1_000);
 }
@@ -260,6 +263,7 @@ async function run(action: () => Promise<void>, silent = false) {
 
 async function select(id: string) {
   if(id==='noop')return;
+  if(id==='profile:wechat'){if(!wx.createUserInfoButton){error='当前微信版本不支持资料授权，请使用上传头像';render();}return;}
   if(id==='voice:leave'&&nativeVoice.connecting){void nativeVoice.leave();return;}
   if (busy || commandBusy) return;
   if (id === 'web:open' && room && user) { auxiliary = 'webHandoff'; scroll = 0; render(); return; }
