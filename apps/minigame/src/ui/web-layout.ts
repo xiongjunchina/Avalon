@@ -20,6 +20,7 @@ export function resultHeroGeometry(width:number,self:string,reason:string){
 }
 
 export interface WebSurface {
+  voice?:{joined:boolean;connecting:boolean;muted:boolean;deafened:boolean;members:number;speakers:number};
   chatBubbles?:Record<string,string>;
   page: 'home' | 'setup' | 'table' | 'sheet';
   background?: 'gate' | 'pavilion' | 'sword' | 'library' | 'mirror' | 'dawn';
@@ -115,6 +116,17 @@ export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout 
     });
     for(const node of nodes){node.badge='table-toolbar';if(game)node.y-=2;}
     y = top + (game?34:48);
+    if(!web.practice && web.voice){
+      const voice=web.voice;
+      if(count>10)add('label','voice-limit','微信语音最多10人',16,y,w-32,32,{fontSize:12});
+      else if(!voice.joined){add('button',voice.connecting?'voice:leave':'voice:join',voice.connecting?'连接中… · 取消':'🎙 开启语音',16,y,w-32,32,{skin:'waiting-social',fontSize:13});}
+      else {
+        const gap=6,bw=(w-32-gap*2)/3;
+        [['voice:microphone',voice.muted?'🔇 开麦':'🎙 静音'],['voice:speaker',voice.deafened?'恢复收听':'暂停收听'],['voice:leave','退出语音']].forEach(([id,text],i)=>add('button',id!,text!,16+i*(bw+gap),y,bw,32,{skin:'waiting-social',fontSize:12}));
+        y+=35;add('label','voice-members','语音 '+voice.members+' 人 · 正在说话 '+voice.speakers+' 人',16,y,w-32,22,{fontSize:11});
+      }
+      y+=40;
+    }
     const boardX = 12, boardW = w - 24, questW = (boardW - 24) / 5;
     const questH = 67.3 + cssClamp(36, availableH * .055, 44);
     const drawQuests = (atY: number) => {

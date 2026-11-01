@@ -20,6 +20,7 @@ function invoke<T>(call:(callbacks:Callbacks<T>)=>void, timeout=15000):Promise<T
 }
 
 export class NativeVoice {
+  get connecting(){return this.busy;}
   joined=false;
   microphoneMuted=true;
   speakerMuted=false;

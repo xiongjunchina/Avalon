@@ -171,7 +171,7 @@ function model(): ScreenModel {
   result.web ??= { page: 'sheet', background: view === 'player' ? 'dawn' : 'library' };
   if(result.web.document)result.web.document.settingChoice=settingsChoice.current;
   result.web.friendRequests=playerPanel?.incomingFriendRequests??0;
-  if(view==='game'||view==='lobby')result.web.chatBubbles=roomBubbles.snapshot();
+  if(view==='game'||view==='lobby'){result.web.chatBubbles=roomBubbles.snapshot();result.web.voice={joined:nativeVoice.joined,connecting:nativeVoice.connecting,muted:nativeVoice.microphoneMuted,deafened:nativeVoice.speakerMuted,members:nativeVoice.members,speakers:nativeVoice.speakers};}
   result.web.freeAccess=freeAccess;
   result.web.waitingMissionsExpanded=waitingMissionsExpanded;
   result = feedback(result);
@@ -260,6 +260,7 @@ async function run(action: () => Promise<void>, silent = false) {
 
 async function select(id: string) {
   if(id==='noop')return;
+  if(id==='voice:leave'&&nativeVoice.connecting){void nativeVoice.leave();return;}
   if (busy || commandBusy) return;
   if (id === 'web:open' && room && user) { auxiliary = 'webHandoff'; scroll = 0; render(); return; }
   if ((id === 'web:copyPersonal' || id === 'web:copyInvite') && room && user) return run(async () => {
