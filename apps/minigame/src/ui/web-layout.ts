@@ -20,6 +20,7 @@ export function resultHeroGeometry(width:number,self:string,reason:string){
 }
 
 export interface WebSurface {
+  animationTime?:number;
   voice?:{message?:string;joined:boolean;connecting:boolean;muted:boolean;deafened:boolean;members:number;speakers:number};
   chatBubbles?:Record<string,string>;
   page: 'home' | 'setup' | 'table' | 'sheet';

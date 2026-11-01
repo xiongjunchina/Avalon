@@ -191,18 +191,24 @@ function model(): ScreenModel {
 }
 const wechatProfileButton=new WechatProfileButton(wx,profile=>{playerPanel?.applyWechatProfile(profile);render();},message=>{error=message;render();});
 const cachedWebLayout=createScrollLayoutCache();
+const motionEpoch=Date.now();
+let motionTimer:ReturnType<typeof setTimeout>|undefined;
 function render() {
   retryWebFonts();
+  clearTimeout(motionTimer);
   clearTimeout(countdownTimer);
   sound.update(view === 'practice' ? practice?.view().game : view === 'game' ? room?.game : undefined, !suspended && (view === 'practice' || view === 'game' && connectionStatus === '已连接'));
   configureDocumentMetrics(canvas);
   const current = model();
   const layout = current.web ? cachedWebLayout(current, viewport,webFontRevision()) : undefined;
   scroll = layout ? Math.max(0, Math.min(scroll, layout.maxScroll)) : clampScroll(current.rows, viewport, scroll, current.scene);
-  rows = renderScreen({ ...current, scroll }, canvas, viewport, artwork, layout);
+  rows = renderScreen({ ...current, scroll,web:current.web?{...current.web,animationTime:Date.now()-motionEpoch}:undefined }, canvas, viewport, artwork, layout);
   const authRegion=layout?.nodes.find(n=>n.id==='profile:wechat');
   wechatProfileButton.sync(!suspended&&!busy&&authRegion&&authRegion.y>=(authRegion.clipTop??0)&&authRegion.y+authRegion.height<=(authRegion.clipBottom??viewport.height)?authRegion:undefined);
-  // Static duel artwork needs no idle animation timer.
+  const animated=!!(wx.requestAnimationFrame??(typeof requestAnimationFrame==='function'?requestAnimationFrame:undefined))&&!suspended&&!current.web?.document?.modal&&(current.web?.page==='home'||current.web?.page==='table');
+  if(animated){const frame=()=>{if(suspended)return;const before=Date.now();renderScreen({...current,scroll,web:{...current.web!,animationTime:Date.now()-motionEpoch}},canvas,viewport,artwork,layout);const elapsed=Date.now()-before;motionTimer=setTimeout(frame,Math.max(42,elapsed*2));};motionTimer=setTimeout(frame,42);}
+  // Countdown updates remain separate from visual animation.
+
   if (!suspended && view === 'game' && ['dealing','guanyin_window'].includes(room?.game?.phase??'')) countdownTimer = setTimeout(render, 1_000);
 }
 function refreshHomeFriends(){const panel=playerPanel;if(panel)void panel.refreshFriends().then(()=>{if(playerPanel===panel)render();}).catch(()=>{});}

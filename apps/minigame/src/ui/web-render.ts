@@ -1,3 +1,4 @@
+import {sceneMotion} from './motion.js';
 export function strokeWithoutGold(ctx:CanvasRenderingContext2D){
  const color=ctx.strokeStyle;
  if(typeof color==='string'){
@@ -525,7 +526,7 @@ function drawDocumentNode(ctx:CanvasRenderingContext2D,n:WebNode,model:ScreenMod
   if(n.skin==='direct-message'){fill(ctx,n,n.selected?gradient(ctx,n,['#1e3a5f','#152d4b'],135):'#1e293bcc',12,n.selected?'#38bdf8':'#ffd8754d');(n.lines??[n.text]).forEach((line,i)=>write(line,n.x+13,n.y+9+9.1+i*18.2,n.width-26,13,'left',sans,'400',n.selected?'#e0f2fe':'#fff4d0'));return;}
   if(n.skin==='direct-quick-strip'){ctx.fillStyle='#141019b3';ctx.fillRect(n.x,n.y,n.width,n.height);return;}
   if(n.skin==='direct-quick'){fill(ctx,n,'#38bdf81f',24,'#38bdf84d');write(n.text,cx,cy,n.width-18,11.5,'center',sans,'400','#bae6fd');return;}
-  if(n.skin==='home-duel'){const img=artwork?.get(n.image!);if(img?.width&&img.height){const scale=Math.max(n.width/img.width,n.height/img.height);ctx.drawImage(img as CanvasImageSource,n.x+(n.width-img.width*scale)/2,n.y+(n.height-img.height*scale)*.4,img.width*scale,img.height*scale);}return;}
+  if(n.skin==='home-duel'){const img=artwork?.get(n.image!);if(img?.width&&img.height){const motion=sceneMotion(model.web?.animationTime??0),scale=Math.max(n.width/img.width,n.height/img.height)*motion.zoom;ctx.drawImage(img as CanvasImageSource,n.x+(n.width-img.width*scale)/2+motion.driftX,n.y+(n.height-img.height*scale)*.4,img.width*scale,img.height*scale);}return;}
   if(n.skin==='home-copy'){ctx.save();const heading=n.id==='home-headline',promotion=n.id==='home-promotion';shadow(ctx,promotion?'#3b2a12':'#fff1c7',heading?6:4,1);const lines=n.text.split('\n'),lh=n.height/lines.length;lines.forEach((line,i)=>text(ctx,line,cx,n.y+lh*(i+.5),n.width,n.fontSize??13,heading?'#40190e':promotion?'#ffe7b2':'#172329','center',heading?calligraphy:homeInterface,'400',0,true));ctx.restore();return;}
   if(n.skin==='art-image') {image(n.image,n.x,n.y,n.width,n.height);return;}
   if(n.skin==='expedition'){fill(ctx,{...n,selected:true},gradient(ctx,n,['#281d2e','#17111d'],180),18,'#d4a359');return;}
@@ -793,7 +794,7 @@ function drawNode(ctx: CanvasRenderingContext2D, n: WebNode, model: ScreenModel,
     ctx.save();shadow(ctx,'rgba(255,216,117,0.35)',20,0);circle(ctx,cx,cy,r,'#190808','#ffd875');ctx.restore();
     circle(ctx,cx,cy,r-3,'#170706','rgba(212,163,89,0.6)');
     const compact=n.width<48, directionW=Math.min(n.width-4,measureWebText(n.detail??'',9,'sans','700')+textGraphemes(n.detail??'').length*.5+8);
-    ctx.save();shadow(ctx,'rgba(255,216,117,0.9)',12,0);text(ctx,n.text,cx,cy-(compact?5:14.5),n.width,clamp(18,viewportWidth*.054,28),webTheme.accent);ctx.restore();
+    ctx.save();const symbolY=cy-(compact?5:14.5);ctx.translate(cx,symbolY);ctx.rotate(sceneMotion(model.web?.animationTime??0).angle*(n.detail?.includes('逆')?-1:1));shadow(ctx,'rgba(255,216,117,0.9)',12,0);text(ctx,n.text,0,0,n.width,clamp(18,viewportWidth*.054,28),webTheme.accent);ctx.restore();
     if(!compact){fill(ctx,{...n,x:cx-directionW/2,y:cy-2,width:directionW,height:15},'#0f0404cc',7,'#e5b96480');
     text(ctx,n.detail??'',cx,cy+5.5,directionW,9,'#eedcc4','center',sans,'700',.5);}
     if(n.count===undefined&&model.web?.room?.game?.result)text(ctx,'胜负已分',cx,cy+(compact?9:20),n.width,10,webTheme.accent,'center',sans,'600',.5);
