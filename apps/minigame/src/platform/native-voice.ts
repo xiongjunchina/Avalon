@@ -14,7 +14,7 @@ export interface NativeVoiceRuntime {
 function invoke<T>(call:(callbacks:Callbacks<T>)=>void):Promise<T> {
   return new Promise((resolve,reject)=>{
     const timer=setTimeout(()=>reject(Error('语音操作超时，请重试')),15_000);
-    try { call({success:value=>{clearTimeout(timer);resolve(value);},fail:()=>{clearTimeout(timer);reject(Error('微信语音调用失败：请确认已开通实时语音能力、允许麦克风，且未占用其他通话'));}}); }
+    try { call({success:value=>{clearTimeout(timer);resolve(value);},fail:error=>{clearTimeout(timer);const e=error as {errMsg?:string;errCode?:number};const detail=String(e?.errMsg??'未返回详情，请检查麦克风权限和语音能力').slice(0,240);reject(Error('微信语音调用失败：'+detail+(e?.errCode!==undefined?'（错误码 '+e.errCode+'）':'')));}}); }
     catch { clearTimeout(timer);reject(Error('微信语音接口不可用，请使用已开通权限的手机微信')); }
   });
 }
@@ -116,3 +116,4 @@ export class NativeVoice {
     ]:[{id:'voice:join',text:this.busy?'正在连接…':'加入微信语音（默认闭麦）'}]):[]),
   ];}
 }
+
