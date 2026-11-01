@@ -343,7 +343,7 @@ async function select(id: string) {
       } else gameUi.targetId = targetId;
       render(); return;
     }
-    if (id === 'rematch') { practice = new PracticeSession(practice.settings, user?.nickname ?? '我', practice); syncGameUi(gameUi, practice.view()); render(); return; }
+    if (id === 'rematch') { practice = new PracticeSession(practice.settings, user?.nickname ?? '我', practice,user); syncGameUi(gameUi, practice.view()); render(); return; }
     const command = gameAction(practice.view(), practice.user, id, gameUi);
     if (command) { try { practice.act(command); if (command.type === 'useTreasure') gameUi.targetId = undefined; syncGameUi(gameUi, practice.view()); } catch (cause) { error = cause instanceof Error ? cause.message : '练习操作失败'; } render(); }
     else if (['treasure:heartProtect','treasure:heartSabotage','treasure:guanyinSkip','treasure:tinStaff', 'treasure:guanyinMirror', 'treasure:humanBag', 'treasure:jinguSeal', 'treasure:bananaFan'].includes(id)) { error = '当前法宝不可用，或所选目标不符合条件'; render(); }
@@ -388,7 +388,7 @@ async function select(id: string) {
     if (id === 'guide') { guideReturn = 'entry'; navigate('guide'); return; }
     if (id.startsWith('auth:')) { authMode = id === 'auth:switch' ? 'switch' : 'create'; render(); return; }
     if (id === 'input:nickname' || id === 'input:switch') return run(async () => { const text = await askText(wx, id === 'input:nickname' ? nickname : switchCode, id === 'input:nickname' ? 20 : 6); if (text !== undefined) { if (id === 'input:nickname') nickname = text; else switchCode = text.replace(/\D/g, '').slice(0, 6); } });
-    if (id === 'practice') { practice = new PracticeSession(editableSettings, user?.nickname ?? '我'); syncGameUi(gameUi, practice.view()); navigate('practice'); return; }
+    if (id === 'practice') { practice = new PracticeSession(editableSettings, user?.nickname ?? '我',undefined,user); syncGameUi(gameUi, practice.view()); navigate('practice'); return; }
     if (id === 'login') return run(async () => { await nativeVoice.leave(); if (authMode === 'switch' && !/^\d{6}$/.test(switchCode)) throw new Error('INVALID_PLAYER_CODE'); const result = await api.login(nickname || undefined); user = authMode === 'switch' ? await api.switchAccount(switchCode) : result.user; knownAccounts.remember(user); auxiliary = undefined; lobby = new LobbyController(api, user); playerPanel = new PlayerPanel(extras, user, () => chooseAvatar(wx), () => chooseWechatProfile(wx));refreshHomeFriends(); const existing = await lobby.resume(); if (existing) connect(existing); else if (invites.code) { connect(await joinWithPassword(invites.code)); invites.take(); } else if(authIntent==='create'){authIntent=undefined;creationAccess={};selectedDedicated=undefined;setupIntent='room';navigate('settings');}else if(authIntent==='join'){authIntent=undefined;joinKey='';auxiliary='join';render();}else render(); });
     if (id === 'create' && lobby) { creationAccess={};selectedDedicated=undefined;setupIntent = 'room'; navigate('settings'); return; }
     if (id === 'join' && lobby) { joinKey = ''; auxiliary = 'join'; scroll = 0; render(); return; }
@@ -404,13 +404,13 @@ async function select(id: string) {
     if (id === 'cancelSettings') { navigate(setupIntent === 'practice' && practice ? 'practice' : room ? 'lobby' : 'entry'); return; }
     if (id.startsWith('count:')) { const count = Number(id.slice(6)); if (count >= 5 && count <= 12) editableSettings = { ...editableSettings, playerCount: count, anonymousTeamVote: defaultAnonymousTeamVote(count) }; render(); return; }
     if (id === 'createRoom' && lobby) return run(async () => { connect(await lobby!.create(editableSettings,creationAccess)); });
-    if (id === 'startPractice') { practice = new PracticeSession(editableSettings, user?.nickname ?? '我'); syncGameUi(gameUi, practice.view(), true, practice.user.id); navigate('practice'); return; }
+    if (id === 'startPractice') { practice = new PracticeSession(editableSettings, user?.nickname ?? '我',undefined,user); syncGameUi(gameUi, practice.view(), true, practice.user.id); navigate('practice'); return; }
     if (id === 'apply') { if (room && lobby) lobby.updateSettings(editableSettings); navigate(room?.game ? 'game' : room ? 'lobby' : 'entry'); return; }
     editableSettings = toggleSetting(editableSettings, id as keyof Settings);
     render(); return;
   }
   if (view === 'lobby' && room && lobby) {
-    if (id === 'practice') { practice = new PracticeSession(room.settings, user?.nickname ?? '我'); syncGameUi(gameUi, practice.view(), true, practice.user.id); navigate('practice'); return; }
+    if (id === 'practice') { practice = new PracticeSession(room.settings, user?.nickname ?? '我',undefined,user); syncGameUi(gameUi, practice.view(), true, practice.user.id); navigate('practice'); return; }
     if (id === 'more') { auxiliary = 'roomTools'; scroll = 0; render(); return; }
     if (id==='waiting:lady'||id==='waiting:early') { if(room.hostId===user?.id) lobby.updateSettings({...room.settings,...(id==='waiting:lady'?{ladyEnabled:!room.settings.ladyEnabled}:{earlyAssassinationEnabled:!room.settings.earlyAssassinationEnabled})}); return; }
     if (id === 'ready') lobby.ready(!room.members.find(member => member.id === user?.id)?.ready);

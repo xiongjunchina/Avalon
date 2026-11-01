@@ -34,3 +34,12 @@ test('game uses the logged-in profile for self while preserving other players av
  assert.equal(nodes.find(n=>n.id==='player:'+user.id)?.image,user.avatarUrl);
  assert.equal(nodes.find(n=>n.id==='player:'+room.members[1].id)?.image,room.members[1].avatarUrl);
 });
+
+import {PracticeSession} from '../src/screens/practice.js';
+import {defaultSettings} from '@avalon/contracts';
+test('practice keeps personal avatar and distinct bot avatars when changing perspective',()=>{
+ const practice=new PracticeSession(defaultSettings,'行者',undefined,{id:'real',nickname:'行者',wechatAvatarUrl:'https://thirdwx.qlogo.cn/self'});
+ const first=practice.view();assert.equal(first.members[0].wechatAvatarUrl,'https://thirdwx.qlogo.cn/self');assert.ok(first.members.slice(1).every(m=>m.avatarUrl?.startsWith('/art/avatars/')));
+ practice.switchSeat(first.members[1].id);assert.equal(practice.user.avatarUrl,first.members[1].avatarUrl);assert.equal(practice.user.wechatAvatarUrl,undefined);
+ practice.switchSeat(first.members[0].id);assert.equal(practice.user.wechatAvatarUrl,'https://thirdwx.qlogo.cn/self');
+});

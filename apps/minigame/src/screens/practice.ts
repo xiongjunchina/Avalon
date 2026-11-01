@@ -1,4 +1,5 @@
-import type { Command, Player, RoomView, Settings } from '@avalon/contracts';
+import {BUILTIN_AVATARS} from '../../../web/src/avatar-catalog.js';
+import type { Command, Player, RoomView, Settings, User } from '@avalon/contracts';
 import { MISSION_SIZES, captain, createGame, isEnded, projectGame, roleHistoryAfterDeal, randomBigIntBelow, teamOf, transition, type GameState } from '@avalon/game-core';
 import { ensureGameClone } from '../platform/clone.js';
 
@@ -14,14 +15,17 @@ function shuffle<T>(items: T[]): T[] {
 
 export class PracticeSession {
   private game: GameState;
-  readonly user = { id: SELF_ID, nickname: '我' };
-  constructor(readonly settings: Settings, nickname: string, previous?: PracticeSession) {
+  readonly user:User = { id: SELF_ID, nickname: '我' };
+  private readonly profiles=new Map<string,Pick<User,'avatar'|'avatarUrl'|'wechatAvatarUrl'>>();
+  constructor(readonly settings: Settings, nickname: string, previous?: PracticeSession, profile?:User) {
     ensureGameClone();
     this.user.nickname = nickname;
     const players: Player[] = Array.from({ length: settings.playerCount }, (_, index) => ({
       id: index === 0 ? SELF_ID : `practice-bot-${index}`, seat: index + 1,
       nickname: index === 0 ? nickname : `仙友${index + 1}号`,
     }));
+    for(const player of players)this.profiles.set(player.id,player.id===SELF_ID&&profile?{avatar:profile.avatar,avatarUrl:profile.avatarUrl,wechatAvatarUrl:profile.wechatAvatarUrl}:{avatarUrl:BUILTIN_AVATARS[(player.seat-1)%BUILTIN_AVATARS.length]!.src});
+    Object.assign(this.user,this.profiles.get(SELF_ID));
     this.game = createGame(`practice-${Date.now()}`, players, settings, shuffle, {
       recentRoles: previous?.settings.playerCount === settings.playerCount ? roleHistoryAfterDeal(previous.game) : undefined,
       // Local bots only. Authoritative online deals always use the server's crypto source.
@@ -34,7 +38,7 @@ export class PracticeSession {
   view(): RoomView {
     const game = projectGame(this.game, this.user.id);
     return { id: 'local-practice', code: '练习局', hostId: SELF_ID, version: 1,
-      settings: this.settings, members: this.game.players.map(player => ({ ...player, ready: true, online: true })),
+      settings: this.settings, members: this.game.players.map(player => ({ ...player, ...this.profiles.get(player.id), ready: true, online: true })),
       phase: isEnded(this.game) ? 'finished' : 'playing', acceptingNewMembers: false, game };
   }
   act(action: Pick<Command, 'type' | 'payload'>): void {
@@ -45,7 +49,8 @@ export class PracticeSession {
   switchSeat(id: string) {
     const player = this.game.players.find(item => item.id === id);
     if (!player) throw new Error('INVALID_TARGET');
-    this.user.id = player.id; this.user.nickname = player.nickname;
+    delete this.user.avatar;delete this.user.avatarUrl;delete this.user.wechatAvatarUrl;
+    this.user.id = player.id; this.user.nickname = player.nickname;Object.assign(this.user,this.profiles.get(player.id));
   }
   perspectives() { return this.game.players.map(player => ({ ...player, role: this.game.roles[player.id]! })); }
   stepBot(autoSelf = false): boolean {
