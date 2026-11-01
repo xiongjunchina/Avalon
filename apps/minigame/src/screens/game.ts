@@ -276,7 +276,7 @@ function gameOverlayScreen(room: RoomView, user: User, ui: GameUiState, base: Sc
   const underlay = ui.overlayReturn === 'identity' && ui.overlay !== 'identity'
     ? gameOverlayScreen(room,user,{...ui,overlay:'identity',overlayReturn:undefined,privateRoleVisible:true},base) : base;
   return { title, rows, portrait, web: { page:'sheet',sheet:ui.overlay,targetId:ui.targetId,background:ui.overlay==='guanyin-window'?'mirror':ui.overlay==='private-notice'?(ui.noticeKind==='jingu'?'dawn':'mirror'):ui.overlay==='identity'?'mirror':game.phase==='finished'?'dawn':'sword',backId:'overlayClose',underlay,
-    document: {kind,remainingSeconds:game.guanyinEndsAt?Math.max(0,Math.ceil((Date.parse(game.guanyinEndsAt)-now)/1000)):GUANYIN_WINDOW_MS/1000,noticeKind:ui.noticeKind,modal:true,treasureTargetsExpanded:ui.treasureTargetsExpanded,game:{...game,self:undefined},...(ui.privateRoleVisible && ['identity','treasures','art','private-notice','guanyin-window'].includes(ui.overlay??'')?{self}:{}),user,
+    document: {kind,remainingSeconds:game.guanyinEndsAt?Math.max(0,Math.ceil((Date.parse(game.guanyinEndsAt)-now)/1000)):GUANYIN_WINDOW_MS/1000,noticeKind:ui.noticeKind,modal:true,treasureTargetsExpanded:ui.treasureTargetsExpanded,game:{...game,players:game.players.map(p=>({...room.members.find(m=>m.id===p.id),...p})),self:undefined},...(ui.privateRoleVisible && ['identity','treasures','art','private-notice','guanyin-window'].includes(ui.overlay??'')?{self}:{}),user,
       roleItem:ui.overlay==='art'&&self?getRoleGalleryItem(self.role,self.loyalGuardian,self.femaleDemon):undefined,
       voteChoice:ui.voteChoice,submitted:self?.teamVoted,earlyHistoryExpanded:ui.earlyHistoryExpanded,reportMission:ui.reportMission} } };
 

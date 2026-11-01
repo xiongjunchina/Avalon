@@ -111,7 +111,7 @@ export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout 
     const toolScale = 1;
     let tx = Math.max(130.2,w-210.8);
     nodes.find(n=>n.id==='copyRoom')!.width=Math.min(111.5625,tx-48);
-    (web.practice ? [['bot','代操',26], ['rematch','重开',51.6], ['practiceSettings','配置',51.6], ['guide','📖 规则',51.6]] : [['sound','sound',26], ['chat','💬 传音',51.6], ['more','⚙️ 设置',51.6], ['guide','📖 规则',51.6]]).forEach(([id,title,width]) => {
+    (web.practice ? [['bot','代操',26], ['practiceSeats','视角',51.6], ['practiceSettings','配置',51.6], ['guide','📖 规则',51.6]] : [['sound','sound',26], ['chat','💬 传音',51.6], ['more','⚙️ 设置',51.6], ['guide','📖 规则',51.6]]).forEach(([id,title,width]) => {
       add('button', String(id), String(title), tx, top + 3, Number(width) * toolScale, 26, { fixed: true }); tx += (Number(width) + 3) * toolScale;
     });
     for(const node of nodes){node.badge='table-toolbar';if(game)node.y-=2;}

@@ -43,3 +43,13 @@ test('practice keeps personal avatar and distinct bot avatars when changing pers
  practice.switchSeat(first.members[1].id);assert.equal(practice.user.avatarUrl,first.members[1].avatarUrl);assert.equal(practice.user.wechatAvatarUrl,undefined);
  practice.switchSeat(first.members[0].id);assert.equal(practice.user.wechatAvatarUrl,'https://thirdwx.qlogo.cn/self');
 });
+
+test('practice projects distinct private roles per seat and includes avatars in identity clues',()=>{
+ const practice=new PracticeSession(defaultSettings,'行者');const seats=practice.perspectives();const roles=new Set<string>();
+ for(const seat of seats){practice.switchSeat(seat.id);const room=practice.view();assert.equal(room.game!.self!.role,seat.role);roles.add(room.game!.self!.role);
+ const model=gameScreen(room,practice.user,{privateRoleVisible:true,ballotVisible:false,overlay:'identity'});
+ assert.equal(model.web!.document!.self!.role,seat.role);
+ assert.ok(model.web!.document!.game!.players.every(p=>!!p.avatarUrl));
+ }
+ assert.ok(roles.size>1);
+});
