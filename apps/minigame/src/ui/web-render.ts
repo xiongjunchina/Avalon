@@ -138,8 +138,20 @@ function utilityFill(ctx:CanvasRenderingContext2D,n:WebNode) {
   fill(ctx,n,gradient(ctx,n,['#441715','#200908']),6,'#e5b567');ctx.restore();
 }
 function rule(ctx: CanvasRenderingContext2D,n:WebNode,color='rgba(212,163,89,.4)') {ctx.beginPath();ctx.moveTo(n.x,n.y);ctx.lineTo(n.x+n.width,n.y);ctx.strokeStyle=color;ctx.lineWidth=1;strokeWithoutGold(ctx);}
+const glassTextures=new WeakMap<object,Map<string,HTMLCanvasElement>>();
+function homeGlass(ctx:CanvasRenderingContext2D,n:WebNode,radius:number,artwork:Artwork|undefined,width:number,active=false){
+ const img=artwork?.get('home/duel-mobile.jpg'),canvas=ctx.canvas,height=canvas?.height&&canvas.width?canvas.height*width/canvas.width:0;
+ const factory=backdropFactory??(canvas?.ownerDocument?()=>canvas.ownerDocument.createElement('canvas'):undefined);
+ let buffer:HTMLCanvasElement|undefined;
+ if(img?.width&&img.height&&height&&factory){let cache=glassTextures.get(img);if(!cache){cache=new Map();glassTextures.set(img,cache);}const key=width+'x'+height;buffer=cache.get(key);
+  if(!buffer){try{const candidate=factory();candidate.width=Math.max(1,Math.round(width*.25));candidate.height=Math.max(1,Math.round(height*.25));const bc=candidate.getContext('2d');if(bc?.getImageData&&bc.putImageData){const scale=Math.max(width/img.width,height/img.height);bc.drawImage(img as CanvasImageSource,(width-img.width*scale)/2*.25,(height-img.height*scale)*.4*.25,img.width*scale*.25,img.height*scale*.25);const pixels=bc.getImageData(0,0,candidate.width,candidate.height);blurBackdrop(pixels.data,candidate.width,candidate.height);bc.putImageData(pixels,0,0);buffer=candidate;if(cache.size>=2)cache.clear();cache.set(key,buffer);}}catch{/* translucent fallback */}}
+ }
+ ctx.save();rect(ctx,n.x,n.y,n.width,n.height,radius);ctx.clip();if(buffer)ctx.drawImage(buffer,0,0,width,height);
+ ctx.fillStyle=active?'rgba(20,100,120,.6)':'rgba(14,29,46,.48)';ctx.fillRect(n.x,n.y,n.width,n.height);ctx.fillStyle=gradient(ctx,n,['rgba(255,255,255,.18)','rgba(255,255,255,.025)'],180);ctx.fillRect(n.x,n.y,n.width,n.height);ctx.restore();
+ rect(ctx,n.x+.5,n.y+.5,n.width-1,n.height-1,radius);ctx.strokeStyle=active?'rgba(160,240,255,.65)':'rgba(255,255,255,.24)';ctx.lineWidth=1;ctx.stroke();
+}
 function soundIcon(ctx: CanvasRenderingContext2D, x:number,y:number) {
-  ctx.save();ctx.strokeStyle='#eddcc4';ctx.lineWidth=1.3;ctx.beginPath();ctx.moveTo(x-6,y-3);ctx.lineTo(x-3,y-3);ctx.lineTo(x+1,y-6);ctx.lineTo(x+1,y+6);ctx.lineTo(x-3,y+3);ctx.lineTo(x-6,y+3);ctx.closePath();strokeWithoutGold(ctx);ctx.beginPath();ctx.moveTo(x+4,y-3);ctx.lineTo(x+9,y+3);ctx.moveTo(x+9,y-3);ctx.lineTo(x+4,y+3);strokeWithoutGold(ctx);ctx.restore();
+  ctx.save();ctx.strokeStyle='#eddcc4';ctx.lineWidth=1.3;ctx.beginPath();ctx.moveTo(x-6,y-3);ctx.lineTo(x-3,y-3);ctx.lineTo(x+1,y-6);ctx.lineTo(x+1,y+6);ctx.lineTo(x-3,y+3);ctx.lineTo(x-6,y+3);ctx.closePath();ctx.stroke();ctx.beginPath();ctx.moveTo(x+4,y-3);ctx.lineTo(x+9,y+3);ctx.moveTo(x+9,y-3);ctx.lineTo(x+4,y+3);ctx.stroke();ctx.restore();
 }
 function drawSeatMicBadge(ctx: CanvasRenderingContext2D, x: number, y: number, state: 'live'|'speaking'|'muted'|'unjoined') {
   const r = 9, cx = x + r, cy = y + r;
@@ -782,7 +794,7 @@ function drawNode(ctx: CanvasRenderingContext2D, n: WebNode, model: ScreenModel,
     ctx.save();
     if(n.id==='arena-frame') {
       arenaFill(ctx,n);
-    } else if(n.id==='mode-frame') fill(ctx,n,'rgba(15,25,31,.88)',24,'#d4a35966');
+    } else if(n.id==='mode-frame') homeGlass(ctx,n,24,artwork,viewportWidth);
     else {shadow(ctx,'rgba(0,0,0,.75)',22,n.id==='action-dock'?-8:3);fill(ctx,n,gradient(ctx,n,['rgba(58,20,18,.96)','rgba(28,9,8,.98)']),n.id==='action-dock'?26:18,n.id==='action-dock'?'#e5b964':'#e5b96488');}
     ctx.restore();
     if(n.id==='action-dock'&&model.web?.room?.game){
@@ -830,9 +842,10 @@ function drawNode(ctx: CanvasRenderingContext2D, n: WebNode, model: ScreenModel,
     const color=isCTA&&n.disabled?gradient(ctx,n,['#442825','#221210']):n.kind==='input'?'rgba(26,8,8,.97)':primary ? gradient(ctx,n,home?['#328ea0','#145b6c']:isCTA?['#74291d','#44120e']:['#27657b','#15404f']) : isDirection?gradient(ctx,n,['#581816','#260a09']):gradient(ctx,n,['rgba(62,22,20,.92)','rgba(28,9,8,.96)']);
     ctx.save();ctx.globalAlpha=n.disabled&&!isCTA ? .58 : 1;
     const radius=n.badge==='table-toolbar'&&!['sound','leave','exitPractice','bot'].includes(n.id)?4:home&&['create','join'].includes(n.id)?14:n.badge==='utility'?6:n.id==='copyRoom'?5:n.kind==='choice'?12:n.height/2;
-    if(n.badge==='utility')utilityFill(ctx,n);
+    if(home&&!n.muted&&!n.id.startsWith('mode:'))homeGlass(ctx,n,radius,artwork,viewportWidth,!!primary);
+    else if(n.badge==='utility')utilityFill(ctx,n);
     else if(!n.muted&&!(home&&n.id.startsWith('mode:'))){shadow(ctx);fill(ctx,n,color,radius,primary&&home?'#f5dfa8':n.selected?'#f5dfa8':webTheme.border);ctx.shadowBlur=0;ctx.shadowOffsetY=0;if(!n.fixed&&n.badge!=='table-toolbar')edge(ctx,n,radius);}
-    if(home&&n.id.startsWith('mode:')&&n.selected){fill(ctx,n,gradient(ctx,n,['#27657b','#15404f']),16,'#f5dfa8');}
+    if(home&&n.id.startsWith('mode:')&&n.selected){homeGlass(ctx,n,16,artwork,viewportWidth,true);}
     if(home&&n.id==='friends'&&n.count){text(ctx,'👥 仙友',cx-7,cy,n.width-25,13,'#fff3d6','center',homeInterface,'400');circle(ctx,n.x+n.width-14,cy,8,'#dc2626','#f87171');text(ctx,String(Math.min(n.count,99)),n.x+n.width-14,cy,15,11,'#fff','center',sans,'700');ctx.restore();return;}
     if(n.id==='sound'){soundIcon(ctx,home&&n.width>50?n.x+20:cx,cy);if(home&&n.width>50)text(ctx,'静音',n.x+46,cy,36,13,'#fff3d6','center',homeInterface,'400');ctx.restore();return;}
     if(table&&(n.fixed||n.badge==='table-toolbar')&&['leave','exitPractice'].includes(n.id)){ctx.save();ctx.translate(n.x+1,n.y+1);ctx.strokeStyle='#ffd875';ctx.lineWidth=2;ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();ctx.moveTo(9,14);ctx.lineTo(5,10);ctx.lineTo(9,6);ctx.moveTo(5,10);ctx.lineTo(16,10);ctx.bezierCurveTo(22,10,22,18,16,18);strokeWithoutGold(ctx);ctx.restore();ctx.restore();return;}
@@ -859,7 +872,7 @@ function drawNode(ctx: CanvasRenderingContext2D, n: WebNode, model: ScreenModel,
 
 export function configureDocumentMetrics(canvas:HTMLCanvasElement){
  const ctx=canvas.getContext('2d');if(!ctx)return;
- setDocumentTextMeasurer((value,size,face='sans',weight='400')=>{value=value.replace(/[\ufe0e\ufe0f]/g,'');const weightKey=String(Math.min(700,Math.max(400,Math.round(Number(weight)/100)*100))),family=face==='mono'?'monospace':face==='system'?cnSans:nativeSans?(sansWeights[weightKey]??sans):sans,renderWeight=nativeSans&&face!=='mono'&&face!=='system'?'400':weight;const key=family+'|'+renderWeight+'|'+size+'|'+value,cached=documentWidths.get(key);if(cached!==undefined)return cached;ctx.save();ctx.font=renderWeight+' '+size+'px '+family;const width=inlineWidth(ctx,value,size,face!=='mono'&&face!=='system');ctx.restore();if(documentWidths.size>8192)documentWidths.clear();documentWidths.set(key,width);return width;});
+ setDocumentTextMeasurer((value,size,face='sans',weight='400')=>{value=value.replace(/[\ufe0e\ufe0f]/g,'');const weightKey=String(Math.min(700,Math.max(400,Math.round(Number(weight)/100)*100))),family=face==='mono'?'monospace':face==='home'?homeInterface:face==='system'?cnSans:nativeSans?(sansWeights[weightKey]??sans):sans,renderWeight=nativeSans&&face!=='mono'&&face!=='system'?'400':weight;const key=family+'|'+renderWeight+'|'+size+'|'+value,cached=documentWidths.get(key);if(cached!==undefined)return cached;ctx.save();ctx.font=renderWeight+' '+size+'px '+family;const width=inlineWidth(ctx,value,size,face!=='mono'&&face!=='system');ctx.restore();if(documentWidths.size>8192)documentWidths.clear();documentWidths.set(key,width);return width;});
 }
 export function renderWebScreen(model: ScreenModel, canvas: HTMLCanvasElement, v: SafeViewport, artwork?: Artwork, preparedLayout?: WebLayout): HitRegion[] {
   const ctx = canvas.getContext('2d'); if (!ctx) throw new Error('Canvas 2D is unavailable');
