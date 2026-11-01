@@ -98,16 +98,16 @@ test('voice-enabled client logs in and creates the selected room without requiri
   assert.equal(chosenAvatars, 1, 'the visible upload button must invoke the native picker');
   await tap('保存资料');
   assert.equal(requests.find(item => item.path === '/me' && item.data?.avatarUrl)?.data.avatarUrl, 'data:image/jpeg;base64,AAAA');
-  await tap('返回原页面');
+  await tap('‹ 返回');
   await tap('加入房间');
   assert.ok(frame.some(item => item.text === '输入房间号或邀请链接'));
   await tap('入座取经');
   assert.ok(frame.some(item => item.text.includes('请输入房间号或邀请链接')));
   await tap('输入房间号或邀请链接');
   confirmKeyboard({ value: '654321' }); await settle();
-  await tap('返回法坛'); await tap('加入房间');
+  await tap('‹ 返回'); await tap('加入房间');
   assert.ok(frame.some(item => item.text === '输入房间号或邀请链接'));
-  await tap('返回法坛'); await tap('🎙 远端语音房');assert.ok(frame.some(i=>i.text==='开语音房'));await tap('🏛 线下常规房');assert.ok(frame.some(i=>i.text==='开常规房'));await tap('🎙 远端语音房'); await tap('开语音房'); await tap('9');
+  await tap('‹ 返回'); await tap('🎙 远端语音房');assert.ok(frame.some(i=>i.text==='开语音房'));await tap('🏛 线下常规房');assert.ok(frame.some(i=>i.text==='开常规房'));await tap('🎙 远端语音房'); await tap('开语音房'); await tap('9');
   for (let index = 0; index < 8 && !frame.some(item => item.text === '创建游戏房间' && item.y < 790); index++) {
     start({ touches: [{ clientX: 350, clientY: 760 }] }); end({ changedTouches: [{ clientX: 350, clientY: 240 }] }); await settle();
   }
@@ -126,7 +126,7 @@ test('voice-enabled client logs in and creates the selected room without requiri
   assert.ok(frame.some(item=>item.text==='我来带队'),'public chat must appear over the player seat');
   await tap('结束');assert.ok(frame.some(item=>item.text==='继续游戏'));
   assert.equal(commands.filter(command=>command.type==='endGame').length,0);
-  await tap('返回对局');assert.equal(commands.filter(command=>command.type==='endGame').length,0);
+  await tap('‹ 返回');assert.equal(commands.filter(command=>command.type==='endGame').length,0);
   room.game.abortPoll={requestedBy:room.members[1].id,approvals:0,required:1,voted:false};room.version++;
   socketMessage({data:JSON.stringify({type:'snapshot',room})});await settle();
   await tap('结束');await tap('继续游戏');

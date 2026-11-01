@@ -610,7 +610,7 @@ export function navigationHitArea(n:WebNode,v:SafeViewport):WebNode{
  return {...n,x:Math.max(0,Math.min(v.width-width,n.x-(width-n.width)/2)),y:Math.max(v.top,n.y-(height-n.height)/2),width,height};
 }
 function drawNode(ctx: CanvasRenderingContext2D, n: WebNode, model: ScreenModel, viewportWidth:number, artwork?: Artwork) {
-  if(isNavigationControl(n)){const height=Math.max(38,n.height),y=n.y-(height-n.height)/2;ctx.save();shadow(ctx,'#00000080',4,2);fill(ctx,{...n,y,height},gradient(ctx,{...n,y,height},['#285063','#142c3c'],180),Math.min(12,height/2),'#b9e8f075');ctx.shadowBlur=0;const close=/关闭/.test(n.text),label=n.width<55?(close?'×':'‹'):(close?'× 关闭':n.text.startsWith('取消')?'取消':'‹ '+n.text.replace(/^[‹←]\s*/,''));text(ctx,label,n.x+n.width/2,y+height/2,n.width-10,n.width<55?23:13,'#f2fbff','center',sans,'700');ctx.restore();return;}
+  if(isNavigationControl(n)){const height=Math.max(38,n.height),y=n.y-(height-n.height)/2;ctx.save();shadow(ctx,'#00000080',4,2);fill(ctx,{...n,y,height},gradient(ctx,{...n,y,height},['#285063','#142c3c'],180),Math.min(12,height/2),'#b9e8f075');ctx.shadowBlur=0;const close=/关闭/.test(n.text),label=n.width<55?(close?'×':'‹'):(close?'× 关闭':n.text.startsWith('取消')?'取消':n.width<110?'‹ 返回':'‹ '+n.text.replace(/^[‹←]\s*/,''));text(ctx,label,n.x+n.width/2,y+height/2,n.width-10,n.width<55?23:13,'#f2fbff','center',sans,'700');ctx.restore();return;}
   if(n.skin){drawDocumentNode(ctx,n,model,artwork);return;}
   const cx = n.x + n.width / 2, cy = n.y + n.height / 2;
   if (n.kind === 'metric') {
