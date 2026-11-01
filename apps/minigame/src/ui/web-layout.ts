@@ -78,11 +78,11 @@ export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout 
     add('label','home-description','组队、表决、暗中试探，找出取经路上的妖。',homePad,copyY+headlineH+(compact?6:10),homeW,descSize*1.45,{skin:'home-copy',fontSize:descSize});
     add('panel','mode-frame','',homePad,footer,homeW,52);
     const modeSize=cssClamp(12,w*.036,15);
-    add('tab','mode:offline','🏛️ 线下常规房',homePad+4,footer+4,(homeW-14)/2,44,{selected:true,fontSize:modeSize});
-    add('tab','mode:voice',MINI_GAME_VOICE_ENABLED?'🎙️ 微信语音说明':'实时语音暂不提供',w/2+3,footer+4,(homeW-14)/2,44,{disabled:!MINI_GAME_VOICE_ENABLED,fontSize:modeSize});
+    add('tab','mode:offline','🏛️ 线下常规房',homePad+4,footer+4,(homeW-14)/2,44,{selected:!web.settings?.voiceChatEnabled,fontSize:modeSize});
+    add('tab','mode:voice','🎙️ 远端语音房',w/2+3,footer+4,(homeW-14)/2,44,{selected:!!web.settings?.voiceChatEnabled,fontSize:modeSize});
     if(hasInvitation)add('label','home-invite-hint','已收到朋友邀请，点击加入即可继续入座。',homePad,footer+52+fg,homeW,16.8,{skin:'home-copy',fontSize:12});
     const actionsY=footer+52+fg+inviteH,actionH=compact?46:52,actionSize=cssClamp(16,w*.045,19),practiceH=compact?34:40;
-    add('button','create','开常规房',homePad,actionsY,(homeW-10)/2,actionH,{primary:true,fontSize:actionSize,image:'emblems/mountain.png'});
+    add('button','create',web.settings?.voiceChatEnabled?'开语音房':'开常规房',homePad,actionsY,(homeW-10)/2,actionH,{primary:true,fontSize:actionSize,image:'emblems/mountain.png'});
     add('button',hasInvitation?'invitation':'join',hasInvitation?'加入邀请房间':'加入房间',homePad+(homeW+10)/2,actionsY,(homeW-10)/2,actionH,{fontSize:actionSize,image:'emblems/crown.png'});
     add('button','practice','🐒 幻境单人试玩 ›',w/2-72,actionsY+actionH+fg,144,practiceH,{fontSize:14});
     const linksY=actionsY+actionH+fg+practiceH+fg+1,linkSize=cssClamp(11,w*.0325,14),linkH=compact?34:38;

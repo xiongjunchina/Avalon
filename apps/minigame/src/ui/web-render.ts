@@ -65,9 +65,9 @@ function gradient(ctx: CanvasRenderingContext2D, n: WebNode, colors: string[],an
   colors.forEach((color, index) => value.addColorStop(index / (colors.length - 1), color));if(cache.size>=256)cache.clear();cache.set(key,value); return value;
 }
 function inlineWidth(ctx:CanvasRenderingContext2D,value:string,size:number,narrowDot=false){return ctx.measureText(value).width-(narrowDot?(value.match(/·/g)?.length??0)*(ctx.measureText('·').width-size*.24072):0);}
-function text(ctx: CanvasRenderingContext2D, value: string, x: number, y: number, width: number, size = 14, color = webTheme.text, align: CanvasTextAlign = 'center', family = sans, weight = '400', spacing = 0) {
+function text(ctx: CanvasRenderingContext2D, value: string, x: number, y: number, width: number, size = 14, color = webTheme.text, align: CanvasTextAlign = 'center', family = sans, weight = '400', spacing = 0, preserveFamily=false) {
   value=value.replace(/[\ufe0e\ufe0f]/g,'');
-  if(family===display||family===calligraphy||family===homeInterface)family=sans;
+  if(!preserveFamily&&(family===display||family===calligraphy))family=sans;
   ctx.textAlign = align; ctx.textBaseline = 'middle'; const sansWeight=String(Math.min(700,Math.max(400,Math.round(Number(weight)/100)*100)));
   const useFamily=family===sans&&nativeSans?(sansWeights[sansWeight]??sans):family===homeInterface&&nativeSans?homeInterface.split(',')[0]+','+(sansWeights[sansWeight]??sans):family,useWeight=family===sans&&!nativeSans?sansWeight:family.startsWith('-apple-system')||family==='monospace'||family===homeInterface&&!nativeSans?weight:'400';
   ctx.font = useWeight+' ' + size + 'px ' + useFamily; ctx.fillStyle = color;
@@ -504,7 +504,7 @@ function drawDocumentNode(ctx:CanvasRenderingContext2D,n:WebNode,model:ScreenMod
   if(n.skin==='direct-quick-strip'){ctx.fillStyle='#141019b3';ctx.fillRect(n.x,n.y,n.width,n.height);return;}
   if(n.skin==='direct-quick'){fill(ctx,n,'#38bdf81f',24,'#38bdf84d');write(n.text,cx,cy,n.width-18,11.5,'center',sans,'400','#bae6fd');return;}
   if(n.skin==='home-duel'){const img=artwork?.get(n.image!);if(img?.width&&img.height){const scale=Math.max(n.width/img.width,n.height/img.height);ctx.drawImage(img as CanvasImageSource,n.x+(n.width-img.width*scale)/2,n.y+(n.height-img.height*scale)*.4,img.width*scale,img.height*scale);}return;}
-  if(n.skin==='home-copy'){ctx.save();const heading=n.id==='home-headline',promotion=n.id==='home-promotion';shadow(ctx,promotion?'#3b2a12':'#fff1c7',heading?6:4,1);const lines=n.text.split('\n'),lh=n.height/lines.length;lines.forEach((line,i)=>write(line,cx,n.y+lh*(i+.5),n.width,n.fontSize??13,'center',heading?calligraphy:homeInterface,'400',heading?'#40190e':promotion?'#ffe7b2':'#172329'));ctx.restore();return;}
+  if(n.skin==='home-copy'){ctx.save();const heading=n.id==='home-headline',promotion=n.id==='home-promotion';shadow(ctx,promotion?'#3b2a12':'#fff1c7',heading?6:4,1);const lines=n.text.split('\n'),lh=n.height/lines.length;lines.forEach((line,i)=>text(ctx,line,cx,n.y+lh*(i+.5),n.width,n.fontSize??13,heading?'#40190e':promotion?'#ffe7b2':'#172329','center',heading?calligraphy:homeInterface,'400',0,true));ctx.restore();return;}
   if(n.skin==='art-image') {image(n.image,n.x,n.y,n.width,n.height);return;}
   if(n.skin==='expedition'){fill(ctx,{...n,selected:true},gradient(ctx,n,['#281d2e','#17111d'],180),18,'#d4a359');return;}
   if(n.skin==='captain-banner'){ctx.save();rect(ctx,n.x,n.y,n.width,n.height,16);ctx.clip();const g=ctx.createLinearGradient(n.x,0,n.x+n.width,0);for(const [stop,color] of [[0,'#103f4f'],[.45,'#156d7d'],[.85,'#0f8290'],[1,'#0d6371']] as const)g.addColorStop(stop,color);ctx.fillStyle=g;ctx.fillRect(n.x,n.y,n.width,n.height);ctx.restore();ctx.fillStyle=g;ctx.fillRect(n.x,n.y+n.height/2,n.width,n.height/2);rule(ctx,{...n,y:n.y+n.height},'#e0aa3e');ctx.save();shadow(ctx,'#ffd875cc',12,0);circle(ctx,n.x+38,cy-1,24,'#ffd875');ctx.restore();image(n.image,n.x+16,cy-23,44,44,true);art(ctx,artwork,'imperial-crown',n.x+27,n.y-2,22,16);const self=n.text.endsWith('（你）'),title=self?n.text.slice(0,-3):n.text,size=n.fontSize??19,selfW=self?measureWebText('（你）',13,'calligraphy'):0,titleW=n.width-84-selfW-(self?2:0);write(title,n.x+74,cy,titleW,size,'left',calligraphy,'400','#ffd875');if(self){const tw=Math.min(titleW,measureWebText(title,size,'calligraphy'));write('（你）',n.x+76+tw,cy,selfW+1,13,'left',calligraphy,'400','#ffd875');}return;}
@@ -792,7 +792,7 @@ function drawNode(ctx: CanvasRenderingContext2D, n: WebNode, model: ScreenModel,
       ctx.font='700 '+size+'px '+sans;const dw=ctx.measureText('·').width;let px=cx-(lw+rw+dw+dotMargin*2)/2;
       ctx.textAlign='left';ctx.font='400 '+size+'px '+calligraphy;
       for(const c of left){ctx.strokeText(c,px,cy);ctx.fillStyle='#7d231f';ctx.fillText(c,px,cy);px+=ctx.measureText(c).width+spacing;}
-      px+=dotMargin;text(ctx,'·',px+dw/2,cy-size*.04,dw,size,'#7d231f','center',sans,'700');px+=dw+dotMargin;
+      px+=dotMargin;ctx.beginPath();ctx.arc(px+dw/2,cy-size*.04,Math.max(1.5,size*.06),0,Math.PI*2);ctx.fillStyle='#7d231f';ctx.fill();px+=dw+dotMargin;
       ctx.font='400 '+size+'px '+calligraphy;ctx.textAlign='left';for(const c of right){ctx.strokeText(c,px,cy);ctx.fillStyle='#7d231f';ctx.fillText(c,px,cy);px+=ctx.measureText(c).width+spacing;}ctx.restore();
 
     } else if (n.id === 'ribbon') {

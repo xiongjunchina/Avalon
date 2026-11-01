@@ -169,7 +169,7 @@ function model(): ScreenModel {
   else if (room?.game && view === 'game' && user) result = gameScreen(room, user, gameUi,serverClock.now());
   else if (room && user && view === 'lobby') result = lobbyScreen(room, user, connectionStatus);
   else {result = entryScreen(user, error,!guestHomeVisible);if(!user&&guestHomeVisible)result.web={page:'home',guestHome:true};}
-  if (result.web?.page === 'home') Object.assign(result.web, { roleIndex, nickname, switchCode, authMode, authIntent, freeAccess, friendRequests:playerPanel?.incomingFriendRequests??0, knownAccounts: knownAccounts.list() });
+  if (result.web?.page === 'home') Object.assign(result.web, { roleIndex, nickname, switchCode, authMode, authIntent, settings:editableSettings, freeAccess, friendRequests:playerPanel?.incomingFriendRequests??0, knownAccounts: knownAccounts.list() });
   result.web ??= { page: 'sheet', background: view === 'player' ? 'dawn' : 'library' };
   if(result.web.document)result.web.document.settingChoice=settingsChoice.current;
   result.web.friendRequests=playerPanel?.incomingFriendRequests??0;
@@ -298,7 +298,7 @@ async function select(id: string) {
   if(id==='share'&&room){if(wx.shareAppMessage)wx.shareAppMessage({title:`来嘻游 · 真假猴王房间 ${room.code} 一起论剑`,query:`invite=${encodeURIComponent(room.inviteKey??room.code)}`});else{notice=`请告知好友房间号 ${room.code}`;render();}return;}
   if(id==='copyRoomCode'&&room&&wx.setClipboardData){wx.setClipboardData({data:room.code,success:()=>{notice='房间号已复制';render();},fail:()=>{error='复制失败，请重试';render();}});return;}
   if (id === 'copyRoom' && room && wx.setClipboardData) { wx.setClipboardData({ data: invitationUrl(baseUrl,room.inviteKey??room.code), success: () => { notice = '房间邀请链接已复制'; render(); }, fail: () => { error = '复制失败，请重试'; render(); } }); return; }
-  if (id === 'mode:voice') { notice = MINI_GAME_VOICE_ENABLED ? '创建或加入房间后，点顶部声音按钮加入微信语音；最多10人，与网页语音独立。' : '当前版本不支持实时语音；网页语音能力保持可用。'; render(); return; }
+  if(id==='mode:offline'||id==='mode:voice'){editableSettings={...editableSettings,voiceChatEnabled:id==='mode:voice'};render();return;}
   if (id.startsWith('voice:')) return run(async () => { try { if(id==='voice:join') await nativeVoice.join(); else if(id==='voice:leave') await nativeVoice.leave(); else if(id==='voice:microphone') await nativeVoice.toggleMicrophone(); else if(id==='voice:speaker') await nativeVoice.toggleSpeaker(); } catch(cause) { if(cause instanceof Error && nativeVoice.message===cause.message) return; throw cause; } }, true);
   if(id==='waiting:missions'){waitingMissionsExpanded=!waitingMissionsExpanded;render();return;}
   if (id === 'sound') { auxiliary = 'sound'; scroll = 0; render(); return; }

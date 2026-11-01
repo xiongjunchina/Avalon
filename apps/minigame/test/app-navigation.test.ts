@@ -107,12 +107,13 @@ test('voice-enabled client logs in and creates the selected room without requiri
   confirmKeyboard({ value: '654321' }); await settle();
   await tap('返回法坛'); await tap('加入房间');
   assert.ok(frame.some(item => item.text === '输入房间号或邀请链接'));
-  await tap('返回法坛'); await tap('开常规房'); await tap('9');
+  await tap('返回法坛'); await tap('🎙 远端语音房'); await tap('开语音房'); await tap('9');
   for (let index = 0; index < 8 && !frame.some(item => item.text === '创建游戏房间' && item.y < 790); index++) {
     start({ touches: [{ clientX: 350, clientY: 760 }] }); end({ changedTouches: [{ clientX: 350, clientY: 240 }] }); await settle();
   }
   await tap('创建游戏房间');
   assert.equal(requests.find(item => item.path === '/rooms')?.data.settings.playerCount, 9);
+  assert.equal(requests.find(item => item.path === '/rooms')?.data.settings.voiceChatEnabled, true);
   assert.ok(frame.some(item => item.text.includes('房号 123456')));
   room = parityFixture().room; room.version = 2;
   socketMessage({data:JSON.stringify({type:'snapshot',room})}); await settle();
@@ -131,3 +132,4 @@ test('voice-enabled client logs in and creates the selected room without requiri
   await tap('结束');await tap('继续游戏');
   assert.equal(commands.at(-1)?.type,'voteAbort');assert.equal(commands.at(-1)?.payload.approve,false);
 });
+
