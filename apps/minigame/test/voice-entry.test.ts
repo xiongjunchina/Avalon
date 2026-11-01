@@ -1,3 +1,4 @@
+import {lobbyScreen} from '../src/screens/lobby.js';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {NativeVoice} from '../src/platform/native-voice.js';
@@ -24,5 +25,17 @@ test('room voice controls are directly reachable in the game without opening sou
   for(const id of joined?['voice:microphone','voice:speaker','voice:leave']:['voice:join']){
    const n=layout.nodes.find(n=>n.id===id)!;assert.ok(n);assert.ok(n.y>=88&&n.y+n.height<666);assert.ok(n.x>=0&&n.x+n.width<=width);
   }
+ }
+});
+
+test('waiting room voice rows do not overlap settings or waiting ribbon',()=>{
+ const {room,user}=parityFixture();room.game=undefined as any;
+ for(const joined of [false,true]){
+ const model=lobbyScreen(room,user);model.web!.voice={joined,connecting:false,muted:true,deafened:false,members:2,speakers:0};
+ const {nodes}=layoutWebScreen(model,{width:390,height:844,top:88,bottom:34});
+ const settings=nodes.find(n=>n.id==='settings')!,ribbon=nodes.find(n=>n.id==='ribbon')!;
+ for(const n of nodes.filter(n=>n.id.startsWith('voice:')||n.id==='voice-members')){
+ if(n.y<ribbon.y){assert.ok(n.y>=settings.y+settings.height);assert.ok(n.y+n.height<=ribbon.y);}
+ }
  }
 });

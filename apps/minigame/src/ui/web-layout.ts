@@ -21,6 +21,7 @@ export function resultHeroGeometry(width:number,self:string,reason:string){
 
 export interface WebSurface {
   animationTime?:number;
+  soundPreferences?:{music:boolean;effects:boolean};
   voice?:{message?:string;joined:boolean;connecting:boolean;muted:boolean;deafened:boolean;members:number;speakers:number};
   chatBubbles?:Record<string,string>;
   page: 'home' | 'setup' | 'table' | 'sheet';
@@ -69,7 +70,7 @@ export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout 
     add('button',web.user?'account':'loginOpen',web.user?.nickname??'游客浏览',homePad,top,avatarW,toolbarH,{fixed:true,badge:'home-avatar',image:web.user?.avatarUrl??web.user?.wechatAvatarUrl??'emblems/'+(web.user?.avatar??'cards')+'.png'});
     const soundW=web.user&&w<=380?36:74,friendW=w<=380?65:80,switchW=w<=380?53:61.2,toolsW=web.user?friendW+soundW+switchW+12:soundW;
     let toolX=w-homePad-toolsW;
-    for(const [id,title,width] of (web.user?[['friends','👥 仙友',friendW],['sound','静音',soundW],['switch','🚪 换号',switchW]]:[['sound','静音',soundW]]) as [string,string,number][]){add('button',id,title,toolX,top,width,toolbarH,{fixed:true,fontSize:13,count:id==='friends'?web.friendRequests:undefined});toolX+=width+6;}
+    for(const [id,title,width] of (web.user?[['friends','👥 仙友',friendW],['sound',web.soundPreferences?.music||web.soundPreferences?.effects?'声音已开':'已静音',soundW],['switch','🚪 换号',switchW]]:[['sound',web.soundPreferences?.music||web.soundPreferences?.effects?'声音已开':'已静音',soundW]]) as [string,string,number][]){add('button',id,title,toolX,top,width,toolbarH,{fixed:true,fontSize:13,count:id==='friends'?web.friendRequests:undefined});toolX+=width+6;}
     const logoSize=compact?28:cssClamp(28,w*.088,36),logoH=logoSize*1.2,subSize=compact?11:cssClamp(11,w*.033,14);
     const hasInvitation=model.rows.some(r=>r.id==='invitation'),promotion=web.freeAccess!==false,inviteH=hasInvitation?16.8+fg:0,footerH=(compact?202:230)+inviteH+(promotion?0:-5),footer=v.height-v.bottom-(compact?8:14)-footerH;
     const brandY=footer-(compact?22:30)-logoH-(compact?8:12)-subSize*1.45;
@@ -115,7 +116,7 @@ export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout 
     });
     for(const node of nodes){node.badge='table-toolbar';if(game)node.y-=2;}
     y = top + (game?34:48);
-    if(!web.practice && web.voice){
+    const drawVoiceControls=()=>{if(!web.practice && web.voice){
       const voice=web.voice;
       if(count>10)add('label','voice-limit','微信语音最多10人',16,y,w-32,32,{fontSize:12});
       else if(!voice.joined){add('button',voice.connecting?'voice:leave':'voice:join',voice.connecting?'连接中… · 取消':'🎙 开启语音',16,y,w-32,32,{skin:'waiting-social',fontSize:13});}
@@ -126,7 +127,8 @@ export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout 
       }
       y+=40;
       if(!voice.joined&&voice.message&&!/^(未加入|正在加入)/.test(voice.message)){const lines=wrapText(voice.message,w-32),height=lines.length*18+8;add('label','voice-status',voice.message,16,y,w-32,height,{fontSize:12,lines,lineHeight:18});y+=height;}
-    }
+    }};
+    if(game)drawVoiceControls();
     const boardX = 12, boardW = w - 24, questW = (boardW - 24) / 5;
     const questH = 67.3 + cssClamp(36, availableH * .055, 44);
     const drawQuests = (atY: number) => {
@@ -141,6 +143,7 @@ export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout 
       const host=room.hostId===web.user?.id, me=room.members.find(m=>m.id===web.user?.id);
       y=top+34;
       add('button','settings',count+' 人局 · '+(room.settings.anonymousTeamVote?'匿名表决':'公开表决')+' · '+(count<=10?'微信语音':'语音限10人')+' · 房间设置',10,y,w-20,30,{skin:'pill',fontSize:12});y+=38;
+      drawVoiceControls();
       add('label','ribbon','等待仙友入座 '+room.members.length+'/'+count,10,y-4,w-20,36);y+=32;
       const compact=count>=9,cols=count>=7?4:3,gap=compact?6:8,seatX=compact?12:14,cellW=(w-seatX*2-(cols-1)*gap)/cols,cellH=compact?120:133;if(compact)y-=2;
       const seatLeft=(i:number)=>seatX+(i%cols)*(cellW+gap)+(Math.floor(i/cols)===Math.floor((count-1)/cols)?(cols-(count%cols||cols))*(cellW+gap)/2:0);

@@ -172,6 +172,7 @@ function model(): ScreenModel {
   if (result.web?.page === 'home') Object.assign(result.web, { roleIndex, nickname, switchCode, authMode, authIntent, settings:editableSettings, freeAccess, friendRequests:playerPanel?.incomingFriendRequests??0, knownAccounts: knownAccounts.list() });
   result.web ??= { page: 'sheet', background: view === 'player' ? 'dawn' : 'library' };
   if(result.web.document)result.web.document.settingChoice=settingsChoice.current;
+  result.web.soundPreferences=sound.preferences;
   result.web.friendRequests=playerPanel?.incomingFriendRequests??0;
   if(view==='game'||view==='lobby'){result.web.chatBubbles=roomBubbles.snapshot();result.web.voice={message:nativeVoice.message,joined:nativeVoice.joined,connecting:nativeVoice.connecting,muted:nativeVoice.microphoneMuted,deafened:nativeVoice.speakerMuted,members:nativeVoice.members,speakers:nativeVoice.speakers};}
   result.web.freeAccess=freeAccess;

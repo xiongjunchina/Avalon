@@ -139,3 +139,8 @@ test('narrow results wrap the role below the headline without shrinking the head
  assert.equal(small.find(n=>n.id==='treasures')!.disabled,true);
  assert.ok(small.find(n=>n.id==='result-actions')!.y>=small.find(n=>n.id==='result-hero')!.y+173.75);
 });
+
+test('home sound control reflects music and effects preferences',()=>{
+ for(const enabled of [true,false]){const model=entryScreen({id:'u',nickname:'行者',playerCode:'123456'});model.web!.soundPreferences={music:enabled,effects:false};
+ assert.equal(layoutWebScreen(model,{width:390,height:844,top:88,bottom:34}).nodes.find(n=>n.id==='sound')!.text,enabled?'声音已开':'已静音');}
+});

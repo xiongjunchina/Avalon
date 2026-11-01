@@ -94,7 +94,7 @@ try {
         if(scene==='chat'){const panel=new app.PlayerPanel({},user);await panel.open('roomchat',{roomId:parityRoom.id});if(captureScene!=='chat-empty')panel.onRoomChat({messageId:'m1',fromUserId:parityRoom.members[1].id,nickname:'仙友1',seat:2,text:'这局我来当队长',timestamp:'2026-10-22T00:00:00Z'});if(captureScene==='chat-long')for(let i=0;i<25;i++)panel.onRoomChat({messageId:'long'+i,fromUserId:user.id,nickname:'行者',seat:1,text:'第'+(i+1)+'条传音：请根据大家的发言和投票记录认真判断。',timestamp:'2026-10-22T00:00:00Z'});if(captureScene==='chat-draft')await panel.handle('chat:input',async()=> '相信我，我带飞');model=panel.model();model.web.underlay=app.gameScreen(parityRoom,user,{privateRoleVisible:false,ballotVisible:false});}
 
         if(bottomCapture||scene==='chat'||scene==='mission'||(scene==='result'&&captureScene!=='result-top'))model.scroll=app.layoutWebScreen(model,{width,height,top:safeTop,bottom:0}).maxScroll;
-        if(model.web){model.web.freeAccess=true;if(scene==='lobby')model.web.friendRequests=1;}
+        if(model.web){model.web.freeAccess=true;if(scene==='lobby'){model.web.friendRequests=1;model.web.voice={joined:false,connecting:false,muted:true,deafened:false,members:0,speakers:0};}model.web.soundPreferences={music:true,effects:true};}
         app.renderScreen(model, canvas, { width, height, top: safeTop, bottom: 0 }, { get: name => cache.get(name) });
         const layout=app.layoutWebScreen(model,{width,height,top:safeTop,bottom:0});return layout;
       }, { width, height, scene, assets, dpr,playerCount,captureScene,safeTop,sparseLobby,bottomCapture:process.env.PARITY_BOTTOM==='1' });
