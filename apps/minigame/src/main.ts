@@ -155,7 +155,7 @@ function model(): ScreenModel {
     const local = practice.view();
     result = gameScreen(local, practice.user, gameUi);
     result.rows = result.rows.filter(row => row.id !== 'chat');
-    result.rows.push({ id: 'bot', text: '电脑代操下一步' }, { id: 'rematch', text: '重新演练' }, { id: 'exitPractice', text: '退出练习' });
+    result.rows.push({ id: 'bot', text: '电脑代操下一步' }, ...(['finished','aborted'].includes(local.game?.phase??'')?[{id:'rematch',text:'重新演练'}]:[]), { id: 'exitPractice', text: '退出练习' });
     if (result.web) result.web.practice = true;
   }
   else if (view === 'settings') {
@@ -306,6 +306,7 @@ async function select(id: string) {
   if (id === 'auxiliaryClose') { auxiliary = undefined; scroll = 0; render(); return; }
   if (id === 'input:join') return run(async () => { const value = await askText(wx, joinKey, 200); if (value !== undefined) joinKey = value; });
   if (id === 'joinSubmit' && lobby) return run(async () => { const encoded = /(?:\?|&)invite=([^&#]+)/.exec(joinKey)?.[1]; const key = encoded ? decodeURIComponent(encoded) : joinKey.trim(); if (!key) throw new Error('请输入房间号或邀请链接'); connect(await joinWithPassword(key)); });
+  if(id==='practiceCaptain'&&practice){const id=practice.view().game?.captainId;if(id){practice.switchSeat(id);hideSensitiveView(gameUi);gameUi.snapshotKey=undefined;syncGameUi(gameUi,practice.view(),false,practice.user.id);scroll=0;render();}return;}
   if (id === 'practiceSeats' && practice) { auxiliary = 'practiceSeats'; scroll = 0; render(); return; }
   if (id.startsWith('practiceSeat:') && practice) { practice.switchSeat(id.slice(13)); hideSensitiveView(gameUi); gameUi.snapshotKey = undefined; syncGameUi(gameUi, practice.view(), false, practice.user.id); auxiliary = undefined; scroll = 0; render(); return; }
   if ((view === 'game' || view === 'practice' || view === 'lobby' || view === 'settings') && id === 'guide') { guideReturn = view; navigate('guide'); return; }

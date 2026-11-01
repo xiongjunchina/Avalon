@@ -253,8 +253,11 @@ export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout 
       const directionW=cssClamp(100,w*.28,118), controlsX=panelX+9, controlsW=panelW-18;
       add('button','direction',(game?.draftTeam?.direction === 'counterclockwise' ? '逆时针' : '顺时针')+'发言',controlsX,panelY+23.890625+(w<360?14.828125:0),directionW,48);
       add('button',stage === 'proposing' ? 'propose' : 'startTeamVote',stage === 'proposing' ? (selected.length===size?'确认阵容':'待选队员')+' ('+selected.length+'/'+size+')' : '锁定阵容 · 发起表决', controlsX+directionW+10,panelY+23.890625+(w<360?14.828125:0),controlsW-directionW-10,48,{ primary:true,disabled:selected.length!==size });
+    } else if(web.practice&&proposing&&captain){
+      add('label','practice-captain-hint','本轮领队：'+captain.nickname,panelX+10,panelY+7,panelW-20,24,{fontSize:13});
+      add('button','practiceCaptain','切换到领队 · 继续选人',panelX+10,panelY+36,panelW-20,44,{primary:true});
     } else {
-      const actions=model.rows.filter(row => ['confirmRole','openVote','openMission','inspect','confirmInspection','assassinate','rematch',...(!game?['ready',...(room.hostId===web.user?.id?['start']:['practice'])]:[])].includes(row.id)).slice(0,2);
+      const actions=model.rows.filter(row => (row.id!=='rematch'||ended)&&['confirmRole','openVote','openMission','inspect','confirmInspection','assassinate','rematch',...(!game?['ready',...(room.hostId===web.user?.id?['start']:['practice'])]:[])].includes(row.id)).slice(0,2);
       if (actions.length) actions.forEach((action,index)=>add('button',action.id,action.text,panelX+10+index*(panelW-14)/actions.length,panelY+21,(panelW-20)/actions.length-4,48,{primary:true}));
       else add('label','dock-waiting',proposing ? '⏳ 候任静观 · 正在点将\n等待领队 '+(captain?.nickname??'')+' 钦点同行人，方案实时同步' : model.rows.find(row=>row.id==='submitted')?.text??'静候仙友完成当前操作',panelX+8,panelY+10,panelW-16,panelH-20);
     }

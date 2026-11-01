@@ -53,3 +53,10 @@ test('practice projects distinct private roles per seat and includes avatars in 
  }
  assert.ok(roles.size>1);
 });
+
+test('second mission practice offers the next captain instead of restarting',()=>{
+ const {room,user}=parityFixture('game');room.game!.mission=2;room.game!.phase='proposing';room.game!.captainId=room.members[1].id;
+ const model=gameScreen(room,user,{privateRoleVisible:false,ballotVisible:false});model.web!.practice=true;model.rows.push({id:'rematch',text:'重新演练'});
+ const nodes=layoutWebScreen(model,{width:390,height:844,top:88,bottom:34}).nodes;
+ assert.ok(nodes.some(n=>n.id==='practiceCaptain'));assert.ok(!nodes.some(n=>n.id==='rematch'));
+});
