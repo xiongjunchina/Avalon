@@ -22,3 +22,15 @@ test('native authorization occupies the original control and is removed on scrol
  bridge.sync(bounds);assert.equal(destroyed,0);bridge.sync(undefined);assert.equal(destroyed,1);
  accepted=undefined;tap({userInfo:{nickName:'旧回调',avatarUrl:'https://thirdwx.qlogo.cn/avatar'}});assert.equal(accepted,undefined);
 });
+
+import {parityFixture} from '../scripts/parity-fixture.js';
+import {gameScreen} from '../src/screens/game.js';
+import {layoutWebScreen} from '../src/ui/web-layout.js';
+test('game uses the logged-in profile for self while preserving other players avatars',()=>{
+ const fixture=parityFixture('game');const room:import('@avalon/contracts').RoomView=fixture.room,user:import('@avalon/contracts').User=fixture.user;user.avatarUrl='https://thirdwx.qlogo.cn/self';
+ room.members[0].avatarUrl=undefined;room.members[0].wechatAvatarUrl=undefined;room.members[1].avatarUrl='https://thirdwx.qlogo.cn/other';
+ const model=gameScreen(room,user,{privateRoleVisible:false,ballotVisible:false});
+ const nodes=layoutWebScreen(model,{width:390,height:844,top:88,bottom:34}).nodes;
+ assert.equal(nodes.find(n=>n.id==='player:'+user.id)?.image,user.avatarUrl);
+ assert.equal(nodes.find(n=>n.id==='player:'+room.members[1].id)?.image,room.members[1].avatarUrl);
+});

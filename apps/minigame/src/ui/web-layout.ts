@@ -212,7 +212,8 @@ export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout 
       const left = index % 2 === 0, row = Math.floor(index / 2);
       const px = left ? 10 + arenaInset : rightEnd - seatW;
       const py = arenaTop + 15 + row * (cellH + gap);
-      const memberView = room.members.find(item => item.id === member?.id);
+      const roomMember = room.members.find(item => item.id === member?.id);
+      const memberView = member?.id === web.user?.id ? { ...roomMember, ...web.user, online:roomMember?.online, ready:roomMember?.ready } : roomMember;
       const revealed = game?.revealedRoles?.[member?.id ?? ''];
       const ballot = game?.phase === 'team_vote' && !room.settings.anonymousTeamVote ? game.teamVote?.ballots?.[member?.id ?? ''] : undefined;
           const isWinnerSeat = ended && Boolean(game?.result?.winner && revealed && teamOf(revealed) === game.result.winner);
