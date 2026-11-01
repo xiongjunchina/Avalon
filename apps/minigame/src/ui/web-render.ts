@@ -604,7 +604,13 @@ function drawDocumentNode(ctx:CanvasRenderingContext2D,n:WebNode,model:ScreenMod
   box();write(n.text,cx,cy,n.width-12);
 }
 
+export function isNavigationControl(n:WebNode){return n.kind==='button'&&n.badge!=='table-toolbar'&&/^(?:[‹←↶]|[✕×]\s*关闭|返回|关闭|取消$)/.test(n.text)&&n.skin!=='chat-handle';}
+export function navigationHitArea(n:WebNode,v:SafeViewport):WebNode{
+ if(!isNavigationControl(n))return n;const width=Math.max(44,n.width),height=Math.max(44,n.height);
+ return {...n,x:Math.max(0,Math.min(v.width-width,n.x-(width-n.width)/2)),y:Math.max(v.top,n.y-(height-n.height)/2),width,height};
+}
 function drawNode(ctx: CanvasRenderingContext2D, n: WebNode, model: ScreenModel, viewportWidth:number, artwork?: Artwork) {
+  if(isNavigationControl(n)){const height=Math.max(38,n.height),y=n.y-(height-n.height)/2;ctx.save();shadow(ctx,'#00000080',4,2);fill(ctx,{...n,y,height},gradient(ctx,{...n,y,height},['#285063','#142c3c'],180),Math.min(12,height/2),'#b9e8f075');ctx.shadowBlur=0;const close=/关闭/.test(n.text),label=n.width<55?(close?'×':'‹'):(close?'× 关闭':n.text.startsWith('取消')?'取消':'‹ '+n.text.replace(/^[‹←]\s*/,''));text(ctx,label,n.x+n.width/2,y+height/2,n.width-10,n.width<55?23:13,'#f2fbff','center',sans,'700');ctx.restore();return;}
   if(n.skin){drawDocumentNode(ctx,n,model,artwork);return;}
   const cx = n.x + n.width / 2, cy = n.y + n.height / 2;
   if (n.kind === 'metric') {
@@ -909,8 +915,8 @@ export function renderWebScreen(model: ScreenModel, canvas: HTMLCanvasElement, v
   }
   // Web mobile surfaces scroll by touch without a persistent decorative scrollbar.
   // Reverse paint order so a toast or fixed dock owns the tap instead of a covered seat.
-  if(model.web!.document)return [...layout.nodes.filter(n=>!n.disabled&&['button','choice','tab'].includes(n.kind)&&n.y+n.height>(n.clipTop??v.top)&&n.y<(n.clipBottom??v.height-v.bottom)).reverse().sort((a,b)=>Number(Boolean(b.fixed))-Number(Boolean(a.fixed))),...layout.nodes.filter(n=>n.kind==='hitbox')];
+  if(model.web!.document)return [...layout.nodes.filter(n=>!n.disabled&&['button','choice','tab'].includes(n.kind)&&n.y+n.height>(n.clipTop??v.top)&&n.y<(n.clipBottom??v.height-v.bottom)).reverse().sort((a,b)=>Number(Boolean(b.fixed))-Number(Boolean(a.fixed))),...layout.nodes.filter(n=>n.kind==='hitbox')].map(n=>navigationHitArea(n,v));
   return [...layout.nodes].sort((a, b) => Number(Boolean(b.fixed)) - Number(Boolean(a.fixed)))
     .filter(node => !node.disabled && !['label', 'panel', 'altar', 'metric'].includes(node.kind)
-      && node.y + node.height > (node.clipTop ?? v.top) && node.y < (node.clipBottom ?? v.height - v.bottom));
+      && node.y + node.height > (node.clipTop ?? v.top) && node.y < (node.clipBottom ?? v.height - v.bottom)).map(n=>navigationHitArea(n,v));
 }
