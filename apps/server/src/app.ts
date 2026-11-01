@@ -2,7 +2,7 @@ import Fastify, { type FastifyReply, type FastifyRequest } from 'fastify';
 import cookie from '@fastify/cookie';
 import websocket from '@fastify/websocket';
 import rateLimit from '@fastify/rate-limit';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import type { WebSocket } from 'ws';
 import { z } from 'zod';
 import { commandSchema, dedicatedRoomSchema, specialCodeSchema, roomPasswordSchema, nicknameSchema, profileSchema, presetSchema, settingsSchema, type ServerMessage, type User } from '@avalon/contracts';
@@ -208,7 +208,7 @@ export async function buildApp(options: { store: PostgresStore; origin?: string;
   });
   app.get<{Params:{id:string}}>('/api/rooms/:id',async(req,reply)=>store.roomFor((await authenticate(req,reply)).id,z.string().uuid().parse(req.params.id)));
 
-  app.post<{Params:{id:string}}>('/api/rooms/:id/wechat-voice-ticket',{config:{rateLimit:{max:10,timeWindow:'1 minute'}}},async(req,reply)=>{
+  app.post<{Params:{id:string}}>('/api/rooms/:id/wechat-voice-ticket',{config:{rateLimit:{max:10,timeWindow:'1 minute',keyGenerator:(req:FastifyRequest)=>{const token=bearerToken(req.headers.authorization);return token?'voice:'+createHash('sha256').update(token).digest('hex'):req.ip;}}}},async(req,reply)=>{
     const user=await authenticate(req,reply);
     if(!bearerToken(req.headers.authorization)) throw new DomainError('UNAUTHENTICATED',401);
     if(!wechatVoiceEnabled)throw new DomainError('WECHAT_VOICE_DISABLED',503);

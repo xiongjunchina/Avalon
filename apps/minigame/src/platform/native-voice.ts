@@ -26,6 +26,7 @@ export class NativeVoice {
   members=0;
   speakers=0;
   message='未加入微信语音';
+  private retryAt=0;
   private roomId?:string;
   private count=0;
   private epoch=0;
@@ -47,6 +48,7 @@ export class NativeVoice {
   async join(){
     if(!this.enabled)throw Error('当前版本不支持实时语音');
     if(this.busy||this.joined)return;
+    if(Date.now()<this.retryAt){this.message='语音请求过于频繁，请约1分钟后重试';this.changed();return;}
     if(this.nativeOutstanding||this.cleanupFailed)throw Error('上次语音操作尚未确认结束，请关闭小游戏后重新进入');
     if(!this.roomId)throw Error('请先加入真实游戏房间');
     if(this.count>10)throw Error('微信原生语音每房最多10人，11～12人牌局不提供原生语音');
@@ -72,7 +74,7 @@ export class NativeVoice {
       },fail:error=>{this.nativeOutstanding=false;cb.fail?.(error);}}));
       if(epoch!==this.epoch)return;
       this.joined=true;this.members=result.openIdList?.length??1;this.microphoneMuted=true;this.message='已加入微信语音（默认闭麦）';
-    }catch(error){if(epoch===this.epoch){await this.leave();this.message=error instanceof Error?error.message:'语音加入失败';throw error;}}
+    }catch(error){if(epoch===this.epoch){await this.leave();if(error instanceof Error&&error.message==='RATE_LIMITED'){this.retryAt=Date.now()+60000;this.message='语音请求过于频繁，请约1分钟后重试';}else this.message=error instanceof Error?error.message:'语音加入失败';throw error;}}
     finally{this.busy=false;this.changed();}
   }
   async toggleMicrophone(){await this.mute(!this.microphoneMuted,this.speakerMuted);}
