@@ -863,7 +863,7 @@ function drawNode(ctx: CanvasRenderingContext2D, n: WebNode, model: ScreenModel,
     }
     if(home&&n.badge==='home-avatar'&&n.image){circle(ctx,n.x+17,cy,14,'#183041','#d4a359');ctx.save();circle(ctx,n.x+17,cy,13,'#210d0b');ctx.clip();const avatar=artwork?.get(n.image);if(avatar?.width)ctx.drawImage(avatar as CanvasImageSource,n.x+4,cy-13,26,26);ctx.restore();text(ctx,n.text,n.x+32+(n.width-37)/2,cy,n.width-36,12,webTheme.text,'center',homeInterface,'400');ctx.restore();return;}
     if(isCTA&&!n.disabled){art(ctx,artwork,'cloud-left',n.x+5,cy-8,24,14);art(ctx,artwork,'cloud-right',n.x+n.width-29,cy-8,24,14);}
-    if(home&&n.image){art(ctx,artwork,n.image.slice(8,-4),n.x+n.width/2-55,cy-10,20,20);}
+    if(home&&n.image){const icon=20,gap=8,available=n.width-28-icon-gap;let size=n.fontSize??16;ctx.font='400 '+size+'px '+homeInterface;while(size>11&&ctx.measureText(n.text).width>available){size-=.5;ctx.font='400 '+size+'px '+homeInterface;}const textWidth=Math.min(available,ctx.measureText(n.text).width),left=cx-(icon+gap+textWidth)/2;art(ctx,artwork,n.image.slice(8,-4),left,cy-icon/2,icon,icon);text(ctx,n.text,left+icon+gap,cy,textWidth+.5,size,'#fff3d6','left',homeInterface,'400');ctx.restore();return;}
     if (n.id.startsWith('mission-choice:')) {
       const success = n.id.endsWith('success'), icon = artwork?.get('emblems/' + (success ? 'blue' : 'red') + '.png');
       if (icon) ctx.drawImage(icon as CanvasImageSource, cx - 30, n.y + 24, 60, 60);
