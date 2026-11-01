@@ -291,7 +291,7 @@ async function select(id: string) {
   if(id==='copyRoomCode'&&room&&wx.setClipboardData){wx.setClipboardData({data:room.code,success:()=>{notice='房间号已复制';render();},fail:()=>{error='复制失败，请重试';render();}});return;}
   if (id === 'copyRoom' && room && wx.setClipboardData) { wx.setClipboardData({ data: invitationUrl(baseUrl,room.inviteKey??room.code), success: () => { notice = '房间邀请链接已复制'; render(); }, fail: () => { error = '复制失败，请重试'; render(); } }); return; }
   if (id === 'mode:voice') { notice = MINI_GAME_VOICE_ENABLED ? '创建或加入房间后，点顶部声音按钮加入微信语音；最多10人，与网页语音独立。' : '当前版本不支持实时语音；网页语音能力保持可用。'; render(); return; }
-  if (id.startsWith('voice:')) return run(async () => { if(id==='voice:join') {try {await nativeVoice.join();} catch { /* NativeVoice renders its error once within the voice panel. */ }} else if(id==='voice:leave') await nativeVoice.leave(); else if(id==='voice:microphone') await nativeVoice.toggleMicrophone(); else if(id==='voice:speaker') await nativeVoice.toggleSpeaker(); });
+  if (id.startsWith('voice:')) return run(async () => { try { if(id==='voice:join') await nativeVoice.join(); else if(id==='voice:leave') await nativeVoice.leave(); else if(id==='voice:microphone') await nativeVoice.toggleMicrophone(); else if(id==='voice:speaker') await nativeVoice.toggleSpeaker(); } catch(cause) { if(cause instanceof Error && nativeVoice.message===cause.message) return; throw cause; } }, true);
   if(id==='waiting:missions'){waitingMissionsExpanded=!waitingMissionsExpanded;render();return;}
   if (id === 'sound') { auxiliary = 'sound'; scroll = 0; render(); return; }
   if (id.startsWith('sound:')) { const key = id.slice(6) as 'music' | 'effects'; sound.configure(key, !sound.preferences[key]); render(); return; }

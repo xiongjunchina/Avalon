@@ -5,7 +5,7 @@ export interface NativeVoiceRuntime {
   authorize?(options: Callbacks & { scope: 'scope.record' }): void;
   joinVoIPChat?(options: Callbacks<{openIdList?:string[]}> & VoiceTicket & { roomType:'voice';muteConfig:{muteMicrophone:boolean;muteEarphone:boolean} }): void;
   exitVoIPChat?(options: Callbacks): void;
-  updateVoIPChatMuteConfig?(options: Callbacks & {muteMicrophone:boolean;muteEarphone:boolean}): void;
+  updateVoIPChatMuteConfig?(options: Callbacks & {muteConfig:{muteMicrophone:boolean;muteEarphone:boolean}}): void;
   onVoIPChatMembersChanged?(callback:(event:{openIdList:string[]})=>void):void;
   onVoIPChatSpeakersChanged?(callback:(event:{openIdList:string[]})=>void):void;
   onVoIPChatInterrupted?(callback:()=>void):void;
@@ -87,7 +87,7 @@ export class NativeVoice {
     const epoch=this.epoch;
     this.nativeOutstanding=true;
     try {
-      await invoke<void>(cb=>this.wx.updateVoIPChatMuteConfig!({...cb,muteMicrophone:microphone,muteEarphone:speaker,
+      await invoke<void>(cb=>this.wx.updateVoIPChatMuteConfig!({...cb,muteConfig:{muteMicrophone:microphone,muteEarphone:speaker},
         success:()=>{
           if(epoch!==this.epoch)void this.leave().finally(()=>{this.nativeOutstanding=false;});
           else this.nativeOutstanding=false;
