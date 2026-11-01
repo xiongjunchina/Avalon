@@ -75,10 +75,10 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
     const emptyLines=wrapText('暂无法坛发言，点击上方密语或输入打字传音',v.width-28,t=>measure(t,12)),streamNatural=messages.length?Math.max(70,20+streamRows.reduce((sum,r)=>sum+r.h+8,0)):52+emptyLines.length*25;
     const h=Math.min(available*.6,195+streamNatural),fy=bottom-h,streamTop=fy+140,streamBottom=bottom-55,streamH=streamBottom-streamTop,maxScroll=Math.max(0,streamNatural-streamH),scroll=Math.min(maxScroll,Math.max(0,model.scroll??0));
     add('panel','dialog-frame','',0,fy,v.width,h,{skin:'chat-sheet',fixed:true});
-    button('overlayClose','',fy+10,{skin:'chat-handle',fixed:true},v.width/2-20,40,4);
+    button(model.web!.backId??'back','',fy+10,{skin:'chat-handle',fixed:true},v.width/2-20,40,4);
     txt('chat-title','💬 法坛传音',fy+30,15,{skin:'chat-copy',weight:'700',tone:'gold',fixed:true,lineHeight:22.5},16,111);
     txt('chat-hint','（实时全场冒泡）',fy+33,11,{skin:'chat-copy',tone:'muted',fixed:true,lineHeight:16.5},114,110);
-    button('overlayClose','✕ 关闭',fy+26,{skin:'chat-close',fontSize:12.5,weight:'600',fixed:true},v.width-80.05,64.05,30);
+    button(model.web!.backId??'back','✕ 关闭',fy+26,{skin:'chat-close',fontSize:12.5,weight:'600',fixed:true},v.width-80.05,64.05,30);
     add('panel','chat-tactical-section','',0,fy+67,v.width,73,{skin:'chat-tactical',fixed:true});
     txt('chat-tactical-label','⚡ 常用密语（横滑浏览 · 点击直接秒发）：',fy+75,11,{skin:'chat-copy',weight:'600',tone:'muted',fixed:true,lineHeight:16},14,v.width-28);
     const quick=model.rows.filter(r=>r.id.startsWith('quick:')),widths=quick.map(r=>measure(r.text,12,'sans','500')+24),maxX=Math.max(0,widths.reduce((sum,n)=>sum+n+6,0)-6-v.width+28);let qx=14-Math.min(maxX,Math.max(0,model.horizontalScroll??0));
