@@ -12,7 +12,7 @@ test('home preserves latest web duel artwork, paired room actions and compact ac
   const nodes = layoutWebScreen(model, { width: 390, height: 844, top: 44, bottom: 34 }).nodes;
   assert.ok(nodes.some(node => node.id === 'home-duel' && node.image === 'home/duel-mobile.jpg'));
   assert.equal(nodes.find(node => node.id === 'create')?.y, nodes.find(node => node.id === 'join')?.y);
-  assert.ok(nodes.some(node => node.id === 'account' && node.y < 120));
+  assert.ok(nodes.find(node=>node.id==='home-subtitle')!.y+nodes.find(node=>node.id==='home-subtitle')!.height<nodes.find(node=>node.id==='account')!.y);
 });
 
 test('waiting table folds mission details after readiness and preserves vacant seats', () => {
@@ -34,7 +34,7 @@ test('390px home geometry follows the web CSS instead of a separate mini game co
   const role = nodes.find(n => n.id === 'home-duel')!;
   assert.ok(Math.abs(role.width - 390) < 1);
   assert.ok(Math.abs(role.y - 0) < 1);
-  assert.ok(Math.abs(nodes.find(n => n.id === 'brand')!.y - 60) < 1);
+  assert.ok(Math.abs(nodes.find(n => n.id === 'brand')!.y - 12) < 1);
   assert.ok(Math.abs(nodes.find(n => n.id === 'create')!.y - 662) < 1);
 });
 
