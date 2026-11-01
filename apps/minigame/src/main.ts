@@ -53,7 +53,7 @@ const canvas = drawShell(platform);
 setBackdropCanvasFactory(()=>wx.createCanvas() as unknown as HTMLCanvasElement);
 const artwork = createArtwork(wx, () => render(), baseUrl);
 const api = new MiniGameApi(platform, baseUrl);
-const nativeVoice = new NativeVoice(wx, async roomId => api.request<VoiceTicket>(`/rooms/${roomId}/wechat-voice-ticket`, { code: await platform.login() }), () => render(), MINI_GAME_VOICE_ENABLED);
+const nativeVoice = new NativeVoice(wx, async roomId => api.request<VoiceTicket>(`/rooms/${roomId}/wechat-voice-ticket`, { code: await platform.login() }), () => render(), MINI_GAME_VOICE_ENABLED,async roomId=>(await api.request<{members:Record<string,string>}>(`/rooms/${roomId}/wechat-voice-members`)).members);
 const knownAccounts = new KnownAccounts(platform);
 const sound = new MiniGameSound(platform, baseUrl, text => { notice = text; render(); });
 const invites = new InviteInbox();
@@ -174,7 +174,7 @@ function model(): ScreenModel {
   if(result.web.document)result.web.document.settingChoice=settingsChoice.current;
   result.web.soundPreferences=sound.preferences;
   result.web.friendRequests=playerPanel?.incomingFriendRequests??0;
-  if(view==='game'||view==='lobby'){result.web.chatBubbles=roomBubbles.snapshot();result.web.voice={message:nativeVoice.message,joined:nativeVoice.joined,connecting:nativeVoice.connecting,muted:nativeVoice.microphoneMuted,deafened:nativeVoice.speakerMuted,members:nativeVoice.members,speakers:nativeVoice.speakers};}
+  if(view==='game'||view==='lobby'){result.web.chatBubbles=roomBubbles.snapshot();result.web.voice={players:nativeVoice.playerStates,message:nativeVoice.message,joined:nativeVoice.joined,connecting:nativeVoice.connecting,muted:nativeVoice.microphoneMuted,deafened:nativeVoice.speakerMuted,members:nativeVoice.members,speakers:nativeVoice.speakers};}
   result.web.freeAccess=freeAccess;
   result.web.waitingMissionsExpanded=waitingMissionsExpanded;
   result = feedback(result);

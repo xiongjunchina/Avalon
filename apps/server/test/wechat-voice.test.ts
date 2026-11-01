@@ -18,3 +18,9 @@ test('native voice requires a fresh valid session key',async()=>{
 test('membership is rechecked after WeChat exchange',async()=>{
  let calls=0;await assert.rejects(issueWechatVoiceTicket('u','r','code',cfg,async()=>{if(++calls>1)throw Error('FORBIDDEN');return {openid:'wx-user',playerCount:5};},fetcher),/FORBIDDEN/);
 });
+
+test('verified ticket carries the current room identity map without auth secrets',async()=>{
+ const ticket=await issueWechatVoiceTicket('u','r','code',cfg,async()=>({openid:'wx-user',playerCount:6,members:{'wx-user':'u','wx-friend':'friend'}}),fetcher);
+ assert.deepEqual(ticket.members,{'wx-user':'u','wx-friend':'friend'});
+ assert.doesNotMatch(JSON.stringify(ticket),/private-session-key|server-secret/);
+});

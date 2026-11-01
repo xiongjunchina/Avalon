@@ -399,6 +399,7 @@ function drawDocumentNode(ctx:CanvasRenderingContext2D,n:WebNode,model:ScreenMod
     if(n.image){ctx.save();shadow(ctx,n.badge==='房主'?'#ffd875':'#000000b3',n.badge==='房主'?13:14,n.badge==='房主'?0:4);circle(ctx,cx,py+d/2,d/2+2,'#2b0c0a','#e5b964');ctx.restore();
       if(n.image==='emblems/cards.png')art(ctx,artwork,'cards',cx-12,py+d/2-12,24,24);else image(n.image,cx-d/2,py,d,d,true);
     } else {circle(ctx,cx,py+d/2,d/2,'#16344e55','#d4a35966');write('+',cx,py+d/2,40,25);}
+    if(n.micState)drawSeatMicBadge(ctx,cx+d/2-16,py+d-16,n.micState);
     if(n.badge){const host=n.badge==='房主',bw=host?52:34;fill(ctx,{...n,selected:false,x:cx-bw/2,y:n.y+7,width:bw,height:host?17:20},host?'#ffd875':'#a4303080',host?8:4,host?'#d4a359':'#f8717166');write(host?'👑 房主':n.badge,cx,n.y+(host?15.5:17),bw-4,10,'center',sans,'600',host?'#392012':'#fff');}
     const nameSize=compact?12:13,nameH=compact?21:24;ctx.font='400 '+nameSize+'px '+display;const nameWidth=Math.min(n.width-6,ctx.measureText(n.text).width+(compact?12:16)),ny=py+d+(compact?6:8);ctx.beginPath();ctx.moveTo(cx-nameWidth/2+5,ny);ctx.lineTo(cx+nameWidth/2-5,ny);ctx.lineTo(cx+nameWidth/2,ny+nameH/2);ctx.lineTo(cx+nameWidth/2-5,ny+nameH);ctx.lineTo(cx-nameWidth/2+5,ny+nameH);ctx.lineTo(cx-nameWidth/2,ny+nameH/2);ctx.closePath();ctx.fillStyle='#2b0c0a';ctx.fill();write(n.text,cx,ny+nameH/2,nameWidth-(compact?12:16),nameSize,'center',display,'700',n.selfPlayer?'#ffd875':'#fff3d6');
     const readyY=py+d+(compact?30:37);if(n.selected)fill(ctx,{...n,selected:false,x:cx-30,y:readyY,width:60,height:19},'#0eaa75',10,'#b1ffe0');
@@ -759,7 +760,7 @@ function drawNode(ctx: CanvasRenderingContext2D, n: WebNode, model: ScreenModel,
       if (n.online === false) circle(ctx, avatarX + diameter - 3, avatarY + diameter - 3, 3.5, '#64748b', '#1c0808');
 
 
-      if (n.micState) drawSeatMicBadge(ctx, avatarX - 2, avatarY + diameter - 16, n.micState);
+      if (n.micState) drawSeatMicBadge(ctx, avatarX + diameter - 16, avatarY + diameter - 16, n.micState);
 
       ctx.save();rect(ctx,labelX,nameY,labelW,labelH,labelH/2);ctx.clip();
       const textX=labelX+5, mid=nameY+labelH/2, meW=n.selfPlayer?17.5:0;

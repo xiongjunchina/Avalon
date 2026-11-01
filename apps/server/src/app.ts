@@ -208,6 +208,19 @@ export async function buildApp(options: { store: PostgresStore; origin?: string;
   });
   app.get<{Params:{id:string}}>('/api/rooms/:id',async(req,reply)=>store.roomFor((await authenticate(req,reply)).id,z.string().uuid().parse(req.params.id)));
 
+  async function voiceMemberIdentities(userId:string,roomId:string){
+    const {room}=await store.roomFor(userId,roomId);
+    const rows=await store.pool.query<{id:string;wechat_openid:string|null}>('SELECT id,wechat_openid FROM users WHERE id=ANY($1::uuid[])',[room.members.map(m=>m.id)]);
+    return Object.fromEntries(rows.rows.filter(r=>r.wechat_openid).map(r=>[r.wechat_openid!,r.id]));
+  }
+  app.get<{Params:{id:string}}>('/api/rooms/:id/wechat-voice-members',async(req,reply)=>{
+    const user=await authenticate(req,reply);
+    if(!bearerToken(req.headers.authorization))throw new DomainError('UNAUTHENTICATED',401);
+    if(!wechatVoiceEnabled)throw new DomainError('WECHAT_VOICE_DISABLED',503);
+    reply.header('Cache-Control','no-store');
+    return {members:await voiceMemberIdentities(user.id,z.string().uuid().parse(req.params.id))};
+  });
+
   app.post<{Params:{id:string}}>('/api/rooms/:id/wechat-voice-ticket',{config:{rateLimit:{max:10,timeWindow:'1 minute',keyGenerator:(req:FastifyRequest)=>{const token=bearerToken(req.headers.authorization);return token?'voice:'+createHash('sha256').update(token).digest('hex'):req.ip;}}}},async(req,reply)=>{
     const user=await authenticate(req,reply);
     if(!bearerToken(req.headers.authorization)) throw new DomainError('UNAUTHENTICATED',401);
@@ -220,7 +233,7 @@ export async function buildApp(options: { store: PostgresStore; origin?: string;
     },async(userId,roomId)=>{
       const {room}=await store.roomFor(userId,roomId);
       const row=(await store.pool.query<{wechat_openid:string|null}>('SELECT wechat_openid FROM users WHERE id=$1',[userId])).rows[0];
-      return {openid:row?.wechat_openid,playerCount:room.settings.playerCount};
+      return {openid:row?.wechat_openid,playerCount:room.settings.playerCount,members:await voiceMemberIdentities(userId,roomId)};
     });
   });
 

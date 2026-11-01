@@ -5,7 +5,7 @@ import { DomainError } from './store.js';
 // WeChat native VoIP supports at most ten members, independently of game capacity.
 export async function issueWechatVoiceTicket(
   userId: string, roomId: string, code: string, config: WechatConfig,
-  lookup: (userId: string, roomId: string) => Promise<{ openid?: string | null; playerCount: number }>,
+  lookup: (userId: string, roomId: string) => Promise<{ openid?: string | null; playerCount: number; members?:Record<string,string> }>,
   fetcher: typeof fetch = fetch,
 ) {
   const member = await lookup(userId, roomId);
@@ -22,5 +22,5 @@ export async function issueWechatVoiceTicket(
   const timeStamp = Math.floor(Date.now() / 1000);
   const signature = createHmac('sha256', identity.sessionKey)
     .update([config.appId, groupId, nonceStr, String(timeStamp)].sort().join('')).digest('hex');
-  return { groupId, nonceStr, timeStamp, signature };
+  return { groupId, nonceStr, timeStamp, signature, ...(current.members?{members:current.members}:{}) };
 }

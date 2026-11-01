@@ -48,3 +48,16 @@ test('waiting room has exactly one voice entry and no duplicate microphone contr
  assert.equal(nodes.filter(n=>n.id===(joined?'voice:microphone':'voice:join')).length,1);
  }
 });
+
+test('waiting and active game seats display per-player speech instead of a shared count',()=>{
+ const {room,user}=parityFixture();
+ for(const waiting of [true,false]){
+ const active=waiting?{...room,game:undefined}:room,model=waiting?lobbyScreen(active as any,user):gameScreen(room,user,{privateRoleVisible:false,ballotVisible:false});
+ const other=room.members.find(m=>m.id!==user.id)!;
+ model.web!.voice={joined:true,connecting:false,muted:true,deafened:false,members:2,speakers:1,players:{[user.id]:'live',[other.id]:'speaking'}};
+ const {nodes}=layoutWebScreen(model,{width:390,height:844,top:88,bottom:34});
+ assert.equal(nodes.find(n=>n.id===(waiting?'member:':'player:')+user.id)!.micState,'muted');
+ assert.equal(nodes.find(n=>n.id===(waiting?'member:':'player:')+other.id)!.micState,'speaking');
+ assert.ok(nodes.filter(n=>n.micState==='speaking').length===1);
+ }
+});

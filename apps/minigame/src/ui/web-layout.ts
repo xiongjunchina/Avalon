@@ -22,7 +22,7 @@ export function resultHeroGeometry(width:number,self:string,reason:string){
 export interface WebSurface {
   animationTime?:number;
   soundPreferences?:{music:boolean;effects:boolean};
-  voice?:{message?:string;joined:boolean;connecting:boolean;muted:boolean;deafened:boolean;members:number;speakers:number};
+  voice?:{players?:Record<string,'live'|'speaking'>;message?:string;joined:boolean;connecting:boolean;muted:boolean;deafened:boolean;members:number;speakers:number};
   chatBubbles?:Record<string,string>;
   page: 'home' | 'setup' | 'table' | 'sheet';
   background?: 'gate' | 'pavilion' | 'sword' | 'library' | 'mirror' | 'dawn';
@@ -52,6 +52,12 @@ export interface WebNode extends HitRegion {
 }
 export interface WebLayout { nodes: WebNode[]; maxScroll: number; contentTop: number; contentBottom: number }
 const cssClamp = (min: number, value: number, max: number) => Math.max(min, Math.min(value, max));
+
+export function playerMicState(web:WebSurface,id:string):WebNode['micState']{
+ if(web.practice||!web.voice||!web.room||web.room.settings.playerCount>10)return;
+ if(id===web.user?.id){if(!web.voice.joined)return 'unjoined';if(web.voice.muted)return 'muted';return web.voice.players?.[id]==='speaking'?'speaking':'live';}
+ return web.voice.players?.[id]??'unjoined';
+}
 
 export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout {
   if (model.web?.document) return layoutDocument(model,v);
@@ -149,7 +155,7 @@ export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout 
       const seatLeft=(i:number)=>seatX+(i%cols)*(cellW+gap)+(Math.floor(i/cols)===Math.floor((count-1)/cols)?(cols-(count%cols||cols))*(cellW+gap)/2:0);
       for(let i=0;i<count;i++){
         const m=room.members.find(p=>p.seat===i+1);
-        add('seat',m?'member:'+m.id:'share',m?m.nickname+(m.id===web.user?.id?'（你）':''):'虚位以待',seatLeft(i),y+Math.floor(i/cols)*cellH,cellW,cellH,{skin:'waiting-seat',disabled:!!m,count:i+1,selected:!!m?.ready,selfPlayer:m?.id===web.user?.id,online:m?.online,badge:m?.id===room.hostId?'房主':host&&m?'踢出':undefined,detail:m?(m.ready?'✓ 已准备':'未准备'):'邀请仙友',image:m?(m.avatarUrl??m.wechatAvatarUrl??'emblems/'+(m.avatar??'cards')+'.png'):undefined});
+        add('seat',m?'member:'+m.id:'share',m?m.nickname+(m.id===web.user?.id?'（你）':''):'虚位以待',seatLeft(i),y+Math.floor(i/cols)*cellH,cellW,cellH,{skin:'waiting-seat',micState:m?playerMicState(web,m.id):undefined,disabled:!!m,count:i+1,selected:!!m?.ready,selfPlayer:m?.id===web.user?.id,online:m?.online,badge:m?.id===room.hostId?'房主':host&&m?'踢出':undefined,detail:m?(m.ready?'✓ 已准备':'未准备'):'邀请仙友',image:m?(m.avatarUrl??m.wechatAvatarUrl??'emblems/'+(m.avatar??'cards')+'.png'):undefined});
       }
       if(host)for(const m of room.members.filter(m=>m.id!==web.user?.id)){const i=m.seat-1;add('hitbox','member:'+m.id,'踢出',seatLeft(i)+cellW/2-24,y+Math.floor(i/cols)*cellH+7,48,17,{skin:'hitbox'});}
       y+=Math.ceil(count/cols)*cellH+(compact?0:4);
@@ -219,7 +225,7 @@ export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout 
       const revealed = game?.revealedRoles?.[member?.id ?? ''];
       const ballot = game?.phase === 'team_vote' && !room.settings.anonymousTeamVote ? game.teamVote?.ballots?.[member?.id ?? ''] : undefined;
           const isWinnerSeat = ended && Boolean(game?.result?.winner && revealed && teamOf(revealed) === game.result.winner);
-          const micState = room.settings.voiceChatEnabled && member ? 'unjoined' : undefined;
+          const micState = member?playerMicState(web,member.id):undefined;
           add('seat', member ? (game ? 'player:' : 'member:') + member.id : 'share', member?.nickname ?? '虚位以待', px, py, seatW, cellH,
             { count: index + 1, selected: Boolean(member && (selected.includes(member.id) || web.targetId === member.id)), selfPlayer: member?.id === web.user?.id, online: memberView?.online,
               micState,lineHeight:cssClamp(26,v.height*.038,32),team:revealed?teamOf(revealed):undefined,

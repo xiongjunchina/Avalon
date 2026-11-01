@@ -84,3 +84,20 @@ test('post-join audio configuration failure stays visible and does not claim joi
  const v=new NativeVoice({authorize:o=>o.success(),joinVoIPChat:o=>o.success({}),updateVoIPChatMuteConfig:o=>o.fail?.({errMsg:'audio config rejected'}),exitVoIPChat:o=>o.success()},async()=>({groupId:'g',nonceStr:'n',timeStamp:1,signature:'s'}),()=>{});
  v.syncRoom('r',6);await assert.rejects(v.join(),/audio config rejected/);assert.equal(v.joined,false);assert.match(v.message,/audio config rejected/);
 });
+
+test('native speaker identities map to the matching player and clear when speech stops or member leaves',async()=>{
+ let speakers=(e:{openIdList:string[]})=>{},members=(e:{openIdList:string[]})=>{};
+ const v=new NativeVoice({authorize:o=>o.success(),joinVoIPChat:o=>o.success({openIdList:['wx-a','wx-b']}),exitVoIPChat:o=>o.success(),onVoIPChatSpeakersChanged:f=>speakers=f,onVoIPChatMembersChanged:f=>members=f},async()=>({groupId:'g',nonceStr:'n',timeStamp:1,signature:'s',members:{'wx-a':'player-a','wx-b':'player-b'}}),()=>{});
+ v.syncRoom('r',6);await v.join();assert.deepEqual(v.playerStates,{'player-a':'live','player-b':'live'});
+ speakers({openIdList:['wx-b']});assert.deepEqual(v.playerStates,{'player-a':'live','player-b':'speaking'});
+ speakers({openIdList:[]});assert.equal(v.playerStates['player-b'],'live');
+ speakers({openIdList:['wx-b']});members({openIdList:['wx-a']});assert.deepEqual(v.playerStates,{'player-a':'live'});assert.equal(v.speakers,0);
+ await v.leave();assert.deepEqual(v.playerStates,{});
+});
+test('member mapping refresh handles late participants and ignores old room responses',async()=>{
+ let members=(e:{openIdList:string[]})=>{},resolve:((m:Record<string,string>)=>void)|undefined;
+ const v=new NativeVoice({authorize:o=>o.success(),joinVoIPChat:o=>o.success({openIdList:['a']}),exitVoIPChat:o=>o.success(),onVoIPChatMembersChanged:f=>members=f},async()=>({groupId:'g',nonceStr:'n',timeStamp:1,signature:'s',members:{a:'self'}}),()=>{},true,()=>new Promise(r=>resolve=r));
+ v.syncRoom('r',6);await v.join();resolve!({a:'self'});await new Promise(r=>setImmediate(r));
+ members({openIdList:['a','b']});resolve!({a:'self',b:'friend'});await new Promise(r=>setImmediate(r));assert.equal(v.playerStates.friend,'live');
+ members({openIdList:['a','b']});v.syncRoom(undefined,0);resolve!({a:'self',b:'wrong-room'});await new Promise(r=>setImmediate(r));assert.deepEqual(v.playerStates,{});
+});
