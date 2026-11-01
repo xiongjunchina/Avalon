@@ -1,3 +1,4 @@
+import {ScrollRasterCache} from './scroll-raster-cache.js';
 import {sceneMotion} from './motion.js';
 export function strokeWithoutGold(ctx:CanvasRenderingContext2D){
  const color=ctx.strokeStyle;
@@ -885,6 +886,7 @@ export function configureDocumentMetrics(canvas:HTMLCanvasElement){
  const ctx=canvas.getContext('2d');if(!ctx)return;
  setDocumentTextMeasurer((value,size,face='sans',weight='400')=>{value=value.replace(/[\ufe0e\ufe0f]/g,'');const weightKey=String(Math.min(700,Math.max(400,Math.round(Number(weight)/100)*100))),family=face==='mono'?'monospace':face==='home'?homeInterface:face==='system'?cnSans:nativeSans?(sansWeights[weightKey]??sans):sans,renderWeight=nativeSans&&face!=='mono'&&face!=='system'?'400':weight;const key=family+'|'+renderWeight+'|'+size+'|'+value,cached=documentWidths.get(key);if(cached!==undefined)return cached;ctx.save();ctx.font=renderWeight+' '+size+'px '+family;const width=inlineWidth(ctx,value,size,face!=='mono'&&face!=='system');ctx.restore();if(documentWidths.size>8192)documentWidths.clear();documentWidths.set(key,width);return width;});
 }
+const guideRasters=new WeakMap<HTMLCanvasElement,ScrollRasterCache>();
 export function renderWebScreen(model: ScreenModel, canvas: HTMLCanvasElement, v: SafeViewport, artwork?: Artwork, preparedLayout?: WebLayout): HitRegion[] {
   const ctx = canvas.getContext('2d'); if (!ctx) throw new Error('Canvas 2D is unavailable');
   ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
@@ -909,7 +911,17 @@ export function renderWebScreen(model: ScreenModel, canvas: HTMLCanvasElement, v
   // Match the setup screen's own CSS surface, leaving other scenes unchanged.
   if(!modal&&model.web!.page==='setup'){ctx.fillStyle='#0c1f3378';ctx.fillRect(0,0,v.width,v.height);}
   const layout = preparedLayout ?? layoutWebScreen(model, v);
+  const guide=!modal&&['guide','guide-role'].includes(model.web!.document?.kind??'');
+  let rasterized=false;
+  if(guide){
+    const factory=backdropFactory??(canvas.ownerDocument?()=>canvas.ownerDocument.createElement('canvas'):undefined);
+    if(factory){let raster=guideRasters.get(canvas);if(!raster){raster=new ScrollRasterCache();guideRasters.set(canvas,raster);}
+      const key=JSON.stringify([model.web!.document,model.rows,fontRevision,artwork?.revision??0]);
+      rasterized=raster.draw(ctx,{key,width:v.width,ratio:Math.max(1,canvas.width/v.width),scroll:Math.max(0,Math.min(model.scroll??0,layout.maxScroll)),top:layout.contentTop,bottom:layout.contentBottom,nodes:layout.nodes.filter(n=>!n.fixed),factory,paint:(c,n)=>drawNode(c,n,model,v.width,artwork)});
+    }
+  }else{guideRasters.get(canvas)?.clear();}
   for (const node of [...layout.nodes.filter(item => item.fixed && item.id === 'dialog-frame'), ...layout.nodes.filter(item => !item.fixed), ...layout.nodes.filter(item => item.fixed && item.kind === 'panel' && item.id !== 'dialog-frame'), ...layout.nodes.filter(item => item.fixed && item.kind !== 'panel')]) {
+    if(rasterized&&!node.fixed)continue;
     // Clipping alone still issues all text/image draw calls for long documents.
     if (node.y + node.height < (node.clipTop ?? v.top) - 24 || node.y > (node.clipBottom ?? v.height-v.bottom) + 24) continue;
     ctx.save();

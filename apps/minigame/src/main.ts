@@ -486,7 +486,7 @@ function scheduleRender(reuseContent=true) {
 }
 
 const cancelTouchMotion=attachTouchNavigation(wx, {
-  scrollBy(delta) { const before=scroll;scroll = Math.min(maxPaintScroll,Math.max(0, scroll + delta));scrollingUntil=Date.now()+180;scheduleRender();return scroll!==before; },
+  scrollBy(delta,inFrame) { const before=scroll;scroll = Math.min(maxPaintScroll,Math.max(0, scroll + delta));scrollingUntil=Date.now()+180;if(inFrame)render(true);else scheduleRender();return scroll!==before; },
   canScrollHorizontal(x,y){return rows.some(r=>r.scrollMaxX!==undefined&&x>=(r.clipLeft??0)&&x<=(r.clipRight??viewport.width)&&y>=r.y&&y<=r.y+r.height);},
   scrollHorizontal(delta){const max=rows.find(r=>r.scrollMaxX!==undefined)?.scrollMaxX??0;horizontalScroll=Math.max(0,Math.min(max,horizontalScroll+delta));scheduleRender(false);},
   tap(x,y) { const row=hitTest(rows,x,y); if(row) void select(row.id); },

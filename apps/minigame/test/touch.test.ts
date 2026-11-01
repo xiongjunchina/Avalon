@@ -30,3 +30,12 @@ test('release continues vertical momentum and a new touch cancels it',()=>{
  assert.equal(frames.length,1);frames.shift()!();assert.ok(scroll>60);
  const before=scroll;start({touches:[{clientX:40,clientY:140}]});frames.shift()!();assert.equal(scroll,before);
 });
+
+test('inertia uses global RAF on WeChat and paints inside that frame without another scheduling hop',t=>{
+ let start:any,move:any,end:any;const frames:(()=>void)[]=[];const original=globalThis.requestAnimationFrame;
+ globalThis.requestAnimationFrame=((f:any)=>{frames.push(f);return frames.length;}) as any;
+ t.after(()=>{if(original)globalThis.requestAnimationFrame=original;else delete (globalThis as any).requestAnimationFrame;});
+ const inFrames:boolean[]=[];const cancel=attachTouchNavigation({onTouchStart:(f:any)=>start=f,onTouchMove:(f:any)=>move=f,onTouchEnd:(f:any)=>end=f} as WxRuntime,{scrollBy:(_delta,inFrame)=>{inFrames.push(!!inFrame);},tap:()=>assert.fail()});
+ start({touches:[{clientX:20,clientY:200}]});move({touches:[{clientX:20,clientY:100}]});end({changedTouches:[{clientX:20,clientY:100}]});
+ assert.equal(frames.length,1);frames.shift()!();assert.equal(inFrames.at(-1),true);cancel();
+});

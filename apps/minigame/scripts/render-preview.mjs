@@ -7,6 +7,8 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 const { chromium } = await import(process.env.MINIGAME_PLAYWRIGHT_PATH
   ? pathToFileURL(process.env.MINIGAME_PLAYWRIGHT_PATH).href : 'playwright');
 const result = await build({ stdin: { contents: `
+export {ScrollRasterCache} from './apps/minigame/src/ui/scroll-raster-cache.ts';
+export {createScrollLayoutCache} from './apps/minigame/src/ui/scroll-layout-cache.ts';
 export { setWebFonts } from './apps/minigame/src/ui/web-render.ts';
 export { layoutWebScreen } from './apps/minigame/src/ui/web-layout.ts';
 export { PlayerPanel } from './apps/minigame/src/screens/player-panel.ts';
@@ -37,6 +39,7 @@ for(const name of await readdir(join(packageRoot,'art/emblems')))if(name.endsWit
 const fonts = Object.fromEntries(await Promise.all(['calligraphy','display','sans','sans500','sans600','sans700','homeInterface'].map(async name => [name,'data:font/ttf;base64,'+(await readFile(join(packageRoot,(/sans[567]00/.test(name)||name==='homeInterface'||name==='display')?'web-fonts':'art/fonts',name+'.ttf'))).toString('base64')])));
 const dpr=Number(process.env.PARITY_DPR??1);
 const playerCount=Number(process.env.PARITY_PLAYERS??6);
+const profileScroll=process.env.PARITY_PROFILE==='1';
 const nativeVoicePreview=process.env.PARITY_VOICE==='1';
 const safeTop=Number(process.env.PARITY_SAFE_TOP??0),sparseLobby=process.env.PARITY_SPARSE==='1';
 const captureSuffix=(process.env.PARITY_BOTTOM==='1'?'-bottom':'')+(safeTop?'-safe'+safeTop:'')+(sparseLobby?'-sparse':'')+(nativeVoicePreview?'-speaking':'');
@@ -53,7 +56,7 @@ try {
     await page.evaluate(names=>AvalonPreview.setWebFonts(Object.fromEntries(names.map(name=>[name,'Packaged-'+name]))),Object.keys(fonts));
     for (const captureScene of (process.env.PARITY_SCENES?.split(',')??['entry','setup','game','identity','vote','vote-submitted','mission','report','result','account','profile','history','favorites','presets','friends','friends-list','friends-add','guide','guide-role'])) {
       const scene=captureScene.startsWith('mirror-window')?'guanyin-window':captureScene.startsWith('notice-')?'private-notice':captureScene.startsWith('treasures-')?'treasures':({'result-top':'result','admin-replay-expanded':'admin-games','admin-replay-audit':'admin-games','admin-replay':'admin-games','chat-long':'chat','chat-draft':'chat','chat-empty':'chat','battle-populated':'battle','battle-public':'battle','admin-users-search':'admin-users','vote-approve':'vote','vote-reject':'vote','vote-abstain':'vote','mission-selected':'mission','preferences-selected':'preferences','report-public':'report','report-failed':'report','preset-editor':'presets','profile-vip':'profile','history-expanded':'history','replay-expanded':'replay','admin-special-editor':'admin-special','admin-code-editor':'admin-users','admin-friends':'admin-users'})[captureScene]??captureScene.replace('-populated','');
-      const layout = await page.evaluate(async ({ width, height, scene, assets, dpr,playerCount,captureScene,bottomCapture,safeTop,sparseLobby,nativeVoicePreview }) => {
+      const layout = await page.evaluate(async ({ width, height, scene, assets, dpr,playerCount,captureScene,bottomCapture,safeTop,sparseLobby,nativeVoicePreview,profileScroll }) => {
         const app = globalThis.AvalonPreview;
         const canvas = document.getElementById('preview'); canvas.width = width*dpr; canvas.height = height*dpr;canvas.style.width=width+'px';canvas.style.height=height+'px';canvas.getContext('2d').scale(dpr,dpr);
         const cache = new Map(); await Promise.all(Object.entries(assets).map(async ([name, url]) => { const img = new Image(); img.src = url; await img.decode(); cache.set(name, img); }));
@@ -98,8 +101,16 @@ try {
         if(model.web){model.web.freeAccess=true;if(scene==='lobby'){model.web.friendRequests=1;model.web.voice={joined:false,connecting:false,muted:true,deafened:false,members:0,speakers:0};}model.web.soundPreferences={music:true,effects:true};}
         if(nativeVoicePreview&&model.web&&['lobby','game'].includes(scene))model.web.voice={joined:true,connecting:false,muted:false,deafened:false,members:parityRoom.members.length,speakers:1,players:Object.fromEntries(parityRoom.members.map((m,i)=>[m.id,i===0?'speaking':'live']))};
         app.renderScreen(model, canvas, { width, height, top: safeTop, bottom: 0 }, { get: name => cache.get(name) });
-        const layout=app.layoutWebScreen(model,{width,height,top:safeTop,bottom:0});return layout;
-      }, { width, height, scene, assets, dpr,playerCount,captureScene,safeTop,sparseLobby,nativeVoicePreview,bottomCapture:process.env.PARITY_BOTTOM==='1' });
+        const viewport={width,height,top:safeTop,bottom:0},layout=app.layoutWebScreen(model,viewport);
+        if(profileScroll){const cached=app.createScrollLayoutCache();cached(model,viewport);const samples=[];let fills=0;const ctx=canvas.getContext('2d'),proto=Object.getPrototypeOf(ctx),original=proto.fillText;proto.fillText=function(...args){fills++;return original.apply(this,args);};
+          for(let i=0;i<120;i++){const m={...model,scroll:Math.min(layout.maxScroll,100+i*9)},l=cached(m,viewport,0,true),start=performance.now();app.renderScreen(m,canvas,viewport,{get:name=>cache.get(name)},l);samples.push(performance.now()-start);}
+          proto.fillText=original;samples.sort((a,b)=>a-b);layout.profile={medianMs:samples[60],p95Ms:samples[114],textCalls:fills,frames:120,dpr};app.renderScreen(model,canvas,viewport,{get:name=>cache.get(name)});
+          const raster=ctx.getImageData(0,0,canvas.width,canvas.height).data,draw=app.ScrollRasterCache.prototype.draw;app.ScrollRasterCache.prototype.draw=()=>false;
+          app.renderScreen(model,canvas,viewport,{get:name=>cache.get(name)});const direct=ctx.getImageData(0,0,canvas.width,canvas.height).data;app.ScrollRasterCache.prototype.draw=draw;
+          let difference=0,max=0;for(let i=0;i<direct.length;i++){const d=Math.abs(direct[i]-raster[i]);difference+=d;max=Math.max(max,d);}
+          layout.profile.rasterComparison={meanChannelDifference:difference/direct.length,maxChannelDifference:max};app.renderScreen(model,canvas,viewport,{get:name=>cache.get(name)});
+        }return layout;
+      }, { width, height, scene, assets, dpr,playerCount,captureScene,safeTop,sparseLobby,nativeVoicePreview,profileScroll,bottomCapture:process.env.PARITY_BOTTOM==='1' });
       await writeFile(join(out, `${captureScene}-${width}.json`), JSON.stringify(layout,null,2));
       await page.screenshot({ path: join(out, `${captureScene}-${width}.png`) });
     }
