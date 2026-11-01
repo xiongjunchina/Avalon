@@ -402,7 +402,8 @@ function drawDocumentNode(ctx:CanvasRenderingContext2D,n:WebNode,model:ScreenMod
     if(n.badge){const host=n.badge==='房主',bw=host?52:34;fill(ctx,{...n,selected:false,x:cx-bw/2,y:n.y+7,width:bw,height:host?17:20},host?'#ffd875':'#a4303080',host?8:4,host?'#d4a359':'#f8717166');write(host?'👑 房主':n.badge,cx,n.y+(host?15.5:17),bw-4,10,'center',sans,'600',host?'#392012':'#fff');}
     const nameSize=compact?12:13,nameH=compact?21:24;ctx.font='400 '+nameSize+'px '+display;const nameWidth=Math.min(n.width-6,ctx.measureText(n.text).width+(compact?12:16)),ny=py+d+(compact?6:8);ctx.beginPath();ctx.moveTo(cx-nameWidth/2+5,ny);ctx.lineTo(cx+nameWidth/2-5,ny);ctx.lineTo(cx+nameWidth/2,ny+nameH/2);ctx.lineTo(cx+nameWidth/2-5,ny+nameH);ctx.lineTo(cx-nameWidth/2+5,ny+nameH);ctx.lineTo(cx-nameWidth/2,ny+nameH/2);ctx.closePath();ctx.fillStyle='#2b0c0a';ctx.fill();write(n.text,cx,ny+nameH/2,nameWidth-(compact?12:16),nameSize,'center',display,'700',n.selfPlayer?'#ffd875':'#fff3d6');
     const readyY=py+d+(compact?30:37);if(n.selected)fill(ctx,{...n,selected:false,x:cx-30,y:readyY,width:60,height:19},'#0eaa75',10,'#b1ffe0');
-    write(n.detail??'',cx,readyY+9.5,n.width-6,11.5,'center',sans,'600',n.selected?'#fff':'#ead8b8');return;
+    if(!n.selected){const bw=Math.min(n.width-6,72);fill(ctx,{...n,x:cx-bw/2,y:readyY-1,width:bw,height:21},'#102b3ee8',8,'transparent');}
+    write(n.detail??'',cx,readyY+9.5,n.width-6,11.5,'center',sans,'600','#fff8ef');return;
   }
   if(n.skin==='waiting-offline'){fill(ctx,n,'#2d141899',16,'#dcbe7840');write(n.text,cx,cy,n.width-8,11,'center',sans,'400','#a8947e');return;}
   if(n.skin==='waiting-social'){fill(ctx,n,gradient(ctx,n,['#302924f5','#120f0dfa'],150),16,'#dcbe7866');write(n.text,cx-(n.count?8:0),cy,n.width-16,12,'center',sans,'700','#ffe57f');if(n.count){circle(ctx,n.x+n.width-19,cy,8,'#ff4d4f','transparent');write(String(n.count),n.x+n.width-19,cy,14,10,'center',sans,'700','#fff');}return;}
@@ -605,7 +606,7 @@ function drawDocumentNode(ctx:CanvasRenderingContext2D,n:WebNode,model:ScreenMod
   box();write(n.text,cx,cy,n.width-12);
 }
 
-export function isNavigationControl(n:WebNode){return n.kind==='button'&&n.badge!=='table-toolbar'&&/^(?:[‹←↶]|[✕×]\s*关闭|返回|关闭|取消$)/.test(n.text)&&n.skin!=='chat-handle';}
+export function isNavigationControl(n:WebNode){return n.kind==='button'&&/^(?:[‹←↶]|[✕×]\s*关闭|返回|关闭|取消$)/.test(n.text)&&n.skin!=='chat-handle';}
 export function navigationHitArea(n:WebNode,v:SafeViewport):WebNode{
  if(!isNavigationControl(n))return n;const width=Math.max(44,n.width),height=Math.max(44,n.height);
  return {...n,x:Math.max(0,Math.min(v.width-width,n.x-(width-n.width)/2)),y:Math.max(v.top,n.y-(height-n.height)/2),width,height};

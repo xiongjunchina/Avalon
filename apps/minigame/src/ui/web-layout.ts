@@ -64,20 +64,17 @@ export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout 
   if (web.page === 'home') {
     const compact=v.height-v.top-v.bottom<=660,homePad=compact?12:16,homeW=w-homePad*2,fg=compact?7:10,toolbarH=w<=380||compact?36:40;
     top=v.top+(compact?8:12);
-    const homeBrandTop=top;top+=compact?64:76;
     add('label','home-duel','',0,0,w,v.height,{skin:'home-duel',image:'home/duel-mobile.jpg',clipTop:0,clipBottom:v.height});
     const avatarW=Math.min(122,Math.max(74,50+(web.user?.nickname.length??4)*12));
     add('button',web.user?'account':'loginOpen',web.user?.nickname??'游客浏览',homePad,top,avatarW,toolbarH,{fixed:true,badge:'home-avatar',image:web.user?.avatarUrl??web.user?.wechatAvatarUrl??'emblems/'+(web.user?.avatar??'cards')+'.png'});
     const soundW=web.user&&w<=380?36:74,friendW=w<=380?65:80,switchW=w<=380?53:61.2,toolsW=web.user?friendW+soundW+switchW+12:soundW;
     let toolX=w-homePad-toolsW;
     for(const [id,title,width] of (web.user?[['friends','👥 仙友',friendW],['sound','静音',soundW],['switch','🚪 换号',switchW]]:[['sound','静音',soundW]]) as [string,string,number][]){add('button',id,title,toolX,top,width,toolbarH,{fixed:true,fontSize:13,count:id==='friends'?web.friendRequests:undefined});toolX+=width+6;}
-    const logoTop=homeBrandTop,logoSize=compact?28:cssClamp(28,w*.088,36),logoH=logoSize*1.2,subSize=compact?11:cssClamp(11,w*.033,14);
-    add('label','brand','嘻游 · 真假猴王',homePad,logoTop,homeW,logoH,{fontSize:logoSize,fixed:true});
-    add('label','home-subtitle','一念佛魔皆幻相，谁是修道取经人',homePad,top+toolbarH+(compact?8:12),homeW,subSize*1.45,{skin:'home-copy',fontSize:subSize,fixed:true});
+    const logoSize=compact?28:cssClamp(28,w*.088,36),logoH=logoSize*1.2,subSize=compact?11:cssClamp(11,w*.033,14);
     const hasInvitation=model.rows.some(r=>r.id==='invitation'),promotion=web.freeAccess!==false,inviteH=hasInvitation?16.8+fg:0,footerH=(compact?202:230)+inviteH+(promotion?0:-5),footer=v.height-v.bottom-(compact?8:14)-footerH;
-    const headlineSize=compact?cssClamp(29,w*.088,34):cssClamp(34,w*.108,44),headlineH=headlineSize*1.06*2,descSize=compact?12:cssClamp(12,w*.036,15),copyH=headlineH+(compact?6:10)+descSize*1.45,copyY=footer-(compact?11:20)-copyH;
-    add('label','home-headline','两个悟空，\n你信哪一个？',homePad,copyY,homeW,headlineH,{skin:'home-copy',fontFace:'calligraphy',fontSize:headlineSize});
-    add('label','home-description','组队、表决、暗中试探，找出取经路上的妖。',homePad,copyY+headlineH+(compact?6:10),homeW,descSize*1.45,{skin:'home-copy',fontSize:descSize});
+    const brandY=footer-(compact?22:30)-logoH-(compact?8:12)-subSize*1.45;
+    add('label','brand','嘻游 · 真假猴王',homePad,brandY,homeW,logoH,{fontSize:logoSize});
+    add('label','home-subtitle','一念佛魔皆幻相，谁是修道取经人',homePad,brandY+logoH+(compact?8:12),homeW,subSize*1.45,{skin:'home-copy',fontSize:subSize});
     add('panel','mode-frame','',homePad,footer,homeW,52);
     const modeSize=cssClamp(12,w*.036,15);
     add('tab','mode:offline','🏛️ 线下常规房',homePad+4,footer+4,(homeW-14)/2,44,{selected:!web.settings?.voiceChatEnabled,fontSize:modeSize});

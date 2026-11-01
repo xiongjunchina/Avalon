@@ -21,3 +21,12 @@ test('horizontal chips lock their own axis and never trigger a quick message whi
  start({touches:[{clientX:200,clientY:240}]});move({touches:[{clientX:198,clientY:180}]});end({changedTouches:[{clientX:198,clientY:170}]});
  assert.equal(vertical,70);assert.equal(horizontal,100);
 });
+
+test('release continues vertical momentum and a new touch cancels it',()=>{
+ let start:any,move:any,end:any,scroll=0;const frames:(()=>void)[]=[];
+ const runtime={onTouchStart:(f:any)=>start=f,onTouchMove:(f:any)=>move=f,onTouchEnd:(f:any)=>end=f,requestAnimationFrame:(f:()=>void)=>{frames.push(f);return frames.length;}} as WxRuntime;
+ attachTouchNavigation(runtime,{scrollBy:d=>{scroll+=d;},tap:()=>assert.fail('drag must not tap')});
+ start({touches:[{clientX:40,clientY:200}]});move({touches:[{clientX:40,clientY:140}]});end({changedTouches:[{clientX:40,clientY:140}]});
+ assert.equal(frames.length,1);frames.shift()!();assert.ok(scroll>60);
+ const before=scroll;start({touches:[{clientX:40,clientY:140}]});frames.shift()!();assert.equal(scroll,before);
+});

@@ -193,20 +193,23 @@ const wechatProfileButton=new WechatProfileButton(wx,profile=>{playerPanel?.appl
 const cachedWebLayout=createScrollLayoutCache();
 const motionEpoch=Date.now();
 let motionTimer:ReturnType<typeof setTimeout>|undefined;
-function render() {
-  retryWebFonts();
+let lastPaintModel:ScreenModel|undefined,scrollingUntil=0,maxPaintScroll=0;
+function render(scrollOnly=false) {
+  if(!scrollOnly)retryWebFonts();
   clearTimeout(motionTimer);
   clearTimeout(countdownTimer);
-  sound.update(view === 'practice' ? practice?.view().game : view === 'game' ? room?.game : undefined, !suspended && (view === 'practice' || view === 'game' && connectionStatus === '已连接'));
+  if(!scrollOnly)sound.update(view === 'practice' ? practice?.view().game : view === 'game' ? room?.game : undefined, !suspended && (view === 'practice' || view === 'game' && connectionStatus === '已连接'));
   configureDocumentMetrics(canvas);
-  const current = model();
-  const layout = current.web ? cachedWebLayout(current, viewport,webFontRevision()) : undefined;
+  const current = scrollOnly&&lastPaintModel?{...lastPaintModel,scroll}:model();
+  lastPaintModel=current;
+  const layout = current.web ? cachedWebLayout(current, viewport,webFontRevision(),scrollOnly) : undefined;
+  maxPaintScroll=layout?.maxScroll??0;
   scroll = layout ? Math.max(0, Math.min(scroll, layout.maxScroll)) : clampScroll(current.rows, viewport, scroll, current.scene);
   rows = renderScreen({ ...current, scroll,web:current.web?{...current.web,animationTime:Date.now()-motionEpoch}:undefined }, canvas, viewport, artwork, layout);
   const authRegion=layout?.nodes.find(n=>n.id==='profile:wechat');
   wechatProfileButton.sync(!suspended&&!busy&&authRegion&&authRegion.y>=(authRegion.clipTop??0)&&authRegion.y+authRegion.height<=(authRegion.clipBottom??viewport.height)?authRegion:undefined);
   const animated=!!(wx.requestAnimationFrame??(typeof requestAnimationFrame==='function'?requestAnimationFrame:undefined))&&!suspended&&!current.web?.document?.modal&&(current.web?.page==='home'||current.web?.page==='table');
-  if(animated){const frame=()=>{if(suspended)return;const before=Date.now();renderScreen({...current,scroll,web:{...current.web!,animationTime:Date.now()-motionEpoch}},canvas,viewport,artwork,layout);const elapsed=Date.now()-before;motionTimer=setTimeout(frame,Math.max(42,elapsed*2));};motionTimer=setTimeout(frame,42);}
+  if(animated){const frame=()=>{if(suspended)return;const before=Date.now();renderScreen({...current,scroll,web:{...current.web!,animationTime:Date.now()-motionEpoch}},canvas,viewport,artwork,layout);const elapsed=Date.now()-before;motionTimer=setTimeout(frame,Math.max(42,elapsed*2));};motionTimer=setTimeout(frame,Math.max(42,scrollingUntil-Date.now()));}
   // Countdown updates remain separate from visual animation.
 
   if (!suspended && view === 'game' && ['dealing','guanyin_window'].includes(room?.game?.phase??'')) countdownTimer = setTimeout(render, 1_000);
@@ -468,24 +471,25 @@ async function select(id: string) {
   }
 }
 
-let renderFrame: any = 0;
-function scheduleRender() {
+let renderFrame: any = 0,scrollFrameOnly=true;
+function scheduleRender(reuseContent=true) {
+  scrollFrameOnly=scrollFrameOnly&&reuseContent;
   const raf = wx.requestAnimationFrame ?? (typeof requestAnimationFrame === 'function' ? requestAnimationFrame : undefined);
-  if (!raf) { render(); return; }
+  if (!raf) { render(scrollFrameOnly);scrollFrameOnly=true; return; }
   if (renderFrame) return;
   renderFrame = raf(() => {
     renderFrame = 0;
-    render();
+    const reuse=scrollFrameOnly;scrollFrameOnly=true;render(reuse);
   });
 }
 
-attachTouchNavigation(wx, {
-  scrollBy(delta) { scroll = Math.max(0, scroll + delta); scheduleRender(); },
+const cancelTouchMotion=attachTouchNavigation(wx, {
+  scrollBy(delta) { const before=scroll;scroll = Math.min(maxPaintScroll,Math.max(0, scroll + delta));scrollingUntil=Date.now()+180;scheduleRender();return scroll!==before; },
   canScrollHorizontal(x,y){return rows.some(r=>r.scrollMaxX!==undefined&&x>=(r.clipLeft??0)&&x<=(r.clipRight??viewport.width)&&y>=r.y&&y<=r.y+r.height);},
-  scrollHorizontal(delta){const max=rows.find(r=>r.scrollMaxX!==undefined)?.scrollMaxX??0;horizontalScroll=Math.max(0,Math.min(max,horizontalScroll+delta));scheduleRender();},
+  scrollHorizontal(delta){const max=rows.find(r=>r.scrollMaxX!==undefined)?.scrollMaxX??0;horizontalScroll=Math.max(0,Math.min(max,horizontalScroll+delta));scheduleRender(false);},
   tap(x,y) { const row=hitTest(rows,x,y); if(row) void select(row.id); },
 });
-platform.onHide(() => { roomBubbles.clear();settingsChoice.close();void nativeVoice.leave(); suspended = true; sound.foreground(false); cancelTextInput(); hideSensitiveView(gameUi); pendingConfirm = undefined; adminPanel.onHide(); if (view === 'admin') view = 'entry'; render(); });
+platform.onHide(() => { cancelTouchMotion();roomBubbles.clear();settingsChoice.close();void nativeVoice.leave(); suspended = true; sound.foreground(false); cancelTextInput(); hideSensitiveView(gameUi); pendingConfirm = undefined; adminPanel.onHide(); if (view === 'admin') view = 'entry'; render(); });
 platform.onShow(options => { suspended = false;retryWebFonts();refreshHomeFriends(); sound.foreground(true); hideSensitiveView(gameUi); invites.receive(options?.query?.invite); connection?.resume(); render(); });
 render();
 if (typeof wx.request === 'function') void extras.announcement().then(result => {
@@ -493,13 +497,14 @@ if (typeof wx.request === 'function') void extras.announcement().then(result => 
   freeAccess = result.freeAccessMode;
   render();
 }).catch(() => { /* The public notice must not block login or offline practice. */ });
-if (api.session.get()) void run(async () => {
-  user = await api.refresh();
+if(typeof wx.login==='function'&&typeof wx.request==='function')void run(async () => {
+  if(api.session.get()){try{user=await api.refresh();}catch(cause){if(!(cause instanceof Error)||!['UNAUTHENTICATED','SESSION_EXPIRED','HTTP_401'].includes(cause.message))throw cause;api.clearSession();}}
+  if(!user)user=(await api.login()).user;
   knownAccounts.remember(user);
   lobby = new LobbyController(api, user);
   playerPanel = new PlayerPanel(extras, user, () => chooseAvatar(wx), () => chooseWechatProfile(wx));refreshHomeFriends();
   const existing = await lobby.resume();
   if (existing) connect(existing);
   else if (invites.code) { connect(await joinWithPassword(invites.code)); invites.take(); }
-});
+},true);
 wx.onShareAppMessage?.(() => ({ title: room ? `来嘻游 · 真假猴王房间 ${room.code} 一起论剑` : '嘻游 · 真假猴王', ...(room ? { query: `invite=${encodeURIComponent(room.inviteKey??room.code)}` } : {}) }));

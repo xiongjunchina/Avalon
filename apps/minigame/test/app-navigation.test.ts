@@ -85,7 +85,9 @@ test('voice-enabled client logs in and creates the selected room without requiri
     end({ changedTouches: [{ clientX: target.x, clientY: target.y }] });
     await settle();
   }
-  await settle(); await tap('登录 / 注册');await tap('例如：小陈、阿辉');confirmKeyboard({value:'行者'});await settle();await tap('取好昵称，继续游戏');
+  await settle(); // First launch signs in through wx.login without a manual nickname screen.
+  assert.equal(requests.filter(r=>r.path==='/sessions/minigame').length,1);
+  assert.equal(requests.find(r=>r.path==='/sessions/minigame')?.data.code,'verified-on-server');
   assert.ok(frame.some(item => item.text === '开常规房'));
   await tap('行者');
   painted.length = 0;
@@ -103,7 +105,9 @@ test('voice-enabled client logs in and creates the selected room without requiri
   assert.ok(frame.some(item => item.text === '输入房间号或邀请链接'));
   await tap('入座取经');
   assert.ok(frame.some(item => item.text.includes('请输入房间号或邀请链接')));
+  await tap('请输入房间号或邀请链接'); // Dismiss the validation toast before editing.
   await tap('输入房间号或邀请链接');
+  assert.equal(typeof confirmKeyboard,'function');
   confirmKeyboard({ value: '654321' }); await settle();
   await tap('‹ 返回'); await tap('加入房间');
   assert.ok(frame.some(item => item.text === '输入房间号或邀请链接'));
