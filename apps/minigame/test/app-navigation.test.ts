@@ -107,7 +107,7 @@ test('voice-enabled client logs in and creates the selected room without requiri
   confirmKeyboard({ value: '654321' }); await settle();
   await tap('返回法坛'); await tap('加入房间');
   assert.ok(frame.some(item => item.text === '输入房间号或邀请链接'));
-  await tap('返回法坛'); await tap('🎙 远端语音房'); await tap('开语音房'); await tap('9');
+  await tap('返回法坛'); await tap('🎙 远端语音房');assert.ok(frame.some(i=>i.text==='开语音房'));await tap('🏛 线下常规房');assert.ok(frame.some(i=>i.text==='开常规房'));await tap('🎙 远端语音房'); await tap('开语音房'); await tap('9');
   for (let index = 0; index < 8 && !frame.some(item => item.text === '创建游戏房间' && item.y < 790); index++) {
     start({ touches: [{ clientX: 350, clientY: 760 }] }); end({ changedTouches: [{ clientX: 350, clientY: 240 }] }); await settle();
   }

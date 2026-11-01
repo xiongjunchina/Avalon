@@ -822,8 +822,8 @@ function drawNode(ctx: CanvasRenderingContext2D, n: WebNode, model: ScreenModel,
     ctx.save();ctx.globalAlpha=n.disabled&&!isCTA ? .58 : 1;
     const radius=n.badge==='table-toolbar'&&!['sound','leave','exitPractice','bot'].includes(n.id)?4:home&&['create','join'].includes(n.id)?14:n.badge==='utility'?6:n.id==='copyRoom'?5:n.kind==='choice'?12:n.height/2;
     if(n.badge==='utility')utilityFill(ctx,n);
-    else if(!n.muted&&!(home&&n.id==='mode:voice')){shadow(ctx);fill(ctx,n,color,radius,primary&&home?'#f5dfa8':n.selected?'#f5dfa8':webTheme.border);ctx.shadowBlur=0;ctx.shadowOffsetY=0;if(!n.fixed&&n.badge!=='table-toolbar')edge(ctx,n,radius);}
-    if(home&&n.id==='mode:offline'){fill(ctx,n,gradient(ctx,n,['#27657b','#15404f']),16,'#f5dfa8');}
+    else if(!n.muted&&!(home&&n.id.startsWith('mode:'))){shadow(ctx);fill(ctx,n,color,radius,primary&&home?'#f5dfa8':n.selected?'#f5dfa8':webTheme.border);ctx.shadowBlur=0;ctx.shadowOffsetY=0;if(!n.fixed&&n.badge!=='table-toolbar')edge(ctx,n,radius);}
+    if(home&&n.id.startsWith('mode:')&&n.selected){fill(ctx,n,gradient(ctx,n,['#27657b','#15404f']),16,'#f5dfa8');}
     if(home&&n.id==='friends'&&n.count){text(ctx,'👥 仙友',cx-7,cy,n.width-25,13,'#fff3d6','center',homeInterface,'400');circle(ctx,n.x+n.width-14,cy,8,'#dc2626','#f87171');text(ctx,String(Math.min(n.count,99)),n.x+n.width-14,cy,15,11,'#fff','center',sans,'700');ctx.restore();return;}
     if(n.id==='sound'){soundIcon(ctx,home&&n.width>50?n.x+20:cx,cy);if(home&&n.width>50)text(ctx,'静音',n.x+46,cy,36,13,'#fff3d6','center',homeInterface,'400');ctx.restore();return;}
     if(table&&(n.fixed||n.badge==='table-toolbar')&&['leave','exitPractice'].includes(n.id)){ctx.save();ctx.translate(n.x+1,n.y+1);ctx.strokeStyle='#ffd875';ctx.lineWidth=2;ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();ctx.moveTo(9,14);ctx.lineTo(5,10);ctx.lineTo(9,6);ctx.moveTo(5,10);ctx.lineTo(16,10);ctx.bezierCurveTo(22,10,22,18,16,18);ctx.stroke();ctx.restore();ctx.restore();return;}
