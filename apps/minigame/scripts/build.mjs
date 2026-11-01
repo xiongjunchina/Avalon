@@ -21,6 +21,7 @@ export async function buildMiniGame({
   appId = process.env.WECHAT_MINIGAME_APP_ID,
   apiBaseUrl = process.env.WECHAT_MINIGAME_API_BASE_URL || DEFAULT_API_BASE_URL,
   voiceEnabled = process.env.WECHAT_MINIGAME_VOICE_ENABLED !== 'false',
+  perfHud = process.env.WECHAT_MINIGAME_PERF_HUD === 'true',
   maxBytes = 4 * 1024 * 1024,
 } = {}) {
   const serviceUrl = normalizeServiceUrl(apiBaseUrl);
@@ -34,7 +35,7 @@ export async function buildMiniGame({
     platform: 'neutral',
     format: 'cjs',
     target: 'es2020',
-    define: { __MINIGAME_API_BASE_URL__: JSON.stringify(serviceUrl), __APP_BASE_PATH__: JSON.stringify(new URL(serviceUrl).pathname.replace(/\/?$/, '/')), __MINIGAME_VOICE_ENABLED__: JSON.stringify(voiceEnabled) },
+    define: { __MINIGAME_PERF_HUD__: JSON.stringify(perfHud), __MINIGAME_API_BASE_URL__: JSON.stringify(serviceUrl), __APP_BASE_PATH__: JSON.stringify(new URL(serviceUrl).pathname.replace(/\/?$/, '/')), __MINIGAME_VOICE_ENABLED__: JSON.stringify(voiceEnabled) },
     minify: true,
     outfile: join(outDir, 'bundle.js'),
   });
@@ -79,7 +80,7 @@ export async function buildMiniGame({
   for(const name of await readdir(join(minigameRoot,'assets/web-fonts')))await copyFile(join(minigameRoot,'assets/web-fonts',name),join(fontRoot,name));
   for(const name of ['display.ttf','display-OFL.txt'])await copyFile(join(minigameRoot,'assets/fonts',name),join(fontRoot,name));
   const fontSize=await bytesIn(fontRoot);if(fontSize>4*1024*1024)throw Error('FONT_PACKAGE_TOO_LARGE');
-  return { outDir, size:size+hdSize+fontSize, appId: selectedAppId, apiBaseUrl:serviceUrl, voiceEnabled };
+  return { outDir, size:size+hdSize+fontSize, appId: selectedAppId, apiBaseUrl:serviceUrl, voiceEnabled, perfHud };
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

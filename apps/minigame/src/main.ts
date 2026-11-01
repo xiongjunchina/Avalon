@@ -1,3 +1,4 @@
+import {FrameDiagnostics} from './ui/frame-diagnostics.js';
 import {createScrollLayoutCache} from './ui/scroll-layout-cache.js';
 import {webFontRevision} from './ui/web-render.js';
 import { chooseWechatProfile, WechatProfileButton } from './platform/wechat-profile.js';
@@ -44,7 +45,9 @@ import { copyWebEntry, webHandoffScreen } from './screens/web-handoff.js';
 
 declare const wx: WxRuntime;
 declare const __MINIGAME_API_BASE_URL__: string;
+declare const __MINIGAME_PERF_HUD__: boolean;
 
+try{wx.setPreferredFramesPerSecond?.(60);}catch{/* Older runtimes retain their default frame rate. */}
 installPrivacyAuthorization(wx);
 const baseUrl = __MINIGAME_API_BASE_URL__;
 const retryWebFonts=installWebFonts(wx,()=>{setTimeout(render,0);});
@@ -193,11 +196,17 @@ function model(): ScreenModel {
 const wechatProfileButton=new WechatProfileButton(wx,profile=>{playerPanel?.applyWechatProfile(profile);render();},message=>{error=message;render();});
 const cachedWebLayout=createScrollLayoutCache();
 const motionEpoch=Date.now();
-let motionTimer:ReturnType<typeof setTimeout>|undefined;
+let motionGeneration=0;
+const visualRaf=wx.requestAnimationFrame?.bind(wx)??(typeof requestAnimationFrame==='function'?requestAnimationFrame:undefined);
+const frameDiagnostics=__MINIGAME_PERF_HUD__?new FrameDiagnostics():undefined;
+const frameNow=()=>typeof performance!=='undefined'?performance.now():Date.now();
+let lastInputAt:number|undefined;
+if(frameDiagnostics&&visualRaf){const sample=()=>{if(!suspended)frameDiagnostics.tick(frameNow());visualRaf(sample);};visualRaf(sample);}
+function paintFrame(current:ScreenModel,layout?:ReturnType<typeof layoutWebScreen>){const start=frameNow();const hits=renderScreen(current,canvas,viewport,artwork,layout);frameDiagnostics?.paint(start,frameNow(),lastInputAt);lastInputAt=undefined;const ctx=canvas.getContext('2d');if(ctx)frameDiagnostics?.draw(ctx,viewport.width,viewport.height-viewport.bottom);return hits;}
 let lastPaintModel:ScreenModel|undefined,scrollingUntil=0,maxPaintScroll=0;
 function render(scrollOnly=false) {
   if(!scrollOnly)retryWebFonts();
-  clearTimeout(motionTimer);
+  const generation=++motionGeneration;
   clearTimeout(countdownTimer);
   sound.voiceActive(nativeVoice.connecting||nativeVoice.joined);
   if(!scrollOnly)sound.update(view === 'practice' ? practice?.view().game : view === 'game' ? room?.game : undefined, !suspended && (view === 'practice' || view === 'game' && connectionStatus === '已连接'));
@@ -207,11 +216,11 @@ function render(scrollOnly=false) {
   const layout = current.web ? cachedWebLayout(current, viewport,webFontRevision(),scrollOnly) : undefined;
   maxPaintScroll=layout?.maxScroll??0;
   scroll = layout ? Math.max(0, Math.min(scroll, layout.maxScroll)) : clampScroll(current.rows, viewport, scroll, current.scene);
-  rows = renderScreen({ ...current, scroll,web:current.web?{...current.web,animationTime:Date.now()-motionEpoch}:undefined }, canvas, viewport, artwork, layout);
+  rows = paintFrame({ ...current, scroll,web:current.web?{...current.web,animationTime:Date.now()-motionEpoch}:undefined }, layout);
   const authRegion=layout?.nodes.find(n=>n.id==='profile:wechat');
   wechatProfileButton.sync(!suspended&&!busy&&authRegion&&authRegion.y>=(authRegion.clipTop??0)&&authRegion.y+authRegion.height<=(authRegion.clipBottom??viewport.height)?authRegion:undefined);
-  const animated=!!(wx.requestAnimationFrame??(typeof requestAnimationFrame==='function'?requestAnimationFrame:undefined))&&!suspended&&!current.web?.document?.modal&&(current.web?.page==='home'||current.web?.page==='table');
-  if(animated){const frame=()=>{if(suspended)return;const before=Date.now();renderScreen({...current,scroll,web:{...current.web!,animationTime:Date.now()-motionEpoch}},canvas,viewport,artwork,layout);const elapsed=Date.now()-before;motionTimer=setTimeout(frame,Math.max(42,elapsed*2));};motionTimer=setTimeout(frame,Math.max(42,scrollingUntil-Date.now()));}
+  const animated=!!visualRaf&&!suspended&&!current.web?.document?.modal&&(current.web?.page==='home'||current.web?.page==='table');
+  if(animated){const frame=()=>{if(suspended||generation!==motionGeneration)return;if(Date.now()>=scrollingUntil)paintFrame({...current,scroll,web:{...current.web!,animationTime:Date.now()-motionEpoch}},layout);visualRaf!(frame);};visualRaf!(frame);}
   // Countdown updates remain separate from visual animation.
 
   if (!suspended && view === 'game' && ['dealing','guanyin_window'].includes(room?.game?.phase??'')) countdownTimer = setTimeout(render, 1_000);
@@ -486,13 +495,13 @@ function scheduleRender(reuseContent=true) {
 }
 
 const cancelTouchMotion=attachTouchNavigation(wx, {
-  scrollBy(delta,inFrame) { const before=scroll;scroll = Math.min(maxPaintScroll,Math.max(0, scroll + delta));scrollingUntil=Date.now()+180;if(inFrame)render(true);else scheduleRender();return scroll!==before; },
+  scrollBy(delta,_inFrame) { lastInputAt=frameNow();const before=scroll;scroll = Math.min(maxPaintScroll,Math.max(0, scroll + delta));scrollingUntil=Date.now()+180;if(scroll!==before)render(true);else lastInputAt=undefined;return scroll!==before; },
   canScrollHorizontal(x,y){return rows.some(r=>r.scrollMaxX!==undefined&&x>=(r.clipLeft??0)&&x<=(r.clipRight??viewport.width)&&y>=r.y&&y<=r.y+r.height);},
   scrollHorizontal(delta){const max=rows.find(r=>r.scrollMaxX!==undefined)?.scrollMaxX??0;horizontalScroll=Math.max(0,Math.min(max,horizontalScroll+delta));scheduleRender(false);},
   tap(x,y) { const row=hitTest(rows,x,y); if(row) void select(row.id); },
 });
 platform.onHide(() => { cancelTouchMotion();roomBubbles.clear();settingsChoice.close();void nativeVoice.foreground(false); suspended = true; sound.foreground(false); cancelTextInput(); hideSensitiveView(gameUi); pendingConfirm = undefined; adminPanel.onHide(); if (view === 'admin') view = 'entry'; render(); });
-platform.onShow(options => { suspended = false;void nativeVoice.foreground(true).catch(()=>{});retryWebFonts();refreshHomeFriends(); sound.foreground(true); hideSensitiveView(gameUi); invites.receive(options?.query?.invite); connection?.resume(); render(); });
+platform.onShow(options => { try{wx.setPreferredFramesPerSecond?.(60);}catch{}suspended = false;void nativeVoice.foreground(true).catch(()=>{});retryWebFonts();refreshHomeFriends(); sound.foreground(true); hideSensitiveView(gameUi); invites.receive(options?.query?.invite); connection?.resume(); render(); });
 render();
 if (typeof wx.request === 'function') void extras.announcement().then(result => {
   announcement = result.announcement.enabled ? result.announcement.text : '';

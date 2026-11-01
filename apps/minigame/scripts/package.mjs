@@ -31,7 +31,8 @@ await record(project);
 const manifest = { version, revision: git(['rev-parse', 'HEAD']), sourceDirty: Boolean(git(['status', '--porcelain'])),
   appId: result.appId, apiOrigin: new URL(result.apiBaseUrl).origin, apiBaseUrl: result.apiBaseUrl,
   webEntryUrl: result.apiBaseUrl + '/',
-  releasePurpose: result.voiceEnabled ? 'wechat-voice-device-test' : 'minigame-candidate',
+  releasePurpose: result.perfHud ? 'performance-device-test' : result.voiceEnabled ? 'wechat-voice-device-test' : 'minigame-candidate',
+  perfHud:result.perfHud,
   voiceEnabled: result.voiceEnabled, ...(result.voiceEnabled ? {voiceProvider:'wechat-native',voiceMaxPlayers:10,voiceInteroperability:'minigame-only',realDeviceVoiceVerified:false} : {}), bytes: result.size, files };
 await writeFile(join(releaseRoot, 'release.json'), JSON.stringify(manifest, null, 2));
 await writeFile(join(releaseRoot, 'README.txt'), `微信开发者工具选择小游戏，导入本目录下 project 文件夹。\n版本 ${version}\nAppID ${result.appId}\n服务地址 ${manifest.apiBaseUrl}\n${result.voiceEnabled ? [

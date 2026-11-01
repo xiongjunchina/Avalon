@@ -69,6 +69,7 @@ export interface WxRuntime extends NativeVoiceRuntime, PrivacyRuntime, ProfileRu
   shareAppMessage?(options: { title: string; query: string }): void;
   getLaunchOptionsSync?(): { query?: { invite?: string } };
   vibrateShort?(options?: { type?: 'light' | 'medium' | 'heavy'; success?(): void; fail?(): void }): void;
+  setPreferredFramesPerSecond?(fps:number):void;
   requestAnimationFrame?(callback: () => void): number;
 }
 

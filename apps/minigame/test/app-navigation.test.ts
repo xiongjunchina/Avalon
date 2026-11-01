@@ -15,6 +15,7 @@ test('voice-enabled client logs in and creates the selected room without requiri
   t.after(() => { for (const timer of timers) clearTimeout(timer); });
   let start: any, end: any, confirmKeyboard: any, room: any, socketMessage: any;
   const commands: any[] = [];
+  const frameCallbacks:(()=>void)[]=[],preferredFps:number[]=[];let screenPaints=0;
   const user = { id: '11111111-1111-4111-8111-111111111111', nickname: '行者', playerCode: '123456' };
   const storage = new Map(), requests: { path: string; data: any }[] = [];
   let frame: { text: string; x: number; y: number }[] = [];
@@ -23,10 +24,12 @@ test('voice-enabled client logs in and creates the selected room without requiri
   let pendingHistory: any;
   const ctx = new Proxy({}, { get: (_target, key) => (key === 'createLinearGradient' || key === 'createRadialGradient') ? () => ({ addColorStop() {} })
     : key === 'measureText' ? (text: string) => ({ width: Array.from(text).reduce((sum, char) => sum + (/[^\u0020-\u007e]/.test(char) ? 1 : .6) * (Number(/([\d.]+)px/.exec(String((_target as any).font))?.[1]) || 12), 0) })
-    : key === 'fillRect' ? (x: number, y: number, w: number, h: number) => { if (x === 0 && y === 0 && w === 390 && h === 844) frame = []; }
+    : key === 'fillRect' ? (x: number, y: number, w: number, h: number) => { if (x === 0 && y === 0 && w === 390 && h === 844) frame = [],screenPaints++; }
     : key === 'fillText' ? (text: string, x: number, y: number) => (painted.push(text), frame.push({ text, x, y }))
     : () => {} });
   const wx = {
+    setPreferredFramesPerSecond:(fps:number)=>preferredFps.push(fps),
+    requestAnimationFrame:(callback:()=>void)=>{frameCallbacks.push(callback);return frameCallbacks.length;},
     createCanvas: () => ({ getContext: () => ctx, toTempFilePathSync: () => 'avatar.jpg' }),
     chooseImage: (o: any) => { chosenAvatars++; o.success({tempFilePaths:['photo.jpg']}); },
     createImage: () => ({width:200,height:200,set src(_s: string) { (this as any).onload?.(); }}),
@@ -88,6 +91,8 @@ test('voice-enabled client logs in and creates the selected room without requiri
   await settle(); // First launch signs in through wx.login without a manual nickname screen.
   assert.equal(requests.filter(r=>r.path==='/sessions/minigame').length,1);
   assert.equal(requests.find(r=>r.path==='/sessions/minigame')?.data.code,'verified-on-server');
+  assert.equal(preferredFps[0],60);
+  const beforePaints=screenPaints;for(const callback of frameCallbacks.splice(0))callback();assert.equal(screenPaints,beforePaints+1,'home draws on the next native frame instead of waiting 42ms');
   assert.ok(frame.some(item => item.text === '开常规房'));
   await tap('行者');
   painted.length = 0;
