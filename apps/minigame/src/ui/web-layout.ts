@@ -20,7 +20,7 @@ export function resultHeroGeometry(width:number,self:string,reason:string){
 }
 
 export interface WebSurface {
-  voice?:{joined:boolean;connecting:boolean;muted:boolean;deafened:boolean;members:number;speakers:number};
+  voice?:{message?:string;joined:boolean;connecting:boolean;muted:boolean;deafened:boolean;members:number;speakers:number};
   chatBubbles?:Record<string,string>;
   page: 'home' | 'setup' | 'table' | 'sheet';
   background?: 'gate' | 'pavilion' | 'sword' | 'library' | 'mirror' | 'dawn';
@@ -126,6 +126,7 @@ export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout 
         y+=35;add('label','voice-members','语音 '+voice.members+' 人 · 正在说话 '+voice.speakers+' 人',16,y,w-32,22,{fontSize:11});
       }
       y+=40;
+      if(!voice.joined&&voice.message&&!/^(未加入|正在加入)/.test(voice.message)){const lines=wrapText(voice.message,w-32),height=lines.length*18+8;add('label','voice-status',voice.message,16,y,w-32,height,{fontSize:12,lines,lineHeight:18});y+=height;}
     }
     const boardX = 12, boardW = w - 24, questW = (boardW - 24) / 5;
     const questH = 67.3 + cssClamp(36, availableH * .055, 44);
@@ -158,7 +159,7 @@ export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout 
       actions.forEach(([id,title],i)=>add('button',id!,title!,20+i*(aw+8),dockY+8,aw,48,{skin:'waiting-primary',fontSize:id==='ready'?cssClamp(14,w*.038,16):cssClamp(12,w*.034,14),selected:id==='ready'&&!!me?.ready,fixed:pinned}));
       y=naturalDockY+68;
       add('panel','waiting-tools','',10,y,w-20,44,{skin:'tabs'});
-      const unit=(w-54)/3.25;add('button','sound',room.settings.playerCount<=10?'🎙 微信语音':'🎙 语音说明',19,y+6,unit*1.25,32,{skin:'waiting-social',fontSize:11,lineHeight:32});
+      const unit=(w-54)/3.25;add('button',room.settings.playerCount>10?'noop':web.voice?.joined?'voice:microphone':'voice:join',room.settings.playerCount>10?'语音限10人':web.voice?.joined?(web.voice.muted?'🔇 开麦':'🎙 静音'):'🎙 开启语音',19,y+6,unit*1.25,32,{skin:'waiting-social',fontSize:11,lineHeight:32});
       add('button','chat','💬 传音',27+unit*1.25,y+6,unit,32,{skin:'waiting-social',fontSize:12});add('button','friends','👥 仙友',35+unit*2.25,y+6,unit,32,{skin:'waiting-social',fontSize:12,count:web.friendRequests});y+=50;
       add('button','waiting:missions',(web.waitingMissionsExpanded?'▾':'▸')+' 五难人数与本局配置',10,y,w-20,70,{skin:'waiting-accordion',fontSize:13});y+=78;
       if(web.waitingMissionsExpanded){drawQuests(y);y+=questH+8;}

@@ -336,7 +336,7 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
       const hint=txt('vip-description',user.isVip?'VIP 到期时间：'+new Date(user.vipUntil!).toLocaleDateString():'当前处于公测体验期，全员零门槛免费畅享战绩复盘与高级板子！',y,12,{lineHeight:21,tone:'muted'},x+28,w-56);y+=hint.height+10;
       button('redeem:input',doc.redeemCode||'输入 8 位 VIP 授权兑换码…',y,{skin:'vip-input',selected:!!doc.redeemCode,fontSize:13},x+28,w-162,40);button('redeem:submit','核销兑换',y,{skin:'vip-redeem',disabled:!doc.redeemCode?.trim(),fontSize:13.5},x+w-124,96,40);y+=53;vipCard.height=y-vipCard.y;y+=24;vipFrame.height=y-vipFrame.y;}bodyEnd=y;footerH=60;
   } else if(doc.kind==='sound'){
-    modalHeader('声音与实时语音');
+    modalHeader('声音设置');
     const voiceRows=model.rows.filter(r=>r.id.startsWith('voice:')||r.id.startsWith('guide:voice'));
     for(const row of voiceRows){if(row.id.startsWith('voice:')){button(row.id,row.text,y,{skin:'pill',primary:row.id==='voice:join'});y+=50;}else if(row.id!=='guide:voice-scope'){para(row.id,row.text,13);}}
     const scope=voiceRows.find(r=>r.id==='guide:voice-scope');if(scope)para(scope.id,scope.text,12);

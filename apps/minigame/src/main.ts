@@ -144,7 +144,6 @@ function model(): ScreenModel {
   if (auxiliary === 'sound') return feedback({ title: '声音设置', rows: [
     { id: 'sound:music', text: '背景音乐：' + (sound.preferences.music ? '开' : '关') },
     { id: 'sound:effects', text: '游戏音效：' + (sound.preferences.effects ? '开' : '关') },
-    ...nativeVoice.rows(),
   ], web: { page: 'sheet', background: 'library', backId: 'auxiliaryClose',document:{kind:'sound',modal:true,soundPreferences:sound.preferences},underlay:view==='practice'&&practice?gameScreen(practice.view(),practice.user,{privateRoleVisible:false,ballotVisible:false}):room&&user?(room.game?gameScreen(room,user,{privateRoleVisible:false,ballotVisible:false}):lobbyScreen(room,user)):entryScreen(user,'',false) } });
   if (auxiliary === 'practiceSeats' && practice) return feedback({ title: '选择演练视角', rows: practice.perspectives().map(player => ({ id: 'practiceSeat:' + player.id, text: `${player.seat}号 · ${player.nickname} · ${formatRoleName(player.role)}` })), web: { page: 'sheet', background: 'sword', backId: 'auxiliaryClose',document:{kind:'tools',modal:true},underlay:gameScreen(practice.view(),practice.user,{privateRoleVisible:false,ballotVisible:false}) } });
   if (auxiliary === 'roomTools' && room && user) return feedback({ ...lobbyScreen(room, user), title: '房间工具', web: { page: 'sheet', backId: 'auxiliaryClose', background: 'pavilion',document:{kind:'tools',modal:true},underlay:lobbyScreen(room,user) } });
@@ -171,7 +170,7 @@ function model(): ScreenModel {
   result.web ??= { page: 'sheet', background: view === 'player' ? 'dawn' : 'library' };
   if(result.web.document)result.web.document.settingChoice=settingsChoice.current;
   result.web.friendRequests=playerPanel?.incomingFriendRequests??0;
-  if(view==='game'||view==='lobby'){result.web.chatBubbles=roomBubbles.snapshot();result.web.voice={joined:nativeVoice.joined,connecting:nativeVoice.connecting,muted:nativeVoice.microphoneMuted,deafened:nativeVoice.speakerMuted,members:nativeVoice.members,speakers:nativeVoice.speakers};}
+  if(view==='game'||view==='lobby'){result.web.chatBubbles=roomBubbles.snapshot();result.web.voice={message:nativeVoice.message,joined:nativeVoice.joined,connecting:nativeVoice.connecting,muted:nativeVoice.microphoneMuted,deafened:nativeVoice.speakerMuted,members:nativeVoice.members,speakers:nativeVoice.speakers};}
   result.web.freeAccess=freeAccess;
   result.web.waitingMissionsExpanded=waitingMissionsExpanded;
   result = feedback(result);
