@@ -1,3 +1,4 @@
+import { chooseWechatProfile } from './platform/wechat-profile.js';
 import { installPrivacyAuthorization } from './platform/privacy.js';
 import {ServerClock} from './net/server-clock.js';
 import {abortConfirmation} from './screens/abort-confirm.js';
@@ -295,7 +296,7 @@ async function select(id: string) {
   if(id==='waiting:missions'){waitingMissionsExpanded=!waitingMissionsExpanded;render();return;}
   if (id === 'sound') { auxiliary = 'sound'; scroll = 0; render(); return; }
   if (id.startsWith('sound:')) { const key = id.slice(6) as 'music' | 'effects'; sound.configure(key, !sound.preferences[key]); render(); return; }
-  if (id.startsWith('known:')) return run(async () => { await nativeVoice.leave(); const account=knownAccounts.list().find(a=>a.playerCode===id.slice(6));if (!api.session.get()) await api.login(); user = await api.switchAccount(id.slice(6),account?.id); knownAccounts.remember(user); lobby = new LobbyController(api, user); playerPanel = new PlayerPanel(extras, user, () => chooseAvatar(wx));refreshHomeFriends(); const existing = await lobby.resume(); if (existing) connect(existing); else navigate('entry'); });
+  if (id.startsWith('known:')) return run(async () => { await nativeVoice.leave(); const account=knownAccounts.list().find(a=>a.playerCode===id.slice(6));if (!api.session.get()) await api.login(); user = await api.switchAccount(id.slice(6),account?.id); knownAccounts.remember(user); lobby = new LobbyController(api, user); playerPanel = new PlayerPanel(extras, user, () => chooseAvatar(wx), () => chooseWechatProfile(wx));refreshHomeFriends(); const existing = await lobby.resume(); if (existing) connect(existing); else navigate('entry'); });
   if (id === 'notice' || id === 'error') { notice = ''; error = ''; render(); return; }
   if (id === 'announcement') { announcement = ''; render(); return; }
   if (id === 'auxiliaryClose') { auxiliary = undefined; scroll = 0; render(); return; }
@@ -384,7 +385,7 @@ async function select(id: string) {
     if (id.startsWith('auth:')) { authMode = id === 'auth:switch' ? 'switch' : 'create'; render(); return; }
     if (id === 'input:nickname' || id === 'input:switch') return run(async () => { const text = await askText(wx, id === 'input:nickname' ? nickname : switchCode, id === 'input:nickname' ? 20 : 6); if (text !== undefined) { if (id === 'input:nickname') nickname = text; else switchCode = text.replace(/\D/g, '').slice(0, 6); } });
     if (id === 'practice') { practice = new PracticeSession(editableSettings, user?.nickname ?? '我'); syncGameUi(gameUi, practice.view()); navigate('practice'); return; }
-    if (id === 'login') return run(async () => { await nativeVoice.leave(); if (authMode === 'switch' && !/^\d{6}$/.test(switchCode)) throw new Error('INVALID_PLAYER_CODE'); const result = await api.login(nickname || undefined); user = authMode === 'switch' ? await api.switchAccount(switchCode) : result.user; knownAccounts.remember(user); auxiliary = undefined; lobby = new LobbyController(api, user); playerPanel = new PlayerPanel(extras, user, () => chooseAvatar(wx));refreshHomeFriends(); const existing = await lobby.resume(); if (existing) connect(existing); else if (invites.code) { connect(await joinWithPassword(invites.code)); invites.take(); } else if(authIntent==='create'){authIntent=undefined;creationAccess={};selectedDedicated=undefined;setupIntent='room';navigate('settings');}else if(authIntent==='join'){authIntent=undefined;joinKey='';auxiliary='join';render();}else render(); });
+    if (id === 'login') return run(async () => { await nativeVoice.leave(); if (authMode === 'switch' && !/^\d{6}$/.test(switchCode)) throw new Error('INVALID_PLAYER_CODE'); const result = await api.login(nickname || undefined); user = authMode === 'switch' ? await api.switchAccount(switchCode) : result.user; knownAccounts.remember(user); auxiliary = undefined; lobby = new LobbyController(api, user); playerPanel = new PlayerPanel(extras, user, () => chooseAvatar(wx), () => chooseWechatProfile(wx));refreshHomeFriends(); const existing = await lobby.resume(); if (existing) connect(existing); else if (invites.code) { connect(await joinWithPassword(invites.code)); invites.take(); } else if(authIntent==='create'){authIntent=undefined;creationAccess={};selectedDedicated=undefined;setupIntent='room';navigate('settings');}else if(authIntent==='join'){authIntent=undefined;joinKey='';auxiliary='join';render();}else render(); });
     if (id === 'create' && lobby) { creationAccess={};selectedDedicated=undefined;setupIntent = 'room'; navigate('settings'); return; }
     if (id === 'join' && lobby) { joinKey = ''; auxiliary = 'join'; scroll = 0; render(); return; }
     if (id === 'switch') { authMode = 'switch'; switchCode = ''; auxiliary = 'switchAccount'; scroll = 0; render(); return; }
@@ -482,7 +483,7 @@ if (api.session.get()) void run(async () => {
   user = await api.refresh();
   knownAccounts.remember(user);
   lobby = new LobbyController(api, user);
-  playerPanel = new PlayerPanel(extras, user, () => chooseAvatar(wx));refreshHomeFriends();
+  playerPanel = new PlayerPanel(extras, user, () => chooseAvatar(wx), () => chooseWechatProfile(wx));refreshHomeFriends();
   const existing = await lobby.resume();
   if (existing) connect(existing);
   else if (invites.code) { connect(await joinWithPassword(invites.code)); invites.take(); }

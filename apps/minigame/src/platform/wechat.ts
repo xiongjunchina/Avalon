@@ -1,3 +1,4 @@
+import type { ProfileRuntime } from './wechat-profile.js';
 import type { PrivacyRuntime } from './privacy.js';
 import type { NativeVoiceRuntime } from './native-voice.js';
 export interface WxRequestOptions {
@@ -33,7 +34,7 @@ export interface WxAvatarCanvas {
   toTempFilePathSync(options: { fileType: 'jpg'; quality: number }): string;
 }
 
-export interface WxRuntime extends NativeVoiceRuntime, PrivacyRuntime {
+export interface WxRuntime extends NativeVoiceRuntime, PrivacyRuntime, ProfileRuntime {
   createCanvas(): HTMLCanvasElement;
   loadFont?(path: string): string | null;
   createOffscreenCanvas?(options: { type: '2d'; width: number; height: number }): WxAvatarCanvas;

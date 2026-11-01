@@ -324,6 +324,7 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
     add('label','avatar-source',sourceText,x+91,y+13,metaW,sourceH,{skin:'profile-source',fontSize:11.5,lines:sourceLines,lineHeight:17.25});
     txt('avatar-help','选择下方法宝头像，或上传自己的照片；头像只用于朋友之间辨认。',y+13+sourceH+4,14,{lineHeight:21},x+91,metaW);
     button('uploadAvatar','上传自定义头像',y+13+previewH+10,{skin:'pill',fontSize:12.5},x+13,w-26,44.75);y+=managerH+16;
+    button('profile:wechat','授权使用微信头像与昵称',y,{skin:'pill',fontSize:13},x,w,44);y+=56;
     txt('nickname-label','昵称',y,14);y+=28;
     button('profile:nickname',draft?.nickname??user.nickname,y,{skin:'input'},x,w,44);y+=60;
     txt('avatar-heading','预置头像',y,14);y+=24;

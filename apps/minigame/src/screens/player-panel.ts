@@ -47,7 +47,7 @@ export class PlayerPanel {
   private appliedSettings?: Settings;
   private canApplyPreset = false;
   private pending?: { label: string; action: () => Promise<unknown> };
-  constructor(private readonly api: PlayerExtras, public user: User, private readonly avatarPicker?: AvatarPicker) {}
+  constructor(private readonly api: PlayerExtras, public user: User, private readonly avatarPicker?: AvatarPicker, private readonly wechatPicker?:()=>Promise<{nickname:string;avatarUrl:string}>) {}
 
   get incomingFriendRequests(){return this.friends.filter(f=>f.status==='pending'&&!f.isSender).length;}
   async refreshFriends(){const result=await this.api.friends();if(Array.isArray(result.friends))this.friends=result.friends;}
@@ -186,7 +186,7 @@ export class PlayerPanel {
     if(id==='profile:nickname'){const text=await input('尊号',20);if(text!==undefined&&this.profileDraft)this.profileDraft.nickname=text;return;}
     if(id.startsWith('profile:builtin:')&&this.profileDraft){const item=BUILTIN_AVATARS[Number(id.slice(16))];if(item){this.profileDraft.avatarUrl=item.src;this.profileDraft.wechatAvatarUrl=null;}return;}
     if(id.startsWith('profile:avatar:')&&this.profileDraft){const avatar=id.slice(15) as Avatar;if(avatarOrder.includes(avatar)){this.profileDraft.avatar=avatar;this.profileDraft.avatarUrl=null;this.profileDraft.wechatAvatarUrl=null;}return;}
-    if(id==='profile:wechat'&&this.profileDraft){const idx=Number(/wx-(\d+)/.exec(this.profileDraft.wechatAvatarUrl??'')?.[1]??0)%12+1;this.profileDraft.wechatAvatarUrl='/art/avatars/wx-'+idx+'.webp?v=artifact1';this.profileDraft.avatarUrl=null;return;}
+    if(id==='profile:wechat'&&this.profileDraft){if(!this.wechatPicker)throw Error('当前环境不支持微信资料授权');const profile=await this.wechatPicker();this.profileDraft.nickname=profile.nickname;this.profileDraft.wechatAvatarUrl=profile.avatarUrl;this.profileDraft.avatarUrl=null;return;}
     if(id==='profile:save'&&this.profileDraft){if(!this.profileDraft.nickname.trim())throw new Error('请填写尊号');this.user=(await this.api.updateProfile(this.profileDraft)).user;this.profileDraft=undefined;this.profileEditing=false;this.feedback='资料已保存';return;}
     if(id==='uploadAvatar'&&this.profileEditing&&this.profileDraft){if(!this.avatarPicker)throw new Error('当前微信版本不支持上传头像');this.profileDraft.avatarUrl=await this.avatarPicker();this.profileDraft.wechatAvatarUrl=null;return;}
     if(id.startsWith('joinFriend:')&&!this.roomId){const friend=this.friends.find(f=>f.id===id.slice(11)&&f.status==='accepted'&&f.online);if(friend?.roomCode)return {joinCode:friend.roomCode};return;}

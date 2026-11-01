@@ -62,6 +62,8 @@ function gradient(ctx: CanvasRenderingContext2D, n: WebNode, colors: string[],an
 }
 function inlineWidth(ctx:CanvasRenderingContext2D,value:string,size:number,narrowDot=false){return ctx.measureText(value).width-(narrowDot?(value.match(/·/g)?.length??0)*(ctx.measureText('·').width-size*.24072):0);}
 function text(ctx: CanvasRenderingContext2D, value: string, x: number, y: number, width: number, size = 14, color = webTheme.text, align: CanvasTextAlign = 'center', family = sans, weight = '400', spacing = 0) {
+  value=value.replace(/[\ufe0e\ufe0f]/g,'');
+  if(family===display||family===calligraphy||family===homeInterface)family=sans;
   ctx.textAlign = align; ctx.textBaseline = 'middle'; const sansWeight=String(Math.min(700,Math.max(400,Math.round(Number(weight)/100)*100)));
   const useFamily=family===sans&&nativeSans?(sansWeights[sansWeight]??sans):family===homeInterface&&nativeSans?homeInterface.split(',')[0]+','+(sansWeights[sansWeight]??sans):family,useWeight=family===sans&&!nativeSans?sansWeight:family.startsWith('-apple-system')||family==='monospace'||family===homeInterface&&!nativeSans?weight:'400';
   ctx.font = useWeight+' ' + size + 'px ' + useFamily; ctx.fillStyle = color;
@@ -844,7 +846,7 @@ function drawNode(ctx: CanvasRenderingContext2D, n: WebNode, model: ScreenModel,
 
 export function configureDocumentMetrics(canvas:HTMLCanvasElement){
  const ctx=canvas.getContext('2d');if(!ctx)return;
- setDocumentTextMeasurer((value,size,face='sans',weight='400')=>{const family=face==='mono'?'monospace':face==='home'?homeInterface:face==='display'?display:face==='calligraphy'?calligraphy:face==='system'?'-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif':sans;const weightKey=String(Math.min(700,Math.max(400,Math.round(Number(weight)/100)*100))),familyKey=face==='sans'&&nativeSans?(sansWeights[weightKey]??sans):face==='home'&&nativeSans?homeInterface.split(',')[0]+','+(sansWeights[weightKey]??sans):family,renderWeight=(face==='sans'&&!nativeSans)||face==='system'||face==='mono'||face==='home'&&!nativeSans?weight:'400';const key=familyKey+'|'+renderWeight+'|'+size+'|'+value,cached=documentWidths.get(key);if(cached!==undefined)return cached;ctx.save();ctx.font=renderWeight+' '+size+'px '+familyKey;const width=inlineWidth(ctx,value,size,face==='sans'||face==='home');ctx.restore();if(documentWidths.size>8192)documentWidths.clear();documentWidths.set(key,width);return width;});
+ setDocumentTextMeasurer((value,size,face='sans',weight='400')=>{value=value.replace(/[\ufe0e\ufe0f]/g,'');const weightKey=String(Math.min(700,Math.max(400,Math.round(Number(weight)/100)*100))),family=face==='mono'?'monospace':face==='system'?cnSans:nativeSans?(sansWeights[weightKey]??sans):sans,renderWeight=nativeSans&&face!=='mono'&&face!=='system'?'400':weight;const key=family+'|'+renderWeight+'|'+size+'|'+value,cached=documentWidths.get(key);if(cached!==undefined)return cached;ctx.save();ctx.font=renderWeight+' '+size+'px '+family;const width=inlineWidth(ctx,value,size,face!=='mono'&&face!=='system');ctx.restore();if(documentWidths.size>8192)documentWidths.clear();documentWidths.set(key,width);return width;});
 }
 export function renderWebScreen(model: ScreenModel, canvas: HTMLCanvasElement, v: SafeViewport, artwork?: Artwork, preparedLayout?: WebLayout): HitRegion[] {
   const ctx = canvas.getContext('2d'); if (!ctx) throw new Error('Canvas 2D is unavailable');
