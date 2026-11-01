@@ -82,7 +82,7 @@ test('native voice guidance preserves small-room WeChat calls and routes oversiz
     const ordinary={settings:{...defaultSettings,playerCount,voiceChatEnabled:false}};
     const enabled=roomVoiceGuidance(ordinary,true);
     if(playerCount<=10){
-      assert.match(enabled,/主动加入微信原生语音.*默认闭麦.*最多10人/);
+      assert.match(enabled,/主动加入微信原生语音.*加入即开麦.*最多10人/);
       assert.match(enabled,/不互通.*语音失败不影响对局/);
     }else{
       assert.match(enabled,/游戏照常进行.*最多10人.*全员转到网页版.*开启网页端声网兼容/);

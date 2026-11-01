@@ -8,6 +8,12 @@ export class MiniGameSound {
   readonly tracker = new AudioEventTracker();
   preferences: SoundPreferences;
   private active = false;
+  private voice=false;
+  voiceActive(value:boolean){
+    if(value===this.voice)return;this.voice=value;
+    if(value){this.music?.pause();this.clearEffects();}
+    else if(this.active&&this.visible&&this.preferences.music){if(this.music)this.music.play();else this.activate();}
+  }
   private visible = true;
   private music?: ReturnType<NonNullable<WechatPlatform['runtime']['createInnerAudioContext']>>;
   private effects: ReturnType<NonNullable<WechatPlatform['runtime']['createInnerAudioContext']>>[] = [];
@@ -24,14 +30,14 @@ export class MiniGameSound {
   }
   activate() {
     this.active = true;
-    if (!this.visible || !this.preferences.music || this.music || !this.platform.runtime.createInnerAudioContext) return;
+    if (this.voice || !this.visible || !this.preferences.music || this.music || !this.platform.runtime.createInnerAudioContext) return;
     this.music = this.platform.runtime.createInnerAudioContext();
     this.music.src = applicationUrl(this.origin,BACKGROUND_MUSIC.file); this.music.loop = true; this.music.volume = .26;
     this.music.onError?.(() => this.report('音乐暂时无法加载，可在声音设置中重试。'));
     this.music.play();
   }
   effect(cue: EffectCue) {
-    if (!this.active || !this.visible || !this.preferences.effects || !this.platform.runtime.createInnerAudioContext) return;
+    if (this.voice || !this.active || !this.visible || !this.preferences.effects || !this.platform.runtime.createInnerAudioContext) return;
     while (this.effects.length >= 3) { const oldest = this.effects.shift(); oldest?.stop(); oldest?.destroy(); }
     const audio = this.platform.runtime.createInnerAudioContext();
     audio.src = applicationUrl(this.origin,effectFile(cue)); audio.volume = .55;
@@ -42,7 +48,7 @@ export class MiniGameSound {
   foreground(value: boolean) {
     this.visible = value; this.tracker.reset();
     if (!value) { this.music?.pause(); this.clearEffects(); }
-    else if (this.active && this.preferences.music) { if (this.music) this.music.play(); else this.activate(); }
+    else if (!this.voice && this.active && this.preferences.music) { if (this.music) this.music.play(); else this.activate(); }
   }
   private clearEffects() { for (const audio of this.effects) { audio.stop(); audio.destroy(); } this.effects = []; }
 }

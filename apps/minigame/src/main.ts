@@ -199,6 +199,7 @@ function render(scrollOnly=false) {
   if(!scrollOnly)retryWebFonts();
   clearTimeout(motionTimer);
   clearTimeout(countdownTimer);
+  sound.voiceActive(nativeVoice.connecting||nativeVoice.joined);
   if(!scrollOnly)sound.update(view === 'practice' ? practice?.view().game : view === 'game' ? room?.game : undefined, !suspended && (view === 'practice' || view === 'game' && connectionStatus === '已连接'));
   configureDocumentMetrics(canvas);
   const current = scrollOnly&&lastPaintModel?{...lastPaintModel,scroll}:model();
@@ -242,7 +243,7 @@ function connect(next: RoomView) {
       }
       render();
     },
-    status: value => { if (value !== '已连接') void nativeVoice.leave(); connectionStatus = value; if (value !== '已连接') hideSensitiveView(gameUi); render(); },
+    status: value => { connectionStatus = value; if (value !== '已连接') hideSensitiveView(gameUi); render(); },
     busy: value => { commandBusy = value; render(); },
     error: value => { error = describeMiniGameError(new Error(value)); render(); },
     message: message => {
@@ -490,8 +491,8 @@ const cancelTouchMotion=attachTouchNavigation(wx, {
   scrollHorizontal(delta){const max=rows.find(r=>r.scrollMaxX!==undefined)?.scrollMaxX??0;horizontalScroll=Math.max(0,Math.min(max,horizontalScroll+delta));scheduleRender(false);},
   tap(x,y) { const row=hitTest(rows,x,y); if(row) void select(row.id); },
 });
-platform.onHide(() => { cancelTouchMotion();roomBubbles.clear();settingsChoice.close();void nativeVoice.leave(); suspended = true; sound.foreground(false); cancelTextInput(); hideSensitiveView(gameUi); pendingConfirm = undefined; adminPanel.onHide(); if (view === 'admin') view = 'entry'; render(); });
-platform.onShow(options => { suspended = false;retryWebFonts();refreshHomeFriends(); sound.foreground(true); hideSensitiveView(gameUi); invites.receive(options?.query?.invite); connection?.resume(); render(); });
+platform.onHide(() => { cancelTouchMotion();roomBubbles.clear();settingsChoice.close();void nativeVoice.foreground(false); suspended = true; sound.foreground(false); cancelTextInput(); hideSensitiveView(gameUi); pendingConfirm = undefined; adminPanel.onHide(); if (view === 'admin') view = 'entry'; render(); });
+platform.onShow(options => { suspended = false;void nativeVoice.foreground(true).catch(()=>{});retryWebFonts();refreshHomeFriends(); sound.foreground(true); hideSensitiveView(gameUi); invites.receive(options?.query?.invite); connection?.resume(); render(); });
 render();
 if (typeof wx.request === 'function') void extras.announcement().then(result => {
   announcement = result.announcement.enabled ? result.announcement.text : '';

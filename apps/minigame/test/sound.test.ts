@@ -11,3 +11,9 @@ test('audio reuses web assets, stays opt-in and pauses on background', () => {
   sound.foreground(false); assert.equal(paused.length, 1);
   sound.effect('tap'); assert.equal(played.length, 1);
 });
+
+test('voice takes audio priority and background music resumes only after voice ends',()=>{
+ let plays=0,pauses=0;const sound=new MiniGameSound({get(){},set(){},runtime:{createInnerAudioContext:()=>({src:'',play(){plays++;},pause(){pauses++;},stop(){},destroy(){}})}} as any,'https://game.example/avalon',()=>{});
+ sound.configure('music',true);assert.equal(plays,1);sound.voiceActive(true);assert.equal(pauses,1);sound.activate();sound.effect('tap');sound.foreground(true);assert.equal(plays,1);
+ sound.voiceActive(false);assert.equal(plays,2);
+});

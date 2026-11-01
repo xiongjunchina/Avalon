@@ -27,6 +27,10 @@ export class NativeVoice {
   members=0;
   speakers=0;
   message='未加入微信语音';
+  private hidden=false;
+  private resumeAfterInterrupt=false;
+  private resumeMuted=false;
+  private resumeDeafened=false;
   private retryAt=0;
   private roomId?:string;
   private count=0;
@@ -40,14 +44,14 @@ export class NativeVoice {
     if(!enabled)return;
     wx.onVoIPChatMembersChanged?.(event=>{if(this.joined){this.members=event.openIdList.length;changed();}});
     wx.onVoIPChatSpeakersChanged?.(event=>{if(this.joined){this.speakers=event.openIdList.length;changed();}});
-    wx.onVoIPChatInterrupted?.(()=>{this.epoch++;this.reset();this.message='语音已中断，请手动重新加入';changed();});
+    wx.onVoIPChatInterrupted?.(()=>{if(this.joined){this.resumeAfterInterrupt=this.hidden;this.resumeMuted=this.microphoneMuted;this.resumeDeafened=this.speakerMuted;}this.epoch++;this.nativeOutstanding=false;this.nativeJoinStarted=false;this.reset();this.message=this.resumeAfterInterrupt?'系统已暂停语音，返回游戏后恢复':'语音已中断，请重新加入';changed();});
   }
   syncRoom(id:string|undefined,count:number){
     if(id!==this.roomId || count>10&&this.count<=10)void this.leave();
     this.roomId=id;this.count=count;
   }
   private reset(){this.joined=false;this.microphoneMuted=true;this.speakerMuted=false;this.members=0;this.speakers=0;}
-  async join(){
+  async join(microphoneMuted=false,speakerMuted=false){
     if(!this.enabled)throw Error('当前版本不支持实时语音');
     if(this.busy||this.joined)return;
     if(Date.now()<this.retryAt){this.message='语音请求过于频繁，请约1分钟后重试';this.changed();return;}
@@ -55,6 +59,7 @@ export class NativeVoice {
     if(!this.roomId)throw Error('请先加入真实游戏房间');
     if(this.count>10)throw Error('微信原生语音每房最多10人，11～12人牌局不提供原生语音');
     if(!this.wx.joinVoIPChat||!this.wx.authorize)throw Error('当前环境不支持微信原生语音，请用手机微信测试');
+    this.resumeAfterInterrupt=false;
     this.busy=true;const epoch=++this.epoch,roomId=this.roomId;
     this.message='正在加入微信语音';this.changed();
     try{
@@ -67,7 +72,7 @@ export class NativeVoice {
       if(epoch!==this.epoch)return;
       this.nativeJoinStarted=true;
       this.nativeOutstanding=true;
-      const result=await invoke<{openIdList?:string[]}>(cb=>this.wx.joinVoIPChat!({...ticket,...cb,roomType:'voice',muteConfig:{muteMicrophone:true,muteEarphone:false},success:value=>{
+      const result=await invoke<{openIdList?:string[]}>(cb=>this.wx.joinVoIPChat!({...ticket,...cb,roomType:'voice',muteConfig:{muteMicrophone:microphoneMuted,muteEarphone:speakerMuted},success:value=>{
         if(epoch!==this.epoch){
           this.exiting=invoke<void>(exit=>this.wx.exitVoIPChat?this.wx.exitVoIPChat(exit):exit.success())
             .catch(()=>{this.cleanupFailed=true;this.message='语音退出未确认，请关闭小游戏检查麦克风';})
@@ -76,13 +81,21 @@ export class NativeVoice {
         cb.success(value);
       },fail:error=>{this.nativeOutstanding=false;cb.fail?.(error);}}));
       if(epoch!==this.epoch)return;
-      this.joined=true;this.members=result.openIdList?.length??1;this.microphoneMuted=true;this.message='已加入微信语音（默认闭麦）';
+      this.joined=true;this.members=result.openIdList?.length??1;this.microphoneMuted=microphoneMuted;this.speakerMuted=speakerMuted;this.message=microphoneMuted?'已加入微信语音 · 麦克风已关闭':'已加入微信语音 · 麦克风已开启';
+      // Explicitly apply both directions after joining, rather than assuming join defaults took effect.
+      if(this.wx.updateVoIPChatMuteConfig)await this.mute(microphoneMuted,speakerMuted,false);
     }catch(error){if(epoch===this.epoch){await this.leave();if(error instanceof Error&&error.message==='RATE_LIMITED'){this.retryAt=Date.now()+60000;this.message='语音请求过于频繁，请约1分钟后重试';}else this.message=error instanceof Error?error.message:'语音加入失败';throw error;}}
     finally{this.nativeJoinStarted=false;this.busy=false;this.changed();}
   }
+  async foreground(visible:boolean){
+    this.hidden=!visible;
+    if(!visible||!this.resumeAfterInterrupt)return;
+    const microphone=this.resumeMuted,speaker=this.resumeDeafened;
+    await this.join(microphone,speaker);
+  }
   async toggleMicrophone(){await this.mute(!this.microphoneMuted,this.speakerMuted);}
   async toggleSpeaker(){await this.mute(this.microphoneMuted,!this.speakerMuted);}
-  private async mute(microphone:boolean,speaker:boolean){
+  private async mute(microphone:boolean,speaker:boolean,cleanup=true){
     if(!this.joined||!this.wx.updateVoIPChatMuteConfig)throw Error('请先加入微信语音');
     if(this.nativeOutstanding)throw Error('语音操作进行中，请稍候');
     const epoch=this.epoch;
@@ -96,11 +109,12 @@ export class NativeVoice {
         },
         fail:error=>{this.nativeOutstanding=false;cb.fail?.(error);},
       }));
-    }catch(error){await this.leave();throw error;}
+    }catch(error){if(cleanup)await this.leave();throw error;}
     if(epoch!==this.epoch)return;
     this.microphoneMuted=microphone;this.speakerMuted=speaker;this.changed();
   }
   async leave(){
+    this.resumeAfterInterrupt=false;
     // Authorization and ticket requests can be cancelled without a native call to clean up.
     const active=this.joined||this.nativeJoinStarted||this.nativeOutstanding||this.cleanupFailed;this.epoch++;this.reset();this.message='未加入微信语音';
     if(active&&!this.exiting){
@@ -119,7 +133,7 @@ export class NativeVoice {
       {id:'voice:microphone',text:this.microphoneMuted?'开启麦克风':'关闭麦克风'},
       {id:'voice:speaker',text:this.speakerMuted?'恢复收听':'暂停收听'},
       {id:'voice:leave',text:'退出微信语音'},
-    ]:[{id:'voice:join',text:this.busy?'正在连接…':'加入微信语音（默认闭麦）'}]):[]),
+    ]:[{id:'voice:join',text:this.busy?'正在连接…':'开启微信语音（直接开麦）'}]):[]),
   ];}
 }
 

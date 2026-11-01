@@ -8,7 +8,7 @@ import { MINI_GAME_VOICE_ENABLED } from '../features.js';
 export function roomVoiceGuidance(room: Pick<RoomView, 'settings'>,voiceEnabled=MINI_GAME_VOICE_ENABLED): string {
   if(voiceEnabled){
     if(room.settings.playerCount>10)return `本房为 ${room.settings.playerCount} 人局，游戏照常进行；微信原生语音最多10人，当前人数不能加入。需要内置语音时，请全员转到网页版${room.settings.voiceChatEnabled?'':'，并请房主开启网页端声网兼容'}。网页声网独立，两端不互通。`;
-    return '小游戏内可在声音设置主动加入微信原生语音，默认闭麦，最多10人，无需跳转网页。网页声网独立，两端不互通；请全房统一通话方式，语音失败不影响对局。';
+    return '小游戏内可在声音设置主动加入微信原生语音，加入即开麦，最多10人，无需跳转网页。网页声网独立，两端不互通；请全房统一通话方式，语音失败不影响对局。';
   }
   if(room.settings.voiceChatEnabled)return '本房使用网页语音。请全员在手机系统浏览器打开网页版，才能互相听见；小游戏当前不接入此语音。';
   return '微信语音当前关闭。本房可面对面交流或自行使用外部通话；5–12 人对局照常进行。需要内置语音时，请房主开启网页端声网兼容，全员转到网页版。';

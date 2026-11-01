@@ -39,3 +39,12 @@ test('waiting room voice rows do not overlap settings or waiting ribbon',()=>{
  }
  }
 });
+
+test('waiting room has exactly one voice entry and no duplicate microphone control',()=>{
+ const {room,user}=parityFixture();room.game=undefined as any;
+ for(const joined of [false,true])for(const width of [320,390,430]){
+ const model=lobbyScreen(room,user);model.web!.voice={joined,connecting:false,muted:false,deafened:false,members:2,speakers:1};
+ const {nodes}=layoutWebScreen(model,{width,height:844,top:88,bottom:34});
+ assert.equal(nodes.filter(n=>n.id===(joined?'voice:microphone':'voice:join')).length,1);
+ }
+});
