@@ -1,3 +1,5 @@
+import {isUnicodeMark} from './unicode-marks.js';
+
 export interface SafeViewport { width: number; height: number; top: number; bottom: number }
 export interface HitRegion { id: string; x: number; y: number; width: number; height: number; text: string; lines?: string[]; clipLeft?:number;clipRight?:number;scrollMaxX?:number;clipTop?: number; clipBottom?: number }
 export type Scene = 'entry' | 'standard' | 'game' | 'admin';
@@ -8,8 +10,10 @@ type Row = { id: string; text: string };
 export function textGraphemes(value:string):string[]{
   const result:string[]=[];
   for(const char of Array.from(value)){
-    const previous=result[result.length-1];
-    if(previous&&(/^[\p{Mark}\u200d\u{1f3fb}-\u{1f3ff}]$/u.test(char)||previous.endsWith('\u200d')||/^\p{Regional_Indicator}$/u.test(previous)&&/^\p{Regional_Indicator}$/u.test(char)))result[result.length-1]+=char;
+    const previous=result[result.length-1],codePoint=char.codePointAt(0)!;
+    const previousPoint=previous?.codePointAt(0)??0;
+    const flagPair=previous?.length===2&&previousPoint>=0x1f1e6&&previousPoint<=0x1f1ff&&codePoint>=0x1f1e6&&codePoint<=0x1f1ff;
+    if(previous&&(isUnicodeMark(codePoint)||codePoint===0x200d||codePoint>=0x1f3fb&&codePoint<=0x1f3ff||previous.endsWith('\u200d')||flagPair))result[result.length-1]+=char;
     else result.push(char);
   }
   return result;

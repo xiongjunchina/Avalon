@@ -20,7 +20,7 @@ macOS/Linux 在仓库根目录执行：
 ```sh
 WECHAT_MINIGAME_VOICE_ENABLED=true \
   WECHAT_MINIGAME_API_BASE_URL=https://game.ccnepower.com/avalon \
-  npm run package:minigame -- --version=1.0.2
+  npm run package:minigame -- --version=1.0.3
 ```
 
 Windows PowerShell：
@@ -28,7 +28,7 @@ Windows PowerShell：
 ```powershell
 $env:WECHAT_MINIGAME_API_BASE_URL='https://game.ccnepower.com/avalon'
 $env:WECHAT_MINIGAME_VOICE_ENABLED='true'
-npm run package:minigame -- --version=1.0.2
+npm run package:minigame -- --version=1.0.3
 ```
 
 命令执行类型检查和小游戏测试，生成独立目录 dist/releases/minigame-<版本>-<随机后缀>。开发者工具选择“小游戏”，导入其中的 project 文件夹，确认 AppID、开发/上传权限以及 urlCheck: true。上传时版本号与清单、后台记录一致。
@@ -96,3 +96,10 @@ release.json 记录源码提交、工作区状态、AppID、完整 API 基地址
 - 小游戏启动时按需补齐 `Array.prototype.at`，覆盖共享游戏逻辑及后续页面；不覆盖运行环境已有实现。首页文字分组直接使用数组下标，角色信息排版不再依赖 `String.prototype.replaceAll`。
 - 构建回归同时验证现代环境和缺少上述方法的环境，检查首页、登录、入房、设置、聊天、对局及本地练习。构建目标 `es2020` 只转换语法，不能替代运行时内置方法兼容测试。
 - 本地候选包 0.5.1 曾以上传版本 1.0.1 发布为体验版；本次统一包清单和上传版本为 1.0.2。手机端问题仍需在新体验版验证，不将开发者工具显示正常视为真机验收。
+
+## 1.0.3 手机文字绘制兼容修复
+
+- 1.0.2 在电脑微信能显示首页，但用户手机仍然只显示背景和标题。2026-11-02 通过该手机的真机调试取得实际错误：`Invalid property name in character class`，来自 `textGraphemes` 的 Unicode 属性正则。设备为 vivo V2528A，微信 8.0.79，基础库 3.17.6。
+- 移除文字分组对运行时 Unicode 属性正则的依赖，保留组合字符、肤色修饰符、连接表情和国旗的分组行为。1.0.2 的 `Array.at` 修复保留，但它不是此次已确认的手机报错原因。
+- 构建回归模拟开发者工具将正则转为 `RegExp` 构造调用、手机拒绝 Unicode 属性的行为；同一组首页及页面操作测试同时覆盖旧内置方法和正则能力限制。
+- 必须重新上传并设置 1.0.3 为体验版，在出问题的手机重新打开验证；构建测试通过或电脑微信正常均不代替手机验收。

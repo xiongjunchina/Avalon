@@ -7,6 +7,7 @@ import { runInNewContext } from 'node:vm';
 import { buildMiniGame } from '../scripts/build.mjs';
 import { layoutWebScreen } from '../src/ui/web-layout.js';
 import { entryScreen } from '../src/screens/entry.js';
+import { forLegacyWechatEngine } from './legacy-engine.js';
 
 test('builds an importable project without server or admin secrets', async t => {
   const outDir = await mkdtemp(join(tmpdir(), 'avalon-minigame-'));
@@ -132,8 +133,8 @@ for (const voiceEnabled of [false, true]) test(`built bundle starts and allows p
   const bundle = await readFile(join(outDir, 'bundle.js'), 'utf8');
   // Device engines can lack newer built-ins even though the build's ES2020 syntax works.
   // Run the actual minified bundle, so the compatibility bootstrap's ordering is tested too.
-  const legacyRuntime = '"use strict"; delete Array.prototype.at; delete String.prototype.replaceAll;\n';
-  assert.doesNotThrow(() => runInNewContext(legacyRuntime + bundle, { wx, console, setTimeout, clearTimeout, crypto: globalThis.crypto }));
+  const legacyBundle = await forLegacyWechatEngine(bundle);
+  assert.doesNotThrow(() => runInNewContext(legacyBundle, { wx, console, setTimeout, clearTimeout, crypto: globalThis.crypto }));
   assert.ok(calls.includes('fillText'));
   assert.deepEqual(voiceEvents, voiceEnabled ? ['members', 'speakers', 'interrupted'] : []);
   for (const text of ['一念佛魔皆幻相', '开常规房', '加入房间', '幻境单人试玩', '玩法与角色'])

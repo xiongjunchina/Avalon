@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import { runInNewContext } from 'node:vm';
 import { parityFixture } from '../scripts/parity-fixture.js';
 import { buildMiniGame } from '../scripts/build.mjs';
+import { forLegacyWechatEngine } from './legacy-engine.js';
 
 for (const legacyBuiltins of [false, true]) test(`voice-enabled client navigates without requiring native voice permission (${legacyBuiltins ? 'ES2020 builtins' : 'modern builtins'})`, async t => {
   const outDir = await mkdtemp(join(tmpdir(), 'avalon-parity-app-'));
@@ -68,8 +69,8 @@ for (const legacyBuiltins of [false, true]) test(`voice-enabled client navigates
     onShow() {}, onHide() {}, onShareAppMessage() {},
     onTouchStart(callback: any) { start = callback; }, onTouchEnd(callback: any) { end = callback; },
   };
-  const legacyPrelude = legacyBuiltins ? '"use strict"; Array.prototype.at = undefined; String.prototype.replaceAll = undefined;\n' : '';
-  runInNewContext(legacyPrelude + await readFile(join(outDir, 'bundle.js'), 'utf8'), {
+  const bundle = await readFile(join(outDir, 'bundle.js'), 'utf8');
+  runInNewContext(legacyBuiltins ? await forLegacyWechatEngine(bundle) : bundle, {
     wx, console, crypto: globalThis.crypto, clearTimeout,
     setTimeout: (callback: () => void, ms: number) => { const timer = setTimeout(callback, ms); timers.add(timer); return timer; },
   });
