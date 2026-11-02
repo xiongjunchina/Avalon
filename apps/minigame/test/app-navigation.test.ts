@@ -7,7 +7,7 @@ import { runInNewContext } from 'node:vm';
 import { parityFixture } from '../scripts/parity-fixture.js';
 import { buildMiniGame } from '../scripts/build.mjs';
 
-test('voice-enabled client logs in and creates the selected room without requiring native voice permission', async t => {
+for (const legacyBuiltins of [false, true]) test(`voice-enabled client navigates without requiring native voice permission (${legacyBuiltins ? 'ES2020 builtins' : 'modern builtins'})`, async t => {
   const outDir = await mkdtemp(join(tmpdir(), 'avalon-parity-app-'));
   t.after(() => rm(outDir, { recursive: true, force: true }));
   await buildMiniGame({ outDir, voiceEnabled:true });
@@ -68,7 +68,8 @@ test('voice-enabled client logs in and creates the selected room without requiri
     onShow() {}, onHide() {}, onShareAppMessage() {},
     onTouchStart(callback: any) { start = callback; }, onTouchEnd(callback: any) { end = callback; },
   };
-  runInNewContext(await readFile(join(outDir, 'bundle.js'), 'utf8'), {
+  const legacyPrelude = legacyBuiltins ? '"use strict"; Array.prototype.at = undefined; String.prototype.replaceAll = undefined;\n' : '';
+  runInNewContext(legacyPrelude + await readFile(join(outDir, 'bundle.js'), 'utf8'), {
     wx, console, crypto: globalThis.crypto, clearTimeout,
     setTimeout: (callback: () => void, ms: number) => { const timer = setTimeout(callback, ms); timers.add(timer); return timer; },
   });

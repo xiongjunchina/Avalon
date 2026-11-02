@@ -104,7 +104,7 @@ test('rejects a package that exceeds its declared limit', async t => {
   await assert.rejects(buildMiniGame({ outDir, appId: 'wx1111111111111111', maxBytes: 10 }), /PACKAGE_TOO_LARGE/);
 });
 
-for (const voiceEnabled of [false, true]) test(`built bundle starts and allows practice with native voice ${voiceEnabled ? 'enabled' : 'disabled'}`, async t => {
+for (const voiceEnabled of [false, true]) test(`built bundle starts and allows practice on an older native engine with voice ${voiceEnabled ? 'enabled' : 'disabled'}`, async t => {
   const outDir = await mkdtemp(join(tmpdir(), 'avalon-minigame-runtime-'));
   t.after(() => rm(outDir, { recursive: true, force: true }));
   await buildMiniGame({ outDir, voiceEnabled });
@@ -130,11 +130,16 @@ for (const voiceEnabled of [false, true]) test(`built bundle starts and allows p
     joinVoIPChat() { assert.fail('startup or practice must not join voice automatically'); },
   };
   const bundle = await readFile(join(outDir, 'bundle.js'), 'utf8');
-  assert.doesNotThrow(() => runInNewContext(bundle, { wx, console, setTimeout, clearTimeout, crypto: globalThis.crypto }));
+  // Device engines can lack newer built-ins even though the build's ES2020 syntax works.
+  // Run the actual minified bundle, so the compatibility bootstrap's ordering is tested too.
+  const legacyRuntime = '"use strict"; delete Array.prototype.at; delete String.prototype.replaceAll;\n';
+  assert.doesNotThrow(() => runInNewContext(legacyRuntime + bundle, { wx, console, setTimeout, clearTimeout, crypto: globalThis.crypto }));
   assert.ok(calls.includes('fillText'));
   assert.deepEqual(voiceEvents, voiceEnabled ? ['members', 'speakers', 'interrupted'] : []);
-  assert.ok(labels.some(label => label.includes('幻境单人试玩')));
+  for (const text of ['一念佛魔皆幻相', '开常规房', '加入房间', '幻境单人试玩', '玩法与角色'])
+    assert.ok(labels.some(label => label.includes(text)), 'full homepage renders ' + text);
   const button = layoutWebScreen(entryScreen(), { width: 390, height: 844, top: 88, bottom: 34 }).nodes.find(node => node.id === 'practice')!;
+  labels.length = 0;
   touchStart?.({ touches: [{ clientX: button.x + 10, clientY: button.y + 15 }] });
   touchEnd?.({ changedTouches: [{ clientX: button.x + 10, clientY: button.y + 15 }] });
   assert.ok(labels.some(label => label.includes('幻境演练')));

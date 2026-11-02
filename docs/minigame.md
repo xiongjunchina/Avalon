@@ -20,7 +20,7 @@ macOS/Linux 在仓库根目录执行：
 ```sh
 WECHAT_MINIGAME_VOICE_ENABLED=true \
   WECHAT_MINIGAME_API_BASE_URL=https://game.ccnepower.com/avalon \
-  npm run package:minigame -- --version=0.5.1
+  npm run package:minigame -- --version=1.0.2
 ```
 
 Windows PowerShell：
@@ -28,7 +28,7 @@ Windows PowerShell：
 ```powershell
 $env:WECHAT_MINIGAME_API_BASE_URL='https://game.ccnepower.com/avalon'
 $env:WECHAT_MINIGAME_VOICE_ENABLED='true'
-npm run package:minigame -- --version=0.5.1
+npm run package:minigame -- --version=1.0.2
 ```
 
 命令执行类型检查和小游戏测试，生成独立目录 dist/releases/minigame-<版本>-<随机后缀>。开发者工具选择“小游戏”，导入其中的 project 文件夹，确认 AppID、开发/上传权限以及 urlCheck: true。上传时版本号与清单、后台记录一致。
@@ -89,3 +89,10 @@ release.json 记录源码提交、工作区状态、AppID、完整 API 基地址
 - 等待房和首页在静止时不循环重绘；对局只有可见的太极动画需要持续更新。滚动事件合并到原生帧，账户、仙友、聊天、房间配置等复用布局与有界条带缓存；复盘的吸顶导航保留原计算方式。
 - 用 `node --import tsx apps/minigame/scripts/perf-core.mjs` 比较布局次数与 Canvas 命令数；这是开发环境基准，不是手机帧率。真机应在同一设备、同一场景对比旧版/新版，检查首页、房间、对局、配置、仙友、传音、个人历史的滚动、点击和返回。
 - 正常候选包不显示调试统计；需要真机诊断时可设置 `WECHAT_MINIGAME_PERF_HUD=true` 另建诊断包。统计为回调频率、绘制次数与输入处理耗时，不代表屏幕实际呈现帧率。
+
+## 1.0.2 运行环境兼容修复
+
+- 1.0.1 体验版收到“背景和标题可见，其余界面消失”的反馈。在缺少 `Array.prototype.at` 的运行环境中，可精确复现：副标题文字分组抛错，中断后续按钮和工具栏绘制。
+- 小游戏启动时按需补齐 `Array.prototype.at`，覆盖共享游戏逻辑及后续页面；不覆盖运行环境已有实现。首页文字分组直接使用数组下标，角色信息排版不再依赖 `String.prototype.replaceAll`。
+- 构建回归同时验证现代环境和缺少上述方法的环境，检查首页、登录、入房、设置、聊天、对局及本地练习。构建目标 `es2020` 只转换语法，不能替代运行时内置方法兼容测试。
+- 本地候选包 0.5.1 曾以上传版本 1.0.1 发布为体验版；本次统一包清单和上传版本为 1.0.2。手机端问题仍需在新体验版验证，不将开发者工具显示正常视为真机验收。

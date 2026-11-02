@@ -1,3 +1,4 @@
+import './platform/runtime-compat.js';
 import {FrameDiagnostics} from './ui/frame-diagnostics.js';
 import {createRenderQueue} from './ui/render-queue.js';
 import {createScrollLayoutCache} from './ui/scroll-layout-cache.js';

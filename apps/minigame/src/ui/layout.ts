@@ -8,7 +8,7 @@ type Row = { id: string; text: string };
 export function textGraphemes(value:string):string[]{
   const result:string[]=[];
   for(const char of Array.from(value)){
-    const previous=result.at(-1);
+    const previous=result[result.length-1];
     if(previous&&(/^[\p{Mark}\u200d\u{1f3fb}-\u{1f3ff}]$/u.test(char)||previous.endsWith('\u200d')||/^\p{Regional_Indicator}$/u.test(previous)&&/^\p{Regional_Indicator}$/u.test(char)))result[result.length-1]+=char;
     else result.push(char);
   }

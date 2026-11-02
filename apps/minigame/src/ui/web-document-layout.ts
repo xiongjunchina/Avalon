@@ -342,7 +342,7 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
     for(const row of voiceRows){if(row.id.startsWith('voice:')){button(row.id,row.text,y,{skin:'pill',primary:row.id==='voice:join'});y+=50;}else if(row.id!=='guide:voice-scope'){para(row.id,row.text,13);}}
     const scope=voiceRows.find(r=>r.id==='guide:voice-scope');if(scope)para(scope.id,scope.text,12);
     for(const [id,label,detail] of [['music','背景音乐',BACKGROUND_MUSIC.title],['effects','操作音效','法器反馈 · 降妖法鼓 · 金箍惊鸣 · 胜负终章']] as const){
-      const lines=wrapText(detail,w-60,t=>measure(t.replaceAll('·',''),12,'sans','400')+(t.match(/·/g)?.length??0)*2.89),h=58+lines.length*17;
+      const lines=wrapText(detail,w-60,t=>measure(t.replace(/·/g,''),12,'sans','400')+(t.match(/·/g)?.length??0)*2.89),h=58+lines.length*17;
       button('sound:'+id,label,y,{skin:'sound-option',selected:doc.soundPreferences?.[id],detail,lines,fontSize:16},x,w,h);y+=h+10;
     }
     for(const [i,t] of ['仅影响自己的设备，自动记住选择。音量使用手机或电脑的媒体音量键调整。','全部操作都有声音反馈，投票与出牌使用相同点击声。胜负音效按自己的结果播放；音效开关不影响实时语音。'].entries()){const n=txt('sound-hint:'+i,t,y,12,{tone:'muted',lineHeight:19.8,fontFace:'home',weight:'650'},x,w);y+=n.height+10;}
