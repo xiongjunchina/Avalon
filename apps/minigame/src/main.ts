@@ -1,4 +1,5 @@
 import {FrameDiagnostics} from './ui/frame-diagnostics.js';
+import {createRenderQueue} from './ui/render-queue.js';
 import {createScrollLayoutCache} from './ui/scroll-layout-cache.js';
 import {webFontRevision} from './ui/web-render.js';
 import { chooseWechatProfile, WechatProfileButton } from './platform/wechat-profile.js';
@@ -21,6 +22,7 @@ import { hideSensitiveView, clampScroll, type HitRegion } from './ui/layout.js';
 import { askText, cancelTextInput } from './ui/input.js';
 import { hitTest, renderScreen, type ScreenModel } from './ui/widgets.js';
 import { entryScreen } from './screens/entry.js';
+import { joinScreen } from './screens/join.js';
 import { LobbyController, lobbyScreen, readyReminder } from './screens/lobby.js';
 import { settingsScreen, toggleSetting, SettingsChoice } from './screens/settings.js';
 import { gameAction, gameScreen, handleGameOverlay, syncGameUi, type GameUiState } from './screens/game.js';
@@ -106,6 +108,7 @@ const rolePreferenceDraft=new RolePreferenceDraft();
 let waitingMissionsExpanded=false;
 let auxiliary: 'preferences' | 'dedicated' | 'roomTools' | 'practiceSeats' | 'sound' | 'switchAccount' | 'join' | 'webHandoff' | undefined;
 let joinKey = '';
+let joinSubmitting = false;
 let dedicatedRooms: DedicatedRoom[] = [];
 let creationAccess: {dedicatedRoomId?:string;password?:string|null} = {};
 let selectedDedicated: DedicatedRoom | undefined;
@@ -139,11 +142,7 @@ function model(): ScreenModel {
     web: { page: 'sheet', sheet: 'ready', background: 'pavilion', backId: 'readyLater',document:{kind:'tools',modal:true},underlay:lobbyScreen(room,user) },
   });
   if(auxiliary==='preferences'&&room)return feedback(rolePreferenceDraft.model(room));
-  if (auxiliary === 'join') return feedback({ title: '加入朋友的房间', rows: [
-    { id: 'input:join', text: joinKey || '输入房间号或邀请链接' },
-    { id: 'guide:join', text: '请向朋友索取房间号或邀请链接。每次打开此页均为空，不会填入历史邀请。' },
-    { id: 'joinSubmit', text: '入座取经' },
-  ], web: { page: 'sheet', background: 'gate', backId: 'auxiliaryClose',document:{kind:'tools',modal:true},underlay:entryScreen(user) } });
+  if (auxiliary === 'join') return feedback(joinScreen(user, joinKey, joinSubmitting));
   if(auxiliary==='dedicated')return feedback({title:'选择开桌方式',rows:[{id:'dedicated:normal',text:'普通房 · 随机房号'},...dedicatedRooms.map(r=>({id:'dedicated:'+r.id,text:r.code+' · '+r.name+(r.activeRoomId?'（已开桌）':''),disabled:!!r.activeRoomId}))],web:{page:'sheet',background:'library',backId:'auxiliaryClose',document:{kind:'tools',modal:true}}});
   if (auxiliary === 'switchAccount') return feedback({ ...entryScreen(undefined,undefined,true), web: {...entryScreen(undefined,undefined,true).web!, authMode, nickname, switchCode, knownAccounts: knownAccounts.list(), backId: 'auxiliaryClose' } });
   if (auxiliary === 'webHandoff' && room && user) return feedback(webHandoffScreen(room, user));
@@ -204,7 +203,9 @@ let lastInputAt:number|undefined;
 if(frameDiagnostics&&visualRaf){const sample=()=>{if(!suspended)frameDiagnostics.tick(frameNow());visualRaf(sample);};visualRaf(sample);}
 function paintFrame(current:ScreenModel,layout?:ReturnType<typeof layoutWebScreen>){const start=frameNow();const hits=renderScreen(current,canvas,viewport,artwork,layout);frameDiagnostics?.paint(start,frameNow(),lastInputAt);lastInputAt=undefined;const ctx=canvas.getContext('2d');if(ctx)frameDiagnostics?.draw(ctx,viewport.width,viewport.height-viewport.bottom);return hits;}
 let lastPaintModel:ScreenModel|undefined,scrollingUntil=0,maxPaintScroll=0;
+let cancelQueuedPaint=()=>{};
 function render(scrollOnly=false) {
+  cancelQueuedPaint();
   if(!scrollOnly)retryWebFonts();
   const generation=++motionGeneration;
   clearTimeout(countdownTimer);
@@ -219,8 +220,9 @@ function render(scrollOnly=false) {
   rows = paintFrame({ ...current, scroll,web:current.web?{...current.web,animationTime:Date.now()-motionEpoch}:undefined }, layout);
   const authRegion=layout?.nodes.find(n=>n.id==='profile:wechat');
   wechatProfileButton.sync(!suspended&&!busy&&authRegion&&authRegion.y>=(authRegion.clipTop??0)&&authRegion.y+authRegion.height<=(authRegion.clipBottom??viewport.height)?authRegion:undefined);
-  const animated=!!visualRaf&&!suspended&&!current.web?.document?.modal&&(current.web?.page==='home'||current.web?.page==='table');
-  if(animated){const frame=()=>{if(suspended||generation!==motionGeneration)return;if(Date.now()>=scrollingUntil)paintFrame({...current,scroll,web:{...current.web!,animationTime:Date.now()-motionEpoch}},layout);visualRaf!(frame);};visualRaf!(frame);}
+  // Only the visible altar animates. Home and waiting rooms have no idle redraw loop.
+  const animated=!!visualRaf&&!suspended&&!current.web?.document?.modal&&layout?.nodes.some(n=>n.kind==='altar'&&n.y+n.height>viewport.top&&n.y<viewport.height-viewport.bottom);
+  if(animated){let lastVisual=frameNow();const frame=()=>{if(suspended||generation!==motionGeneration)return;const now=frameNow();if(Date.now()>=scrollingUntil&&now-lastVisual>=1000/30){lastVisual=now;paintFrame({...current,scroll,web:{...current.web!,animationTime:Date.now()-motionEpoch}},layout);}visualRaf!(frame);};visualRaf!(frame);}
   // Countdown updates remain separate from visual animation.
 
   if (!suspended && view === 'game' && ['dealing','guanyin_window'].includes(room?.game?.phase??'')) countdownTimer = setTimeout(render, 1_000);
@@ -327,8 +329,15 @@ async function select(id: string) {
   if (id === 'notice' || id === 'error') { notice = ''; error = ''; render(); return; }
   if (id === 'announcement') { announcement = ''; render(); return; }
   if (id === 'auxiliaryClose') { auxiliary = undefined; scroll = 0; render(); return; }
-  if (id === 'input:join') return run(async () => { const value = await askText(wx, joinKey, 200); if (value !== undefined) joinKey = value; });
-  if (id === 'joinSubmit' && lobby) return run(async () => { const encoded = /(?:\?|&)invite=([^&#]+)/.exec(joinKey)?.[1]; const key = encoded ? decodeURIComponent(encoded) : joinKey.trim(); if (!key) throw new Error('请输入房间号或邀请链接'); connect(await joinWithPassword(key)); });
+  if (id === 'input:join') return run(async () => { const value = await askText(wx, joinKey, 200, { retainOnComplete: true }); if (value !== undefined) joinKey = value; }, true);
+  if (id === 'joinSubmit' && lobby) return run(async () => {
+    const encoded = /(?:\?|&)invite=([^&#]+)/.exec(joinKey)?.[1];
+    const key = encoded ? decodeURIComponent(encoded) : joinKey.trim();
+    if (!key) throw new Error('请输入房间号或邀请链接');
+    joinSubmitting = true; render();
+    try { connect(await joinWithPassword(key)); }
+    finally { joinSubmitting = false; }
+  }, true);
   if(id==='practiceCaptain'&&practice){const id=practice.view().game?.captainId;if(id){practice.switchSeat(id);hideSensitiveView(gameUi);gameUi.snapshotKey=undefined;syncGameUi(gameUi,practice.view(),false,practice.user.id);scroll=0;render();}return;}
   if (id === 'practiceSeats' && practice) { auxiliary = 'practiceSeats'; scroll = 0; render(); return; }
   if (id.startsWith('practiceSeat:') && practice) { practice.switchSeat(id.slice(13)); hideSensitiveView(gameUi); gameUi.snapshotKey = undefined; syncGameUi(gameUi, practice.view(), false, practice.user.id); auxiliary = undefined; scroll = 0; render(); return; }
@@ -415,7 +424,7 @@ async function select(id: string) {
     if (id === 'practice') { practice = new PracticeSession(editableSettings, user?.nickname ?? '我',undefined,user); syncGameUi(gameUi, practice.view()); navigate('practice'); return; }
     if (id === 'login') return run(async () => { await nativeVoice.leave(); if (authMode === 'switch' && !/^\d{6}$/.test(switchCode)) throw new Error('INVALID_PLAYER_CODE'); const result = await api.login(nickname || undefined); user = authMode === 'switch' ? await api.switchAccount(switchCode) : result.user; knownAccounts.remember(user); auxiliary = undefined; lobby = new LobbyController(api, user); playerPanel = new PlayerPanel(extras, user, () => chooseAvatar(wx), () => chooseWechatProfile(wx));refreshHomeFriends(); const existing = await lobby.resume(); if (existing) connect(existing); else if (invites.code) { connect(await joinWithPassword(invites.code)); invites.take(); } else if(authIntent==='create'){authIntent=undefined;creationAccess={};selectedDedicated=undefined;setupIntent='room';navigate('settings');}else if(authIntent==='join'){authIntent=undefined;joinKey='';auxiliary='join';render();}else render(); });
     if (id === 'create' && lobby) { creationAccess={};selectedDedicated=undefined;setupIntent = 'room'; navigate('settings'); return; }
-    if (id === 'join' && lobby) { joinKey = ''; auxiliary = 'join'; scroll = 0; render(); return; }
+    if (id === 'join' && lobby) { joinKey = ''; error = ''; notice = ''; auxiliary = 'join'; scroll = 0; render(); return; }
     if (id === 'switch') { authMode = 'switch'; switchCode = ''; auxiliary = 'switchAccount'; scroll = 0; render(); return; }
     if (id === 'logout') return run(async () => { nativeVoice.syncRoom(undefined,0); await nativeVoice.leave(); connection?.stop(); connection = undefined; room = undefined; user = undefined; lobby = undefined; playerPanel = undefined; await api.logout(); render(); });
     if (id === 'admin') return run(async () => { const key = await askText(wx, '', 256); if (!key) return; await adminPanel.open(key); navigate('admin'); });
@@ -482,20 +491,12 @@ async function select(id: string) {
   }
 }
 
-let renderFrame: any = 0,scrollFrameOnly=true;
-function scheduleRender(reuseContent=true) {
-  scrollFrameOnly=scrollFrameOnly&&reuseContent;
-  const raf = wx.requestAnimationFrame ?? (typeof requestAnimationFrame === 'function' ? requestAnimationFrame : undefined);
-  if (!raf) { render(scrollFrameOnly);scrollFrameOnly=true; return; }
-  if (renderFrame) return;
-  renderFrame = raf(() => {
-    renderFrame = 0;
-    const reuse=scrollFrameOnly;scrollFrameOnly=true;render(reuse);
-  });
-}
+const renderQueue=createRenderQueue(visualRaf,reuse=>render(reuse));
+cancelQueuedPaint=renderQueue.cancel;
+function scheduleRender(reuseContent=true) { renderQueue.request(reuseContent); }
 
 const cancelTouchMotion=attachTouchNavigation(wx, {
-  scrollBy(delta,_inFrame) { lastInputAt=frameNow();const before=scroll;scroll = Math.min(maxPaintScroll,Math.max(0, scroll + delta));scrollingUntil=Date.now()+180;if(scroll!==before)render(true);else lastInputAt=undefined;return scroll!==before; },
+  scrollBy(delta,inFrame) { lastInputAt=frameNow();const before=scroll;scroll = Math.min(maxPaintScroll,Math.max(0, scroll + delta));scrollingUntil=Date.now()+180;if(scroll!==before){if(inFrame)renderQueue.flush();else scheduleRender();}else lastInputAt=undefined;return scroll!==before; },
   canScrollHorizontal(x,y){return rows.some(r=>r.scrollMaxX!==undefined&&x>=(r.clipLeft??0)&&x<=(r.clipRight??viewport.width)&&y>=r.y&&y<=r.y+r.height);},
   scrollHorizontal(delta){const max=rows.find(r=>r.scrollMaxX!==undefined)?.scrollMaxX??0;horizontalScroll=Math.max(0,Math.min(max,horizontalScroll+delta));scheduleRender(false);},
   tap(x,y) { const row=hitTest(rows,x,y); if(row) void select(row.id); },

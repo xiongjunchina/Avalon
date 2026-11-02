@@ -601,6 +601,18 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
     const actions=model.rows.filter(r=>r.id.startsWith('confirm:')),bw=(w-10*(actions.length-1))/Math.max(1,actions.length),lines=actions.map(r=>wrapText(r.text,bw-38,t=>measure(t,16,'sans','700'))),bh=Math.max(48,...lines.map(l=>l.length*24+26));
     if(actions.length){y+=14;actions.forEach((row,i)=>button(row.id,row.text,y,{skin:row.id==='confirm:yes'?'abort-primary':'abort-secondary',fontSize:16,lines:lines[i],lineHeight:24},x+i*(bw+10),bw,bh));y+=bh;}
     y+=pad-13;bodyEnd=y;
+  } else if(doc.kind==='join') {
+    modalHeader(model.title);
+    txt('join-field-label','房间号或邀请链接',y,14,{weight:'600'});y+=27;
+    const draft=doc.joinDraft??'',input=model.rows.find(r=>r.id==='input:join');
+    button('input:join',input?.text??draft,y,{skin:'input',fontSize:15,lines:[input?.text??draft],muted:!draft,disabled:doc.joinSubmitting},x,w,50);y+=62;
+    // Keep errors in the form flow so a failed room never hides the editable field.
+    const issue=feedback.find(r=>r.id==='error');
+    if(issue){const message=txt('join-error',issue.text,y,13,{tone:'red',lineHeight:20});y+=message.height+12;}
+    const hint=txt('guide:join',model.rows.find(r=>r.id==='guide:join')?.text??'',y,13,{tone:'muted',lineHeight:20});y+=hint.height+18;
+    button('joinSubmit',doc.joinSubmitting?'正在加入…':'确认加入房间',y,{skin:'gold-button',fontSize:16,weight:'700',primary:true,disabled:doc.joinSubmitting||!draft.trim()},x,w,48);y+=62;
+    button(model.web!.backId??'auxiliaryClose','返回首页',y,{skin:'pill',fontSize:14},x,w,44);y+=44;
+    bodyEnd=y;
   } else if(['confirm','tools'].includes(doc.kind)) {
     modalHeader(model.title);
     const ignored=new Set(['back','overlayClose']);
@@ -803,7 +815,7 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
     } else if(doc.kind==='settings') {
       if(doc.activeTab==='setup'&&doc.settings){
         const setupTitle='🏛️ 创建游戏房间',toolsW=v.width<=340?69:v.width<=380?73:79,titleNatural=measure(setupTitle,23,'sans','600')+textGraphemes(setupTitle).length*2;
-        const free=v.width-32-toolsW-32,shrink=Math.max(0,38+titleNatural-free),backW=38-shrink*38/(38+titleNatural),titleW=titleNatural-shrink*titleNatural/(38+titleNatural),setupLines=wrapText(setupTitle,titleW,t=>measure(t,23,'sans','600')+textGraphemes(t).length*2),headH=Math.max(38,setupLines.length*34),space=Math.max(16,(v.width-32-backW-titleW-toolsW)/2);
+        const free=v.width-32-toolsW-32,backW=38,titleW=Math.min(titleNatural,Math.max(1,free-backW)),setupLines=wrapText(setupTitle,titleW,t=>measure(t,23,'sans','600')+textGraphemes(t).length*2),headH=Math.max(38,setupLines.length*34),space=Math.max(16,(v.width-32-backW-titleW-toolsW)/2);
         y=12;button('cancelSettings','‹',y+(headH-38)/2,{skin:'setup-back',fontSize:34},16,backW,38);button('sound','♫',y+(headH-32)/2,{skin:'pill'},v.width-16-toolsW,32,32);button('guide','规则',y+(headH-32)/2,{skin:'pill',fontSize:v.width<=340?11:v.width<=380?11.5:12},v.width-16-(toolsW-32-(v.width<=380?3:5)),toolsW-32-(v.width<=380?3:5),32);
         add('label','setup-title',setupTitle,16+backW+space,y+(headH-setupLines.length*34)/2,titleW,setupLines.length*34,{skin:'text',fontSize:23,fontFace:'sans',weight:'600',letterSpacing:2,lines:setupLines,lineHeight:34,tone:'gold',align:'left'});y=12+headH+26;
         const canUseNativeVoice=MINI_GAME_VOICE_ENABLED&&doc.settings.playerCount<=10;
@@ -912,7 +924,7 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
     if(preset)button('preset:save',doc.roomPreset?'保存当前房间设置':'保存预设',fy+h-82,{skin:'gold-button',fixed:true,primary:true,disabled:!doc.presetName?.trim()},x-4,w+8,47);
     if(profile){add('label','profile-footer-rule','',x,fy+h-84,w,1,{skin:'rule',fixed:true});button('profile:save','保存资料',fy+h-76,{skin:'gold-button',fontSize:15,weight:'700',fixed:true,primary:true},x-2,w+4,47);}
     if(identity){const footerY=fy+h-footerH-11;add('label','identity-footer-rule','',x,footerY,w,1,{skin:'rule',fixed:true});txt('identity-permission','出牌权限：'+(doc.self?.team==='blue'?'仅能护经（成功）':'可护经（成功）/ 作祟（失败）')+' · 离页自动收起',footerY+8,10,{align:'center',fixed:true,tone:'muted',letterSpacing:2,fontFace:'display',lineHeight:14});button(model.web!.backId??'overlayClose','返回对局页面',footerY+27,{skin:'identity-return',fontSize:14,weight:'700',fixed:true,primary:true},x,w,38);}
-    feedback.slice(0,1).forEach(r=>add('button',r.id==='error'?'error':'dismissFeedback',r.text,x,fy+Math.min(60,h-70),w,56,{skin:'toast',tone:r.id==='error'?'red':'gold',fixed:true,fontSize:12}));
+    if(doc.kind!=='join')feedback.slice(0,1).forEach(r=>add('button',r.id==='error'?'error':'dismissFeedback',r.text,x,fy+Math.min(60,h-70),w,56,{skin:'toast',tone:r.id==='error'?'red':'gold',fixed:true,fontSize:12}));
     // Block taps within the sheet; only its outer backdrop dismisses it.
     add('hitbox','noop','',ox,fy,width,h,{skin:'hitbox',fixed:true});add('hitbox',model.web!.backId??'back','',0,top,v.width,available,{skin:'hitbox',fixed:true});
     appendSettingChoices();

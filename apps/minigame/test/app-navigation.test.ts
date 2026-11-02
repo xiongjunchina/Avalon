@@ -13,7 +13,7 @@ test('voice-enabled client logs in and creates the selected room without requiri
   await buildMiniGame({ outDir, voiceEnabled:true });
   const timers = new Set<ReturnType<typeof setTimeout>>();
   t.after(() => { for (const timer of timers) clearTimeout(timer); });
-  let start: any, end: any, confirmKeyboard: any, room: any, socketMessage: any;
+  let start: any, end: any, confirmKeyboard: any, completeKeyboard: any, inputKeyboard: any, pendingJoin: any, room: any, socketMessage: any;
   const commands: any[] = [];
   const frameCallbacks:(()=>void)[]=[],preferredFps:number[]=[];let screenPaints=0;
   const user = { id: '11111111-1111-4111-8111-111111111111', nickname: '行者', playerCode: '123456' };
@@ -46,6 +46,7 @@ test('voice-enabled client logs in and creates the selected room without requiri
       else if (path === '/me/games') { pendingHistory = options; return; }
       else if (path === '/me' && options.method === 'PATCH') data = {user:{...user,...options.data}};
       else if (path === '/me') data = { user, roomId: null };
+      else if (path === '/rooms/join') { pendingJoin = options; return; }
       else if (path === '/rooms') { room = { id: '22222222-2222-4222-8222-222222222222', code: '123456', hostId: user.id, version: 1, phase: 'waiting', settings: options.data.settings, members: [{ ...user, seat: 1, ready: false, online: true }], acceptingNewMembers: true }; data = { room }; }
       else if (path.startsWith('/rooms/')) data = { room };
       else if (path === '/minigame/socket-ticket') data = { ticket: 'test-ticket' };
@@ -62,6 +63,8 @@ test('voice-enabled client logs in and creates the selected room without requiri
       });
     }, close() {}, onOpen(callback: () => void) { callback(); }, onMessage(callback: any) { socketMessage = callback; }, onClose() {}, onError() {} }),
     showKeyboard() {}, hideKeyboard() {}, onKeyboardConfirm(callback: any) { confirmKeyboard = callback; }, offKeyboardConfirm() {},
+    onKeyboardInput(callback: any) { inputKeyboard = callback; }, offKeyboardInput() {},
+    onKeyboardComplete(callback: any) { completeKeyboard = callback; }, offKeyboardComplete() {},
     onShow() {}, onHide() {}, onShareAppMessage() {},
     onTouchStart(callback: any) { start = callback; }, onTouchEnd(callback: any) { end = callback; },
   };
@@ -69,7 +72,11 @@ test('voice-enabled client logs in and creates the selected room without requiri
     wx, console, crypto: globalThis.crypto, clearTimeout,
     setTimeout: (callback: () => void, ms: number) => { const timer = setTimeout(callback, ms); timers.add(timer); return timer; },
   });
-  const settle = () => new Promise<void>(resolve => setImmediate(resolve));
+  const settle = async () => {
+    await new Promise<void>(resolve => setImmediate(resolve));
+    for(const callback of frameCallbacks.splice(0))callback();
+    await new Promise<void>(resolve => setImmediate(resolve));
+  };
   async function tap(label: string) {
     // Canvas text may be painted in runs to apply letter spacing and fallback-glyph widths.
     const candidates = frame.flatMap((item, index) => {
@@ -92,7 +99,7 @@ test('voice-enabled client logs in and creates the selected room without requiri
   assert.equal(requests.filter(r=>r.path==='/sessions/minigame').length,1);
   assert.equal(requests.find(r=>r.path==='/sessions/minigame')?.data.code,'verified-on-server');
   assert.equal(preferredFps[0],60);
-  const beforePaints=screenPaints;for(const callback of frameCallbacks.splice(0))callback();assert.equal(screenPaints,beforePaints+1,'home draws on the next native frame instead of waiting 42ms');
+  const beforePaints=screenPaints;for(const callback of frameCallbacks.splice(0))callback();assert.equal(screenPaints,beforePaints,'static home must not redraw on idle native frames');
   assert.ok(frame.some(item => item.text === '开常规房'));
   await tap('行者');
   painted.length = 0;
@@ -107,15 +114,29 @@ test('voice-enabled client logs in and creates the selected room without requiri
   assert.equal(requests.find(item => item.path === '/me' && item.data?.avatarUrl)?.data.avatarUrl, 'data:image/jpeg;base64,AAAA');
   await tap('‹ 返回');
   await tap('加入房间');
-  assert.ok(frame.some(item => item.text === '输入房间号或邀请链接'));
-  await tap('入座取经');
-  assert.ok(frame.some(item => item.text.includes('请输入房间号或邀请链接')));
-  await tap('请输入房间号或邀请链接'); // Dismiss the validation toast before editing.
-  await tap('输入房间号或邀请链接');
+  assert.ok(frame.some(item => item.text === '点击输入房号或粘贴邀请链接'));
+  await tap('确认加入房间');
+  assert.equal(requests.filter(r=>r.path==='/rooms/join').length,0);
+  await tap('点击输入房号或粘贴邀请链接');
   assert.equal(typeof confirmKeyboard,'function');
   confirmKeyboard({ value: '654321' }); await settle();
+  assert.ok(frame.some(item=>item.text==='654321'));
+  assert.equal(requests.filter(r=>r.path==='/rooms/join').length,0,'keyboard confirmation edits the field without submitting');
+  await tap('确认加入房间');
+  assert.equal(requests.filter(r=>r.path==='/rooms/join').length,1);
+  assert.equal(pendingJoin.data.key,'654321');
+  await tap('正在加入…');
+  assert.equal(requests.filter(r=>r.path==='/rooms/join').length,1,'pending submit cannot be sent twice');
+  pendingJoin.success({statusCode:404,data:{error:'ROOM_CLOSED'}});await settle();
+  assert.ok(frame.some(item=>item.text==='654321'),'failed join must retain the editable draft');
+  assert.ok(frame.some(item=>item.text.includes('房间已关闭')));
+  await tap('654321');
+  inputKeyboard({value:'123456'});completeKeyboard();await settle();
+  assert.ok(frame.some(item=>item.text==='123456'),'dismissed keyboard retains typed room number');
+  assert.ok(!frame.some(item=>item.text.includes('房间已关闭')),'editing clears stale room errors');
+  assert.equal(requests.filter(r=>r.path==='/rooms/join').length,1);
   await tap('‹ 返回'); await tap('加入房间');
-  assert.ok(frame.some(item => item.text === '输入房间号或邀请链接'));
+  assert.ok(frame.some(item => item.text === '点击输入房号或粘贴邀请链接'));
   await tap('‹ 返回'); await tap('🎙 远端语音房');assert.ok(frame.some(i=>i.text==='开语音房'));await tap('🏛 线下常规房');assert.ok(frame.some(i=>i.text==='开常规房'));await tap('🎙 远端语音房'); await tap('开语音房'); await tap('9');
   for (let index = 0; index < 8 && !frame.some(item => item.text === '创建游戏房间' && item.y < 790); index++) {
     start({ touches: [{ clientX: 350, clientY: 760 }] }); end({ changedTouches: [{ clientX: 350, clientY: 240 }] }); await settle();
@@ -124,6 +145,7 @@ test('voice-enabled client logs in and creates the selected room without requiri
   assert.equal(requests.find(item => item.path === '/rooms')?.data.settings.playerCount, 9);
   assert.equal(requests.find(item => item.path === '/rooms')?.data.settings.voiceChatEnabled, true);
   assert.ok(frame.some(item => item.text.includes('房号 123456')));
+  const waitingPaints=screenPaints;for(const callback of frameCallbacks.splice(0))callback();assert.equal(screenPaints,waitingPaints,'waiting room must not redraw on idle native frames');
   room = parityFixture().room; room.version = 2;
   socketMessage({data:JSON.stringify({type:'snapshot',room})}); await settle();
   await tap('1号'); await tap('2号');

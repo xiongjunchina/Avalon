@@ -1,4 +1,5 @@
 import {ScrollRasterCache} from './scroll-raster-cache.js';
+import {hasLinearScrollGeometry} from './scroll-layout-cache.js';
 import {sceneMotion} from './motion.js';
 export function strokeWithoutGold(ctx:CanvasRenderingContext2D){
  const color=ctx.strokeStyle;
@@ -142,12 +143,21 @@ function utilityFill(ctx:CanvasRenderingContext2D,n:WebNode) {
 }
 function rule(ctx: CanvasRenderingContext2D,n:WebNode,color='rgba(212,163,89,.4)') {ctx.beginPath();ctx.moveTo(n.x,n.y);ctx.lineTo(n.x+n.width,n.y);ctx.strokeStyle=color;ctx.lineWidth=1;strokeWithoutGold(ctx);}
 const glassTextures=new WeakMap<object,Map<string,HTMLCanvasElement>>();
+/** Preserve the full portrait width and its proportions on tall native screens.
+ * Extra height belongs to the sky/cloud bands, never to a horizontal crop of the faces. */
+function drawHomeArtwork(ctx:CanvasRenderingContext2D,img:CanvasImageSource & {width:number;height:number},x:number,y:number,width:number,height:number){
+ const sky=img.height*.15,portraits=img.height*.5,portraitHeight=Math.min(height,portraits*width/img.width);
+ const skyHeight=(height-portraitHeight)*.3,cloudHeight=height-skyHeight-portraitHeight;
+ if(skyHeight>0)ctx.drawImage(img,0,0,img.width,sky,x,y,width,skyHeight);
+ ctx.drawImage(img,0,sky,img.width,portraits,x,y+skyHeight,width,portraitHeight);
+ if(cloudHeight>0)ctx.drawImage(img,0,sky+portraits,img.width,img.height-sky-portraits,x,y+skyHeight+portraitHeight,width,cloudHeight);
+}
 function homeGlass(ctx:CanvasRenderingContext2D,n:WebNode,radius:number,artwork:Artwork|undefined,width:number,active=false){
  const img=artwork?.get('home/duel-mobile.jpg'),canvas=ctx.canvas,height=canvas?.height&&canvas.width?canvas.height*width/canvas.width:0;
  const factory=backdropFactory??(canvas?.ownerDocument?()=>canvas.ownerDocument.createElement('canvas'):undefined);
  let buffer:HTMLCanvasElement|undefined;
  if(img?.width&&img.height&&height&&factory){let cache=glassTextures.get(img);if(!cache){cache=new Map();glassTextures.set(img,cache);}const key=width+'x'+height;buffer=cache.get(key);
-  if(!buffer){try{const candidate=factory();candidate.width=Math.max(1,Math.round(width*.25));candidate.height=Math.max(1,Math.round(height*.25));const bc=candidate.getContext('2d');if(bc?.getImageData&&bc.putImageData){const scale=Math.max(width/img.width,height/img.height);bc.drawImage(img as CanvasImageSource,(width-img.width*scale)/2*.25,(height-img.height*scale)*.4*.25,img.width*scale*.25,img.height*scale*.25);const pixels=bc.getImageData(0,0,candidate.width,candidate.height);blurBackdrop(pixels.data,candidate.width,candidate.height);bc.putImageData(pixels,0,0);buffer=candidate;if(cache.size>=2)cache.clear();cache.set(key,buffer);}}catch{/* translucent fallback */}}
+  if(!buffer){try{const candidate=factory();candidate.width=Math.max(1,Math.round(width*.25));candidate.height=Math.max(1,Math.round(height*.25));const bc=candidate.getContext('2d');if(bc?.getImageData&&bc.putImageData){drawHomeArtwork(bc,img as CanvasImageSource & {width:number;height:number},0,0,candidate.width,candidate.height);const pixels=bc.getImageData(0,0,candidate.width,candidate.height);blurBackdrop(pixels.data,candidate.width,candidate.height);bc.putImageData(pixels,0,0);buffer=candidate;if(cache.size>=2)cache.clear();cache.set(key,buffer);}}catch{/* translucent fallback */}}
  }
  ctx.save();rect(ctx,n.x,n.y,n.width,n.height,radius);ctx.clip();if(buffer)ctx.drawImage(buffer,0,0,width,height);
  ctx.fillStyle=active?'rgba(13,64,77,.88)':'rgba(10,18,28,.86)';ctx.fillRect(n.x,n.y,n.width,n.height);ctx.fillStyle=gradient(ctx,n,['rgba(255,255,255,.09)','rgba(255,255,255,.008)'],180);ctx.fillRect(n.x,n.y,n.width,n.height);ctx.restore();
@@ -529,7 +539,7 @@ function drawDocumentNode(ctx:CanvasRenderingContext2D,n:WebNode,model:ScreenMod
   if(n.skin==='direct-message'){fill(ctx,n,n.selected?gradient(ctx,n,['#1e3a5f','#152d4b'],135):'#1e293bcc',12,n.selected?'#38bdf8':'#ffd8754d');(n.lines??[n.text]).forEach((line,i)=>write(line,n.x+13,n.y+9+9.1+i*18.2,n.width-26,13,'left',sans,'400',n.selected?'#e0f2fe':'#fff4d0'));return;}
   if(n.skin==='direct-quick-strip'){ctx.fillStyle='#141019b3';ctx.fillRect(n.x,n.y,n.width,n.height);return;}
   if(n.skin==='direct-quick'){fill(ctx,n,'#38bdf81f',24,'#38bdf84d');write(n.text,cx,cy,n.width-18,11.5,'center',sans,'400','#bae6fd');return;}
-  if(n.skin==='home-duel'){const img=artwork?.get(n.image!);if(img?.width&&img.height){const motion=sceneMotion(model.web?.animationTime??0),scale=Math.max(n.width/img.width,n.height/img.height)*motion.zoom;ctx.drawImage(img as CanvasImageSource,n.x+(n.width-img.width*scale)/2+motion.driftX,n.y+(n.height-img.height*scale)*.4,img.width*scale,img.height*scale);}return;}
+  if(n.skin==='home-duel'){const img=artwork?.get(n.image!);if(img?.width&&img.height)drawHomeArtwork(ctx,img as CanvasImageSource & {width:number;height:number},n.x,n.y,n.width,n.height);return;}
   if(n.skin==='home-copy'){ctx.save();const heading=n.id==='home-headline',promotion=n.id==='home-promotion';shadow(ctx,promotion?'#3b2a12':'#fff1c7',heading?6:4,1);const lines=n.text.split('\n'),lh=n.height/lines.length;lines.forEach((line,i)=>text(ctx,line,cx,n.y+lh*(i+.5),n.width,n.fontSize??13,heading?'#40190e':promotion?'#ffe7b2':'#172329','center',heading?calligraphy:homeInterface,'400',0,true));ctx.restore();return;}
   if(n.skin==='art-image') {image(n.image,n.x,n.y,n.width,n.height);return;}
   if(n.skin==='expedition'){fill(ctx,{...n,selected:true},gradient(ctx,n,['#281d2e','#17111d'],180),18,'#d4a359');return;}
@@ -614,7 +624,7 @@ export function navigationHitArea(n:WebNode,v:SafeViewport):WebNode{
  return {...n,x:Math.max(0,Math.min(v.width-width,n.x-(width-n.width)/2)),y:Math.max(v.top,n.y-(height-n.height)/2),width,height};
 }
 function drawNode(ctx: CanvasRenderingContext2D, n: WebNode, model: ScreenModel, viewportWidth:number, artwork?: Artwork) {
-  if(isNavigationControl(n)){const height=Math.max(38,n.height),y=n.y-(height-n.height)/2;ctx.save();shadow(ctx,'#00000080',4,2);fill(ctx,{...n,y,height},gradient(ctx,{...n,y,height},['#285063','#142c3c'],180),Math.min(12,height/2),'#b9e8f075');ctx.shadowBlur=0;const close=/关闭/.test(n.text),label=n.width<55?(close?'×':'‹'):(close?'× 关闭':n.text.startsWith('取消')?'取消':n.width<110?'‹ 返回':'‹ '+n.text.replace(/^[‹←]\s*/,''));text(ctx,label,n.x+n.width/2,y+height/2,n.width-10,n.width<55?23:13,'#f2fbff','center',sans,'700');ctx.restore();return;}
+  if(isNavigationControl(n)){ctx.save();shadow(ctx,'#00000080',4,2);fill(ctx,n,gradient(ctx,n,['#285063','#142c3c'],180),Math.min(12,n.height/2),'#b9e8f075');ctx.shadowBlur=0;const close=/关闭/.test(n.text),label=n.width<55?(close?'×':'‹'):(close?'× 关闭':n.text.startsWith('取消')?'取消':n.width<110?'‹ 返回':'‹ '+n.text.replace(/^[‹←]\s*/,''));text(ctx,label,n.x+n.width/2,n.y+n.height/2,n.width-10,n.width<55?Math.min(23,n.height*.75):13,'#f2fbff','center',sans,'700');ctx.restore();return;}
   if(n.skin){drawDocumentNode(ctx,n,model,artwork);return;}
   const cx = n.x + n.width / 2, cy = n.y + n.height / 2;
   if (n.kind === 'metric') {
@@ -859,7 +869,7 @@ function drawNode(ctx: CanvasRenderingContext2D, n: WebNode, model: ScreenModel,
     else if(!n.muted&&!(home&&n.id.startsWith('mode:'))){shadow(ctx);fill(ctx,n,color,radius,primary&&home?'#f5dfa8':n.selected?'#f5dfa8':webTheme.border);ctx.shadowBlur=0;ctx.shadowOffsetY=0;if(!n.fixed&&n.badge!=='table-toolbar')edge(ctx,n,radius);}
     if(home&&n.id.startsWith('mode:')&&n.selected){homeGlass(ctx,n,16,artwork,viewportWidth,true);}
     if(home&&n.id==='friends'&&n.count){text(ctx,'👥 仙友',cx-7,cy,n.width-25,13,'#fff3d6','center',homeInterface,'400');circle(ctx,n.x+n.width-14,cy,8,'#dc2626','#f87171');text(ctx,String(Math.min(n.count,99)),n.x+n.width-14,cy,15,11,'#fff','center',sans,'700');ctx.restore();return;}
-    if(n.id==='sound'){const enabled=!!(model.web?.soundPreferences?.music||model.web?.soundPreferences?.effects);soundIcon(ctx,home&&n.width>50?n.x+15:cx,cy,!enabled);if(home&&n.width>50)text(ctx,enabled?'声音已开':'已静音',n.x+46,cy,48,11,'#fff3d6','center',homeInterface,'400');ctx.restore();return;}
+    if(n.id==='sound'){const enabled=!!(model.web?.soundPreferences?.music||model.web?.soundPreferences?.effects);soundIcon(ctx,cx,cy,!enabled);ctx.restore();return;}
     if(table&&(n.fixed||n.badge==='table-toolbar')&&['leave','exitPractice'].includes(n.id)){ctx.save();ctx.translate(n.x+1,n.y+1);ctx.strokeStyle='#ffd875';ctx.lineWidth=2;ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();ctx.moveTo(9,14);ctx.lineTo(5,10);ctx.lineTo(9,6);ctx.moveTo(5,10);ctx.lineTo(16,10);ctx.bezierCurveTo(22,10,22,18,16,18);strokeWithoutGold(ctx);ctx.restore();ctx.restore();return;}
     if(n.id==='copyRoom'){
       circle(ctx,n.x+8,n.y+8,3,'#22c55e','#22c55e');text(ctx,n.text,n.x+14,n.y+8,n.width-16,11,webTheme.accent,'left',sans,'700');text(ctx,n.detail??'',n.x+5,n.y+20,n.width-6,8,webTheme.muted,'left');ctx.restore();return;
@@ -886,7 +896,7 @@ export function configureDocumentMetrics(canvas:HTMLCanvasElement){
  const ctx=canvas.getContext('2d');if(!ctx)return;
  setDocumentTextMeasurer((value,size,face='sans',weight='400')=>{value=value.replace(/[\ufe0e\ufe0f]/g,'');const weightKey=String(Math.min(700,Math.max(400,Math.round(Number(weight)/100)*100))),family=face==='mono'?'monospace':face==='home'?homeInterface:face==='system'?cnSans:nativeSans?(sansWeights[weightKey]??sans):sans,renderWeight=nativeSans&&face!=='mono'&&face!=='system'?'400':weight;const key=family+'|'+renderWeight+'|'+size+'|'+value,cached=documentWidths.get(key);if(cached!==undefined)return cached;ctx.save();ctx.font=renderWeight+' '+size+'px '+family;const width=inlineWidth(ctx,value,size,face!=='mono'&&face!=='system');ctx.restore();if(documentWidths.size>8192)documentWidths.clear();documentWidths.set(key,width);return width;});
 }
-const guideRasters=new WeakMap<HTMLCanvasElement,ScrollRasterCache>();
+const bodyRasters=new WeakMap<HTMLCanvasElement,{key:string;layers:ScrollRasterCache[]}>();
 export function renderWebScreen(model: ScreenModel, canvas: HTMLCanvasElement, v: SafeViewport, artwork?: Artwork, preparedLayout?: WebLayout): HitRegion[] {
   const ctx = canvas.getContext('2d'); if (!ctx) throw new Error('Canvas 2D is unavailable');
   ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
@@ -911,23 +921,46 @@ export function renderWebScreen(model: ScreenModel, canvas: HTMLCanvasElement, v
   // Match the setup screen's own CSS surface, leaving other scenes unchanged.
   if(!modal&&model.web!.page==='setup'){ctx.fillStyle='#0c1f3378';ctx.fillRect(0,0,v.width,v.height);}
   const layout = preparedLayout ?? layoutWebScreen(model, v);
-  const guide=!modal&&['guide','guide-role'].includes(model.web!.document?.kind??'');
-  let rasterized=false;
-  if(guide){
-    const factory=backdropFactory??(canvas.ownerDocument?()=>canvas.ownerDocument.createElement('canvas'):undefined);
-    if(factory){let raster=guideRasters.get(canvas);if(!raster){raster=new ScrollRasterCache();guideRasters.set(canvas,raster);}
-      const key=JSON.stringify([model.web!.document,model.rows,fontRevision,artwork?.revision??0]);
-      rasterized=raster.draw(ctx,{key,width:v.width,ratio:Math.max(1,canvas.width/v.width),scroll:Math.max(0,Math.min(model.scroll??0,layout.maxScroll)),top:layout.contentTop,bottom:layout.contentBottom,nodes:layout.nodes.filter(n=>!n.fixed),factory,paint:(c,n)=>drawNode(c,n,model,v.width,artwork)});
-    }
-  }else{guideRasters.get(canvas)?.clear();}
-  for (const node of [...layout.nodes.filter(item => item.fixed && item.id === 'dialog-frame'), ...layout.nodes.filter(item => !item.fixed), ...layout.nodes.filter(item => item.fixed && item.kind === 'panel' && item.id !== 'dialog-frame'), ...layout.nodes.filter(item => item.fixed && item.kind !== 'panel')]) {
-    if(rasterized&&!node.fixed)continue;
+  const moving=layout.nodes.filter(n=>!n.fixed);
+  const factory=backdropFactory??(canvas.ownerDocument?()=>canvas.ownerDocument.createElement('canvas'):undefined);
+  // Preserve individual clipping and sticky headers on non-linear surfaces via direct painting.
+  const cacheable=!!factory&&hasLinearScrollGeometry(model)&&moving.every(n=>(n.clipTop??layout.contentTop)===layout.contentTop&&(n.clipBottom??layout.contentBottom)===layout.contentBottom);
+  let cached=bodyRasters.get(canvas);
+  if(cacheable){
+    const {scroll:_scroll,web,...content}=model;
+    const {animationTime:_time,...webContent}=web!;
+    const key=JSON.stringify([content,webContent,v,fontRevision,artwork?.revision??0]);
+    if(!cached||cached.key!==key){cached?.layers.forEach(layer=>layer.clear());cached={key,layers:[]};bodyRasters.set(canvas,cached);}
+  }else{cached?.layers.forEach(layer=>layer.clear());bodyRasters.delete(canvas);}
+  const paintVisible=(node:WebNode)=>{
     // Clipping alone still issues all text/image draw calls for long documents.
-    if (node.y + node.height < (node.clipTop ?? v.top) - 24 || node.y > (node.clipBottom ?? v.height-v.bottom) + 24) continue;
+    if (node.y + node.height < (node.clipTop ?? v.top) - 24 || node.y > (node.clipBottom ?? v.height-v.bottom) + 24) return;
     ctx.save();
     if (!node.fixed || node.clipLeft!==undefined || node.clipRight!==undefined) { ctx.beginPath(); ctx.rect(node.clipLeft??0, node.clipTop ?? (node.fixed?v.top:layout.contentTop), (node.clipRight??v.width)-(node.clipLeft??0), (node.clipBottom ?? (node.fixed?v.height-v.bottom:layout.contentBottom)) - (node.clipTop ?? (node.fixed?v.top:layout.contentTop))); ctx.clip(); }
     drawNode(ctx, node, model, v.width, artwork); ctx.restore();
-  }
+  };
+  // A modal frame belongs behind its body; fixed headers/footers remain above the raster.
+  layout.nodes.filter(n=>n.fixed&&n.id==='dialog-frame').forEach(paintVisible);
+  let layerIndex=0,pending:WebNode[]=[];
+  const paintBody=()=>{
+    if(!pending.length)return;
+    let rasterized=false;
+    if(cacheable&&cached){
+      const layer=cached.layers[layerIndex]??(cached.layers[layerIndex]=new ScrollRasterCache());
+      rasterized=layer.draw(ctx,{key:cached.key+'|'+layerIndex,width:v.width,ratio:Math.max(1,canvas.width/v.width),scroll:Math.max(0,Math.min(model.scroll??0,layout.maxScroll)),top:layout.contentTop,bottom:layout.contentBottom,nodes:pending,factory,paint:(c,n)=>{
+        c.save();
+        if(n.clipLeft!==undefined||n.clipRight!==undefined){c.beginPath();c.rect(n.clipLeft??0,n.y-24,(n.clipRight??v.width)-(n.clipLeft??0),n.height+48);c.clip();}
+        drawNode(c,n,model,v.width,artwork);c.restore();
+      }});
+    }
+    if(!rasterized)pending.forEach(paintVisible);
+    pending=[];layerIndex++;
+  };
+  // Only the altar changes over time; do not repaint every seat and action around it.
+  for(const node of moving){if(node.kind==='altar'){paintBody();paintVisible(node);}else pending.push(node);}
+  paintBody();
+  layout.nodes.filter(n=>n.fixed&&n.kind==='panel'&&n.id!=='dialog-frame').forEach(paintVisible);
+  layout.nodes.filter(n=>n.fixed&&n.kind!=='panel').forEach(paintVisible);
   // Web mobile surfaces scroll by touch without a persistent decorative scrollbar.
   // Reverse paint order so a toast or fixed dock owns the tap instead of a covered seat.
   if(model.web!.document)return [...layout.nodes.filter(n=>!n.disabled&&['button','choice','tab'].includes(n.kind)&&n.y+n.height>(n.clipTop??v.top)&&n.y<(n.clipBottom??v.height-v.bottom)).reverse().sort((a,b)=>Number(Boolean(b.fixed))-Number(Boolean(a.fixed))),...layout.nodes.filter(n=>n.kind==='hitbox')].map(n=>navigationHitArea(n,v));

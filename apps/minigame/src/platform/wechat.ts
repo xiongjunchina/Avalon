@@ -56,8 +56,10 @@ export interface WxRuntime extends NativeVoiceRuntime, PrivacyRuntime, ProfileRu
   hideKeyboard?(): void;
   onKeyboardConfirm?(callback: (event: { value: string }) => void): void;
   offKeyboardConfirm?(callback: (event: { value: string }) => void): void;
-  onKeyboardComplete?(callback: () => void): void;
-  offKeyboardComplete?(callback: () => void): void;
+  onKeyboardComplete?(callback: (event?: { value?: string }) => void): void;
+  offKeyboardComplete?(callback: (event?: { value?: string }) => void): void;
+  onKeyboardInput?(callback: (event: { value: string }) => void): void;
+  offKeyboardInput?(callback: (event: { value: string }) => void): void;
   onTouchStart?(callback: (event: { touches: { clientX: number; clientY: number }[] }) => void): void;
   onTouchMove?(callback: (event: { touches: { clientX: number; clientY: number }[] }) => void): void;
   onTouchCancel?(callback: () => void): void;

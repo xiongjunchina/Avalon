@@ -74,7 +74,7 @@ export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout 
     add('label','home-duel','',0,0,w,v.height,{skin:'home-duel',image:'home/duel-mobile.jpg',clipTop:0,clipBottom:v.height});
     const avatarW=Math.min(122,Math.max(74,50+(web.user?.nickname.length??4)*12));
     add('button',web.user?'account':'loginOpen',web.user?.nickname??'游客浏览',homePad,top,avatarW,toolbarH,{fixed:true,badge:'home-avatar',image:web.user?.avatarUrl??web.user?.wechatAvatarUrl??'emblems/'+(web.user?.avatar??'cards')+'.png'});
-    const soundW=web.user&&w<=380?36:74,friendW=w<=380?65:80,switchW=w<=380?53:61.2,toolsW=web.user?friendW+soundW+switchW+12:soundW;
+    const soundW=toolbarH,friendW=w<=380?65:80,switchW=w<=380?53:61.2,toolsW=web.user?friendW+soundW+switchW+12:soundW;
     let toolX=w-homePad-toolsW;
     for(const [id,title,width] of (web.user?[['friends','👥 仙友',friendW],['sound',web.soundPreferences?.music||web.soundPreferences?.effects?'声音已开':'已静音',soundW],['switch','🚪 换号',switchW]]:[['sound',web.soundPreferences?.music||web.soundPreferences?.effects?'声音已开':'已静音',soundW]]) as [string,string,number][]){add('button',id,title,toolX,top,width,toolbarH,{fixed:true,fontSize:13,count:id==='friends'?web.friendRequests:undefined});toolX+=width+6;}
     const logoSize=compact?28:cssClamp(28,w*.088,36),logoH=logoSize*1.2,subSize=compact?11:cssClamp(11,w*.033,14);

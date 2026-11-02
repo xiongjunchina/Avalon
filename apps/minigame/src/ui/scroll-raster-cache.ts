@@ -4,7 +4,7 @@ import type {WebNode} from './web-layout.js';
 export class ScrollRasterCache {
  private key='';private tiles=new Map<number,HTMLCanvasElement>();
  draw(target:CanvasRenderingContext2D,options:{key:string;width:number;ratio:number;scroll:number;top:number;bottom:number;nodes:WebNode[];factory:()=>HTMLCanvasElement;paint:(ctx:CanvasRenderingContext2D,node:WebNode)=>void}){
-  const {width,ratio,scroll,top,bottom,nodes,factory,paint}=options,height=256,bleed=12;
+  const {width,ratio,scroll,top,bottom,nodes,factory,paint}=options,height=256,bleed=32;
   const key=options.key+'|'+width+'|'+ratio;
   if(key!==this.key){this.clear();this.key=key;}
   const first=Math.max(0,Math.floor((top+scroll)/height)),last=Math.floor((bottom+scroll-1)/height);

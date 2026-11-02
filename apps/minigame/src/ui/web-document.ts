@@ -6,7 +6,9 @@ export interface WebDocument {
   settingChoice?:{id:string;key:"captainMode"|"rejectionScope"|"voiceChatEnabled";value:string};
   noticeKind?:'mirror'|'bell'|'jingu';
   remainingSeconds?:number;
-  kind: 'abort-confirm' | 'guanyin-window' | 'private-notice' | 'admin-friends' | 'code-editor' | 'auth' | 'special-editor' | 'sound' | 'preferences' | 'identity' | 'vote' | 'treasures' | 'report' | 'history' | 'art' | 'confirm' | 'tools' | 'account' | 'presets' | 'friends' | 'chat' | 'guide' | 'guide-role' | 'admin' | 'replay' | 'settings';
+  kind: 'join' | 'abort-confirm' | 'guanyin-window' | 'private-notice' | 'admin-friends' | 'code-editor' | 'auth' | 'special-editor' | 'sound' | 'preferences' | 'identity' | 'vote' | 'treasures' | 'report' | 'history' | 'art' | 'confirm' | 'tools' | 'account' | 'presets' | 'friends' | 'chat' | 'guide' | 'guide-role' | 'admin' | 'replay' | 'settings';
+  joinDraft?: string;
+  joinSubmitting?: boolean;
   playerCodeEditor?:{user:AdminUserSummary;code:string;currentCode:string;check?:PlayerCodeAvailability;history:PlayerCodeAllocation[];expanded:boolean;notice:string};
   specialDraft?:{id?:string;code:string;name:string;managerCode:string;settings:Settings;password?:string|null};
   adminOverview?: AdminOverview;

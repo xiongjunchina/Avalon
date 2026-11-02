@@ -15,6 +15,7 @@ export { PlayerPanel } from './apps/minigame/src/screens/player-panel.ts';
 export { parityFixture, parityPlayerData, parityAdminData, parityAdminReplay } from './apps/minigame/scripts/parity-fixture.ts';
 export { renderScreen } from './apps/minigame/src/ui/widgets.ts';
 export { entryScreen } from './apps/minigame/src/screens/entry.ts';
+export { joinScreen } from './apps/minigame/src/screens/join.ts';
 export { lobbyScreen } from './apps/minigame/src/screens/lobby.ts';
 export { guideScreen } from './apps/minigame/src/screens/guide.ts';
 export { abortConfirmation } from './apps/minigame/src/screens/abort-confirm.ts';
@@ -24,7 +25,7 @@ export { adminOverviewScreen } from './apps/minigame/src/screens/admin/views.ts'
 export { PracticeSession } from './apps/minigame/src/screens/practice.ts';
 export { settingsScreen } from './apps/minigame/src/screens/settings.ts';
 export { defaultSettings } from './packages/contracts/src/index.ts';
-`, resolveDir: root }, bundle: true, format: 'iife', globalName: 'AvalonPreview', write: false });
+`, resolveDir: root }, bundle: true, format: 'iife', globalName: 'AvalonPreview', define:{__MINIGAME_VOICE_ENABLED__:JSON.stringify(process.env.WECHAT_MINIGAME_VOICE_ENABLED!=='false')}, write: false });
 const assets = {};
 const packageRoot=join(root,'dist/minigame');
 for(const folder of ['scenes','roles','avatars'])for(const name of await readdir(join(packageRoot,'art',folder))){
@@ -67,6 +68,7 @@ try {
         if (scene === 'guest') {model=app.entryScreen(undefined,undefined,true);model.web.authIntent='create';}
         if (scene === 'setup') model = { ...app.settingsScreen(app.defaultSettings), web: { page: 'setup', settings: app.defaultSettings } };
         if (scene === 'entry') model = { ...app.entryScreen(user),web:{...app.entryScreen(user).web,friendRequests:1}, scene: 'entry' };
+        if (scene === 'join' || scene === 'join-error') { model=app.joinScreen(user,'654321');if(scene==='join-error')model.rows.unshift({id:'error',text:'房间已关闭，请重新创建或加入其他房间。'}); }
         if (scene === 'lobby') model = { ...app.lobbyScreen({...parityRoom,members:sparseLobby?parityRoom.members.slice(0,1):parityRoom.members,game:undefined,phase:'waiting'}, user, '已连接'), scene: 'game' };
         if (['guanyin-window','private-notice','game','identity','vote','vote-submitted','mission','mission-submitted','report','result','art','treasures','battle'].includes(scene)) {
           const overlay=scene==='guanyin-window'?'guanyin-window':scene==='private-notice'?'private-notice':['identity','art','treasures'].includes(scene)?scene:scene.startsWith('vote')?'vote':scene==='report'?'report':scene==='battle'?'history':undefined;
