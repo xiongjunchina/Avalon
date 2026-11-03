@@ -8,6 +8,58 @@ import {spawnSync} from 'node:child_process';
 
 const script=fileURLToPath(new URL('../install-content-safety-ecs.sh',import.meta.url));
 const revision='a'.repeat(40);
+// A real controlling terminal catches buffered r+ opens of /dev/tty that mocks miss.
+const terminalDriver=String.raw`
+import errno, json, os, pty, select, signal, subprocess, sys, termios, time
+mode, script, root = sys.argv[1:4]
+command = ['bash', script, '--root', root, 'prepare']
+if mode == 'no-tty':
+    result = subprocess.run(command, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE, start_new_session=True, timeout=20)
+    print(json.dumps({'status':result.returncode,'stdout':result.stdout.decode(errors='replace'),
+                      'stderr':result.stderr.decode(errors='replace')}))
+    sys.exit(0)
+answers = json.loads(os.environ['MOCK_TERMINAL_ANSWERS'])
+pid, master = pty.fork()
+if pid == 0:
+    os.execvpe(command[0], command, os.environ)
+output = bytearray()
+sent = 0
+hidden = []
+status = None
+deadline = time.monotonic() + 20
+prompts = [b'AccessKey ID', b'AccessKey Secret']
+try:
+    while time.monotonic() < deadline:
+        if select.select([master], [], [], 0.1)[0]:
+            try:
+                chunk = os.read(master, 8192)
+            except OSError as error:
+                if error.errno == errno.EIO:
+                    break
+                raise
+            if not chunk:
+                break
+            output.extend(chunk)
+            if sent < len(prompts) and prompts[sent] in output:
+                hidden.append(not bool(termios.tcgetattr(master)[3] & termios.ECHO))
+                os.write(master, answers[sent].encode() + b'\n')
+                sent += 1
+        done, code = os.waitpid(pid, os.WNOHANG)
+        if done:
+            status = code
+            break
+    if status is None:
+        done, status = os.waitpid(pid, os.WNOHANG)
+        if not done:
+            os.kill(pid, signal.SIGKILL)
+            _, status = os.waitpid(pid, 0)
+    exit_code = os.WEXITSTATUS(status) if os.WIFEXITED(status) else -os.WTERMSIG(status)
+finally:
+    os.close(master)
+print(json.dumps({'status':exit_code,'stdout':output.decode(errors='replace'),'stderr':'',
+                  'hidden':hidden,'sent':sent}))
+`;
 const tool=`#!/usr/bin/env node
 const fs=require('node:fs'),path=require('node:path');
 const name=path.basename(process.argv[1]),args=process.argv.slice(2),dir=process.env.MOCK_ROOT;
@@ -82,7 +134,16 @@ function fixture(t,{active=true,mafiaActive=true,mafiaProject='mafia-deploy-ecs'
  const stateDir=()=>readFileSync(join(dir,'deploy/runtime/content-safety-current'),'utf8').trim();
  const state=()=>JSON.parse(readFileSync(join(stateDir(),'state.json'),'utf8'));
  const timers=()=>JSON.parse(readFileSync(join(dir,'timers.json'),'utf8'));
- return{dir,original,execute,commands,stateDir,state,timers,rows};
+ const terminal=(mode='tty',answers=['testInteractiveId','private-interactive-secret'])=>{
+  const result=spawnSync('python3',['-c',terminalDriver,mode,script,dir],{encoding:'utf8',timeout:25_000,
+   env:{...process.env,PATH:join(dir,'bin')+':'+process.env.PATH,MOCK_ROOT:dir,MOCK_REVISION:revision,MOCK_TERMINAL_ANSWERS:JSON.stringify(answers)}});
+  assert.equal(result.status,0,result.stderr);
+  const observed=JSON.parse(result.stdout);
+  for(const secret of ['testInteractiveId','private-interactive-secret','private-wx-secret','private-ali-secret'])
+   assert.ok(!String(observed.stdout+observed.stderr).includes(secret),'secret must not echo in the real terminal');
+  return observed;
+ };
+ return{dir,original,execute,commands,stateDir,state,timers,rows,terminal};
 }
 
 test('prepare works without new server source, keeps private config and does not stop containers',t=>{
@@ -94,6 +155,56 @@ test('prepare works without new server source, keeps private config and does not
  assert.deepEqual(f.timers(),{'avalon-auto-update.timer':false,'mafia-auto-update.timer':false});
  assert.ok(!f.commands().some(c=>c.tool==='docker'&&(c.args.includes('up')||c.args.includes('stop')||c.args.includes('build'))));
  const again=f.execute('prepare');assert.notEqual(again.status,0);assert.equal(f.state().phase,'prepared','second prepare must not destroy original baseline');
+});
+
+test('a real terminal accepts hidden AccessKey input without treating the device as a seekable file',{skip:process.platform==='win32'},t=>{
+ const f=fixture(t),result=f.terminal();
+ assert.equal(result.status,0,result.stdout+result.stderr);
+ assert.equal(result.sent,2);assert.deepEqual(result.hidden,[true,true]);
+ assert.equal(f.state().phase,'prepared');
+ const next=readFileSync(join(f.stateDir(),'.env.next'),'utf8');
+ assert.match(next,/ALIYUN_CONTENT_ACCESS_KEY_ID='testInteractiveId'/);
+ assert.match(next,/ALIYUN_CONTENT_ACCESS_KEY_SECRET='private-interactive-secret'/);
+ assert.equal(readFileSync(join(f.dir,'deploy/.env.ecs'),'utf8'),f.original);
+ assert.ok(!f.commands().some(c=>c.tool==='docker'&&c.args[0]==='compose'));
+});
+
+for(const mode of ['no-tty','empty-input'])test(mode+' is rejected before changing timers, configuration or release state',{skip:process.platform==='win32'},t=>{
+ const f=fixture(t),result=mode==='no-tty'?f.terminal('no-tty'):f.terminal('tty',['','']);
+ assert.notEqual(result.status,0);
+ assert.equal(readFileSync(join(f.dir,'deploy/.env.ecs'),'utf8'),f.original);
+ assert.deepEqual(f.timers(),{'avalon-auto-update.timer':true,'mafia-auto-update.timer':true});
+ assert.equal(existsSync(join(f.dir,'deploy/runtime/content-safety-current')),false);
+ assert.ok(!f.commands().some(c=>(c.tool==='docker'&&c.args[0]==='compose')||(c.tool==='systemctl'&&['start','stop'].includes(c.args[0]))));
+});
+
+function oldFailedPrepare(f){
+ assert.equal(f.execute('prepare').status,0);
+ const directory=f.stateDir(),state=f.state();
+ state.phase='failed';state.switchStarted=false;
+ writeFileSync(join(directory,'state.json'),JSON.stringify(state));
+ writeFileSync(join(f.dir,'timers.json'),JSON.stringify({'avalon-auto-update.timer':false,'mafia-auto-update.timer':true}));
+ return directory;
+}
+
+test('retrying an old failed prepare retains the original active timer state and restores it after cutover',t=>{
+ const f=fixture(t),directory=oldFailedPrepare(f);
+ const result=f.execute('prepare');assert.equal(result.status,0,result.stderr);
+ assert.equal(f.stateDir(),directory,'reuse the original protected baseline instead of recording the paused timer as original');
+ assert.equal(f.state().timers['avalon-auto-update.timer'].active,true);
+ assert.equal(f.state().timers['mafia-auto-update.timer'].active,true);
+ const release=f.execute('cutover');assert.equal(release.status,0,release.stderr);
+ assert.deepEqual(f.timers(),{'avalon-auto-update.timer':true,'mafia-auto-update.timer':true});
+});
+
+for(const changed of ['configuration','container'])test('failed prepare retry refuses a changed '+changed+' baseline',t=>{
+ const f=fixture(t),directory=oldFailedPrepare(f);
+ if(changed==='configuration')writeFileSync(join(f.dir,'deploy/.env.ecs'),f.original+'# changed after failure\n');
+ else writeFileSync(join(f.dir,'containers.json'),JSON.stringify(f.rows.map(row=>row.service==='server'&&row.project==='avalon-ecs'?{...row,id:'different-server'}:row)));
+ const before=f.commands().length,result=f.execute('prepare');assert.notEqual(result.status,0);
+ assert.equal(f.stateDir(),directory);assert.equal(f.state().phase,'failed');
+ assert.deepEqual(f.timers(),{'avalon-auto-update.timer':false,'mafia-auto-update.timer':true});
+ assert.ok(!f.commands().slice(before).some(c=>(c.tool==='docker'&&c.args[0]==='compose')||(c.tool==='systemctl'&&['start','stop'].includes(c.args[0]))));
 });
 
 test('explicit Mafia project selects the requested database even when a default candidate also exists',t=>{

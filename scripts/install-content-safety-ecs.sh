@@ -210,6 +210,39 @@ def verify():
         'otherContainerBaselinesUnchanged': True, 'realDeviceAndVoice': 'NOT_TESTED'}) + '\n')
     print('HTTPS、内容安全健康及其他容器基线验证通过；手机游戏/真实语音仍需人工验收。')
 
+def read_credentials(values):
+    allowed = {'ALIYUN_CONTENT_ACCESS_KEY_ID', 'ALIYUN_CONTENT_ACCESS_KEY_SECRET', 'ALIYUN_CONTENT_SECURITY_TOKEN',
+               'ALIYUN_CONTENT_REGION', 'ALIYUN_CONTENT_ENDPOINT', 'ALIYUN_CONTENT_NICKNAME_SERVICE',
+               'ALIYUN_CONTENT_CHAT_SERVICE', 'ALIYUN_CONTENT_IMAGE_SERVICE'}
+    if args.config_file:
+        private_file = Path(args.config_file)
+        require(private_file.is_file() and private_file.stat().st_mode & 0o077 == 0,
+                '--config-file 必须是只有当前用户可访问的私有 JSON 文件（chmod 600）。')
+        try:
+            credentials = json.loads(private_file.read_text())
+        except ValueError:
+            raise ReleaseError('私有 JSON 配置格式错误；未输出内容。') from None
+        require(isinstance(credentials, dict) and set(credentials).issubset(allowed), '私有 JSON 只允许 ALIYUN_CONTENT_* 指定字段。')
+    else:
+        credentials = {key: values[key] for key in allowed if values.get(key)}
+        # getpass opens the controlling terminal without requiring it to be seekable.
+        # Never fall back to echoed stdin when Workbench has no usable TTY.
+        with warnings.catch_warnings():
+            warnings.simplefilter('error', getpass.GetPassWarning)
+            for key, prompt in [('ALIYUN_CONTENT_ACCESS_KEY_ID', '专用 RAM AccessKey ID（隐藏输入）：'),
+                                ('ALIYUN_CONTENT_ACCESS_KEY_SECRET', '专用 RAM AccessKey Secret（隐藏输入）：')]:
+                if not credentials.get(key):
+                    try:
+                        credentials[key] = getpass.getpass(prompt)
+                    except (OSError, EOFError, getpass.GetPassWarning):
+                        raise ReleaseError('无法安全隐藏输入，请提供 --config-file 私有 JSON；未修改定时器或配置。') from None
+    require(all(isinstance(v, str) and v and re.fullmatch(r'[\x21-\x7e]+', v) for v in credentials.values()),
+            '阿里云私有配置必须是非空 ASCII 单行字符串。可选空字段请省略。')
+    require(credentials.get('ALIYUN_CONTENT_ACCESS_KEY_ID') and credentials.get('ALIYUN_CONTENT_ACCESS_KEY_SECRET'), '缺少专用 RAM AccessKey。')
+    require(values.get('WECHAT_MINIGAME_APP_ID') == 'wxdb4e422c14adab3f' and values.get('WECHAT_MINIGAME_APP_SECRET'),
+            '原私有配置缺少正确 AppID/AppSecret；本脚本不会猜测或覆盖微信凭据。')
+    return credentials
+
 def prepare():
     global state, state_dir, state_owned
     require(env_path.is_file(), '找不到 deploy/.env.ecs。')
@@ -224,17 +257,34 @@ def prepare():
     mafia = [r for r in records if r['service'] == 'postgres' and
              (r['project'] == args.mafia_project if args.mafia_project else re.fullmatch(r'mafia(?:-ecs|-deploy-ecs)?', r['project']))]
     require(len(mafia) == 1, '无法唯一定位 Mafia 数据库，请核实后填写 --mafia-project；不会猜测或跳过备份。')
-    stamp = datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%SZ')
-    state_dir = runtime / ('content-safety-' + stamp)
-    state_dir.mkdir(mode=0o700)
-    state = {'version': 1, 'phase': 'preparing', 'project': project, 'preparedRevision': head(),
-             'containers': records, 'postgres': postgres['id'], 'mafiaPostgres': mafia[0]['id'],
-             'rollbackImages': {}, 'timers': {}, 'switchStarted': False}
+    # Read and validate credentials before pausing any timer or creating release state.
+    credentials = read_credentials(values)
+    if state is not None:
+        # A pre-switch preparation failure may already have paused Avalon. Reuse its
+        # original timer snapshot instead of mistaking the paused state for the baseline.
+        require(state.get('phase') == 'failed' and not state.get('switchStarted') and not state.get('targetRevision'),
+                '只有尚未开始切换的准备失败记录可直接重试。')
+        require(state['project'] == project and {r['id']: r for r in state['containers']} == {r['id']: r for r in records},
+                '准备失败后容器基线已改变，请先核实旧发布记录，不覆盖原始状态。')
+        for source, name in [(env_path, '.env.backup'), (root / 'deploy/compose.yaml', 'compose.yaml'),
+                             (root / 'deploy/compose.portal.yaml', 'compose.portal.yaml')]:
+            backup = state_dir / name
+            require(not backup.exists() or backup.read_bytes() == source.read_bytes(),
+                    '准备失败后配置已改变，请核实原始备份后再继续。')
+        state['phase'] = 'preparing'
+    else:
+        stamp = datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%SZ')
+        state_dir = runtime / ('content-safety-' + stamp)
+        state_dir.mkdir(mode=0o700)
+        state = {'version': 1, 'phase': 'preparing', 'project': project, 'preparedRevision': head(),
+                 'containers': records, 'postgres': postgres['id'], 'mafiaPostgres': mafia[0]['id'],
+                 'rollbackImages': {}, 'timers': {}, 'switchStarted': False}
+        save(runtime / 'content-safety-current', str(state_dir) + '\n')
     state_owned = True
-    save(runtime / 'content-safety-current', str(state_dir) + '\n')
     save_state()
     for timer in ['avalon-auto-update.timer', 'mafia-auto-update.timer']:
-        state['timers'][timer] = timer_state(timer)
+        if timer not in state['timers']:
+            state['timers'][timer] = timer_state(timer)
         save_state()
         if state['timers'][timer]['enabled'] != 'not-found':
             run(['systemctl', 'stop', timer], label='暂停自动更新定时器')
@@ -245,35 +295,6 @@ def prepare():
     for source, destination in [(env_path, '.env.backup'), (root / 'deploy/compose.yaml', 'compose.yaml'),
                                 (root / 'deploy/compose.portal.yaml', 'compose.portal.yaml')]:
         save(state_dir / destination, source.read_bytes(), binary=True)
-    allowed = {'ALIYUN_CONTENT_ACCESS_KEY_ID', 'ALIYUN_CONTENT_ACCESS_KEY_SECRET', 'ALIYUN_CONTENT_SECURITY_TOKEN',
-               'ALIYUN_CONTENT_REGION', 'ALIYUN_CONTENT_ENDPOINT', 'ALIYUN_CONTENT_NICKNAME_SERVICE',
-               'ALIYUN_CONTENT_CHAT_SERVICE', 'ALIYUN_CONTENT_IMAGE_SERVICE'}
-    if args.config_file:
-        private_file = Path(args.config_file)
-        require(private_file.is_file() and private_file.stat().st_mode & 0o077 == 0,
-                '--config-file 必须是只有当前用户可访问的私有 JSON 文件（chmod 600）。')
-        try:
-            credentials = json.loads(private_file.read_text())
-        except ValueError:
-            raise ReleaseError('私有 JSON 配置格式错误；未输出内容。') from None
-        require(isinstance(credentials, dict) and set(credentials).issubset(allowed), '私有 JSON 只允许 ALIYUN_CONTENT_* 指定字段。')
-    else:
-        try:
-            with open('/dev/tty', 'r+'):
-                pass
-        except OSError:
-            raise ReleaseError('无交互终端，请提供 --config-file 私有 JSON。') from None
-        warnings.simplefilter('error', getpass.GetPassWarning)
-        credentials = {key: values[key] for key in allowed if values.get(key)}
-        for key, prompt in [('ALIYUN_CONTENT_ACCESS_KEY_ID', '专用 RAM AccessKey ID（隐藏输入）：'),
-                            ('ALIYUN_CONTENT_ACCESS_KEY_SECRET', '专用 RAM AccessKey Secret（隐藏输入）：')]:
-            if not credentials.get(key):
-                credentials[key] = getpass.getpass(prompt)
-    require(all(isinstance(v, str) and v and re.fullmatch(r'[\x21-\x7e]+', v) for v in credentials.values()),
-            '阿里云私有配置必须是非空 ASCII 单行字符串。可选空字段请省略。')
-    require(credentials.get('ALIYUN_CONTENT_ACCESS_KEY_ID') and credentials.get('ALIYUN_CONTENT_ACCESS_KEY_SECRET'), '缺少专用 RAM AccessKey。')
-    require(values.get('WECHAT_MINIGAME_APP_ID') == 'wxdb4e422c14adab3f' and values.get('WECHAT_MINIGAME_APP_SECRET'),
-            '原私有配置缺少正确 AppID/AppSecret；本脚本不会猜测或覆盖微信凭据。')
     changes = {'ALIYUN_CONTENT_REGION': 'cn-shanghai', 'ALIYUN_CONTENT_NICKNAME_SERVICE': 'nickname_detection_pro',
                'ALIYUN_CONTENT_CHAT_SERVICE': 'comment_detection_pro', 'ALIYUN_CONTENT_IMAGE_SERVICE': 'profilePhotoCheck',
                **credentials, 'CONTENT_SAFETY_ENABLED': 'true', 'CONTENT_SAFETY_MAINTENANCE': 'true'}
@@ -398,8 +419,9 @@ try:
         if (runtime / 'content-safety-current').exists():
             load_state()
             require(state.get('phase') not in ['preparing', 'prepared', 'switching'], '已有未完成发布记录；请继续对应阶段或人工检查，不覆盖备份。')
-            state = None
-            state_dir = None
+            if not (state.get('phase') == 'failed' and not state.get('switchStarted') and not state.get('targetRevision')):
+                state = None
+                state_dir = None
         prepare()
     else:
         load_state()
