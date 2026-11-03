@@ -220,8 +220,9 @@ def prepare():
     server = service(records, project, 'server')
     gateway = service(records, project, 'gateway')
     postgres = service(records, project, 'postgres')
+    # Mafia's ECS installer uses mafia-deploy-ecs; retain earlier project names too.
     mafia = [r for r in records if r['service'] == 'postgres' and
-             (r['project'] == args.mafia_project if args.mafia_project else re.fullmatch(r'mafia(?:-ecs)?', r['project']))]
+             (r['project'] == args.mafia_project if args.mafia_project else re.fullmatch(r'mafia(?:-ecs|-deploy-ecs)?', r['project']))]
     require(len(mafia) == 1, '无法唯一定位 Mafia 数据库，请核实后填写 --mafia-project；不会猜测或跳过备份。')
     stamp = datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%SZ')
     state_dir = runtime / ('content-safety-' + stamp)

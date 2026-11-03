@@ -93,7 +93,7 @@ bash /root/install-content-safety-ecs.sh prepare
 
 `prepare` 在旧版仓库上即可运行；它读取并记录现有容器、镜像、重启次数、Compose 和私有配置，检查进行中对局，暂停 **Avalon 与 Mafia 的自动更新定时器**并保存原始运行状态。暂停更新不会停止 Mafia、公共入口或其他游戏容器。脚本用隐藏输入收集专用 RAM AccessKey，生成权限为 `600` 的 `.env.next`，原 `.env.ecs` 保持不变，不启动新容器，不调用付费 API。
 
-如需从已保存的私有文件读取，可改用 `prepare --config-file /root/avalon-content-safety.json`。这是 JSON 文件，只允许上表 `ALIYUN_CONTENT_*` 字段；先设 `chmod 600`，不要将密钥写到 shell 命令历史。无法自动唯一定位 Mafia 项目时，核对其现有 Compose 项目名，再加 `--mafia-project <实际项目名>`。
+如需从已保存的私有文件读取，可改用 `prepare --config-file /root/avalon-content-safety.json`。这是 JSON 文件，只允许上表 `ALIYUN_CONTENT_*` 字段；先设 `chmod 600`，不要将密钥写到 shell 命令历史。脚本支持 Mafia ECS 安装器使用的 `mafia-deploy-ecs` 项目名及旧名称 `mafia`、`mafia-ecs`。存在多个候选或使用其他项目名时，核对实际 Compose 项目标签，再加 `--mafia-project <实际项目名>`；不会只凭容器名字猜测。项目识别失败发生在暂停定时器和修改配置之前，修正参数后可重跑 `prepare`。
 
 准备成功后保留输出的私有发布记录目录，并告知维护人员“prepare 已完成”，然后才合入 `main`。若有进行中对局、另一发布正在运行或准备失败，先解决提示的问题，勿跳过检查。
 

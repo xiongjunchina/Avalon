@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, statSync} from 'node:fs';
+import {mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, statSync, existsSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -57,7 +57,7 @@ if(name==='curl') {
 }
 `;
 
-function fixture(t,{active=true,mafiaActive=true}={}){
+function fixture(t,{active=true,mafiaActive=true,mafiaProject='mafia-deploy-ecs'}={}){
  const dir=mkdtempSync(join(tmpdir(),'avalon-content-release-'));t.after(()=>rmSync(dir,{recursive:true,force:true}));
  mkdirSync(join(dir,'deploy'));mkdirSync(join(dir,'bin'));
  mkdirSync(join(dir,'scripts/deploy'),{recursive:true});writeFileSync(join(dir,'scripts/deploy/restore-content-safety-avatars.sql'),'-- restore-approved-avatars');
@@ -65,7 +65,7 @@ function fixture(t,{active=true,mafiaActive=true}={}){
  const original='PROJECT=avalon-ecs\nAPP_ORIGIN=https://game.ccnepower.com\nAPP_BASE_PATH=/avalon/\nPUBLIC_INGRESS_MODE=portal\nIMAGE_TAG=old\nWECHAT_MINIGAME_APP_ID=wxdb4e422c14adab3f\nWECHAT_MINIGAME_APP_SECRET=private-wx-secret\nWECHAT_MINIGAME_VOICE_ENABLED=true\nAGORA_TEST_PRIVATE=keep-agora-unchanged\n';
  writeFileSync(join(dir,'deploy/.env.ecs'),original,{mode:0o600});
  for(const name of ['compose.yaml','compose.portal.yaml'])writeFileSync(join(dir,'deploy',name),'services: {}\n');
- const rows=[['avalon-ecs','server'],['avalon-ecs','gateway'],['avalon-ecs','postgres'],['mafia','server'],['mafia','postgres'],['game-portal','gateway'],['xiongqc-ecs','gateway']].map(([project,service])=>({
+ const rows=[['avalon-ecs','server'],['avalon-ecs','gateway'],['avalon-ecs','postgres'],[mafiaProject,'server'],[mafiaProject,'postgres'],['game-portal','gateway'],['xiongqc-ecs','gateway']].map(([project,service])=>({
   id:project+'-'+service,name:'/'+project+'-'+service+'-1',image:'sha256:old-'+service,started:'original',restarts:'0',project,service}));
  writeFileSync(join(dir,'containers.json'),JSON.stringify(rows));
  writeFileSync(join(dir,'avatar.json'),JSON.stringify({value:'data:image/png;base64,YXBwcm92ZWQ='}));
@@ -88,11 +88,37 @@ function fixture(t,{active=true,mafiaActive=true}={}){
 test('prepare works without new server source, keeps private config and does not stop containers',t=>{
  const f=fixture(t);const result=f.execute('prepare');assert.equal(result.status,0,result.stderr);
  assert.equal(readFileSync(join(f.dir,'deploy/.env.ecs'),'utf8'),f.original);
+ assert.equal(f.state().mafiaPostgres,'mafia-deploy-ecs-postgres','the actual Mafia deployment project is selected');
  assert.equal(f.state().phase,'prepared');assert.equal(statSync(f.stateDir()).mode&0o777,0o700);
  for(const name of ['.env.backup','.env.next','state.json'])assert.equal(statSync(join(f.stateDir(),name)).mode&0o777,0o600);
  assert.deepEqual(f.timers(),{'avalon-auto-update.timer':false,'mafia-auto-update.timer':false});
  assert.ok(!f.commands().some(c=>c.tool==='docker'&&(c.args.includes('up')||c.args.includes('stop')||c.args.includes('build'))));
  const again=f.execute('prepare');assert.notEqual(again.status,0);assert.equal(f.state().phase,'prepared','second prepare must not destroy original baseline');
+});
+
+test('explicit Mafia project selects the requested database even when a default candidate also exists',t=>{
+ const f=fixture(t,{mafiaProject:'friends-mafia-production'});
+ const rows=[...f.rows,{id:'other-mafia-postgres',name:'/mafia-ecs-postgres-1',image:'sha256:other-postgres',started:'original',restarts:'0',project:'mafia-ecs',service:'postgres'}];
+ writeFileSync(join(f.dir,'containers.json'),JSON.stringify(rows));
+ const result=f.execute('prepare',{},['--mafia-project','friends-mafia-production']);
+ assert.equal(result.status,0,result.stderr);
+ assert.equal(f.state().mafiaPostgres,'friends-mafia-production-postgres');
+ assert.ok(!f.commands().some(c=>c.tool==='docker'&&c.args[0]==='compose'));
+});
+
+for(const scenario of ['no matching project','multiple matching projects'])test(scenario+' stops preparation before any service or timer mutation',t=>{
+ const f=fixture(t,{mafiaProject:scenario==='no matching project'?'friends-mafia-production':'mafia-deploy-ecs'});
+ const rows=scenario==='multiple matching projects'
+  ? [...f.rows,{id:'other-mafia-postgres',name:'/mafia-ecs-postgres-1',image:'sha256:other-postgres',started:'original',restarts:'0',project:'mafia-ecs',service:'postgres'}]
+  : f.rows;
+ writeFileSync(join(f.dir,'containers.json'),JSON.stringify(rows));
+ const result=f.execute('prepare');
+ assert.notEqual(result.status,0);assert.match(result.stderr,/无法唯一定位 Mafia 数据库/);
+ assert.equal(readFileSync(join(f.dir,'deploy/.env.ecs'),'utf8'),f.original);
+ assert.deepEqual(JSON.parse(readFileSync(join(f.dir,'containers.json'),'utf8')),rows);
+ assert.deepEqual(f.timers(),{'avalon-auto-update.timer':true,'mafia-auto-update.timer':true});
+ assert.equal(existsSync(join(f.dir,'deploy/runtime/content-safety-current')),false);
+ assert.ok(!f.commands().some(c=>(c.tool==='docker'&&c.args[0]==='compose')||(c.tool==='systemctl'&&['start','stop'].includes(c.args[0]))));
 });
 
 test('an active game prevents preparation without stopping or rebuilding any container',t=>{
