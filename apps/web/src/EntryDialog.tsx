@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import * as Label from '@radix-ui/react-label';
 import type { User } from '@avalon/contracts';
 import { api, describe } from './api';
+import { NICKNAME_CONTENT_SAFETY_NOTICE } from './content-safety-copy';
 import { Modal } from './Modal';
 import { entryRoomKey, EntrySession } from './entry-session';
 
@@ -98,6 +99,7 @@ export function EntryDialog({ intent, knownAccounts, onClose, onAuthenticated }:
         <p className="hint" id="entry-identity-hint">{mode === 'create'
           ? '填朋友认识的称呼，别填房间号；仙友码由系统自动分配。'
           : '输入仙友码即可找回原账号，继续使用原昵称、头像和战绩。'}</p>
+        {mode === 'create' && <p className="hint">{NICKNAME_CONTENT_SAFETY_NOTICE}</p>}
         {error && <p className="error entry-error" role="alert">{error}</p>}
         <button className="mp-cyan-pill" disabled={busy || (mode === 'create' ? !nickname.trim() : code.length !== 6)} type="submit">
           {busy ? '正在进入…' : mode==='create'?joining?'使用此昵称加入房间':`取好昵称，${purpose}`:joining?'找回账号并加入房间':`找回账号，${purpose}`}

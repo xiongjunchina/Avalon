@@ -5,6 +5,7 @@ import {webTreasureCopy} from './web-treasure-copy.js';
 import {BACKGROUND_MUSIC} from '../../../web/src/audio-catalog.js';
 import {settingsText} from '../../../web/src/settings-summary.js';
 import {BUILTIN_AVATARS} from '../../../web/src/avatar-catalog.js';
+import {CHAT_CONTENT_SAFETY_NOTICE, NICKNAME_CONTENT_SAFETY_NOTICE, PROFILE_CONTENT_SAFETY_NOTICE} from '../../../web/src/content-safety-copy.js';
 import type { GameView, Player, Role, Score, RoundView } from '@avalon/contracts';
 import { assignFemaleDemons, assignLoyalGuardians, failuresRequiredFor, GUANYIN_WINDOW_MS, ROLE_CONFIG, teamOf } from '@avalon/game-core';
 import { defaultRoleArtPrefix, ALL_GALLERY_ROLES, formatRoleName, getRoleGalleryItem, roleMottos, roleNames, roleTitles, WUYUE_MISSIONS } from '../../../web/src/roles.js';
@@ -73,7 +74,8 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
   if(drawer){
     const messages=doc.messages??[], streamRows=messages.map(msg=>{const split=msg.name.indexOf(' '),seat=split<0?'旁观':msg.name.slice(0,split),name=(split<0?msg.name:msg.name.slice(split+1))+'：',seatWidth=measure(seat,11,'sans','700'),nw=measure(name,13,'sans','600'),textWidth=measure(msg.text,13),free=v.width-28-nw-32,sw=Math.max(11,Math.min(seatWidth,free*seatWidth/(seatWidth+textWidth))),mw=Math.max(30,v.width-28-sw-nw-16),lines=wrapText(msg.text,mw-16,t=>measure(t,13));return {msg,seat,name,sw,nw,mw,lines,h:lines.length*18.2+6};});
     const emptyLines=wrapText('暂无法坛发言，点击上方密语或输入打字传音',v.width-28,t=>measure(t,12)),streamNatural=messages.length?Math.max(70,20+streamRows.reduce((sum,r)=>sum+r.h+8,0)):52+emptyLines.length*25;
-    const h=Math.min(available*.6,195+streamNatural),fy=bottom-h,streamTop=fy+140,streamBottom=bottom-55,streamH=streamBottom-streamTop,maxScroll=Math.max(0,streamNatural-streamH),scroll=Math.min(maxScroll,Math.max(0,model.scroll??0));
+    const noticeLines=wrapText(CHAT_CONTENT_SAFETY_NOTICE,v.width-28,t=>measure(t,11)),noticeH=noticeLines.length*16.5+12;
+    const h=Math.min(available*.6,195+streamNatural+noticeH),fy=bottom-h,streamTop=fy+140,streamBottom=bottom-55-noticeH,streamH=streamBottom-streamTop,maxScroll=Math.max(0,streamNatural-streamH),scroll=Math.min(maxScroll,Math.max(0,model.scroll??0));
     add('panel','dialog-frame','',0,fy,v.width,h,{skin:'chat-sheet',fixed:true});
     button(model.web!.backId??'back','',fy+10,{skin:'chat-handle',fixed:true},v.width/2-20,40,4);
     txt('chat-title','💬 法坛传音',fy+30,15,{skin:'chat-copy',weight:'700',tone:'gold',fixed:true,lineHeight:22.5},16,111);
@@ -86,6 +88,7 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
     let my=streamTop+10-scroll;
     for(const r of streamRows){const clip={clipTop:streamTop,clipBottom:streamBottom};txt('chat-seat:'+r.msg.id,r.seat,my+5,11,{skin:'chat-copy',weight:'700',tone:'blue',lineHeight:15.4,...clip},14,r.sw);txt('chat-name:'+r.msg.id,r.name,my+3,13,{skin:'chat-copy',weight:'600',tone:'gold',lineHeight:18.2,...clip},22+r.sw,r.nw);add('label','chat:'+r.msg.id,r.msg.text,30+r.sw+r.nw,my,Math.min(r.mw,Math.max(...r.lines.map(t=>measure(t,13)))+16),r.h,{skin:'chat-bubble',lines:r.lines,fontSize:13,lineHeight:18.2,...clip});my+=r.h+8;}
     if(!messages.length)add('label','chat-empty','暂无法坛发言，点击上方密语或输入打字传音',14,streamTop+26-scroll,v.width-28,emptyLines.length*25,{skin:'chat-copy',tone:'muted',fontSize:12,lines:emptyLines,lineHeight:25,align:'center',clipTop:streamTop,clipBottom:streamBottom});
+    txt('chat-content-safety',CHAT_CONTENT_SAFETY_NOTICE,streamBottom+6,11,{skin:'chat-copy',tone:'muted',fixed:true,lines:noticeLines,lineHeight:16.5},14,v.width-28);
     add('panel','chat-input-bar','',0,bottom-55,v.width,55,{skin:'chat-input-bar',fixed:true});
     button('chat:input','🎙️',bottom-46,{skin:'chat-mic',fontSize:18,fixed:true},12,38,38);
     button('chat:input',doc.chatDraft||'输入传音，或用手机键盘语音输入…',bottom-46,{skin:'chat-input',fontSize:13.5,fixed:true,muted:!doc.chatDraft},58,v.width-136,38);
@@ -132,6 +135,7 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
     txt('auth-label',switching?'原账号的 6 位仙友码':'玩家昵称（大家怎么称呼你）',y,16);y+=32;
     button(switching?'input:switch':'input:nickname',switching?model.web!.switchCode||'例如：123456':model.web!.nickname||'例如：小陈、阿辉',y,{skin:'input',fontSize:16,muted:switching?!model.web!.switchCode:!model.web!.nickname},x,w,50);y+=60;
     const hint=txt('auth-note',switching?'输入仙友码即可找回原账号，继续使用原昵称、头像和战绩。':'填朋友认识的称呼，别填房间号；仙友码由系统自动分配。',y,14.5,{lineHeight:21.75});y+=hint.height+14;
+    if(!switching)para('auth-content-safety',NICKNAME_CONTENT_SAFETY_NOTICE,12);
     button('login',switching?'找回账号，继续游戏':model.web!.authIntent==='create'?'取好昵称，创建房间':model.web!.authIntent==='join'?'取好昵称，加入房间':'取好昵称，继续游戏',y,{skin:'waiting-primary',fontSize:18,disabled:switching?!/^\d{6}$/.test(model.web!.switchCode??''):!model.web!.nickname?.trim()},x,w,50);y+=57.5;bodyEnd=y;
   }else if(adminFriends){
     const title=txt('admin-friends-title','【'+(doc.adminFriendOwner??'')+'】的仙友圈子',y+3.5,21,{fontFace:'display',tone:'gold',fixed:true,lineHeight:21},x,w-60);button('page:users','关闭',y,{skin:'admin-tool',fontSize:12,fixed:true},x+w-49,49,28);y+=Math.max(42,title.height+21);bodyStart=y;
@@ -318,13 +322,15 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
     const user=doc.user,draft=doc.profileDraft;
     const builtin=BUILTIN_AVATARS.find(a=>a.src===draft?.avatarUrl),source=builtin?'法宝头像（'+builtin.name+'）':draft?.avatarUrl?'自定义头像':draft?.wechatAvatarUrl?'微信头像':'法宝头像（'+BUILTIN_AVATARS[0]!.name+'）';
     const sourceText='头像预览：'+source,metaW=w-104,sourceLines=wrapText(sourceText,metaW-18,t=>measure(t,11.5,'sans','700')),sourceH=sourceLines.length*17.25+6;
-    const helpLines=wrapText('选择下方法宝头像，或上传自己的照片；头像只用于朋友之间辨认。',metaW,t=>measure(t,14,'sans','500')),metaH=sourceH+4+helpLines.length*21,previewH=Math.max(64,metaH),managerH=26+previewH+10+44.75;
+    const profileHelp='选择法宝头像或上传照片；昵称和头像通过内容检测后才会展示给其他玩家。';
+    const helpLines=wrapText(profileHelp,metaW,t=>measure(t,14,'sans','500')),metaH=sourceH+4+helpLines.length*21,previewH=Math.max(64,metaH),managerH=26+previewH+10+44.75;
     panel('profile-preview',y,managerH,'profile-preview');
     add('portrait','profile-avatar','',x+13,y+13+(previewH-64)/2,64,64,{skin:'avatar',image:draft?.avatarUrl??draft?.wechatAvatarUrl??'emblems/'+(draft?.avatar??user.avatar??'leaf')+'.png'});
     add('label','avatar-source',sourceText,x+91,y+13,metaW,sourceH,{skin:'profile-source',fontSize:11.5,lines:sourceLines,lineHeight:17.25});
-    txt('avatar-help','选择下方法宝头像，或上传自己的照片；头像只用于朋友之间辨认。',y+13+sourceH+4,14,{lineHeight:21},x+91,metaW);
+    txt('avatar-help',profileHelp,y+13+sourceH+4,14,{lineHeight:21},x+91,metaW);
     button('uploadAvatar','上传自定义头像',y+13+previewH+10,{skin:'pill',fontSize:12.5},x+13,w-26,44.75);y+=managerH+16;
     button('profile:wechat','授权使用微信头像与昵称',y,{skin:'pill',fontSize:13},x,w,44);y+=56;
+    para('profile-content-safety',PROFILE_CONTENT_SAFETY_NOTICE,12);
     txt('nickname-label','昵称',y,14);y+=28;
     button('profile:nickname',draft?.nickname??user.nickname,y,{skin:'input'},x,w,44);y+=60;
     txt('avatar-heading','预置头像',y,14);y+=24;
@@ -716,15 +722,17 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
       y+=doc.friendTab==='friends'?-8:doc.friendTab==='add'?-4:6;
     } else if(doc.kind==='chat') {
       modalHeader('仙友录 · 召集与好友');
-      const sheetTop=y,sheetH=Math.min(380,v.height*.6),inner=w-28,targetNatural=256+8+measure(doc.chatFriend?.nickname??'',13.5,'sans','700'),avatarD=(inner-44)*targetNatural/(2*(inner-22)+targetNatural),backW=(inner-avatarD)/2,headH=avatarD+17;
+      const noticeLines=wrapText(CHAT_CONTENT_SAFETY_NOTICE,w-24,t=>measure(t,11)),noticeH=noticeLines.length*16.5+12;
+      const sheetTop=y,sheetH=Math.min(380+noticeH,v.height*.6),inner=w-28,targetNatural=256+8+measure(doc.chatFriend?.nickname??'',13.5,'sans','700'),avatarD=(inner-44)*targetNatural/(2*(inner-22)+targetNatural),backW=(inner-avatarD)/2,headH=avatarD+17;
       panel('direct-topbar',y,headH,'direct-topbar');button('page:friends','← 返回仙友录',y+(headH-48)/2+7,{skin:'direct-back',fontSize:12},x+14,backW,48);
       const f=doc.chatFriend;if(f){add('portrait','direct-friend','',x+14+backW,y+8,avatarD,avatarD,{skin:'direct-avatar',image:f.avatarUrl??'emblems/'+(f.avatar??'cards')+'.png'});const lines=wrapText(f.nickname,13.5,t=>measure(t,13.5,'sans','700'));txt('direct-name',f.nickname,y+8+(avatarD-lines.length*20)/2,13.5,{tone:'gold',weight:'700',lines,lineHeight:20},x+22+backW+avatarD,13.5);}
       button('refresh:direct','🔄',y+(headH-48)/2+7,{skin:'direct-back',fontSize:12},x+14+backW+avatarD,backW,48);y+=headH;
-      const streamTop=y,streamBottom=sheetTop+sheetH-134;let messageY=streamTop+12;const messageStart=nodes.length;
+      const streamTop=y,streamBottom=sheetTop+sheetH-134-noticeH;let messageY=streamTop+12;const messageStart=nodes.length;
       for(const msg of doc.messages??[]){const tw=Math.min((w-24)*.78,Math.max(60,measure(msg.text,13)+26)),lines=wrapText(msg.text,tw-26,t=>measure(t,13)),h=lines.length*18.2+18,px=msg.self?x+w-tw-12:x+12;add('label','chat:'+msg.id,msg.text,px,messageY,tw,h,{skin:'direct-message',lines,fontSize:13,selected:msg.self});messageY+=h;if(msg.timestamp){txt('chat-time:'+msg.id,new Date(msg.timestamp).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit',hour12:false}),messageY+3,10.5,{tone:'muted',lineHeight:15},px+4,tw-8);messageY+=18;}messageY+=10;}
       if(!doc.messages?.length){const empty=txt('direct-empty','📜 暂无密札往来，发送快捷密语或打字开始交谈吧！',messageY+30,12,{tone:'muted',align:'center'},x+42,w-84);messageY=empty.y+empty.height+30;}
       const messageEnd=nodes.length,maxScroll=Math.max(0,messageY+2-streamBottom),scroll=Math.min(model.scroll??0,maxScroll);
       y=streamBottom;const quick=model.rows.filter(r=>r.id.startsWith('quick:')),widths=quick.map(r=>measure(r.text,11.5)+20),maxX=Math.max(0,widths.reduce((a,b)=>a+b+6,0)-6-w+24);let qx=x+12-Math.min(maxX,Math.max(0,model.horizontalScroll??0));panel('direct-quick-strip',y,79,'direct-quick-strip');quick.forEach((r,i)=>{button(r.id,r.text,y+23,{skin:'direct-quick',fontSize:11.5,clipLeft:x+12,clipRight:x+w-12,scrollMaxX:maxX},qx,widths[i]!,48);qx+=widths[i]!+6;});y+=79;
+      txt('chat-content-safety',CHAT_CONTENT_SAFETY_NOTICE,y+6,11,{tone:'muted',lines:noticeLines,lineHeight:16.5},x+12,w-24);y+=noticeH;
       panel('direct-input-bar',y,55,'direct-input-bar');button('chat:input','🎙️',y+9,{skin:'chat-mic',fontSize:18},x+12,38,38);button('chat:input',doc.chatDraft||'向 '+(f?.nickname??'仙友')+' 发送密札…',y+9,{skin:'direct-input',fontSize:13.5},x+58,w-136,38);button('chat:send','传札',y+9,{skin:'direct-send',fontSize:14,disabled:!doc.chatDraft?.trim()},x+w-70,58,38);y+=55;
       const h=y+socialPad,fy=top+(available-h)/2;
       nodes.forEach((n,i)=>{n.y+=fy;n.fixed=i<messageStart||i>=messageEnd;if(!n.fixed){n.y-=scroll;n.clipTop=fy+streamTop;n.clipBottom=fy+streamBottom;}});

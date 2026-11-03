@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { RoomChatMessage } from '@avalon/contracts';
-import { api } from './api';
+import { api, describe } from './api';
+import { CHAT_CONTENT_SAFETY_NOTICE } from './content-safety-copy';
 import './chat.css';
 
 const TACTICAL_PHRASES = [
@@ -106,8 +107,8 @@ export function ChatDrawer({ roomId, messages, onClose, onSent }: ChatDrawerProp
       setText('');
       // Auto close drawer after sending so view returns immediately to game table
       onClose();
-    } catch (err: any) {
-      alert(err.message || '发送失败');
+    } catch (err) {
+      alert(describe(err));
     } finally {
       setBusy(false);
     }
@@ -177,6 +178,7 @@ export function ChatDrawer({ roomId, messages, onClose, onSent }: ChatDrawerProp
           </div>
         )}
 
+        <p className="chat-content-safety-notice">{CHAT_CONTENT_SAFETY_NOTICE}</p>
         {/* Input Bar */}
         <form
           className="chat-drawer-input-bar"

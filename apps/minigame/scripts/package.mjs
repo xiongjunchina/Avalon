@@ -31,12 +31,14 @@ await record(project);
 const manifest = { version, revision: git(['rev-parse', 'HEAD']), sourceDirty: Boolean(git(['status', '--porcelain'])),
   appId: result.appId, apiOrigin: new URL(result.apiBaseUrl).origin, apiBaseUrl: result.apiBaseUrl,
   webEntryUrl: result.apiBaseUrl + '/',
-  releasePurpose: result.perfHud ? 'performance-device-test' : result.voiceEnabled ? 'wechat-voice-device-test' : 'minigame-candidate',
+  releasePurpose: result.perfHud ? 'performance-device-test' : 'minigame-review-candidate',
+  contentSafetyRequired: true, contentSafetyProviders: ['wechat-minigame-v2', 'aliyun'],
+  contentSafetyLiveVerified: false,
   perfHud:result.perfHud,
   voiceEnabled: result.voiceEnabled, ...(result.voiceEnabled ? {voiceProvider:'wechat-native',voiceMaxPlayers:10,voiceInteroperability:'minigame-only',realDeviceVoiceVerified:false} : {}), bytes: result.size, files };
 await writeFile(join(releaseRoot, 'release.json'), JSON.stringify(manifest, null, 2));
 await writeFile(join(releaseRoot, 'README.txt'), `微信开发者工具选择小游戏，导入本目录下 project 文件夹。\n版本 ${version}\nAppID ${result.appId}\n服务地址 ${manifest.apiBaseUrl}\n${result.voiceEnabled ? [
-  '用途：微信原生语音体验版候选包，供真机联调；尚未完成真机通话验收。',
+  '用途：微信内容安全整改体验版候选包，供真机联调；实际接口权限、ECS部署和真机通话验收需另行核实。',
   '仅同房小游戏玩家互通，最多10人；与网页声网语音不互通。11–12人需要内置语音时请全员使用网页版。',
   'ECS 服务端必须同时启用 WECHAT_MINIGAME_VOICE_ENABLED=true，并配置正确的 AppID/AppSecret；AppSecret 仅留在服务端，不放入本工程。',
   '合作伙伴需核对微信实时语音能力权限与隐私指引中的麦克风用途声明。',

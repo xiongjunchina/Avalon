@@ -21,7 +21,7 @@ export class PlayerExtras {
   presets() { return this.api.request<{ presets: SettingPreset[] }>('/me/presets'); }
   savePreset(name: string, settings: Settings) { return this.api.request<{ preset: SettingPreset }>('/me/presets', { name, settings }); }
   deletePreset(id: string) { return this.api.request(`/me/presets/${encodeURIComponent(id)}`, undefined, 'DELETE'); }
-  updateProfile(profile: { nickname: string; avatar: User['avatar']; avatarUrl?: string | null; wechatAvatarUrl?: string | null }) { return this.api.request<{ user: User }>('/me', profile, 'PATCH'); }
+  updateProfile(profile: { nickname: string; avatar: User['avatar']; avatarUrl?: string | null; wechatAvatarUrl?: string | null }) { return this.api.request<{ user: User }>('/me', profile, 'PATCH', { timeoutMs: 20_000 }); }
   redeem(code: string) { return this.api.request<{ ok: boolean; days: number; vipUntil: string }>('/me/redeem', { code }); }
   announcement() { return this.api.request<{ announcement: { text: string; enabled: boolean }; freeAccessMode: boolean }>('/system/announcement'); }
 }

@@ -113,7 +113,7 @@ export class PostgresStore {
       return { user, token };
     });
   }
-  async switchAccount(playerCode: string, expectedUserId?: string): Promise<{ user: User; token: string }> {
+  async switchAccount(playerCode: string, expectedUserId?: string, sourceToken?: string): Promise<{ user: User; token: string }> {
     const token = randomBytes(32).toString('base64url');
     return this.tx(async c => {
       const u = (await c.query<{
@@ -143,6 +143,10 @@ export class PostgresStore {
         u.id,
         new Date(this.now() + SESSION_MS),
       ]);
+      // The current operator's verified identity follows the session, never the target account.
+      if(sourceToken)await c.query(`UPDATE sessions target SET wechat_actor_openid=source.wechat_actor_openid,
+        wechat_actor_verified_at=source.wechat_actor_verified_at FROM sessions source
+        WHERE target.token_hash=$1 AND source.token_hash=$2 AND source.expires_at>$3`,[digest(token),digest(sourceToken),this.date()]);
 
       const isVip = Boolean(u.vip_until && u.vip_until.getTime() > this.now());
       const user: User = {
@@ -207,10 +211,12 @@ export class PostgresStore {
         throw new DomainError('USER_BANNED', 403);
       }
 
-      await c.query('INSERT INTO sessions(token_hash, user_id, expires_at) VALUES($1, $2, $3)', [
+      await c.query('INSERT INTO sessions(token_hash, user_id, expires_at,wechat_actor_openid,wechat_actor_verified_at) VALUES($1, $2, $3,$4,$5)', [
         digest(token),
         u.id,
         new Date(this.now() + SESSION_MS),
+        input.openid,
+        this.date(),
       ]);
 
       const isVip = Boolean(u.vip_until && u.vip_until.getTime() > this.now());
@@ -282,6 +288,9 @@ export class PostgresStore {
       const user=await this.sessionUser(c,userId);
       const token=randomBytes(32).toString('base64url');
       await c.query('INSERT INTO sessions(token_hash,user_id,expires_at) VALUES($1,$2,$3)',[digest(token),userId,new Date(this.now()+SESSION_MS)]);
+      await c.query(`UPDATE sessions target SET wechat_actor_openid=source.wechat_actor_openid,
+        wechat_actor_verified_at=source.wechat_actor_verified_at FROM sessions source
+        WHERE target.token_hash=$1 AND source.token_hash=$2`,[digest(token),digest(sourceToken)]);
       return {user,token};
     });
   }

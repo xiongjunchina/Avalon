@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { MiniGameApi } from '../src/net/api.js';
 import type { WechatPlatform, WxRequestOptions } from '../src/platform/wechat.js';
+import { PlayerExtras } from '../src/screens/player-extras.js';
 
 test('wx.login creates and stores a bearer session used by refresh', async () => {
   const stored = new Map<string, unknown>();
@@ -57,4 +58,30 @@ test('account switch replaces the mini-game bearer token', async () => {
   const api = new MiniGameApi(platform, 'https://avalon.example:8443');
   assert.equal((await api.switchAccount('123456','new-user')).id, 'new-user');
   assert.equal(stored.get('avalon_minigame_session'), 'new-token');
+});
+
+test('profile updates wait 20 seconds while game and voice calls retain their default 10-second timeout', async t => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const calls: WxRequestOptions[] = [];
+  const platform = { get: () => undefined, request: (options: WxRequestOptions) => calls.push(options) } as unknown as WechatPlatform;
+  const api = new MiniGameApi(platform, 'https://avalon.example/avalon');
+  const profile = new PlayerExtras(api).updateProfile({ nickname: '仙友', avatar: 'leaf', avatarUrl: null });
+  const game = api.request('/rooms/room/commands', { type: 'ready' });
+  const voice = api.request('/rooms/room/wechat-voice-ticket', { code: 'login-code' });
+  let profileSettled = false;
+  void profile.then(() => { profileSettled = true; }, () => { profileSettled = true; });
+  const profileRejected = assert.rejects(profile, /NETWORK_TIMEOUT/);
+  const gameRejected = assert.rejects(game, /NETWORK_TIMEOUT/);
+  const voiceRejected = assert.rejects(voice, /NETWORK_TIMEOUT/);
+  assert.equal(calls[0].method, 'PATCH');
+  assert.ok(calls[0].url.endsWith('/api/me'));
+  t.mock.timers.tick(10_000);
+  await Promise.all([gameRejected, voiceRejected]);
+  assert.equal(profileSettled, false);
+  t.mock.timers.tick(9_999);
+  await Promise.resolve();
+  assert.equal(profileSettled, false);
+  t.mock.timers.tick(1);
+  await profileRejected;
+  assert.equal(profileSettled, true);
 });

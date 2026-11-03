@@ -7,6 +7,7 @@ import { assignFemaleDemons, assignLoyalGuardians } from '@avalon/game-core';
 import { formatRoleName, roleNames } from './roles';
 import { RolePortrait } from './RolePortrait';
 import { api, describe } from './api';
+import { PROFILE_CONTENT_SAFETY_NOTICE } from './content-safety-copy';
 import { PresetsPanel, settingsText } from './PresetsPanel';
 import { Emblem, PlayerAvatar, roleTeam } from './Heraldry';
 import { BUILTIN_AVATARS, builtinAvatarFor, findBuiltinAvatar } from './avatar-catalog';
@@ -138,7 +139,7 @@ function ProfileEditor({user,onUser,onClose}:{user:User;onUser:(u:User)=>void;on
   return <Modal label="修改昵称与头像" scene="dawn" onClose={()=>{if(!busy)onClose();}}><section className="table-modal-sheet flow-editor-sheet profile-editor">
     <header className="table-modal-head"><strong>修改昵称与头像</strong><button type="button" className="secondary tool-pill" disabled={busy} onClick={onClose}>关闭</button></header>
     <div className="flow-scroll-body">
-    <form id="profile-editor-form" onSubmit={e=>{e.preventDefault();setBusy(true);setError('');setSaved(false);void api<{user:User}>('/me',{nickname,avatar,avatarUrl,wechatAvatarUrl},'PATCH').then(r=>{onUser(r.user);setNickname(r.user.nickname);setAvatarUrl(r.user.avatarUrl??null);setWechatAvatarUrl(r.user.wechatAvatarUrl??null);setSaved(true);}).catch(e=>setError(describe(e))).finally(()=>setBusy(false));}}>
+    <form id="profile-editor-form" onSubmit={e=>{e.preventDefault();setBusy(true);setError('');setSaved(false);void api<{user:User}>('/me',{nickname,avatar,avatarUrl,wechatAvatarUrl},'PATCH',{timeoutMs:20_000}).then(r=>{onUser(r.user);setNickname(r.user.nickname);setAvatarUrl(r.user.avatarUrl??null);setWechatAvatarUrl(r.user.wechatAvatarUrl??null);setSaved(true);}).catch(e=>setError(describe(e))).finally(()=>setBusy(false));}}>
     <fieldset disabled={busy}><legend className="sr-only">编辑资料</legend>
       <div className="profile-avatar-manager">
         <div className="profile-avatar-preview-box">
@@ -147,7 +148,7 @@ function ProfileEditor({user,onUser,onClose}:{user:User;onUser:(u:User)=>void;on
           </span>
           <div className="profile-avatar-meta">
             <span className="avatar-source-tag">头像预览：{activeSource}</span>
-            <small className="hint">选择下方法宝头像，或上传自己的照片；头像只用于朋友之间辨认。</small>
+            <small className="hint">选择法宝头像或上传照片；昵称和头像通过内容检测后才会展示给其他玩家。</small>
           </div>
         </div>
         <div className="profile-avatar-actions">
@@ -162,6 +163,7 @@ function ProfileEditor({user,onUser,onClose}:{user:User;onUser:(u:User)=>void;on
           <input ref={fileInputRef} type="file" accept="image/*" className="sr-only" aria-label="上传自定义头像文件" onChange={e=>void handleFileChange(e)} />
         </div>
       </div>
+      <p className="hint">{PROFILE_CONTENT_SAFETY_NOTICE}</p>
       <label htmlFor="profile-nickname">昵称</label><input id="profile-nickname" maxLength={20} required value={nickname} onChange={e=>{setNickname(e.target.value);setSaved(false);}}/>
       <fieldset className="profile-preset-fieldset"><legend>预置头像</legend>
         <p className="hint">十二件法宝，点击选择并预览；保存资料后生效。</p>

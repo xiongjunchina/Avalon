@@ -2,6 +2,7 @@ import { deployment } from './deployment';
 import React, { useEffect, useRef, useState } from 'react';
 import type { DirectMessage, FriendSummary, RoomView, User } from '@avalon/contracts';
 import { api, describe } from './api';
+import { CHAT_CONTENT_SAFETY_NOTICE } from './content-safety-copy';
 import { Modal } from './Modal';
 import { PlayerAvatar } from './Heraldry';
 
@@ -405,6 +406,7 @@ export function FriendsModal({
               </div>
             )}
 
+            <p className="chat-content-safety-notice">{CHAT_CONTENT_SAFETY_NOTICE}</p>
             {/* Input bar */}
             <form
               className="chat-drawer-input-bar"

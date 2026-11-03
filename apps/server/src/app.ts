@@ -16,14 +16,18 @@ import { loginWithWechatCode } from './wechat-auth.js';
 import { issueWechatVoiceTicket } from './wechat-voice.js';
 import { MiniGameTickets, bearerToken, requestOriginAllowed } from './minigame-session.js';
 import { WebHandoffs } from './web-handoff.js';
+import { ContentSafety } from './content-safety.js';
+import { createContentSafety } from './content-safety-config.js';
 
-export async function buildApp(options: { store: PostgresStore; origin?: string; secure?: boolean; trustProxy?: boolean; heartbeatMs?: number; maintenanceMs?: number }) {
+export async function buildApp(options: { store: PostgresStore; origin?: string; secure?: boolean; trustProxy?: boolean; heartbeatMs?: number; maintenanceMs?: number; contentSafety?: ContentSafety }) {
   const { store }=options;
   const accounts=new Accounts(store);
   const special=new SpecialManagement(store);
   const friendsService=new FriendsService(store);
   const adminService=new AdminService(store);
   const origin=options.origin??'http://localhost:5173';
+  const safety=options.contentSafety??createContentSafety(store.pool,origin);
+  await safety.initialize();
   const app=Fastify({logger:false,bodyLimit:131072,trustProxy:options.trustProxy ? (_address, hop) => hop === 0 : false});
   // One active server per database schema. Never rebuild presence underneath another server.
   const owner=await store.pool.connect();
@@ -43,7 +47,7 @@ export async function buildApp(options: { store: PostgresStore; origin?: string;
     queues.set(key,p); track(p);
     void p.finally(()=>{if(queues.get(key)===p) queues.delete(key);}).catch(()=>{}); return p;
   }
-  const send=(socket:WebSocket,data:ServerMessage)=>{if(socket.readyState===1) socket.send(JSON.stringify(data));};
+  const send=(socket:WebSocket,data:ServerMessage)=>{if(socket.readyState===1) socket.send(JSON.stringify(safety.sanitize(data)));};
   function storageFailure() {
     storageHealthy=false;
     for(const c of connections.values()) {send(c.socket,{type:'error',error:'SERVICE_UNAVAILABLE'});c.socket.close(1013,'Service unavailable');}
@@ -95,8 +99,12 @@ export async function buildApp(options: { store: PostgresStore; origin?: string;
     const user=await store.authenticate(token,!!reply);
     if(reply&&!bearer)setSession(reply,token!); return user;
   };
+  const safetyActor=(req:FastifyRequest)=>safety.actor(bearerToken(req.headers.authorization)??req.cookies.avalon_session);
   app.addHook('onRequest',async req=>{
     if(!storageHealthy||closing)throw new DomainError('SERVICE_UNAVAILABLE',503);
+    if(process.env.CONTENT_SAFETY_MAINTENANCE==='true'&&!['/api/health'].includes(req.url)
+      &&!req.url.startsWith('/api/content-safety/media/')&&!req.url.startsWith('/api/avatars/')&&!req.url.startsWith('/api/admin/'))
+      throw new DomainError('SERVICE_UNAVAILABLE',503);
     const websocketRequest=req.headers.upgrade==='websocket';
     const miniGameLogin=req.method==='POST'&&req.url==='/api/sessions/minigame';
     const socketTicket=websocketRequest&&req.url.startsWith('/api/rooms/')
@@ -111,19 +119,37 @@ export async function buildApp(options: { store: PostgresStore; origin?: string;
     }
   });
   app.addHook('onSend',async(_req,reply)=>{reply.header('Cache-Control','no-store');reply.header('X-Content-Type-Options','nosniff');});
+  app.addHook('preSerialization',async(req,_reply,payload)=>{
+    if(req.url.startsWith('/api/admin/'))return payload;
+    const filtered=safety.sanitize(payload);
+    // Only the authenticated owner sees original drafts. Do not seed profile editing
+    // with a legacy moderation placeholder that could overwrite their saved data.
+    if((req.url==='/api/me'||req.url.startsWith('/api/sessions/'))&&payload&&typeof payload==='object'&&'user' in payload)
+      return {...filtered as object,user:(payload as {user:unknown}).user};
+    return filtered;
+  });
   app.setErrorHandler((err,_req,reply)=>{
     if(err instanceof DomainError)return reply.code(err.status).send({error:err.code});
     if(err instanceof z.ZodError)return reply.code(400).send({error:'INVALID_INPUT'});
     const status=(err as {statusCode?:number}).statusCode??500;
     return reply.code(status).send({error:status===429?'RATE_LIMITED':status<500?'INVALID_REQUEST':'INTERNAL_ERROR'});
   });
-  app.get('/api/health',async()=>{await store.health();return {status:'ok',storage:'postgresql',stage:6};});
+  app.get('/api/health',async()=>{await store.health();return {status:'ok',storage:'postgresql',stage:6,contentSafetyEnabled:safety.enabled};});
+  app.get<{Params:{token:string}}>('/api/content-safety/media/:token',async(req,reply)=>{
+    const media=await safety.media(req.params.token);if(!media)return reply.code(404).send({error:'NOT_FOUND'});
+    return reply.type(media.mime).send(media.data);
+  });
+  app.get<{Params:{id:string}}>('/api/avatars/:id',async(req,reply)=>{
+    const media=await safety.image(req.params.id);if(!media)return reply.code(404).send({error:'NOT_FOUND'});
+    return reply.type(media.mime).send(media.data);
+  });
   app.post('/api/sessions/guest',{config:{rateLimit:{max:15,timeWindow:'1 minute'}}},async(req,reply)=>{
     const {nickname, forceNew,registrationId,roomKey}=z.object({nickname:nicknameSchema, forceNew:z.boolean().optional(),
       registrationId:z.string().uuid().optional(),roomKey:z.string().trim().min(1).max(200).optional()}).strict().parse(req.body);
     if (!forceNew) {
       try{return {user:await authenticate(req,reply)};}catch(err){if(!(err instanceof DomainError)||err.code!=='UNAUTHENTICATED')throw err;}
     }
+    await safety.text(nickname,'profile');
     const {user,token}=await store.createGuest(nickname,{registrationId,roomKey}); setSession(reply,token);return {user};
   });
   app.post('/api/sessions/refresh',async(req,reply)=>({user:await authenticate(req,reply)}));
@@ -134,7 +160,7 @@ export async function buildApp(options: { store: PostgresStore; origin?: string;
     const { playerCode, expectedUserId } = z.object({
       playerCode: specialCodeSchema, recoveryCode: z.string().min(1).max(128).optional(), expectedUserId: z.string().uuid().optional(),
     }).strict().parse(req.body);
-    const { user, token } = await store.switchAccount(playerCode, expectedUserId);
+    const { user, token } = await store.switchAccount(playerCode, expectedUserId, miniGameToken);
     setSession(reply, token);
     return miniGameToken ? { user, token } : { user };
   });
@@ -142,7 +168,10 @@ export async function buildApp(options: { store: PostgresStore; origin?: string;
     const appId = process.env.WECHAT_MINIGAME_APP_ID;
     const appSecret = process.env.WECHAT_MINIGAME_APP_SECRET;
     if (!appId || !appSecret) throw new DomainError('WECHAT_UNAVAILABLE', 503);
-    return loginWithWechatCode(req.body, { appId, appSecret }, identity => store.loginWechat(identity));
+    return loginWithWechatCode(req.body, { appId, appSecret }, async identity => {
+      if(identity.nickname)await safety.text(identity.nickname,'profile',{openid:identity.openid});
+      return store.loginWechat(identity);
+    });
   });
   app.post('/api/sessions/web-handoff', { config: { rateLimit: { max: 10, timeWindow: '1 minute' } } }, async(req,reply)=>{
     const token=bearerToken(req.headers.authorization);
@@ -175,7 +204,11 @@ export async function buildApp(options: { store: PostgresStore; origin?: string;
   });
   app.get('/api/me',async(req,reply)=>{const user=await authenticate(req,reply);return {user,roomId:await store.currentRoom(user.id)};});
   app.patch('/api/me',async(req,reply)=>{
-    const user=await accounts.updateProfile((await authenticate(req,reply)).id,profileSchema.parse(req.body));
+    const current=await authenticate(req,reply),input=profileSchema.parse(req.body),actor=await safetyActor(req);
+    const [,avatarUrl,wechatAvatarUrl]=await Promise.all([
+      safety.text(input.nickname,'profile',actor),safety.avatar(input.avatarUrl,actor),safety.avatar(input.wechatAvatarUrl,actor),
+    ]);
+    const user=await accounts.updateProfile(current.id,{...input,...(avatarUrl!==undefined?{avatarUrl}:{}),...(wechatAvatarUrl!==undefined?{wechatAvatarUrl}:{})});
     const roomId=await store.currentRoom(user.id);if(roomId)publish(roomId);return {user};
   });
   app.get('/api/me/stats',async(req,reply)=>accounts.statistics((await authenticate(req,reply)).id));
@@ -184,7 +217,11 @@ export async function buildApp(options: { store: PostgresStore; origin?: string;
   app.put<{Params:{id:string}}>('/api/me/favorites/:id',async(req,reply)=>accounts.favorite((await authenticate(req,reply)).id,z.string().uuid().parse(req.params.id),true));
   app.delete<{Params:{id:string}}>('/api/me/favorites/:id',async(req,reply)=>accounts.favorite((await authenticate(req,reply)).id,z.string().uuid().parse(req.params.id),false));
   app.get('/api/me/presets',async(req,reply)=>({presets:await accounts.presets((await authenticate(req,reply)).id)}));
-  app.post('/api/me/presets',async(req,reply)=>({preset:await accounts.savePreset((await authenticate(req,reply)).id,presetSchema.parse(req.body))}));
+  app.post('/api/me/presets',async(req,reply)=>{
+    const user=await authenticate(req,reply),input=presetSchema.parse(req.body);
+    await safety.text(input.name,'profile',await safetyActor(req));
+    return {preset:await accounts.savePreset(user.id,input)};
+  });
   app.delete<{Params:{id:string}}>('/api/me/presets/:id',async(req,reply)=>accounts.deletePreset((await authenticate(req,reply)).id,z.string().uuid().parse(req.params.id)));
   app.get('/api/me/dedicated-rooms',async(req,reply)=>({rooms:await special.rooms((await authenticate(req,reply)).id)}));
   const roomAccess = z.object({settings:settingsSchema.optional(),dedicatedRoomId:z.string().uuid().optional(),password:roomPasswordSchema.optional()}).strict();
@@ -301,6 +338,7 @@ export async function buildApp(options: { store: PostgresStore; origin?: string;
     const user=await authenticate(req,reply);
     const friendId=z.string().uuid().parse(req.params.id);
     const {text}=z.object({text:z.string().trim().min(1).max(500)}).strict().parse(req.body);
+    await safety.text(text,'chat',await safetyActor(req));
     const client=await store.pool.connect();
     const msgId=randomUUID();
     const timestamp=new Date().toISOString();
@@ -330,6 +368,7 @@ export async function buildApp(options: { store: PostgresStore; origin?: string;
     const roomId=z.string().uuid().parse(req.params.id);
     const {room}=await store.roomFor(user.id,roomId);
     const {text}=z.object({text:z.string().trim().min(1).max(200)}).strict().parse(req.body);
+    await safety.text(text,'chat',await safetyActor(req));
     const member=room.members.find(m=>m.id===user.id);
     const seat=member?.seat??0;
     const messageId=randomUUID();
@@ -390,6 +429,12 @@ export async function buildApp(options: { store: PostgresStore; origin?: string;
     requireAdmin(req, reply);
     return adminService.getOverview(connections.size);
   });
+  app.get('/api/admin/content-safety/reviews',async(req,reply)=>{requireAdmin(req,reply);return {reviews:await safety.reviews()};});
+  app.post('/api/admin/content-safety/reload',async(req,reply)=>{requireAdmin(req,reply);await safety.initialize();return {ok:true};});
+  app.post<{Params:{id:string}}>('/api/admin/content-safety/reviews/:id',async(req,reply)=>{
+    requireAdmin(req,reply);const input=z.object({decision:z.enum(['pass','risky']),note:z.string().trim().min(1).max(200)}).strict().parse(req.body);
+    return safety.resolveReview(z.string().uuid().parse(req.params.id),input.decision,input.note);
+  });
 
   app.get('/api/admin/settings', async (req, reply) => {
     requireAdmin(req, reply);
@@ -398,7 +443,12 @@ export async function buildApp(options: { store: PostgresStore; origin?: string;
 
   app.post('/api/admin/settings', async (req, reply) => {
     requireAdmin(req, reply);
-    const { key, value } = z.object({ key: z.string(), value: z.any() }).parse(req.body);
+    const { key } = z.object({ key: z.string() }).parse(req.body);
+    let { value } = z.object({ value: z.any() }).parse(req.body);
+    if(key==='broadcast_announcement') {
+      value=z.object({text:z.string().max(500),enabled:z.boolean()}).strict().parse(value);
+      if(value.text.trim())await safety.text(value.text,'chat');
+    }
     await adminService.updateSystemSetting(key, value);
     if (key === 'broadcast_announcement' && value && typeof value === 'object') {
       for (const c of connections.values()) {
@@ -409,8 +459,8 @@ export async function buildApp(options: { store: PostgresStore; origin?: string;
   });
 
   app.get('/api/admin/dedicated-rooms',async(req,reply)=>{requireAdmin(req,reply);return {rooms:await special.rooms()};});
-  app.post('/api/admin/dedicated-rooms',async(req,reply)=>{requireAdmin(req,reply);await special.saveRoom(dedicatedRoomSchema.parse(req.body));return {ok:true};});
-  app.put<{Params:{id:string}}>('/api/admin/dedicated-rooms/:id',async(req,reply)=>{requireAdmin(req,reply);await special.saveRoom(dedicatedRoomSchema.parse(req.body),z.string().uuid().parse(req.params.id));return {ok:true};});
+  app.post('/api/admin/dedicated-rooms',async(req,reply)=>{requireAdmin(req,reply);const input=dedicatedRoomSchema.parse(req.body);await safety.text(input.name,'profile');await special.saveRoom(input);return {ok:true};});
+  app.put<{Params:{id:string}}>('/api/admin/dedicated-rooms/:id',async(req,reply)=>{requireAdmin(req,reply);const input=dedicatedRoomSchema.parse(req.body);await safety.text(input.name,'profile');await special.saveRoom(input,z.string().uuid().parse(req.params.id));return {ok:true};});
   app.get('/api/admin/player-codes',async(req,reply)=>{requireAdmin(req,reply);return {codes:await special.reservations()};});
   app.get('/api/admin/player-codes/history',async(req,reply)=>{
     requireAdmin(req,reply);const {cursor,limit}=z.object({cursor:z.string().min(1).max(512).optional(),limit:z.coerce.number().int().min(1).max(50).default(20)}).strict().parse(req.query);
@@ -544,7 +594,8 @@ export async function buildApp(options: { store: PostgresStore; origin?: string;
 
   app.post('/api/admin/broadcast', async (req, reply) => {
     requireAdmin(req, reply);
-    const { text, enabled } = z.object({ text: z.string(), enabled: z.boolean() }).parse(req.body);
+    const { text, enabled } = z.object({ text: z.string().max(500), enabled: z.boolean() }).parse(req.body);
+    if(text.trim())await safety.text(text,'chat');
     await adminService.updateSystemSetting('broadcast_announcement', { text, enabled });
     for (const c of connections.values()) {
       send(c.socket, { type: 'systemAnnouncement', text, enabled });

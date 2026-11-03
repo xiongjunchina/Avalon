@@ -1,5 +1,10 @@
 import { deployment } from './deployment';
 export const errors: Record<string, string> = {
+  CONTENT_REJECTED: '内容未通过安全检测，请修改文字或更换头像后重试。',
+  CONTENT_PENDING: '内容需要进一步复核，暂未公开，请修改后重试或稍后再试。',
+  CONTENT_CHECK_UNAVAILABLE: '内容检测暂时不可用，本次内容未发布，请稍后重试。',
+  CONTENT_IDENTITY_REQUIRED: '微信身份已过期，请重新微信登录后重试。',
+  INVALID_AVATAR: '头像格式或来源不受支持，请重新从相册选择上传。',
   HANDOFF_EXPIRED: '接续链接已过期、已使用或已被新链接替换，请回到小游戏重新复制本人接续链接。',
   HANDOFF_ROOM_CHANGED: '原房间或席位已变化，请回到小游戏确认后重新生成接续链接。',
   HANDOFF_UNAVAILABLE: '接续服务暂时繁忙，请稍后重试；原房间可以继续游戏。',
@@ -45,8 +50,8 @@ export const errors: Record<string, string> = {
   REQUEST_NOT_FOUND: '未找到对应的好友申请。',
   RATE_LIMITED: '操作过于频繁，请稍后再试。', NETWORK: '连接失败，请检查网络后重试。',
 };
-export async function api<T>(path: string, body?: unknown, method = body === undefined ? 'GET' : 'POST'): Promise<T> {
-  const controller=new AbortController(); const timer=setTimeout(()=>controller.abort(),10000);
+export async function api<T>(path: string, body?: unknown, method = body === undefined ? 'GET' : 'POST', options: { timeoutMs?: number } = {}): Promise<T> {
+  const controller=new AbortController(); const timer=setTimeout(()=>controller.abort(),options.timeoutMs ?? 10_000);
   try {
     const response = await fetch(deployment.path(`api${path}`), { method,
       headers: { ...(body === undefined ? {} : { 'Content-Type': 'application/json' }), ...(method === 'GET' ? {} : { 'X-Avalon-Request': '1' }) },

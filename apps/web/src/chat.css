@@ -184,6 +184,15 @@
 }
 
 /* Tactical Quick Phrases */
+.chat-content-safety-notice {
+  margin: 0;
+  padding: 6px 14px;
+  flex-shrink: 0;
+  font-size: 11px;
+  line-height: 1.5;
+  color: #cbd5e1;
+}
+
 .chat-tactical-section {
   padding: 8px 14px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);

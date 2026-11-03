@@ -21,7 +21,7 @@ export class MiniGameApi {
     this.session = new MiniGameSession(platform);
   }
 
-  request<T>(path: string, body?: unknown, method = body === undefined ? 'GET' : 'POST'): Promise<T> {
+  request<T>(path: string, body?: unknown, method = body === undefined ? 'GET' : 'POST', options: { timeoutMs?: number } = {}): Promise<T> {
     const token = this.session.get();
     return new Promise((resolve, reject) => {
       let finished = false;
@@ -31,7 +31,7 @@ export class MiniGameApi {
         clearTimeout(timer);
         action();
       };
-      const timer = setTimeout(() => finish(() => reject(new Error('NETWORK_TIMEOUT'))), this.options.timeoutMs ?? 10_000);
+      const timer = setTimeout(() => finish(() => reject(new Error('NETWORK_TIMEOUT'))), options.timeoutMs ?? this.options.timeoutMs ?? 10_000);
       this.platform.request({
         url: applicationUrl(this.baseUrl,`api${path}`),
         method,

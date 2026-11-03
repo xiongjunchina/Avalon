@@ -821,3 +821,22 @@
 .admin-viewport .special-editor .check input:checked::before { transform: translateX(16px); }
 .admin-viewport .special-editor details { margin-top: 14px; padding-top: 10px; border-top: 1px solid rgba(255, 255, 255, 0.08); }
 .admin-viewport .special-editor summary { cursor: pointer; color: #ffd875; }
+
+/* Content review uses the authenticated administration surface and its compact scale. */
+.admin-review-heading, .admin-review-meta, .admin-review-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+.admin-review-heading { justify-content: space-between; margin-bottom: 12px; }
+.admin-review-heading .admin-panel-title { margin: 0; }
+.admin-review-hint, .admin-review-user { color: #94a3b8; font-size: 13px; line-height: 1.6; overflow-wrap: anywhere; }
+.admin-review-list { display: grid; gap: 16px; margin-top: 16px; }
+.admin-review-card { min-width: 0; padding: 16px; border: 1px solid rgba(255,255,255,.12); border-radius: 10px; background: rgba(255,255,255,.025); }
+.admin-review-meta { justify-content: space-between; font-size: 13px; }
+.admin-review-meta time { color: #94a3b8; font-size: 12px; }
+.admin-review-content { white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; font-size: 14px; line-height: 1.7; background: rgba(0,0,0,.2); padding: 12px; border-radius: 6px; }
+.admin-review-image { display: block; width: 144px; height: 144px; object-fit: contain; margin: 12px 0; background: #e2e8f0; border-radius: 6px; }
+.admin-review-card label { display: block; font-size: 13px; margin: 12px 0 8px; color: #cbd5e1; }
+.admin-review-card textarea.admin-input { width: 100%; resize: vertical; font-size: 13px; line-height: 1.5; }
+.admin-review-actions { margin-top: 12px; }
+.admin-review-actions button:disabled { opacity: .45; cursor: not-allowed !important; }
+.admin-review-error, .admin-review-notice { font-size: 13px; line-height: 1.6; }
+.admin-review-error { color: #fca5a5; }
+.admin-review-notice { color: #86efac; }

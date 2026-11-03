@@ -11,6 +11,7 @@ import type {
 } from '@avalon/contracts';
 import { ReplayView } from './AccountPanel';
 import { AdminRoleAssignmentAudit } from './AdminRoleAssignmentAudit';
+import { AdminContentSafety } from './AdminContentSafety';
 import './admin.css';
 import { SpecialAdmin, PlayerCodeEditor } from './SpecialAdmin';
 import { adminRoomPhaseLabel } from './admin-room-state';
@@ -27,8 +28,9 @@ export function AdminDashboard({ onBackToGame }: AdminDashboardProps) {
   const [busy, setBusy] = useState(false);
 
   // Tabs: 'overview' | 'strategy' | 'users' | 'rooms' | 'codes'
-  const [activeTab, setActiveTab] = useState<'overview' | 'strategy' | 'users' | 'rooms' | 'codes' | 'special'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'strategy' | 'users' | 'rooms' | 'codes' | 'special' | 'content'>('overview');
   const [specialRefresh,setSpecialRefresh]=useState(0);
+  const [contentRefresh,setContentRefresh]=useState(0);
 
   // Overview Data
   const [overview, setOverview] = useState<AdminOverview | null>(null);
@@ -445,6 +447,7 @@ export function AdminDashboard({ onBackToGame }: AdminDashboardProps) {
               else if (activeTab === 'rooms') { void loadRooms(); }
               else if (activeTab === 'codes') { void loadCodes(); }
               else if (activeTab === 'special') { setSpecialRefresh(v=>v+1); }
+              else if (activeTab === 'content') { setContentRefresh(v=>v+1); }
             }}
           >
             🔄 刷新数据
@@ -496,11 +499,13 @@ export function AdminDashboard({ onBackToGame }: AdminDashboardProps) {
           🎟️ 兑换码 ({codes.length})
         </button>
         <button type="button" className={`admin-nav-item ${activeTab==='special'?'is-active':''}`} onClick={()=>setActiveTab('special')}>专属房与靓号</button>
+        <button type="button" className={`admin-nav-item ${activeTab==='content'?'is-active':''}`} onClick={()=>setActiveTab('content')}>内容审核</button>
       </nav>
 
       {/* Main Container */}
       <main className="admin-main-container">
         {activeTab==='special'&&<SpecialAdmin request={adminApi} refreshToken={specialRefresh} onRoomsChanged={async()=>{await Promise.all([loadRooms(),loadOverview()]);}}/>}
+        {activeTab==='content'&&<AdminContentSafety request={adminApi} refreshToken={contentRefresh}/>}
         {codeUser&&<PlayerCodeEditor user={codeUser} request={adminApi} onClose={()=>setCodeUser(null)} onSaved={()=>void loadUsers(userSearchQuery)}/>}
         {/* ================= Tab 1: Overview ================= */}
         {activeTab === 'overview' && (
