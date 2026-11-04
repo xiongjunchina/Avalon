@@ -30,13 +30,13 @@ export function LobbyHero() {
 /** Visitors and returning players share the same public artwork and room entry points. */
 export function LobbyHome({
   user, freeAccess, busy, voiceEnabled, hasInvitation, friendRequests, soundControl,
-  onVoiceChange, onAccount, onSignIn, onLogout, onFriends, onGuide, onCreate, onJoin, onPractice,
+  onVoiceChange, onAccount, onSignIn, onLogout, onFriends, onGuide, onCreate, onJoin,
 }: {
   user: User | null; freeAccess: boolean; busy: boolean; voiceEnabled: boolean;
   hasInvitation: boolean; friendRequests: number; soundControl: ReactNode;
   onVoiceChange: (enabled: boolean) => void;
   onAccount: () => void; onSignIn: () => void; onLogout: () => void; onFriends: () => void;
-  onGuide: () => void; onCreate: () => void; onJoin: () => void; onPractice: () => void;
+  onGuide: () => void; onCreate: () => void; onJoin: () => void;
 }) {
   return <div className="mp-home-screen home-duel-screen">
     <header className="mp-home-topbar">
@@ -81,7 +81,6 @@ export function LobbyHome({
           <Emblem kind="crown" />{hasInvitation ? '加入邀请房间' : '加入房间'}
         </button>
       </div>
-      <button type="button" className="secondary practice-entry" disabled={busy} onClick={onPractice}>🐒 幻境单人试玩 ›</button>
       <nav className="lobby-compact-links" aria-label="快捷导航">
         <button type="button" className="lobby-link-btn" onClick={onGuide}>玩法与角色</button>
         <span className="lobby-link-sep" aria-hidden="true">·</span>

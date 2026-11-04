@@ -10,7 +10,7 @@ const props = {
   freeAccess: true, busy: false, voiceEnabled: false,
   hasInvitation: false, friendRequests: 0, soundControl: null,
   onVoiceChange: noop, onAccount: noop, onSignIn: noop, onLogout: noop,
-  onFriends: noop, onGuide: noop, onCreate: noop, onJoin: noop, onPractice: noop,
+  onFriends: noop, onGuide: noop, onCreate: noop, onJoin: noop,
 };
 
 test('visitor and signed-in home expose the same hero and public guide without a registration form', () => {
@@ -33,13 +33,14 @@ test('visitor and signed-in home expose the same hero and public guide without a
   assert.match(visitor, /公测盛典/);
 });
 
-test('both room modes retain room and practice entries and disable submissions while busy', () => {
+test('both room modes retain room entries, move practice off home and disable submissions while busy', () => {
   const buttons = (html: string) => [...html.matchAll(/<button\b[^>]*>.*?<\/button>/gs)].map(match => match[0]);
   for (const voiceEnabled of [false, true]) {
     for (const busy of [false, true]) {
       const html = renderToStaticMarkup(createElement(LobbyHome, { ...props, user: null, voiceEnabled, busy }));
       const rendered = buttons(html);
-      for (const name of [voiceEnabled ? '开语音房' : '开常规房', '加入房间', '幻境单人试玩']) {
+      assert.doesNotMatch(html, /practice-entry|幻境单人试玩|熟悉玩法/);
+      for (const name of [voiceEnabled ? '开语音房' : '开常规房', '加入房间']) {
         const entry = rendered.find(button => button.includes(name));
         assert.ok(entry, `missing public entry: ${name}`);
         assert.equal(/\bdisabled=""/.test(entry), busy, `busy state for ${name}`);

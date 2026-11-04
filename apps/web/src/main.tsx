@@ -35,6 +35,7 @@ import './sound.css';
 import './account.css';
 import { ReadyReminder } from './ReadyReminder';
 import './feedback.css';
+import './chronicle.css';
 import { Modal } from './Modal';
 import { GamePanel } from './GamePanel';
 import { PracticeSeatPicker } from './PracticeSeatPicker';
@@ -979,10 +980,11 @@ function App() {
               </button>
               <button
                 type="button"
-                className="mp-subtle-link"
+                className="mp-subtle-link setup-practice-entry"
+                disabled={busy}
                 onClick={() => startPracticeGame(setupSettings)}
               >
-                幻境单人演练 {setupSettings.playerCount} 人取经牌局 ›
+                单人试玩 · 熟悉玩法 <span aria-hidden="true">→</span>
               </button>
             </footer>
             <section className="setup-role-preview" aria-labelledby="setup-role-heading">
@@ -1045,7 +1047,6 @@ function App() {
               onGuide={() => { guideReturn.current = 'table'; setPage('guide'); }}
               onCreate={() => openEntry({ type: 'create' })}
               onJoin={() => openEntry({ type: 'join', inviteKey: inviteKey || undefined })}
-              onPractice={() => openEntry({ type: 'practice' })}
             />
 
             {/* Join Room Modal */}

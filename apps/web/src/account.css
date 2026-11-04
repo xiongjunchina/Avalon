@@ -53,11 +53,11 @@
 .account-flow .notice { color: #345536; background: #e5eddc; border: 1px solid #b6c8a2; }
 .account-flow .history-list { display: grid; gap: 10px; }
 .account-flow .history-list .history-card { padding: 8px 12px 0; margin: 0; border: 1px solid var(--border); border-left: 3px solid #b7a994; border-radius: 10px; background: #fffaf0; }
-.account-flow .history-list .result-victory { border-color: #c49a48; border-left-color: #9b6817; background: #fff4d6; }
+.account-flow .history-list .result-victory { border-color: #9bbc9e; border-left-color: #177448; background: #eff6e9; }
 .account-flow .history-list .result-defeat { border-left-color: #a36365; }
 .history-card-heading { display: flex; align-items: center; gap: 8px; min-width: 0; }
-.account-flow .history-list .history-outcome { display: flex; align-items: center; gap: 5px; margin: 0; font: 700 22px/1.3 var(--display); color: #91424b; white-space: nowrap; }
-.account-flow .result-victory .history-outcome { color: #855000; font-size: 25px; }
+.account-flow .history-list .history-outcome { display: flex; align-items: center; gap: 5px; margin: 0; font: 700 22px/1.3 var(--sans); color: #b12d32; white-space: nowrap; }
+.account-flow .result-victory .history-outcome { color: #177448; font-size: 25px; font-weight: 800; }
 .account-flow .result-aborted .history-outcome { color: #6c6259; }
 .history-outcome .emblem { width: 22px; height: 22px; }
 .history-table-size { color: #6c5a48; font-size: 12px; white-space: nowrap; }
@@ -114,16 +114,15 @@
 .account-flow .role-card .role-record { color: #6c5a48; }
 .account-flow .card-foot, .account-flow .role-card .card-foot { color: #6c5a48 !important; opacity: 1 !important; border-top-color: #e1d5bf !important; font-size: 11px !important; }
 .account-flow .score-pair { border-top-color: #e1d5bf !important; }
-/* Editors and detailed replay keep a solid dark reading surface for their game controls. */
-.account-editor, .panel.account-replay { --accent: #ffd875; --muted: #eddcc4; --border: #9b7854; --surface: #291514; --raised: #442420; --ink: #1e0b0a; --glass: #291514; color: #fff3db; background: #291514; border: 1px solid #9b7854; box-shadow: none; }
+/* Editors keep a solid dark reading surface for their game controls. */
+.account-editor { --accent: #ffd875; --muted: #eddcc4; --border: #9b7854; --surface: #291514; --raised: #442420; --ink: #1e0b0a; --glass: #291514; color: #fff3db; background: #291514; border: 1px solid #9b7854; box-shadow: none; }
 .account-editor button { background: #ffd875; color: #3b1402; box-shadow: none; }
 .account-editor button.secondary { background: #442420; color: #fff3db; border-color: #9b7854; }
 .account-editor :focus-visible { outline-color: #ffd875; }
-.account-editor .table-modal-head, .panel.account-replay > .section-head { background: #291514; }
+.account-editor .table-modal-head { background: #291514; }
 .account-editor .flow-fixed-actions { background: #291514; }
 .account-editor .hint, .account-editor label, .account-editor legend { color: #eddcc4; }
 .account-editor .flow-scroll-body { background: #291514; }
-.panel.account-replay { margin: 12px; border-radius: 16px; }
 @media (max-width: 380px) {
   .account.account-flow { margin: 8px; }
   .account-content { padding: 10px; }

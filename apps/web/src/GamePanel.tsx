@@ -1424,13 +1424,13 @@ export function GamePanel({
       {/* Per-Mission Detail Modal (Triggered when tapping any of the 5 Mission Circles) */}
       {inspectMission !== null && (
         <Modal label={`任务 ${inspectMission} 组队与投票详情`} scene={ended ? 'dawn' : 'sword'} onClose={() => setInspectMission(null)}>
-          <div className="table-modal-sheet battle-sheet" onClick={e => e.stopPropagation()}>
+          <div className="table-modal-sheet battle-sheet chronicle-surface chronicle-sheet" onClick={e => e.stopPropagation()}>
             <div className="table-modal-head">
-              <strong>
-                {WUYUE_MISSIONS[inspectMission - 1]?.title ?? `任务 ${inspectMission}`} 详情（需 {g.missionSizes[inspectMission - 1]} 人
+              <strong className="chronicle-mission-heading">
+                {WUYUE_MISSIONS[inspectMission - 1]?.title ?? `任务 ${inspectMission}`}<small>需 {g.missionSizes[inspectMission - 1]} 人
                 {failuresRequiredFor(g.players.length, inspectMission) === 2
-                  ? ' · 2张失败牌才失败'
-                  : ' · 1张失败牌即失败'}）
+                  ? ' · 2 张失败牌才失败'
+                  : ' · 1 张失败牌即失败'}</small>
               </strong>
               <button type="button" className="secondary tool-pill" onClick={() => setInspectMission(null)}>
                 返回法坛
@@ -1452,13 +1452,13 @@ export function GamePanel({
               ))}
             </div>
 
-            {missionRounds.length === 0 ? (
+            <div className="chronicle-scroll-body">{missionRounds.length === 0 ? (
               <p className="muted" style={{ marginTop: 12 }}>
                 {WUYUE_MISSIONS[inspectMission - 1]?.title ?? `任务 ${inspectMission}`} 尚未产生组队提案记录。
               </p>
             ) : (
               <BattleHistory rounds={missionRounds} players={publicPlayers} anonymous={room.settings.anonymousTeamVote} userId={userId} />
-            )}
+            )}</div>
           </div>
         </Modal>
       )}
@@ -1466,19 +1466,20 @@ export function GamePanel({
       {/* Full Battle Log / Rounds History Modal */}
       {historyOpen && (
         <Modal label="战况与提案记录" scene={ended ? 'dawn' : 'sword'} onClose={() => setHistoryOpen(false)}>
-          <div className="table-modal-sheet battle-sheet" onClick={e => e.stopPropagation()}>
+          <div className="table-modal-sheet battle-sheet chronicle-surface chronicle-sheet" onClick={e => e.stopPropagation()}>
             <div className="table-modal-head">
-              <strong>取经劫难全录（共 {g.rounds.length} 次提案）</strong>
+              <strong>取经录 <small>{g.rounds.length} 次提案</small></strong>
               <button type="button" className="secondary tool-pill" onClick={() => setHistoryOpen(false)}>
                 返回法坛
               </button>
             </div>
-            {g.rounds.length === 0 ? (
+            <div className="chronicle-scroll-body">{g.rounds.length === 0 ? (
               <p className="muted">尚无已完成的组队提案。</p>
             ) : (
               <BattleHistory rounds={g.rounds} players={publicPlayers} anonymous={room.settings.anonymousTeamVote} userId={userId} />
             )}
             <ExtensionHistory game={g} name={name} />
+            </div>
           </div>
         </Modal>
       )}

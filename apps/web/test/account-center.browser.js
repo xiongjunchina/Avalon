@@ -36,6 +36,12 @@ async (page) => {
     p6: 'loyal', p7: 'morgana', p8: 'mordred', p9: 'minion', p10: 'minion' };
   const names = ['老熊', '一只取经的小猴子', '山间听雨', '白龙', '小陈', '阿辉', '清风', '明月', '桃桃', '花果山大王'];
   const players = names.map((nickname, i) => ({ id: `p${i + 1}`, seat: i + 1, nickname })).reverse();
+  const rounds = Array.from({ length: 5 }, (_, i) => ({ number: i + 1, mission: Math.min(i + 1, 5), captainId: `p${i + 1}`,
+    team: ['p1', 'p2', 'p3', 'p4'], direction: i % 2 ? 'counterclockwise' : 'clockwise',
+    ...(i === 3 ? {} : { vote: { approvals: 6, rejections: 3, abstentions: 1, passed: i !== 1,
+      ballots: Object.fromEntries(players.map((p, j) => [p.id, j === 9 ? 'abstain' : j < 6])) } }),
+    ...([0, 2].includes(i) ? { result: { successes: i === 0 ? 4 : 3, failures: i === 0 ? 0 : 1, passed: i === 0 } } : {}),
+  }));
   const games = Array.from({ length: 8 }, (_, i) => ({
     id: `history-${i}`, startedAt: '2026-11-04T13:00:00Z', endedAt: `2026-11-04T14:${String(50 - i).padStart(2, '0')}:00Z`,
     rulesetVersion: 'v2', playerCount: 10, self: { nickname: '老名字', seat: 1, role: 'assassin', team: 'red' },
@@ -62,7 +68,7 @@ async (page) => {
         if (path.startsWith('/games/')) {
           if (rosterFail) { rosterFail = false; return route.fulfill({ status: 503, json: { error: 'NETWORK' } }); }
           const game = games.find(g => path.includes(g.id));
-          return route.fulfill({ json: { ...game, favorite, settings, roles, players, rounds: [], inspections: [], earlyWindows: [] } });
+          return route.fulfill({ json: { ...game, favorite, settings: { ...settings, anonymousTeamVote: game.id !== 'history-0' }, roles, players, rounds, inspections: [], earlyWindows: [] } });
         }
         if (path === '/me/presets') {
           if (req.method() === 'POST') presets = [{ ...req.postDataJSON(), id: 'preset-1' }];
@@ -84,6 +90,7 @@ async (page) => {
         return { heights: cards.slice(0, 3).map(el => el.getBoundingClientRect().height),
           visible: cards.filter(el => el.getBoundingClientRect().bottom <= innerHeight).length,
           victory: getComputedStyle(document.querySelector('.result-victory .history-outcome')).color,
+          victoryWeight: getComputedStyle(document.querySelector('.result-victory .history-outcome')).fontWeight,
           defeat: getComputedStyle(document.querySelector('.result-defeat .history-outcome')).color,
           overflow: document.documentElement.scrollWidth > innerWidth };
       });
@@ -91,6 +98,8 @@ async (page) => {
       check(!layout.overflow && Math.max(...layout.heights) <= 165, `History is too tall or overflows horizontally: ${JSON.stringify(layout)}`);
       check(width !== 393 || layout.visible >= 3, `Fewer than three complete records fit on the mobile first screen: ${JSON.stringify(layout)}`);
       check(layout.victory !== layout.defeat, 'Win and loss colors are identical');
+      check(layout.victory === 'rgb(23, 116, 72)' && Number(layout.victoryWeight) >= 700, 'Victory should be bold green');
+      check(layout.defeat === 'rgb(177, 45, 50)', 'Defeat should be red');
       check(!(await p.locator('.history-list').innerText()).includes('对局编号'), 'Unhelpful metadata remains in the list');
       const first = p.locator('.history-card').first();
       await first.locator('summary').click();
@@ -107,6 +116,22 @@ async (page) => {
       if (width === 393) await p.screenshot({ path: '/private/tmp/avalon-account-roster-393.png' });
       await first.getByRole('button', { name: /查看.*的对局复盘/ }).click();
       await p.getByRole('heading', { name: '对局复盘', exact: true }).waitFor();
+      await p.locator('.chronicle-round').first().waitFor();
+      await contrastAudit(p, '.account-replay');
+      const recordLayout = await p.locator('.chronicle-round').first().evaluate(el => ({ height: el.getBoundingClientRect().height, overflow: document.documentElement.scrollWidth > innerWidth }));
+      if (width === 393) await p.screenshot({ path: '/private/tmp/avalon-chronicle-replay-393.png', fullPage: true });
+      check(recordLayout.height < 380 && !recordLayout.overflow, `Replay card is too tall or clipped: ${JSON.stringify(recordLayout)}`);
+      check(await p.locator('.chronicle-round .role-portrait').count() === 0, 'Round records mount private role images');
+      if (width === 393) await p.screenshot({ path: '/private/tmp/avalon-chronicle-replay-393.png', fullPage: true });
+      await p.locator('.chronicle-ballots summary').first().click();
+      check(await p.locator('.chronicle-ballots').first().locator('.battle-voters > div').count() === 10, 'Public votes omit players');
+      await contrastAudit(p, '.account-replay');
+      await p.getByRole('button', { name: '第5次 · 第5难', exact: true }).click();
+      check(await p.locator('.chronicle-round').count() === 5, 'Round navigation discards earlier proposals');
+      const jump = await p.locator('.battle-round-anchor').last().evaluate(el => ({ top: el.getBoundingClientRect().top, bottom: el.getBoundingClientRect().bottom, viewport: innerHeight }));
+      check(jump.top >= 100 && jump.bottom <= jump.viewport, `Round jump target is clipped: ${JSON.stringify(jump)}`);
+      await p.locator('.replay-identities summary').click();
+      check(await p.locator('.replay-identities .history-roster li').count() === 10, 'Replay misses final identities');
       await p.getByRole('button', { name: '返回记录', exact: true }).click();
       await p.getByRole('button', { name: '我的收藏', exact: true }).click();
       await p.locator('.history-card').waitFor();

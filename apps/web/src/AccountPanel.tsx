@@ -265,29 +265,28 @@ function HistoryPanel({favorites,onReplay}:{favorites:boolean;onReplay:(id:strin
 
 export function ReplayView({replay:g}:{replay:Replay}) {
   const name=(id:string)=>{const p=g.players.find(p=>p.id===id);return p?`${p.seat} 号 ${p.nickname}`:'未知成员';};
-  const loyalGuardians = assignLoyalGuardians(g.id, g.players, g.roles, g.rulesetVersion);
-  const femaleDemons = assignFemaleDemons(g.id, g.players, g.roles);
+  const selfId=g.players.find(p=>p.seat===g.self.seat)?.id;
   return <>
-    <div className="result-box"><h2>{g.result.winner===null?'本局中断':`${g.result.winner==='blue'?'蓝方':'红方'}获胜`}</h2><p>{reasons[g.result.reason]}{g.result.targetId?` · 刺杀目标：${name(g.result.targetId)}`:''}</p></div>
-    <details className="replay-metadata flow-details"><summary>时间、编号与规则配置</summary><p className="hint">开始 {date(g.startedAt)}<br/>结束 {date(g.endedAt)} · 你的结果：{outcome(g)}</p><p className="hint game-uid-line">对局编号 ID：<span>{g.id}</span></p>
+    <div className={`replay-result result-${outcomeKind(g)}`}><div className="replay-result-heading"><h2>{outcome(g)}</h2><span>{g.playerCount} 人局 · {g.result.winner===null?'本局中断':`${g.result.winner==='blue'?'蓝方':'红方'}获胜`}</span><time dateTime={g.endedAt}>{date(g.endedAt)}</time></div><p><strong>{roleNames[g.self.role]}</strong> · {g.self.team==='blue'?'蓝方':'红方'} · {g.self.seat} 号位</p><p className="replay-result-reason">{reasons[g.result.reason]}{g.result.targetId?` · 刺杀目标：${name(g.result.targetId)}`:''}</p></div>
+    <details className="replay-identities chronicle-details"><summary>全员最终身份 <span>{g.players.length} 人</span></summary><HistoryRoster replay={g}/></details>
+    <details className="replay-metadata chronicle-details"><summary>时间、编号与规则配置</summary><p className="hint">开始 {date(g.startedAt)}<br/>结束 {date(g.endedAt)} · 你的结果：{outcome(g)}</p><p className="hint game-uid-line">对局编号 ID：<span>{g.id}</span></p>
     <p className="hint">{settingsText(g.settings,g.rulesetVersion)}<br/>规则版本：{g.rulesetVersion}</p>
     <p className="notice">仅本局参与者可看。{g.settings.anonymousTeamVote?'组队投票仅展示总数。':'组队投票展示当时公开的个人赞反。'}任务出牌始终不对应个人。</p>
 </details>
-    <details className="replay-identities flow-details">    <summary>全员最终身份（{g.players.length} 人）</summary><ul className="role-list">{g.players.map(p=><li key={p.id}><span>{name(p.id)}</span><strong className={`revealed-role allegiance-${roleTeam(g.roles[p.id])}`}><RolePortrait role={g.roles[p.id]} loyalGuardian={loyalGuardians[p.id]} femaleDemon={femaleDemons[p.id]} size="mini"/>{formatRoleName(g.roles[p.id], loyalGuardians[p.id], femaleDemons[p.id])}</strong></li>)}</ul>
-</details>
-    <h3>逐轮记录</h3>{!g.rounds.length&&<p className="muted">本局在第一次组队前结束。</p>}
-    <BattleHistory rounds={g.rounds} players={g.players} anonymous={g.settings.anonymousTeamVote}/>
-    {!!g.inspections?.length&&<details className="flow-details"><summary>宝镜查验记录</summary>{g.inspections.map(i=><p key={i.afterMission} className="hint">第{i.afterMission}难：{name(i.inspectorId)} 查验 {name(i.targetId)}，随后交接给被查验者。</p>)}</details>}
-    {!!g.earlyWindows.length&&<details className="flow-details"><summary>轮间确认记录</summary>{g.earlyWindows.map((w,i)=><p key={i} className="hint">第{w.afterProposal}次提案后：{w.decision==='skip'?'跳过提前刺杀':'发起提前刺杀'}（完成任务 {w.afterMission} 后）</p>)}</details>}
+    <div className="chronicle-section-heading"><h3>逐轮记录</h3><span>{g.rounds.length} 次提案</span></div>{!g.rounds.length&&<p className="muted">本局在第一次组队前结束。</p>}
+    <BattleHistory rounds={g.rounds} players={g.players} anonymous={g.settings.anonymousTeamVote} userId={selfId}/>
+    {!!g.inspections?.length&&<details className="chronicle-details"><summary>宝镜查验记录</summary>{g.inspections.map(i=><p key={i.afterMission} className="hint">第{i.afterMission}难：{name(i.inspectorId)} 查验 {name(i.targetId)}，随后交接给被查验者。</p>)}</details>}
+    {!!g.earlyWindows.length&&<details className="chronicle-details"><summary>轮间确认记录</summary>{g.earlyWindows.map((w,i)=><p key={i} className="hint">第{w.afterProposal}次提案后：{w.decision==='skip'?'跳过提前刺杀':'发起提前刺杀'}（完成任务 {w.afterMission} 后）</p>)}</details>}
   </>;
 }
 function ReplayPanel({id,onBack}:{id:string;onBack:()=>void}) {
   const [replay,setReplay]=useState<Replay|null>(null),[error,setError]=useState(''),[busy,setBusy]=useState(false),[retry,setRetry]=useState(0);
   useEffect(()=>{let active=true;setError('');api<Replay>(`/games/${id}/replay`).then(r=>{if(active)setReplay(r);}).catch(e=>{if(active)setError(describe(e));});return()=>{active=false;};},[id,retry]);
-  return <section className="panel replay account-replay"><div className="section-head"><h1>对局复盘</h1><button className="secondary compact-button" onClick={onBack}>返回记录</button></div>
-    {replay&&<div className="replay-favorite-action"><button className="secondary" disabled={busy} aria-pressed={replay.favorite} onClick={()=>{setBusy(true);setError('');void api<{favorite:boolean}>(`/me/favorites/${id}`,undefined,replay.favorite?'DELETE':'PUT').then(r=>setReplay(g=>g?{...g,favorite:r.favorite}:g)).catch(e=>setError(describe(e))).finally(()=>setBusy(false));}}>{replay.favorite?'取消收藏':'收藏这局'}</button></div>}
+  return <section className="panel replay account-replay chronicle-surface"><div className="section-head replay-heading"><h1>对局复盘</h1><div className="replay-heading-actions">{replay&&<button className="secondary compact-button" disabled={busy} aria-pressed={replay.favorite} onClick={()=>{setBusy(true);setError('');void api<{favorite:boolean}>(`/me/favorites/${id}`,undefined,replay.favorite?'DELETE':'PUT').then(r=>setReplay(g=>g?{...g,favorite:r.favorite}:g)).catch(e=>setError(describe(e))).finally(()=>setBusy(false));}}>{replay.favorite?'取消收藏':'收藏这局'}</button>}<button className="secondary compact-button" onClick={onBack}>返回记录</button></div></div>
+    <div className="replay-body">
     {error&&<p className="error" role="alert">{error}<button className="secondary" onClick={()=>setRetry(n=>n+1)}>重新读取复盘</button></p>}
-    {!replay&&!error?<p role="status">正在读取复盘…</p>:replay&&<><ReplayView replay={replay}/><p className="hint">收藏只在你的个人中心可见，不会创建公开链接。取消收藏保留历史对局。</p></>}
+    {!replay&&!error?<div className="history-loading" role="status" aria-label="正在读取复盘"><span/><span/></div>:replay&&<><ReplayView replay={replay}/><p className="hint replay-footnote">收藏仅自己可见，取消收藏仍保留历史对局。</p></>}
+    </div>
   </section>;
 }
 export function AccountPanel({user,onUser,initialReplay,onBack,onLogout}:{user:User;onUser:(u:User)=>void;initialReplay:string|null;onBack:()=>void;onLogout?:()=>void}) {
