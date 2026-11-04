@@ -4,7 +4,7 @@ import { Modal } from './Modal';
 import { useEffect, useRef, useState } from 'react';
 import type { Avatar, User, Statistics, Score, HistoryPage, GameSummary, Replay, GameResult } from '@avalon/contracts';
 import { assignFemaleDemons, assignLoyalGuardians } from '@avalon/game-core';
-import { formatRoleName, roleNames } from './roles';
+import { formatRoleName, getRoleGalleryItem, roleNames } from './roles';
 import { RolePortrait } from './RolePortrait';
 import { api, describe } from './api';
 import { PROFILE_CONTENT_SAFETY_NOTICE } from './content-safety-copy';
@@ -18,6 +18,44 @@ const reasons:Record<GameResult['reason'],string>={three_failures:'三次取经�
 const date=(s:string)=>new Date(s).toLocaleString('zh-CN',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false});
 export const rate=(s:Score)=>s.winRate===null?'—':`${Math.round(s.winRate*100)}%`;
 const outcome=(g:GameSummary)=>g.result.winner===null?'中断':g.result.winner===g.self.team?'胜利':'失败';
+const outcomeKind=(g:GameSummary)=>g.result.winner===null?'aborted':g.result.winner===g.self.team?'victory':'defeat';
+
+export function HistoryRoster({replay:g}:{replay:Replay}) {
+  const guardians=assignLoyalGuardians(g.id,g.players,g.roles,g.rulesetVersion);
+  const demons=assignFemaleDemons(g.id,g.players,g.roles);
+  return <ul className="history-roster" aria-label="本局全员角色">{[...g.players].sort((a,b)=>a.seat-b.seat).map(p=>{
+    const role=g.roles[p.id],team=roleTeam(role),self=p.seat===g.self.seat;
+    return <li key={p.id} className={self?'is-self':undefined}>
+      <RolePortrait role={role} loyalGuardian={guardians[p.id]} femaleDemon={demons[p.id]} size="mini"/>
+      <div><span className="roster-player"><b>{p.seat}</b><span title={p.nickname}>{p.nickname}</span>{self&&<small>我</small>}</span>
+        <strong className={`roster-role team-${team}`} title={formatRoleName(role,guardians[p.id],demons[p.id])}>{getRoleGalleryItem(role,guardians[p.id],demons[p.id]).name}<span> · {team==='blue'?'蓝方':'红方'}</span></strong></div>
+    </li>;
+  })}</ul>;
+}
+
+function HistoryPlayers({id,requested}:{id:string;requested:boolean}) {
+  const [replay,setReplay]=useState<Replay|null>(null),[error,setError]=useState(''),[retry,setRetry]=useState(0);
+  useEffect(()=>{
+    if(!requested)return;
+    let active=true;setError('');
+    api<Replay>(`/games/${id}/replay`).then(r=>{if(active)setReplay(r);}).catch(e=>{if(active)setError(describe(e));});
+    return()=>{active=false;};
+  },[id,requested,retry]);
+  return error?<div className="roster-error" role="alert"><p>{error}</p><button type="button" className="secondary" onClick={()=>setRetry(n=>n+1)}>重新读取角色</button></div>
+    :replay?<HistoryRoster replay={replay}/>:<div className="roster-skeleton" role="status" aria-label="正在读取全员角色"><span/><span/><span/><span/></div>;
+}
+
+export function HistoryGameCard({game:g,onReplay}:{game:GameSummary;onReplay:(id:string)=>void}) {
+  const [requested,setRequested]=useState(false);
+  return <article className={`history-card result-${outcomeKind(g)}`} aria-label={`${outcome(g)}，${g.playerCount} 人局`}>
+    <div className="history-card-heading"><h3 className="history-outcome">{outcomeKind(g)==='victory'&&<Emblem kind="crown"/>}{outcome(g)}</h3><span className="history-table-size">{g.playerCount} 人局</span><time dateTime={g.endedAt}>{date(g.endedAt)}</time></div>
+    <p className="history-card-role"><strong>{roleNames[g.self.role]}</strong><span>{g.self.team==='blue'?'蓝方':'红方'}{g.favorite?' · 已收藏':''}</span></p>
+    <p className="history-card-reason">{reasons[g.result.reason]}</p>
+    <div className="history-card-actions"><button type="button" className="secondary history-replay-button" aria-label={`查看${date(g.endedAt)}的对局复盘`} onClick={()=>onReplay(g.id)}>查看复盘 <span aria-hidden="true">→</span></button>
+      <details className="history-game-details" onToggle={e=>{if(e.currentTarget.open)setRequested(true);}}><summary>全员角色 <span>{g.playerCount} 人</span></summary><HistoryPlayers id={g.id} requested={requested}/></details>
+    </div>
+  </article>;
+}
 
 async function cropImageToSquareDataUrl(file: File, size = 160): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -136,7 +174,7 @@ function ProfileEditor({user,onUser,onClose}:{user:User;onUser:(u:User)=>void;on
     }
   }
 
-  return <Modal label="修改昵称与头像" scene="dawn" onClose={()=>{if(!busy)onClose();}}><section className="table-modal-sheet flow-editor-sheet profile-editor">
+  return <Modal label="修改昵称与头像" scene="dawn" onClose={()=>{if(!busy)onClose();}}><section className="table-modal-sheet flow-editor-sheet profile-editor account-editor">
     <header className="table-modal-head"><strong>修改昵称与头像</strong><button type="button" className="secondary tool-pill" disabled={busy} onClick={onClose}>关闭</button></header>
     <div className="flow-scroll-body">
     <form id="profile-editor-form" onSubmit={e=>{e.preventDefault();setBusy(true);setError('');setSaved(false);void api<{user:User}>('/me',{nickname,avatar,avatarUrl,wechatAvatarUrl},'PATCH',{timeoutMs:20_000}).then(r=>{onUser(r.user);setNickname(r.user.nickname);setAvatarUrl(r.user.avatarUrl??null);setWechatAvatarUrl(r.user.wechatAvatarUrl??null);setSaved(true);}).catch(e=>setError(describe(e))).finally(()=>setBusy(false));}}>
@@ -216,11 +254,11 @@ function HistoryPanel({favorites,onReplay}:{favorites:boolean;onReplay:(id:strin
   useEffect(()=>{let active=true;setBusy(true);setError('');api<HistoryPage>(`/me/games?favorites=${favorites}`).then(r=>{if(active)setPage(r);}).catch(e=>{if(active)setError(describe(e));}).finally(()=>{if(active)setBusy(false);});return()=>{active=false;};},[favorites,retry]);
   async function more(){if(!page?.nextCursor||busy)return;setBusy(true);setError('');try{const r=await api<HistoryPage>(`/me/games?favorites=${favorites}&cursor=${encodeURIComponent(page.nextCursor)}`);setPage(p=>({games:[...(p?.games??[]),...r.games.filter(g=>!p?.games.some(x=>x.id===g.id))],nextCursor:r.nextCursor}));}catch(e){setError(describe(e));}finally{setBusy(false);}}
   return <>
-    <p className="hint">只显示你参与且已结束的对局，按结束时间倒序。{favorites?'取消收藏不会删除对局。':'中断局也保留记录。'}</p>
+    <div className="account-section-heading"><h2>{favorites?'珍藏对局':'对局足迹'}</h2><p>{favorites?'留住精彩，随时回看。取消收藏仍保留历史。':'按时间倒序，展开查看全员角色。'}</p></div>
     {error&&<p role="alert" className="error">{error}<button className="secondary" disabled={busy} onClick={()=>setRetry(n=>n+1)}>重新读取记录</button></p>}
-    {!page&&busy&&<p role="status">正在读取记录…</p>}
+    {!page&&busy&&<div className="history-loading" role="status" aria-label="正在读取记录"><span/><span/><span/></div>}
     {page?.games.length===0&&<p className="empty-state">{favorites?'还没有收藏。在一局复盘中点击“收藏这局”，方便下次再看。':'还没有结束的对局。和朋友玩完一局后，战绩会出现在这里。'}</p>}
-    <div className="history-list">{page?.games.map(g=><article key={g.id}><div className="section-head"><h3>{outcome(g)} <small>{g.playerCount} 人局</small></h3><span className="status">{g.favorite?'已收藏':'已结束'}</span></div><p>{roleNames[g.self.role]} · {g.self.team==='blue'?'蓝方':'红方'} · {reasons[g.result.reason]}</p><button className="secondary" onClick={()=>onReplay(g.id)}>查看复盘 · {date(g.endedAt)}</button><details className="history-game-details flow-details"><summary>对局信息</summary><p className="hint"><time dateTime={g.endedAt}>{date(g.endedAt)}</time> · 当时昵称：{g.self.nickname}</p><p className="hint game-uid-line">对局编号 ID：<span>{g.id}</span></p></details></article>)}</div>
+    <div className="history-list">{page?.games.map(g=><HistoryGameCard key={g.id} game={g} onReplay={onReplay}/>)}</div>
     {page?.nextCursor&&<button className="secondary" disabled={busy} onClick={()=>void more()}>{busy?'正在读取…':'加载更多'}</button>}
   </>;
 }
@@ -246,7 +284,7 @@ export function ReplayView({replay:g}:{replay:Replay}) {
 function ReplayPanel({id,onBack}:{id:string;onBack:()=>void}) {
   const [replay,setReplay]=useState<Replay|null>(null),[error,setError]=useState(''),[busy,setBusy]=useState(false),[retry,setRetry]=useState(0);
   useEffect(()=>{let active=true;setError('');api<Replay>(`/games/${id}/replay`).then(r=>{if(active)setReplay(r);}).catch(e=>{if(active)setError(describe(e));});return()=>{active=false;};},[id,retry]);
-  return <section className="panel replay"><div className="section-head"><h1>对局复盘</h1><button className="secondary compact-button" onClick={onBack}>返回记录</button></div>
+  return <section className="panel replay account-replay"><div className="section-head"><h1>对局复盘</h1><button className="secondary compact-button" onClick={onBack}>返回记录</button></div>
     {replay&&<div className="replay-favorite-action"><button className="secondary" disabled={busy} aria-pressed={replay.favorite} onClick={()=>{setBusy(true);setError('');void api<{favorite:boolean}>(`/me/favorites/${id}`,undefined,replay.favorite?'DELETE':'PUT').then(r=>setReplay(g=>g?{...g,favorite:r.favorite}:g)).catch(e=>setError(describe(e))).finally(()=>setBusy(false));}}>{replay.favorite?'取消收藏':'收藏这局'}</button></div>}
     {error&&<p className="error" role="alert">{error}<button className="secondary" onClick={()=>setRetry(n=>n+1)}>重新读取复盘</button></p>}
     {!replay&&!error?<p role="status">正在读取复盘…</p>:replay&&<><ReplayView replay={replay}/><p className="hint">收藏只在你的个人中心可见，不会创建公开链接。取消收藏保留历史对局。</p></>}
@@ -255,13 +293,14 @@ function ReplayPanel({id,onBack}:{id:string;onBack:()=>void}) {
 export function AccountPanel({user,onUser,initialReplay,onBack,onLogout}:{user:User;onUser:(u:User)=>void;initialReplay:string|null;onBack:()=>void;onLogout?:()=>void}) {
   const [tab,setTab]=useState<'stats'|'history'|'favorites'|'presets'>('stats'),[replay,setReplay]=useState(initialReplay);
   const [profileOpen,setProfileOpen]=useState(false),[soundOpen,setSoundOpen]=useState(false);
+  const [copyNotice,setCopyNotice]=useState('');
   usePageSound(`${tab}:${replay ?? ''}`);
   if(replay)return <ReplayPanel key={replay} id={replay} onBack={()=>{setReplay(null);if(initialReplay)setTab('history');}}/>;
-  return <section className="panel account account-flow" aria-label="个人中心"><div className="section-head profile-bar"><div className="profile-heading"><span className="avatar" aria-label={`${user.nickname}的头像`}><PlayerAvatar avatar={user.avatar??'leaf'} avatarUrl={user.avatarUrl} wechatAvatarUrl={user.wechatAvatarUrl} fallbackKind="leaf"/></span><div><p className="eyebrow">嘻游 · 真假猴王 / 个人中心</p><div style={{display:'flex',alignItems:'center',gap:'8px',flexWrap:'wrap'}}><h1 style={{margin:0}}>{user.nickname}</h1>{user.playerCode&&<button type="button" onClick={()=>{navigator.clipboard.writeText(user.playerCode||'');alert(`仙友码【${user.playerCode}】已复制！在换设备或换号登录时输入此码即可切回查看历史战绩。`);}} title="点击复制仙友码" style={{width:'auto',minHeight:'unset',margin:0,padding:'2px 8px',fontSize:'12px',fontWeight:700,color:'#ffd875',background:'rgba(255,216,117,0.12)',border:'1px solid rgba(255,216,117,0.3)',borderRadius:'4px',cursor:'pointer',fontFamily:'monospace'}}>#{user.playerCode} 📋复制</button>}</div><p style={{margin:'4px 0 0',fontSize:'11.5px',color:'#cbd5e1'}}>专属仙友码全局唯一 · 微信小程序静默对应 · 换号凭此码随时找回战绩</p></div></div><div style={{display:'flex',gap:6}}>{onLogout&&<button className="secondary compact-button" onClick={onLogout} style={{color:'#fca5a5'}}>🚪 更换身份</button>}<button className="secondary compact-button" onClick={onBack}>返回原页面</button></div></div>
+  return <section className="panel account account-flow" aria-label="个人中心"><div className="account-topline"><span>我的取经手记</span><button type="button" className="secondary compact-button" onClick={onBack}>返回原页面</button></div><div className="profile-bar"><div className="profile-heading"><span className="avatar" aria-label={`${user.nickname}的头像`}><PlayerAvatar avatar={user.avatar??'leaf'} avatarUrl={user.avatarUrl} wechatAvatarUrl={user.wechatAvatarUrl} fallbackKind="leaf"/></span><div><p className="eyebrow">嘻游 · 真假猴王 / 个人中心</p><h1>{user.nickname}</h1>{user.playerCode&&<button type="button" className="account-player-code" onClick={async()=>{try{await navigator.clipboard.writeText(user.playerCode!);setCopyNotice('仙友码已复制，换设备时可用它找回战绩。');}catch{setCopyNotice('复制失败，请长按仙友码复制。');}}}>仙友码 {user.playerCode} · 复制</button>}</div></div>{onLogout&&<button type="button" className="secondary compact-button account-switch" onClick={onLogout}>更换身份</button>}{copyNotice&&<p className="account-copy-notice" role="status">{copyNotice}</p>}</div>
     <div className="account-quick-tools"><button type="button" className="secondary" onClick={()=>setProfileOpen(true)}>修改昵称与头像</button><button type="button" className="secondary" onClick={()=>setSoundOpen(true)}>声音设置</button></div>
     {profileOpen&&<ProfileEditor user={user} onUser={onUser} onClose={()=>setProfileOpen(false)}/>}
-    {soundOpen&&<Modal label="声音设置" scene="dawn" onClose={()=>setSoundOpen(false)}><section className="table-modal-sheet flow-editor-sheet"><header className="table-modal-head"><strong>声音设置</strong><button type="button" className="secondary tool-pill" onClick={()=>setSoundOpen(false)}>关闭</button></header><div className="flow-scroll-body"><SoundControls /></div></section></Modal>}
+    {soundOpen&&<Modal label="声音设置" scene="dawn" onClose={()=>setSoundOpen(false)}><section className="table-modal-sheet flow-editor-sheet account-editor"><header className="table-modal-head"><strong>声音设置</strong><button type="button" className="secondary tool-pill" onClick={()=>setSoundOpen(false)}>关闭</button></header><div className="flow-scroll-body"><SoundControls /></div></section></Modal>}
     <nav className="account-tabs" aria-label="个人中心栏目">{([['stats','我的战绩'],['history','历史对局'],['favorites','我的收藏'],['presets','常用设置']] as const).map(([id,label])=><button className="secondary" key={id} aria-current={id===tab?'page':undefined} onClick={()=>setTab(id)}>{label}</button>)}</nav>
-    {tab==='stats'?<StatisticsPanel/>:tab==='presets'?<PresetsPanel/>:<HistoryPanel key={tab} favorites={tab==='favorites'} onReplay={setReplay}/>}
+    <div className="account-content">{tab==='stats'?<><div className="account-section-heading"><h2>我的战绩</h2><p>每一场取经，都留下你的印记。</p></div><StatisticsPanel/></>:tab==='presets'?<PresetsPanel/>:<HistoryPanel key={tab} favorites={tab==='favorites'} onReplay={setReplay}/>}</div>
   </section>;
 }

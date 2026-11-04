@@ -1,0 +1,142 @@
+/* Personal chronicle: opaque paper, ink text, and a restrained mahogany frame. */
+.account.account-flow {
+  --accent: #78480e;
+  --border: #d5c4a6;
+  --muted: #6c5a48;
+  --surface: #fffaf0;
+  --raised: #eee0c7;
+  --glass: #fffaf0;
+  --ink: #35271f;
+  margin: 12px;
+  padding: 0;
+  width: auto;
+  min-width: 0;
+  color: var(--ink);
+  background: #f4ead6;
+  border: 1px solid #c5a66b;
+  border-radius: 18px;
+  box-shadow: 0 6px 20px #1e0b0a40;
+  overflow: clip;
+  font: 400 16px/1.5 var(--sans);
+}
+.account-flow button { font-family: var(--sans); letter-spacing: 0; box-shadow: none; text-shadow: none; }
+.account-flow button.secondary, .account-flow button.text-button {
+  color: #553b25; background: #fffaf0; border: 1px solid var(--border); border-radius: 8px;
+}
+.account-flow button.secondary:hover:not(:disabled), .account-flow button.text-button:hover:not(:disabled) { color: #35271f; background: #eee0c7; }
+.account-flow :focus-visible { outline: 3px solid #81540f; outline-offset: 2px; }
+.account-topline { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px 0; background: #321816; color: #ffe3a5; }
+.account-topline > span { font: 500 18px/1.5 var(--display); letter-spacing: 2px; }
+.account-flow .account-topline button { min-height: 36px; width: auto; padding: 5px 10px; margin: 0; background: #321816; color: #f6e6c6; border-color: #856443; font-size: 13px; }
+.account-flow .profile-bar { display: flex; position: relative; align-items: center; flex-wrap: wrap; gap: 8px; margin: 0; padding: 10px 14px; border: 0; border-radius: 0; background: #321816; color: #fff3db; }
+.account-flow .profile-heading { flex: 1; margin: 0; gap: 12px; min-width: 0; }
+.account-flow .profile-heading > div { padding: 0; }
+.account-flow .profile-heading > .avatar { width: 56px; height: 56px; min-width: 56px; border-radius: 50%; outline: 0; border: 1px solid #bd9457; background: #503026; overflow: hidden; }
+.account-flow .profile-heading h1 { margin: 0; font-size: 24px; color: #fff3db; line-height: 1.4; }
+.account-flow .eyebrow { color: #e2cda8; font-size: 11px; letter-spacing: 1px; margin: 0 0 2px; }
+.account-flow .account-player-code { display: block; width: auto; margin: 2px 0 0; padding: 4px 0; min-height: 30px; border: 0; border-radius: 4px; background: #321816; color: #ffe3a5; font-size: 12px; text-align: left; user-select: text; }
+.account-flow button.account-switch { width: auto; padding: 6px 8px; min-height: 36px; margin: 0; background: #442420; border-color: #856443; color: #f6e6c6; font-size: 12px; }
+.account-flow .account-copy-notice { flex-basis: 100%; margin: 0; font-size: 13px; color: #ffe3a5; }
+.account-flow .profile-bar :focus-visible, .account-topline :focus-visible { outline-color: #ffd875; }
+.account-flow .account-quick-tools { margin: 0; padding: 0 14px 12px; gap: 8px; background: #321816; }
+.account-flow .account-quick-tools > button { min-height: 38px; background: #442420; border-color: #856443; color: #f6e6c6; font-size: 13px; }
+.account-flow .account-tabs { gap: 0; margin: 0; padding: 6px 8px; border: 0; border-bottom: 1px solid var(--border); border-radius: 0; background: #e9dcc1; }
+.account-flow .account-tabs button { padding: 8px 2px; min-height: 44px; border: 0; border-radius: 7px; font-size: 14px; font-weight: 500; color: #6c5a48; background: transparent; }
+.account-flow .account-tabs [aria-current="page"] { background: #fffaf0; color: #683c0b; font-weight: 700; box-shadow: 0 1px 3px #65422224; }
+.account-content { padding: 14px; min-width: 0; }
+.account-section-heading { margin: 0 0 8px; }
+.account-section-heading h2 { margin: 0 0 4px; color: #35271f; font: 600 22px/1.4 var(--display); text-align: left; }
+.account-section-heading p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.6; }
+.account-flow .hint { color: var(--muted); background: none; padding: 0; margin: 8px 0; font-size: 14px; line-height: 1.6; }
+.account-flow .empty-state { padding: 24px 16px; margin: 10px 0; color: var(--muted); background: #fffaf0; border: 1px dashed var(--border); border-radius: 10px; font-size: 16px; text-align: center; }
+.account-flow .error { color: #8c3038; background: #fbe6e2; border: 1px solid #dca5a2; }
+.account-flow .notice { color: #345536; background: #e5eddc; border: 1px solid #b6c8a2; }
+.account-flow .history-list { display: grid; gap: 10px; }
+.account-flow .history-list .history-card { padding: 8px 12px 0; margin: 0; border: 1px solid var(--border); border-left: 3px solid #b7a994; border-radius: 10px; background: #fffaf0; }
+.account-flow .history-list .result-victory { border-color: #c49a48; border-left-color: #9b6817; background: #fff4d6; }
+.account-flow .history-list .result-defeat { border-left-color: #a36365; }
+.history-card-heading { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.account-flow .history-list .history-outcome { display: flex; align-items: center; gap: 5px; margin: 0; font: 700 22px/1.3 var(--display); color: #91424b; white-space: nowrap; }
+.account-flow .result-victory .history-outcome { color: #855000; font-size: 25px; }
+.account-flow .result-aborted .history-outcome { color: #6c6259; }
+.history-outcome .emblem { width: 22px; height: 22px; }
+.history-table-size { color: #6c5a48; font-size: 12px; white-space: nowrap; }
+.history-card-heading time { margin-left: auto; color: #6c5a48; font-size: 11px; font-variant-numeric: tabular-nums; text-align: right; }
+.account-flow .history-list .history-card-role { display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px; margin: 6px 0 0; line-height: 1.4; font-size: 16px; }
+.history-card-role strong { font-weight: 600; }
+.history-card-role > span { color: #6c5a48; font-size: 12px; }
+.account-flow .history-list .history-card-reason { margin: 3px 0 6px; color: #6c5a48; font-size: 13px; line-height: 1.5; }
+.history-card-actions { position: relative; border-top: 1px solid #d5c4a6; }
+.account-flow .history-replay-button { position: absolute; top: 0; right: 0; z-index: 1; margin: 0; padding: 6px 0 6px 12px; width: 100px; min-height: 42px; border: 0; border-radius: 4px; background: transparent; color: #78480e; font-size: 14px; font-weight: 700; text-align: right; }
+.history-replay-button span { margin-left: 4px; }
+.account-flow .history-game-details { margin: 0; padding: 0; border: 0; border-radius: 0; background: none; }
+.account-flow .history-game-details > summary { width: calc(100% - 108px); min-height: 42px; padding: 10px 0; color: #584536; font: 500 14px/1.5 var(--sans); }
+.history-game-details > summary > span { font-size: 12px; color: #6c5a48; margin-left: 4px; }
+.history-roster { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 6px; list-style: none; padding: 0 0 10px; margin: 0; }
+.history-roster > li { display: flex; align-items: center; gap: 6px; min-width: 0; padding: 6px; border: 1px solid #e1d5bf; border-radius: 7px; background: #f4ead6; }
+.history-roster > .is-self { border-color: #ba9551; background: #f8e7bb; }
+.history-roster .role-portrait { flex: 0 0 32px; width: 32px; height: 32px; border-radius: 6px; }
+.history-roster li > div { min-width: 0; }
+.roster-player { display: flex; align-items: baseline; gap: 4px; font-size: 13px; line-height: 1.5; }
+.roster-player b { font-size: 11px; color: #6c5a48; }
+.roster-player > span { min-width: 0; overflow-wrap: anywhere; }
+.roster-player small { font-size: 10px; color: #78480e; flex-shrink: 0; }
+.roster-role { display: block; font-size: 12px; line-height: 1.5; font-weight: 600; overflow-wrap: anywhere; }
+.roster-role > span { font-size: 10px; font-weight: 400; white-space: nowrap; }
+.roster-role.team-blue { color: #245a70; }
+.roster-role.team-red { color: #8c3038; }
+.roster-error { padding: 4px 0 12px; color: #8c3038; font-size: 14px; }
+.account-flow .roster-error p { margin: 0; }
+.roster-error button { font-size: 14px; min-height: 40px; }
+.history-loading { display: grid; gap: 10px; }
+.history-loading > span { height: 138px; background: #e4d7bd; border-radius: 10px; }
+.roster-skeleton { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding-bottom: 10px; }
+.roster-skeleton > span { height: 48px; background: #e4d7bd; border-radius: 7px; }
+.account-flow .presets .preset-list { margin: 0 !important; display: grid; gap: 10px; }
+.account-flow .preset-list li { margin: 0; padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: #fffaf0; }
+.account-flow .preset-list h3 { font: 600 18px/1.5 var(--sans); color: #35271f; }
+.account-flow .preset-list .action-pair { gap: 8px; }
+.account-flow .preset-list .action-pair button { font-size: 14px; }
+.account-flow .preset-new-button { margin: 4px 0 12px; background: #563026; color: #fff0d1; border-color: #563026; }
+.account-flow .stat-grid { background: #fffaf0 !important; box-shadow: none !important; border-color: #d5c4a6 !important; padding: 12px 0 !important; }
+.account-flow .stat-grid strong { color: #553b25 !important; }
+.account-flow .stat-grid > div:nth-child(2) strong { color: #855000 !important; }
+.account-flow .stat-grid > div:nth-child(3) strong { color: #91424b !important; }
+.account-flow .stat-grid span { color: #6c5a48 !important; font-size: 12px !important; }
+.account-flow .ornament-heading { background: none !important; border: 0 !important; border-bottom: 1px solid #d5c4a6 !important; border-radius: 0 !important; padding: 6px 0 !important; justify-content: start !important; }
+.account-flow .ornament-heading h2 { color: #553b25 !important; letter-spacing: 0 !important; font-size: 18px !important; }
+.account-flow .faction-card, .account-flow .role-card { --faction: #245a70; --muted: #6c5a48; color: #35271f; background: #fffaf0 !important; border-color: #c6c5b3; box-shadow: none !important; }
+.account-flow .allegiance-red { --faction: #8c3038; border-color: #d8b6a7; }
+.account-flow .faction-card::before { display: none; }
+.account-flow .faction-card > .emblem, .account-flow .faction-card h3, .account-flow .faction-motto { color: var(--faction); }
+.account-flow .role-card h3, .account-flow .role-card .role-rate strong { color: #553b25 !important; }
+.account-flow .role-card .role-team { background: #eee4d2 !important; color: var(--faction); }
+.account-flow .role-card .role-record { color: #6c5a48; }
+.account-flow .card-foot, .account-flow .role-card .card-foot { color: #6c5a48 !important; opacity: 1 !important; border-top-color: #e1d5bf !important; font-size: 11px !important; }
+.account-flow .score-pair { border-top-color: #e1d5bf !important; }
+/* Editors and detailed replay keep a solid dark reading surface for their game controls. */
+.account-editor, .panel.account-replay { --accent: #ffd875; --muted: #eddcc4; --border: #9b7854; --surface: #291514; --raised: #442420; --ink: #1e0b0a; --glass: #291514; color: #fff3db; background: #291514; border: 1px solid #9b7854; box-shadow: none; }
+.account-editor button { background: #ffd875; color: #3b1402; box-shadow: none; }
+.account-editor button.secondary { background: #442420; color: #fff3db; border-color: #9b7854; }
+.account-editor :focus-visible { outline-color: #ffd875; }
+.account-editor .table-modal-head, .panel.account-replay > .section-head { background: #291514; }
+.account-editor .flow-fixed-actions { background: #291514; }
+.account-editor .hint, .account-editor label, .account-editor legend { color: #eddcc4; }
+.account-editor .flow-scroll-body { background: #291514; }
+.panel.account-replay { margin: 12px; border-radius: 16px; }
+@media (max-width: 380px) {
+  .account.account-flow { margin: 8px; }
+  .account-content { padding: 10px; }
+  .account-flow .profile-bar { flex-direction: row; padding: 12px; }
+  .account-flow .profile-heading { gap: 8px; }
+  .account-flow .profile-heading h1 { font-size: 21px; }
+  .account-flow .profile-heading > .avatar { width: 44px; height: 44px; min-width: 44px; }
+  .account-flow .eyebrow { font-size: 10px; }
+  .account-flow .account-switch { font-size: 11px; padding-inline: 6px; }
+  .account-flow .history-list .history-card { padding-inline: 10px; }
+  .history-card-heading { gap: 5px; }
+  .history-card-heading time { font-size: 10px; }
+  .history-outcome .emblem { width: 18px; height: 18px; }
+  .history-roster > li { padding: 5px; gap: 4px; }
+  .roster-role > span { display: none; }
+}

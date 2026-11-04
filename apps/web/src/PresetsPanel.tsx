@@ -24,19 +24,21 @@ export function PresetsPanel({currentSettings,disabled=false,canApply=false,onAp
   const [editorOpen,setEditorOpen]=useState(false);
   useEffect(()=>{let active=true;setLoading(true);api<{presets:SettingPreset[]}>('/me/presets').then(r=>{if(active){setPresets(r.presets);setError('');}}).catch(e=>{if(active)setError(describe(e));}).finally(()=>{if(active)setLoading(false);});return()=>{active=false;};},[retry]);
   const locked=busy||disabled||loading;
+  const inAccount=!currentSettings;
   async function run(action:()=>Promise<void>) {setBusy(true);setError('');setNotice('');try{await action();}catch(e){setError(describe(e));}finally{setBusy(false);}}
   return <div className="presets">
+    {inAccount&&<div className="account-section-heading"><h2>常用设置</h2><p>把喜欢的玩法存好，下次开房直接应用。</p></div>}
     <p className="hint">最多 10 个；同名保存会更新原预设。只保存玩法，不包含房间、成员或接纳开关。</p>
     {error&&!editorOpen&&<p role="alert" className="error">{error}<button className="secondary" onClick={()=>setRetry(n=>n+1)}>重新读取预设</button></p>}
     {notice&&<p className="notice" role="status">{notice}</p>}
     <button type="button" className="secondary preset-new-button" disabled={locked} onClick={()=>{setName('');setSettings(defaultSettings);setError('');setEditorOpen(true);}}>{currentSettings?'保存当前房间为预设':'新建常用设置'}</button>
-    {loading?<p role="status">正在读取预设…</p>:presets.length===0?<p className="muted">还没有常用设置。</p>:<ul className="preset-list">{presets.map(p=><li key={p.id}><h3>{p.name}</h3><p className="hint">{settingsText(p.settings)}</p><div className="action-pair">
+    {loading?(inAccount?<div className="history-loading" role="status" aria-label="正在读取预设"><span/><span/></div>:<p role="status">正在读取预设…</p>):presets.length===0?(inAccount?<p className="empty-state">还没有常用设置。点击上方按钮，保存你喜欢的人数和玩法。</p>:<p className="muted">还没有常用设置。</p>):<ul className="preset-list">{presets.map(p=><li key={p.id}><h3>{p.name}</h3><p className="hint">{settingsText(p.settings)}</p><div className="action-pair">
       {currentSettings?<button className="secondary" disabled={locked||!canApply} onClick={()=>onApply?.(p.settings)}><span>应用 {p.name}</span></button>:<button className="secondary" disabled={locked} onClick={()=>{setName(p.name);setSettings(p.settings);setError('');setEditorOpen(true);}}><span>编辑 {p.name}</span></button>}
       <button className="text-button" disabled={locked} onClick={()=>void run(async()=>{await api(`/me/presets/${p.id}`,undefined,'DELETE');setPresets(list=>list.filter(x=>x.id!==p.id));setNotice(`已删除“${p.name}”，房间设置不受影响。`);})}><span>删除 {p.name}</span></button>
     </div></li>)}</ul>}
     <p className="hint">应用预设需要房主在等待区操作，并会清除全员准备；人数不足以容纳现有座位时不能应用。</p>
     {editorOpen&&<Modal label="编辑常用设置" scene="library" onClose={()=>{if(!busy)setEditorOpen(false);}}>
-      <section className="table-modal-sheet flow-editor-sheet">
+      <section className={`table-modal-sheet flow-editor-sheet${inAccount?' account-editor':''}`}>
         <header className="table-modal-head"><strong>{currentSettings?'保存房间预设':'编辑常用设置'}</strong><button type="button" className="secondary tool-pill" disabled={busy} onClick={()=>setEditorOpen(false)}>取消</button></header>
         <form id="preset-editor-form" className="preset-form flow-scroll-body" onSubmit={e=>{e.preventDefault();if(locked||!name.trim())return;void run(async()=>{const {preset}=await api<{preset:SettingPreset}>('/me/presets',{name:name.trim(),settings:currentSettings??settings});setPresets(p=>[preset,...p.filter(x=>x.id!==preset.id)]);setName('');setNotice(`已保存“${preset.name}”。`);setEditorOpen(false);});}}>
           <fieldset disabled={locked}><legend className="sr-only">保存常用设置</legend>

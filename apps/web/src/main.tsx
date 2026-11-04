@@ -32,6 +32,7 @@ import './scenes.css';
 import './player-flow.css';
 import './home-duel.css';
 import './sound.css';
+import './account.css';
 import { ReadyReminder } from './ReadyReminder';
 import './feedback.css';
 import { Modal } from './Modal';
