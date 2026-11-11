@@ -5,7 +5,24 @@
 .handoff-sheet p { font: 400 16px/1.65 var(--sans); text-wrap: pretty; }
 .handoff-actions { display: grid; gap: 10px; }
 .handoff-actions button { min-height: 44px; white-space: normal; font: 600 16px/1.5 var(--sans); }
-.room-voice-hint { margin: 4px 0; width: 100%; text-wrap: pretty; }
+.room-voice-hint { margin: 4px 0; width: 100%; text-wrap: pretty; box-sizing: border-box; }
+.waiting-play-priority .room-voice-hint {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  margin: 0 !important;
+  padding: 8px 12px !important;
+  background: linear-gradient(180deg, rgba(34, 12, 14, 0.88), rgba(20, 8, 9, 0.94)) !important;
+  border: 1px solid rgba(229, 185, 100, 0.35) !important;
+  border-radius: 12px !important;
+  color: #ffd875 !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  line-height: 1.55 !important;
+  text-align: center !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.85) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35) !important;
+}
 .flow-details { border: 1px solid rgba(212,163,89,.4); border-radius: 12px; padding: 10px 12px; background: rgba(34,11,10,.85); }
 .flow-details > summary { cursor: pointer; color: #ffd875; font: 600 13px/1.5 var(--sans); }
 .flow-details[open] > summary { margin-bottom: 10px; }
@@ -31,7 +48,7 @@ main.app-shell.is-live-table { --table-gap: 8px; }
 .is-live-table .waiting-settings-summary { width: 100%; min-height: 30px; margin: 0; padding: 5px 8px; font: 600 12px/1.4 var(--sans); }
 .is-live-table .waiting-play-priority .waiting-dock { margin: 0 !important; }
 .is-live-table .waiting-mission-preview { width: 100%; margin-top: 2px; }
-.is-live-table .waiting-play-priority .waiting-voice-social-row { margin: 0 !important; }
+.is-live-table .waiting-play-priority .waiting-voice-social-row { width: 100% !important; max-width: 100% !important; margin: 0 !important; }
 /* Scroll details inside the sheet while keeping the current decision reachable. */
 .table-modal-sheet.flow-editor-sheet,
 .table-modal-sheet.vote-flow-sheet,
