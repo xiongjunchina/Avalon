@@ -32,8 +32,9 @@ test('all 5–12 configurations, exact mission sizes, role vision matrix and pri
     for(const p of g.players){
       const v=projectGame(g,p.id), role=g.roles[p.id];
       assert.equal(v.self?.role,role);assert.equal(v.revealedRoles,undefined);assert.equal('roles' in v,false);
-      const expected=role==='merlin'?g.players.filter(q=>teamOf(g.roles[q.id])==='red'&&g.roles[q.id]!=='mordred').map(q=>q.id)
-        :teamOf(role)==='red'&&role!=='oberon'?g.players.filter(q=>q.id!==p.id&&teamOf(g.roles[q.id])==='red'&&g.roles[q.id]!=='oberon').map(q=>q.id):[];
+      const expected=role==='merlin'?g.players.filter(q=>teamOf(g.roles[q.id])==='red'&&g.roles[q.id]!=='mordred'&&g.roles[q.id]!=='assassin').map(q=>q.id)
+        :role==='oberon'?g.players.filter(q=>q.id!==p.id&&teamOf(g.roles[q.id])==='red').map(q=>q.id)
+        :teamOf(role)==='red'?g.players.filter(q=>q.id!==p.id&&teamOf(g.roles[q.id])==='red'&&g.roles[q.id]!=='oberon').map(q=>q.id):[];
       assert.deepEqual(v.self!.evilIds,expected);
       assert.deepEqual(v.self!.merlinCandidates,role==='percival'?g.players.filter(q=>['merlin','morgana'].includes(g.roles[q.id])).map(q=>q.id):[]);
       if(role==='guinevere'){

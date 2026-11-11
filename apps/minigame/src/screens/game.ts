@@ -108,6 +108,9 @@ export function gameScreen(room: RoomView, user: User, ui: GameUiState, now = Da
     if (treasure.tinStaff) rows.push({ id: 'treasure:tinStaff', text: treasure.tinStaff.result
       ? `锡杖查验：${playerLabel(treasure.tinStaff.result.targetId)}属${treasure.tinStaff.result.team === 'red' ? '妖魔' : '取经'}阵营`
       : treasure.tinStaff.available ? '九环锡杖：选一名非候选仙友查验' : `九环锡杖：${treasure.tinStaff.used ? '已使用' : '完成两轮任务后可用'}` });
+    if (treasure.savingHair) rows.push({ id: 'treasure:savingHair', text: treasure.savingHair.used
+      ? (treasure.savingHair.armed ? '救命毫毛：本轮已祭起' : '救命毫毛：已使用')
+      : treasure.savingHair.available ? '救命毫毛：祭起庇护本轮出征车队' : '救命毫毛：发车后可用' });
     if (treasure.guanyinMirror) rows.push({ id: 'treasure:guanyinMirror', text: treasure.guanyinMirror.result
       ? `观音镜查验：${playerLabel(treasure.guanyinMirror.result.targetId)}心性${treasure.guanyinMirror.result.alignment === 'evil' ? '妖魔' : '纯良'}`
       : treasure.guanyinMirror.available ? '观音镜：选一名出征队员查验' : `观音镜：${treasure.guanyinMirror.used ? '已使用' : '发车后可用'}` });
@@ -307,6 +310,8 @@ export function gameAction(room: RoomView, user: User, action: string, ui: Parti
     const validTarget = Boolean(targetId && game.players.some(player => player.id === targetId) && targetId !== user.id);
     if (action === 'treasure:tinStaff' && treasures.tinStaff?.available && validTarget && !self.merlinCandidates.includes(targetId!))
       command = { type: 'useTreasure', payload: { action: 'tinStaff', targetId: targetId! } };
+    if (action === 'treasure:savingHair' && treasures.savingHair?.available)
+      command = { type: 'useTreasure', payload: { action: 'savingHair' } };
     if (action === 'treasure:guanyinMirror' && treasures.guanyinMirror?.available && validTarget && round?.team.includes(targetId!))
       command = { type: 'useTreasure', payload: { action: 'guanyinMirror', targetId: targetId! } };
     if(action==='treasure:guanyinSkip'&&treasures.guanyinMirror?.available&&game.phase==='guanyin_window')command={type:'useTreasure',payload:{action:'guanyinMirror',skip:true}};

@@ -23,8 +23,8 @@ function afterTwoFailures(g: GameState) {
   return g;
 }
 
-test('v6 treasure policy covers every role, both feature switches, and all supported player counts', () => {
-  assert.equal(RULESET_VERSION, 'standard-no-lancelot-v6');
+test('v7 treasure policy covers every role, both feature switches, and all supported player counts', () => {
+  assert.equal(RULESET_VERSION, 'standard-no-lancelot-v7');
   for (const count of [5, 6, 7, 8, 9, 10, 11, 12]) {
     for (const guardian of [false, true]) for (const treasures of [false, true]) {
       const g = fixture(count, guardian, treasures);
@@ -87,8 +87,8 @@ test('v6 guardian mode keeps human bag, banana fan and heart bell operational fo
   }
 });
 
-test('disabling guardian clues restores all blue treasure actions in v6; legacy v5 retains the saved rules', () => {
-  for (const [guardian, version] of [[false, RULESET_VERSION], [true, 'standard-no-lancelot-v5']] as const) {
+test('disabling guardian clues restores all blue treasure actions in legacy v6 and v5', () => {
+  for (const [guardian, version] of [[false, 'standard-no-lancelot-v6'], [true, 'standard-no-lancelot-v5']] as const) {
     const g = afterTwoFailures(fixture(12, guardian, true, version));
     const percival = playerWith(g, 'percival'), loyal = playerWith(g, 'loyal'), assassin = playerWith(g, 'assassin');
     const inspected = use(g, percival, { action: 'tinStaff', targetId: assassin });
@@ -105,9 +105,10 @@ test('disabling guardian clues restores all blue treasure actions in v6; legacy 
   }
 });
 
-test('new guardian-mode votes skip the Guanyin window while no-clue and legacy games keep it', () => {
+test('v7 skips the Guanyin window directly to mission, while legacy v6 and v5 keep it', () => {
   for (const [guardian, version, expected] of [
-    [true, RULESET_VERSION, 'mission'], [false, RULESET_VERSION, 'guanyin_window'], [true, 'standard-no-lancelot-v5', 'guanyin_window'],
+    [true, RULESET_VERSION, 'mission'], [false, RULESET_VERSION, 'mission'],
+    [false, 'standard-no-lancelot-v6', 'guanyin_window'], [true, 'standard-no-lancelot-v5', 'guanyin_window'],
   ] as const) for (const count of [9, 10, 11, 12]) {
     let g = fixture(count, guardian, true, version);
     const online = g.players.map(p => p.id);
@@ -122,7 +123,7 @@ test('new guardian-mode votes skip the Guanyin window while no-clue and legacy g
 });
 
 test('blue restriction hides saved treasure-derived information while preserving native vision and guardian clues', () => {
-  const g = afterTwoFailures(fixture());
+  const g = afterTwoFailures(fixture(12, true, true, 'standard-no-lancelot-v6'));
   const assassin = playerWith(g, 'assassin'), loyal = playerWith(g, 'loyal');
   g.treasuresState = {
     tinStaff: { used: true, result: { targetId: assassin, team: 'red' } },

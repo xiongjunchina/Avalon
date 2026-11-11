@@ -417,6 +417,7 @@ test('treasures: Guanyin 5-second decision window - skip retains treasure, pick 
   const players = makePlayers(9);
   const settings9 = { ...defaultSettings, playerCount: 9, treasuresEnabled: true };
   let g = createGame('g9-guanyin', players, settings9, fixedRoles10(roles), { randomBelow: () => 0n });
+  g.rulesetVersion = 'standard-no-lancelot-v6';
 
   for (const p of players) {
     g = transition(g, p.id, { type: 'confirmRole', payload: {} }, players.map(x => x.id));
@@ -545,5 +546,94 @@ test('treasures: non-treasure game transitions directly to mission without guany
   // Must transition directly to mission without any delay or guanyin_window
   assert.equal(g.phase, 'mission');
   assert.equal(g.guanyinEndsAt, undefined);
+});
+
+test('treasures: v7 Guanyin savingHair offsets single mission failure and transitions directly to mission', () => {
+  const roles = ['merlin', 'percival', 'guinevere', 'loyal', 'loyal', 'loyal', 'morgana', 'assassin', 'mordred'];
+  const players = makePlayers(9);
+  const settings9 = { ...defaultSettings, playerCount: 9, treasuresEnabled: true };
+  let g = createGame('g9-v7-saving-hair', players, settings9, fixedRoles10(roles), { randomBelow: () => 0n });
+  const online = players.map(x => x.id);
+
+  for (const p of players) {
+    g = transition(g, p.id, { type: 'confirmRole', payload: {} }, online);
+  }
+
+  const merlinId = players[0].id;
+  const guanyinId = players[2].id;
+  const morganaId = players[6].id;
+  const assassinId = players[7].id;
+  const mordredId = players[8].id;
+
+  // v7 Merlin vision: hides Mordred AND Assassin! Only Morgana is visible.
+  const merlinView = projectGame(g, merlinId);
+  assert.deepEqual(merlinView.self?.evilIds, [morganaId]);
+
+  // Round 1 proposal: team size 3 (Merlin, Percival, Assassin)
+  const cap1 = g.captainOrder[g.captainIndex];
+  const team1 = [players[0].id, players[1].id, assassinId];
+  g = transition(g, cap1, { type: 'proposeTeam', payload: { playerIds: team1, direction: 'clockwise' } }, online);
+  g = transition(g, cap1, { type: 'startTeamVote', payload: {} }, online);
+  for (const p of players) {
+    g = transition(g, p.id, { type: 'teamVote', payload: { approve: true } }, online);
+  }
+
+  // In v7: transitions directly to mission, NO guanyin_window!
+  assert.equal(g.phase, 'mission');
+  assert.equal(g.guanyinEndsAt, undefined);
+
+  // Guanyin sees savingHair available
+  const guanyinView = projectGame(g, guanyinId);
+  assert.equal(guanyinView.self?.treasures?.savingHair?.available, true);
+  assert.equal(guanyinView.self?.treasures?.savingHair?.used, false);
+
+  // Guanyin arms savingHair for this mission
+  g = transition(g, guanyinId, { type: 'useTreasure', payload: { action: 'savingHair' } }, online);
+  const guanyinArmedView = projectGame(g, guanyinId);
+  assert.equal(guanyinArmedView.self?.treasures?.savingHair?.used, true);
+  assert.equal(guanyinArmedView.self?.treasures?.savingHair?.armed, true);
+
+  // Mission voting: Merlin & Percival vote success, Assassin votes fail
+  g = transition(g, players[0].id, { type: 'missionVote', payload: { success: true } }, online);
+  g = transition(g, players[1].id, { type: 'missionVote', payload: { success: true } }, online);
+  g = transition(g, assassinId, { type: 'missionVote', payload: { success: false } }, online);
+
+  // Result: The 1 failure was saved by savingHair!
+  const round1Result = g.rounds[0].result;
+  assert.ok(round1Result);
+  assert.equal(round1Result.passed, true);
+  assert.equal(round1Result.failures, 0);
+  assert.equal(round1Result.savingHairSaved, true);
+  assert.equal(g.mission, 2);
+
+  // Cannot use savingHair again
+  assert.throws(() => {
+    transition(g, guanyinId, { type: 'useTreasure', payload: { action: 'savingHair' } }, online);
+  }, (err: unknown) => err instanceof RuleError && err.message === 'ALREADY_USED');
+});
+
+test('v7 Oberon single-directionally sees all other evil teammates while others do not see Oberon', () => {
+  const roles = ['merlin', 'percival', 'guinevere', 'loyal', 'loyal', 'loyal', 'morgana', 'assassin', 'mordred', 'oberon'];
+  const players = makePlayers(10);
+  const settings10 = { ...defaultSettings, playerCount: 10, treasuresEnabled: true };
+  let g = createGame('g10-v7-oberon', players, settings10, fixedRoles10(roles), { randomBelow: () => 0n });
+  const online = players.map(x => x.id);
+
+  for (const p of players) {
+    g = transition(g, p.id, { type: 'confirmRole', payload: {} }, online);
+  }
+
+  const oberonId = players[9].id;
+  const morganaId = players[6].id;
+  const assassinId = players[7].id;
+  const mordredId = players[8].id;
+
+  // Oberon sees Morgana, Assassin, Mordred!
+  const oberonView = projectGame(g, oberonId);
+  assert.deepEqual(oberonView.self?.evilIds.sort(), [morganaId, assassinId, mordredId].sort());
+
+  // Morgana sees Assassin, Mordred - but NOT Oberon!
+  const morganaView = projectGame(g, morganaId);
+  assert.deepEqual(morganaView.self?.evilIds.sort(), [assassinId, mordredId].sort());
 });
 

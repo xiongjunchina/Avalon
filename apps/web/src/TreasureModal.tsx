@@ -49,6 +49,7 @@ export function TreasureModal({
 
   const tinStaff = self.treasures?.tinStaff;
   const guanyinMirror = self.treasures?.guanyinMirror;
+  const savingHair = self.treasures?.savingHair;
   const humanBag = self.treasures?.humanBag;
   const jinguSeal = self.treasures?.jinguSeal;
   const bananaFan = self.treasures?.bananaFan;
@@ -234,76 +235,127 @@ export function TreasureModal({
                 </div>
               )}
 
-              {/* Guinevere: Guanyin Mirror */}
+              {/* Guinevere: Saving Hair (v7) or Guanyin Mirror (legacy) */}
               {self.role === 'guinevere' && (
                 <div className="treasure-card guanyin-card">
-                  <div className="treasure-card-header">
-                    <span className="treasure-badge">🪞 慈航圣物</span>
-                    <h3>救苦救难 · 慈航照妖镜</h3>
-                  </div>
-                  <p className="treasure-desc">
-                    观世音菩萨灵觉神镜。发车表决通过后开启 5 秒专属决断期，可私密照耀车队中 1 位队员的心性纯浊。
-                    <br />
-                    <small className="hint">
-                      ※ 纯属观音私密心证，绝不公开，不干涉或改动出牌结果。
-                    </small>
-                  </p>
-
-                  {guanyinMirror?.result ? (
-                    <div className="treasure-result-box">
-                      <div className="result-label">【照妖镜显圣】</div>
-                      <div className="result-content">
-                        车队队员：<strong>{nameOf(guanyinMirror.result.targetId)}</strong>
-                        <br />
-                        心性照映：
-                        <strong className={guanyinMirror.result.alignment === 'pure' ? 'text-blue' : 'text-red'}>
-                          {guanyinMirror.result.alignment === 'pure' ? '✨ 心性纯良（好人）' : '🔥 妖气内伏（恶妖）'}
-                        </strong>
+                  {savingHair ? (
+                    <>
+                      <div className="treasure-card-header">
+                        <span className="treasure-badge">🪶 慈航圣物</span>
+                        <h3>救苦救难 · 救命毫毛</h3>
                       </div>
-                    </div>
-                  ) : guanyinMirror?.available ? (
-                    <div className="treasure-action-box">
-                      <label htmlFor="guanyin-mirror-target">请选择车队中欲辨察的队员：</label>
-                      <select
-                        id="guanyin-mirror-target"
-                        value={selectedTarget}
-                        onChange={e => setSelectedTarget(e.target.value)}
-                      >
-                        <option value="">点击选择车队队员</option>
-                        {game?.rounds.at(-1)?.team.map(id => {
-                          const p = players.find(x => x.id === id);
-                          if (!p || p.id === userId) return null;
-                          return (
-                            <option key={id} value={id}>
-                              {String(p.seat).padStart(2, '0')}号 · {p.nickname}
-                            </option>
-                          );
-                        })}
-                      </select>
-                      <button
-                        type="button"
-                        className="treasure-confirm-btn"
-                        disabled={!selectedTarget || disabled}
-                        onClick={() => {
-                          if (selectedTarget) {
-                            handleSend({
-                              type: 'useTreasure',
-                              payload: { action: 'guanyinMirror', targetId: selectedTarget },
-                            });
-                          }
-                        }}
-                      >
-                        🪞 祭起照妖宝镜 · 辨察心性
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="treasure-status-idle">
-                      <p>
-                        {guanyinMirror?.used
-                          ? '✅ 慈航照妖镜本局已照耀完毕。'
-                          : '⏳ 宝镜待机中：在任意一轮发车表决通过后，系统将自动开启 5 秒专属照耀窗口。'}
+                      <p className="treasure-desc">
+                        南海观世音菩萨所赐三根救命毫毛。在发车后的执行任务阶段祭起毫毛庇护该车：
+                        若该车最终仅出现 1 张失败牌，毫毛当场将其抵消，该轮任务判定为成功！
+                        （若出现 2 张及以上失败牌，则毫毛失效，任务依然失败）。
+                        <br />
+                        <small className="hint">
+                          ※ 毫毛整局限用 1 次。不公开查验阵营，全凭慈航佛光护持车队。
+                        </small>
                       </p>
-                    </div>
+
+                      {savingHair.used ? (
+                        <div className="treasure-status-idle">
+                          <p>
+                            {savingHair.armed
+                              ? '✨ 【救命毫毛】已在此轮车队祭起！若本轮仅有 1 张失败牌，将被毫毛化险为夷。'
+                              : '✅ 救命毫毛本局已使用完毕。'}
+                          </p>
+                        </div>
+                      ) : savingHair.available ? (
+                        <div className="treasure-action-box">
+                          <p className="alert-text">第 {game?.mission} 轮出征队伍已出发！你可在本轮任务结算前祭起毫毛护持车队：</p>
+                          <button
+                            type="button"
+                            className="treasure-confirm-btn"
+                            disabled={disabled}
+                            onClick={() => {
+                              handleSend({
+                                type: 'useTreasure',
+                                payload: { action: 'savingHair' },
+                              });
+                            }}
+                          >
+                            🪶 祭起救命毫毛 · 庇护本轮出征车队
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="treasure-status-idle">
+                          <p>⏳ 毫毛蓄势中：待任意一轮队伍发车（进入执行任务阶段）后，可在此点击祭起。</p>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <div className="treasure-card-header">
+                        <span className="treasure-badge">🪞 慈航圣物</span>
+                        <h3>救苦救难 · 慈航照妖镜</h3>
+                      </div>
+                      <p className="treasure-desc">
+                        观世音菩萨灵觉神镜。发车表决通过后开启 5 秒专属决断期，可私密照耀车队中 1 位队员的心性纯浊。
+                        <br />
+                        <small className="hint">
+                          ※ 纯属观音私密心证，绝不公开，不干涉或改动出牌结果。
+                        </small>
+                      </p>
+
+                      {guanyinMirror?.result ? (
+                        <div className="treasure-result-box">
+                          <div className="result-label">【照妖镜显圣】</div>
+                          <div className="result-content">
+                            车队队员：<strong>{nameOf(guanyinMirror.result.targetId)}</strong>
+                            <br />
+                            心性照映：
+                            <strong className={guanyinMirror.result.alignment === 'pure' ? 'text-blue' : 'text-red'}>
+                              {guanyinMirror.result.alignment === 'pure' ? '✨ 心性纯良（好人）' : '🔥 妖气内伏（恶妖）'}
+                            </strong>
+                          </div>
+                        </div>
+                      ) : guanyinMirror?.available ? (
+                        <div className="treasure-action-box">
+                          <label htmlFor="guanyin-mirror-target">请选择车队中欲辨察的队员：</label>
+                          <select
+                            id="guanyin-mirror-target"
+                            value={selectedTarget}
+                            onChange={e => setSelectedTarget(e.target.value)}
+                          >
+                            <option value="">点击选择车队队员</option>
+                            {game?.rounds.at(-1)?.team.map(id => {
+                              const p = players.find(x => x.id === id);
+                              if (!p || p.id === userId) return null;
+                              return (
+                                <option key={id} value={id}>
+                                  {String(p.seat).padStart(2, '0')}号 · {p.nickname}
+                                </option>
+                              );
+                            })}
+                          </select>
+                          <button
+                            type="button"
+                            className="treasure-confirm-btn"
+                            disabled={!selectedTarget || disabled}
+                            onClick={() => {
+                              if (selectedTarget) {
+                                handleSend({
+                                  type: 'useTreasure',
+                                  payload: { action: 'guanyinMirror', targetId: selectedTarget },
+                                });
+                              }
+                            }}
+                          >
+                            🪞 祭起照妖宝镜 · 辨察心性
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="treasure-status-idle">
+                          <p>
+                            {guanyinMirror?.used
+                              ? '✅ 慈航照妖镜本局已照耀完毕。'
+                              : '⏳ 宝镜待机中：在任意一轮发车表决通过后，系统将自动开启 5 秒专属照耀窗口。'}
+                          </p>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               )}

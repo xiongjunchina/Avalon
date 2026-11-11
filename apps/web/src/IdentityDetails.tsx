@@ -74,11 +74,17 @@ export function IdentityDetails({
           ? '✨ 可私密查验盲区仙友！'
           : '九环锡杖（第2轮任务后解锁）';
     } else if (self.role === 'guinevere') {
-      treasureSub = self.treasures?.guanyinMirror?.used
-        ? '慈航照妖镜（已照耀）'
-        : self.treasures?.guanyinMirror?.available
-          ? '✨ 正在审视车队（5秒专属期）！'
-          : '慈航照妖镜（发车表决后开启）';
+      treasureSub = self.treasures?.savingHair
+        ? (self.treasures.savingHair.used
+          ? (self.treasures.savingHair.armed ? '救命毫毛（本轮已祭起）' : '救命毫毛（已使用）')
+          : self.treasures.savingHair.available
+            ? '✨ 可祭起庇护本轮出征车队！'
+            : '救命毫毛（发车后可用）')
+        : (self.treasures?.guanyinMirror?.used
+          ? '慈航照妖镜（已照耀）'
+          : self.treasures?.guanyinMirror?.available
+            ? '✨ 正在审视车队（5秒专属期）！'
+            : '慈航照妖镜（发车表决后开启）');
     } else if (self.role === 'mordred') {
       treasureSub = self.treasures?.humanBag?.used
         ? '后天人种袋（已收人）'

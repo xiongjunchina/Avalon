@@ -90,6 +90,7 @@ export const commandSchema = z.discriminatedUnion('type', [
     type: z.literal('useTreasure'),
     payload: z.discriminatedUnion('action', [
       z.object({ action: z.literal('tinStaff'), targetId: z.string().uuid() }).strict(),
+      z.object({ action: z.literal('savingHair') }).strict(),
       z.object({ action: z.literal('guanyinMirror'), targetId: z.string().uuid().optional(), skip: z.boolean().optional() }).strict(),
       z.object({ action: z.literal('humanBag'), targetId: z.string().uuid() }).strict(),
       z.object({ action: z.literal('jinguSeal') }).strict(),
@@ -279,7 +280,7 @@ export interface RoundView {
   number: number; mission: number; captainId: string; team: string[];
   direction: 'clockwise' | 'counterclockwise';
   vote?: { approvals: number; rejections: number; abstentions?: number; passed: boolean; ballots?: Record<string, TeamBallot> };
-  result?: { successes: number; failures: number; passed: boolean };
+  result?: { successes: number; failures: number; passed: boolean; savingHairSaved?: boolean };
 }
 export interface GameResult {
   winner: Team | null;
@@ -323,6 +324,11 @@ export interface SelfTreasures {
     used: boolean;
     available: boolean;
     result?: { targetId: string; alignment: 'pure' | 'evil' };
+  };
+  savingHair?: {
+    used: boolean;
+    available: boolean;
+    armed: boolean;
   };
   humanBag?: {
     used: boolean;

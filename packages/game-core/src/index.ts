@@ -3,7 +3,7 @@ export { roleWeight, ROLE_ASSIGNMENT_VERSION, ROLE_WEIGHT_VERSION } from './role
 export type { RoleProtectionOptions } from './role-assignment.js';
 export { randomBigIntBelow } from './random.js';
 import type { Command, GameResult, GameView, LoyalGuardian, FemaleDemon, Player, Role, RoundView, Settings, Team, PrivateInspection, EarlyWindow, TeamBallot, GuardianClue, SelfTreasures, HeartBellAdvice, RoleAssignmentAudit } from '@avalon/contracts';
-export const RULESET_VERSION = 'standard-no-lancelot-v6';
+export const RULESET_VERSION = 'standard-no-lancelot-v7';
 export const GUANYIN_WINDOW_MS = 5_000;
 export const LOYAL_GUARDIAN_POOL: readonly LoyalGuardian[] = ['bailong', 'zhubajie', 'shawujing', 'jingang'];
 const LEGACY_LOYAL_GUARDIAN_POOL: readonly LoyalGuardian[] = ['zhubajie', 'shawujing', 'bailong', 'jingang'];
@@ -87,6 +87,7 @@ export interface GameState {
   treasuresState?: {
     tinStaff?: { used: boolean; result?: { targetId: string; team: Team } };
     guanyinMirror?: { used: boolean; result?: { targetId: string; alignment: 'pure' | 'evil' } };
+    savingHair?: { used: boolean; armedMission?: number };
     humanBag?: { used: boolean; targetId?: string; activeBannedMission?: number };
     jinguSeal?: { used: boolean; activatedBy?: string };
     bananaFan?: { used: boolean; armed: boolean };
@@ -310,7 +311,8 @@ export function transition(state: GameState, userId: string, action: Pick<Comman
             openEarlyWindowOrPropose(g);
           } else {
             delete g.bananaFanNotice;
-            const hasUnusedGuanyin = Boolean(
+            const isV7 = Number(g.rulesetVersion.match(/-v(\d+)$/)?.[1] ?? '0') >= 7;
+            const hasUnusedGuanyin = !isV7 && Boolean(
               treasuresEnabledFor(g.settings, g.players.length, 'guinevere', g.rulesetVersion) &&
               g.players.length >= 9 &&
               g.players.some(p => g.roles[p.id] === 'guinevere') &&
@@ -341,8 +343,14 @@ export function transition(state: GameState, userId: string, action: Pick<Comman
       requireRule(success || teamOf(g.roles[userId]) === 'red', 'BLUE_MUST_SUCCEED');
       g.missionVotes[userId] = success;
       if (Object.keys(g.missionVotes).length === round.team.length) {
-        const failures = Object.values(g.missionVotes).filter(v => !v).length;
-        round.result = { successes: round.team.length-failures, failures, passed: failures < failuresRequired(g) };
+        let failures = Object.values(g.missionVotes).filter(v => !v).length;
+        const savingHairActive = Boolean(g.treasuresState?.savingHair?.used && g.treasuresState.savingHair.armedMission === g.mission);
+        let savingHairSaved = false;
+        if (savingHairActive && failures === 1) {
+          failures = 0;
+          savingHairSaved = true;
+        }
+        round.result = { successes: round.team.length-failures, failures, passed: failures < failuresRequired(g), ...(savingHairSaved ? { savingHairSaved: true } : {}) };
         g.missionVotes = {};
         const completed = g.rounds.filter(r => r.result), successes = completed.filter(r => r.result!.passed).length;
         if (completed.length-successes >= 3) finish(g, { winner: 'red', reason: 'three_failures' });
@@ -416,6 +424,13 @@ export function transition(state: GameState, userId: string, action: Pick<Comman
           g.treasuresState.tinStaff = { used: true, result: { targetId, team: inspectedTeam } };
           break;
         }
+        case 'savingHair': {
+          requireRule(g.roles[userId] === 'guinevere', 'NOT_GUINEVERE');
+          requireRule(!g.treasuresState.savingHair?.used, 'ALREADY_USED');
+          requireRule(g.phase === 'mission', 'WRONG_PHASE');
+          g.treasuresState.savingHair = { used: true, armedMission: g.mission };
+          break;
+        }
         case 'guanyinMirror': {
           requireRule(g.roles[userId] === 'guinevere', 'NOT_GUINEVERE');
           requireRule(!g.treasuresState.guanyinMirror?.used, 'ALREADY_USED');
@@ -474,11 +489,15 @@ export function transition(state: GameState, userId: string, action: Pick<Comman
   return g;
 }
 export function projectGame(g: GameState, userId?: string): GameView {
+  const versionNum = Number(g.rulesetVersion.match(/-v(\d+)$/)?.[1] ?? '0');
+  const isV7 = versionNum >= 7;
   const role = userId && g.phase !== 'dealing' ? g.roles[userId] : undefined;
   const evilIds = role === 'merlin'
-    ? g.players.filter(p => teamOf(g.roles[p.id]) === 'red' && g.roles[p.id] !== 'mordred').map(p => p.id)
-    : role && teamOf(role) === 'red' && role !== 'oberon'
-      ? g.players.filter(p => p.id !== userId && teamOf(g.roles[p.id]) === 'red' && g.roles[p.id] !== 'oberon').map(p => p.id) : [];
+    ? g.players.filter(p => teamOf(g.roles[p.id]) === 'red' && g.roles[p.id] !== 'mordred' && (!isV7 || g.roles[p.id] !== 'assassin')).map(p => p.id)
+    : role === 'oberon' && isV7
+      ? g.players.filter(p => p.id !== userId && teamOf(g.roles[p.id]) === 'red').map(p => p.id)
+      : role && teamOf(role) === 'red' && role !== 'oberon'
+        ? g.players.filter(p => p.id !== userId && teamOf(g.roles[p.id]) === 'red' && g.roles[p.id] !== 'oberon').map(p => p.id) : [];
   const treasureModeActive = Boolean(g.settings.treasuresEnabled && g.players.length >= 8);
   const treasuresEnabled = Boolean(role && treasuresEnabledFor(g.settings, g.players.length, role, g.rulesetVersion));
   const completedMissions = g.rounds.filter(r => r.result).length;
@@ -530,11 +549,26 @@ export function projectGame(g: GameState, userId?: string): GameView {
           ...(g.treasuresState?.jinguSeal?.activatedBy ? { jinguAllyId: g.treasuresState.jinguSeal.activatedBy } : {}),
         } : {}),
         ...(role === 'guinevere' && treasuresEnabled ? {
-          guanyinMirror: {
-            used: Boolean(g.treasuresState?.guanyinMirror?.used),
-            available: !g.treasuresState?.guanyinMirror?.used && Boolean(currentRound && g.phase === 'guanyin_window' && !isEnded(g)),
-            result: g.treasuresState?.guanyinMirror?.result,
-          },
+          ...(isV7 ? {
+            savingHair: {
+              used: Boolean(g.treasuresState?.savingHair?.used),
+              available: !g.treasuresState?.savingHair?.used && g.phase === 'mission' && !isEnded(g),
+              armed: Boolean(g.treasuresState?.savingHair?.used && g.treasuresState.savingHair.armedMission === g.mission),
+            },
+            ...(g.treasuresState?.guanyinMirror?.result ? {
+              guanyinMirror: {
+                used: true,
+                available: false,
+                result: g.treasuresState.guanyinMirror.result,
+              },
+            } : {}),
+          } : {
+            guanyinMirror: {
+              used: Boolean(g.treasuresState?.guanyinMirror?.used),
+              available: !g.treasuresState?.guanyinMirror?.used && Boolean(currentRound && g.phase === 'guanyin_window' && !isEnded(g)),
+              result: g.treasuresState?.guanyinMirror?.result,
+            },
+          }),
         } : {}),
         ...(role === 'mordred' && treasuresEnabled ? {
           humanBag: {
