@@ -30,6 +30,7 @@ export function TreasureModal({
 }: TreasureModalProps) {
   const [selectedTarget, setSelectedTarget] = useState('');
   const [assassinTarget, setAssassinTarget] = useState('');
+  const [selectedFanTarget, setSelectedFanTarget] = useState('');
 
   if (!open) return null;
 
@@ -480,10 +481,10 @@ export function TreasureModal({
                     <h3>平天大圣 · 芭蕉神扇</h3>
                   </div>
                   <p className="treasure-desc">
-                    太阴之精叶。若看出车队全是好人将直接拿分，可随时预设狂风。若本次组队投票通过，神扇将立刻掀起狂风吹散车队，换下任队长重新组队！
+                    太阴之精叶。发车表决通过后，牛魔王可祭起芭蕉神扇：吹飞车上 1 名指定队员，并从场下未上车的仙友中随机卷入 1 人替补进车执行任务！
                     <br />
                     <small className="hint">
-                      ※ 铁律锁：芭蕉扇吹散绝不计入 5 次流局上限，全场 0 秒等待无缝判定。
+                      ※ 铁律锁：芭蕉扇吹散绝不计入 5 次流局上限，被换入的仙友直接随车做任务。
                     </small>
                   </p>
 
@@ -491,30 +492,69 @@ export function TreasureModal({
                     <div className="treasure-result-box">
                       <div className="result-label">【芭蕉扇已出】</div>
                       <div className="result-content">
-                        神扇狂风已在先前轮次成功吹散发车，本局法宝已消耗完毕。
+                        神扇妖风已在先前轮次席卷车队替补出征，本局法宝已消耗完毕。
                       </div>
                     </div>
                   ) : (
                     <div className="treasure-fan-toggle-box">
-                      <div className="fan-status-indicator">
-                        当前预设状态：
-                        <strong className={bananaFan?.armed ? 'text-red font-bold' : 'text-blue'}>
-                          {bananaFan?.armed ? '🌪️ 聚风待发（若投票通过则立刻吹散）' : '🍃 平息放行（按兵不动）'}
-                        </strong>
-                      </div>
-                      <button
-                        type="button"
-                        className={`treasure-confirm-btn ${bananaFan?.armed ? 'cancel-fan-btn' : 'arm-fan-btn'}`}
-                        disabled={disabled}
-                        onClick={() => {
-                          handleSend({
-                            type: 'useTreasure',
-                            payload: { action: 'bananaFan', armed: !bananaFan?.armed },
-                          });
-                        }}
-                      >
-                        {bananaFan?.armed ? '🍃 取消聚风（改为平息放行）' : '🌪️ 聚风待发（预设吹散本次通过）'}
-                      </button>
+                      {(() => {
+                        const currentRound = game?.rounds?.at(-1);
+                        const currentTeam = currentRound?.team || [];
+                        const hasTeam = currentTeam.length > 0;
+                        const currentTargetId = selectedFanTarget || bananaFan?.targetId || (hasTeam ? currentTeam[0] : '');
+                        const targetPlayer = players.find(p => p.id === currentTargetId);
+                        const targetName = targetPlayer ? `${String(targetPlayer.seat).padStart(2, '0')}号 · ${targetPlayer.nickname}` : '';
+
+                        return (
+                          <>
+                            {hasTeam && (
+                              <div className="treasure-action-box" style={{ marginBottom: 12 }}>
+                                <label htmlFor="banana-fan-target">选择欲吹飞的车队成员：</label>
+                                <select
+                                  id="banana-fan-target"
+                                  value={currentTargetId}
+                                  onChange={e => setSelectedFanTarget(e.target.value)}
+                                  disabled={disabled || bananaFan?.armed}
+                                >
+                                  {currentTeam.map(id => {
+                                    const p = players.find(x => x.id === id);
+                                    return (
+                                      <option key={id} value={id}>
+                                        {p ? `${String(p.seat).padStart(2, '0')}号 · ${p.nickname}` : id}
+                                      </option>
+                                    );
+                                  })}
+                                </select>
+                              </div>
+                            )}
+                            <div className="fan-status-indicator">
+                              当前预设状态：
+                              <strong className={bananaFan?.armed ? 'text-red font-bold' : 'text-blue'}>
+                                {bananaFan?.armed
+                                  ? `🌪️ 聚风待发（通过时吹飞${targetName ? `【${targetName}】` : '目标'}并随机替补）`
+                                  : '🍃 平息放行（按兵不动）'}
+                              </strong>
+                            </div>
+                            <button
+                              type="button"
+                              className={`treasure-confirm-btn ${bananaFan?.armed ? 'cancel-fan-btn' : 'arm-fan-btn'}`}
+                              disabled={disabled || (!bananaFan?.armed && !hasTeam)}
+                              onClick={() => {
+                                handleSend({
+                                  type: 'useTreasure',
+                                  payload: {
+                                    action: 'bananaFan',
+                                    armed: !bananaFan?.armed,
+                                    ...(currentTargetId ? { targetId: currentTargetId } : {}),
+                                  },
+                                });
+                              }}
+                            >
+                              {bananaFan?.armed ? '🍃 取消聚风（改为平息放行）' : (!hasTeam ? '⏳ 等待队长提名车队' : '🌪️ 聚风待发（预设吹飞并随机换人）')}
+                            </button>
+                          </>
+                        );
+                      })()}
                     </div>
                   )}
                 </div>

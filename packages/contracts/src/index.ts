@@ -94,7 +94,7 @@ export const commandSchema = z.discriminatedUnion('type', [
       z.object({ action: z.literal('guanyinMirror'), targetId: z.string().uuid().optional(), skip: z.boolean().optional() }).strict(),
       z.object({ action: z.literal('humanBag'), targetId: z.string().uuid() }).strict(),
       z.object({ action: z.literal('jinguSeal') }).strict(),
-      z.object({ action: z.literal('bananaFan'), armed: z.boolean() }).strict(),
+      z.object({ action: z.literal('bananaFan'), armed: z.boolean(), targetId: z.string().uuid().optional() }).strict(),
       z.object({ action: z.literal('heartBell'), targetId: z.string().uuid(), advice: z.enum(['protect', 'sabotage']) }).strict(),
     ]),
   }).strict(),
@@ -345,6 +345,7 @@ export interface SelfTreasures {
     used: boolean;
     armed: boolean;
     available: boolean;
+    targetId?: string;
   };
 }
 export interface GameView {

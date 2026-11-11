@@ -73,10 +73,10 @@ export function identityTreasure(self: NonNullable<GameView['self']>, count: num
           : '紧箍信物（好人绝境时激活）';
     } else if (self.role === 'oberon') {
       treasureSub = self.treasures?.bananaFan?.used
-        ? '芭蕉神扇（已吹散）'
+        ? '芭蕉神扇（已施法）'
         : self.treasures?.bananaFan?.armed
-          ? '🌪️ 聚风待发（通过则吹散）'
-          : '芭蕉神扇（点击预设吹散）';
+          ? '🌪️ 聚风待发（通过则吹飞换人）'
+          : '芭蕉神扇（点击预设吹飞）';
     } else if (self.role === 'assassin') {
       treasureSub = game?.phase === 'assassination'
         ? '🔥 终局刺杀 · 祭出火尖枪！'

@@ -560,7 +560,7 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
         y+=alert.height+26;
       }
       if(self.role==='oberon'&&!t?.bananaFan?.used){
-        const status=t?.bananaFan?.armed?'🌪️ 聚风待发（若投票通过则立刻吹散）':'🍃 平息放行（按兵不动）';
+        const status=t?.bananaFan?.armed?'🌪️ 聚风待发（通过时吹飞换人）':'🍃 平息放行（按兵不动）';
         const indicator=txt('fan-status','当前预设状态：'+status,y,13,{lineHeight:20.15,emphasis:[{text:status,weight:'700',color:t?.bananaFan?.armed?'#f87171':'#60a5fa'}]},x+15,w-30);y+=indicator.height+10;
       }
       const targets=model.rows.filter(r=>r.id.startsWith('player:')),selected=targets.find(r=>r.id==='player:'+model.web?.targetId),targetLabel=(id:string)=>{const p=game.players.find(p=>id==='player:'+p.id);return p?String(p.seat).padStart(2,'0')+'号 · '+p.nickname:'';};
@@ -585,7 +585,7 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
       if(t?.savingHair?.used)treasureResult('treasure:savingHair','【救命毫毛显圣】',t.savingHair.armed?'✨ 救命毫毛已在此轮车队祭起！若本轮仅有 1 张失败牌，将被毫毛化险为夷。':'✅ 救命毫毛本局已使用完毕。');
       if(t?.humanBag?.used)treasureResult('treasure:humanBag','【袋中乾坤】','已在本局祭出后天人种袋！\n禁锢仙友：'+treasureName(t.humanBag.targetId??''));
       if(t?.jinguSeal?.used)treasureResult('treasure:jinguSeal','【佛印已传达】','你已捏动金箍向大唐圣僧亮明护法真身！\n圣僧已在暗中锁定你的座次，请全力辅佐圣僧逆转战局！');
-      if(t?.bananaFan?.used)treasureResult('treasure:bananaFan','【芭蕉扇已出】','神扇狂风已在先前轮次成功吹散发车，本局法宝已消耗完毕。');
+      if(t?.bananaFan?.used)treasureResult('treasure:bananaFan','【芭蕉扇已出】','神扇妖风已在先前轮次席卷车队替补出征，本局法宝已消耗完毕。');
       if(t?.jinguAllyId)treasureResult('treasure:ally','👑【紧箍佛印 · 同修来投】',treasureName(t.jinguAllyId)+'\n此仙友确系忠良取经护法同修，绝非妖魔！可全力倚重！');
       const rows=model.rows.filter(r=>!resultRows.has(r.id)&&!r.id.startsWith('player:')&&!['back','overlayClose','empty','treasure:heartProtect','treasure:heartSabotage'].includes(r.id));
       if(!rows.length&&self.role==='assassin')rows.push({id:'assassin-idle',text:copy.idle});
@@ -593,7 +593,7 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
         const actionable=row.id==='treasure:tinStaff'?t?.tinStaff?.available:row.id==='treasure:guanyinMirror'?t?.guanyinMirror?.available:row.id==='treasure:humanBag'?t?.humanBag?.available:row.id==='treasure:jinguSeal'?t?.jinguSeal?.available:row.id==='treasure:bananaFan'?t?.bananaFan?.available:/^(early|assassinate|treasure:heart|treasure:guanyinSkip)/.test(row.id);
         const idle=row.id==='treasure:tinStaff'&&!t?.tinStaff?.used&&!t?.tinStaff?.result||row.id==='treasure:guanyinMirror'&&!t?.guanyinMirror?.used&&!t?.guanyinMirror?.result||row.id==='treasure:humanBag'&&!t?.humanBag?.used||row.id==='treasure:jinguSeal'&&!t?.jinguSeal?.used;
         const text=!actionable&&idle&&copy.idle?copy.idle:row.text,lines=wrapText(text,w-50,v=>measure(v,actionable?13:12)),h=actionable?Math.max(36,lines.length*16.8+8):Math.max(38,lines.length*18+16);
-        if(actionable)button(row.id,({'treasure:humanBag':'🎒 祭起后天人种袋 · 禁选上车','treasure:tinStaff':'📿 祭出九环锡杖 · 私密查验','treasure:jinguSeal':'👑 默念紧箍佛印 · 向圣僧明示真身','treasure:bananaFan':t?.bananaFan?.armed?'🍃 取消聚风（改为平息放行）':'🌪️ 聚风待发（预设吹散本次通过）'} as Record<string,string>)[row.id]??text,y,{skin:'treasure-confirm',detail:row.id==='treasure:jinguSeal'?'gold':row.id==='treasure:bananaFan'?(t?.bananaFan?.armed?'cancel-fan':'arm-fan'):undefined,fontSize:12,disabled:targets.length>0&&!selected&& !['earlyAttempt','earlySkip','treasure:guanyinSkip'].includes(row.id)},x+(actionBox?26.5:15),w-(actionBox?53:30),h);
+        if(actionable)button(row.id,({'treasure:humanBag':'🎒 祭起后天人种袋 · 禁选上车','treasure:tinStaff':'📿 祭出九环锡杖 · 私密查验','treasure:jinguSeal':'👑 默念紧箍佛印 · 向圣僧明示真身','treasure:bananaFan':t?.bananaFan?.armed?'🍃 取消聚风（改为平息放行）':'🌪️ 聚风待发（预设吹飞并随机换人）'} as Record<string,string>)[row.id]??text,y,{skin:'treasure-confirm',detail:row.id==='treasure:jinguSeal'?'gold':row.id==='treasure:bananaFan'?(t?.bananaFan?.armed?'cancel-fan':'arm-fan'):undefined,fontSize:12,disabled:targets.length>0&&!selected&& !['earlyAttempt','earlySkip','treasure:guanyinSkip'].includes(row.id)},x+(actionBox?26.5:15),w-(actionBox?53:30),h);
         else{panel(row.id+':frame',y,h,'treasure-idle',x+15,w-30);txt(row.id,text,y+8,12,{lineHeight:18,align:'center',tone:'muted'},x+25,w-50);}y+=h+10;
       }
       if(actionBox){y+=1;actionBox.height=y-actionBox.y;y+=15;}

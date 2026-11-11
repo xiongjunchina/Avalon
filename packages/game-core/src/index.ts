@@ -90,7 +90,7 @@ export interface GameState {
     savingHair?: { used: boolean; armedMission?: number };
     humanBag?: { used: boolean; targetId?: string; activeBannedMission?: number };
     jinguSeal?: { used: boolean; activatedBy?: string };
-    bananaFan?: { used: boolean; armed: boolean };
+    bananaFan?: { used: boolean; armed: boolean; targetId?: string };
     heartBell?: { used: true; senderId: string; targetId: string; mission: number; roundNumber: number; advice: HeartBellAdvice };
   };
   bananaFanNotice?: string;
@@ -227,6 +227,10 @@ function canUseEarlyAssassination(g: GameState): boolean {
 function openEarlyWindowOrPropose(g: GameState) {
   g.phase = 'proposing';
 }
+function pickRandom<T>(items: T[]): T {
+  return items[Math.floor(Math.random() * items.length)];
+}
+
 // Room ownership, not presence or unanimous voting, controls interruption.
 export function transition(state: GameState, userId: string, action: Pick<Command, 'type' | 'payload'>, onlineIds: string[], context = { hostId: state.players[0].id, now: Date.now() }): GameState {
   const g = structuredClone(state);
@@ -306,9 +310,34 @@ export function transition(state: GameState, userId: string, action: Pick<Comman
           if (g.treasuresState?.bananaFan?.armed) {
             g.treasuresState.bananaFan.used = true;
             g.treasuresState.bananaFan.armed = false;
-            g.bananaFanNotice = `第 ${g.rounds.at(-1)!.number} 轮组队投票通过，但牛魔王祭起【芭蕉神扇】狂风呼啸！本次发车被强行吹散，由下一任队长重新组队！`;
-            rotate(g);
-            openEarlyWindowOrPropose(g);
+            const currentRound = g.rounds.at(-1)!;
+            let targetId = g.treasuresState.bananaFan.targetId;
+            if (!targetId || !currentRound.team.includes(targetId)) {
+              targetId = currentRound.team[0];
+            }
+            const unseatedCandidates = g.players.filter(p => !currentRound.team.includes(p.id));
+            if (unseatedCandidates.length > 0) {
+              const replacement = pickRandom(unseatedCandidates);
+              currentRound.team = currentRound.team.map(id => id === targetId ? replacement.id : id);
+              const targetPlayer = g.players.find(p => p.id === targetId);
+              const targetName = targetPlayer ? `${String(targetPlayer.seat).padStart(2, '0')}号·${targetPlayer.nickname}` : '指定队员';
+              const replacementName = `${String(replacement.seat).padStart(2, '0')}号·${replacement.nickname}`;
+              g.bananaFanNotice = `第 ${currentRound.number} 轮发车通过，但牛魔王祭起【芭蕉神扇】狂风大作！将【${targetName}】吹飞出阵，狂风卷入【${replacementName}】替补出征！`;
+            }
+            delete g.treasuresState.bananaFan.targetId;
+            const isV7 = Number(g.rulesetVersion.match(/-v(\d+)$/)?.[1] ?? '0') >= 7;
+            const hasUnusedGuanyin = !isV7 && Boolean(
+              treasuresEnabledFor(g.settings, g.players.length, 'guinevere', g.rulesetVersion) &&
+              g.players.length >= 9 &&
+              g.players.some(p => g.roles[p.id] === 'guinevere') &&
+              !g.treasuresState?.guanyinMirror?.used
+            );
+            if (hasUnusedGuanyin) {
+              g.phase = 'guanyin_window';
+              g.guanyinEndsAt = new Date(context.now + GUANYIN_WINDOW_MS).toISOString();
+            } else {
+              g.phase = 'mission';
+            }
           } else {
             delete g.bananaFanNotice;
             const isV7 = Number(g.rulesetVersion.match(/-v(\d+)$/)?.[1] ?? '0') >= 7;
@@ -356,6 +385,7 @@ export function transition(state: GameState, userId: string, action: Pick<Comman
         if (completed.length-successes >= 3) finish(g, { winner: 'red', reason: 'three_failures' });
         else if (successes >= 3) { g.phase = 'assassination'; g.assassinationMode = 'normal'; }
         else {
+          delete g.bananaFanNotice;
           g.mission++; rotate(g);
           openEarlyWindowOrPropose(g);
           if (g.settings.rejectionScope === 'mission') g.rejectionCount = 0;
@@ -477,6 +507,11 @@ export function transition(state: GameState, userId: string, action: Pick<Comman
           requireRule(!g.treasuresState.bananaFan?.used, 'ALREADY_USED');
           if (!g.treasuresState.bananaFan) g.treasuresState.bananaFan = { used: false, armed: false };
           g.treasuresState.bananaFan.armed = Boolean(payload.armed);
+          if (payload.targetId) {
+            g.treasuresState.bananaFan.targetId = payload.targetId;
+          } else if (!payload.armed) {
+            delete g.treasuresState.bananaFan.targetId;
+          }
           break;
         }
         default:
@@ -589,6 +624,7 @@ export function projectGame(g: GameState, userId?: string): GameView {
             used: Boolean(g.treasuresState?.bananaFan?.used),
             armed: Boolean(g.treasuresState?.bananaFan?.armed),
             available: !g.treasuresState?.bananaFan?.used && !isEnded(g),
+            ...(g.treasuresState?.bananaFan?.targetId ? { targetId: g.treasuresState.bananaFan.targetId } : {}),
           },
         } : {}),
       },

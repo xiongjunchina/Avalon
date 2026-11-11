@@ -364,7 +364,7 @@ test('treasures: Loyal Guardian jinguSeal requires 2 failures and reveals ally t
   assert.equal(assassinView.self?.treasures?.jinguAllyId, undefined);
 });
 
-test('treasures: Oberon bananaFan arms and blows away passed proposal without incrementing rejectionCount', () => {
+test('treasures: Oberon bananaFan arms and replaces target with random unseated player on passed proposal', () => {
   const roles = ['percival', 'merlin', 'morgana', 'mordred', 'guinevere', 'loyal', 'loyal', 'loyal', 'assassin', 'oberon'];
   const players = makePlayers(10);
   let g = createGame('g10-fan', players, defaultSettings, fixedRoles10(roles), { randomBelow: () => 0n });
@@ -377,19 +377,20 @@ test('treasures: Oberon bananaFan arms and blows away passed proposal without in
   const initialCapIndex = g.captainIndex;
   const initialCap = g.captainOrder[initialCapIndex];
 
-  // Oberon arms the fan during discussion
+  // Oberon arms the fan during discussion targeting players[0].id
   const team1 = [players[0].id, players[1].id, players[4].id];
   g = transition(g, initialCap, { type: 'proposeTeam', payload: { playerIds: team1, direction: 'clockwise' } }, players.map(x => x.id));
 
   g = transition(
     g,
     oberonId,
-    { type: 'useTreasure', payload: { action: 'bananaFan', armed: true } },
+    { type: 'useTreasure', payload: { action: 'bananaFan', armed: true, targetId: players[0].id } },
     players.map(x => x.id)
   );
 
   const oberonView = projectGame(g, oberonId);
   assert.equal(oberonView.self?.treasures?.bananaFan?.armed, true);
+  assert.equal(oberonView.self?.treasures?.bananaFan?.targetId, players[0].id);
 
   // Start vote and pass it
   g = transition(g, initialCap, { type: 'startTeamVote', payload: {} }, players.map(x => x.id));
@@ -398,17 +399,17 @@ test('treasures: Oberon bananaFan arms and blows away passed proposal without in
   }
 
   // Because fan was armed:
-  // 1. Phase should return to proposing, NOT mission!
-  assert.equal(g.phase, 'proposing');
-  // 2. Captain index should rotate to next captain!
-  assert.equal(g.captainIndex, (initialCapIndex + 1) % 10);
-  // 3. Rejection count MUST NOT increment!
-  assert.equal(g.rejectionCount, 0);
-  // 4. Oberon's fan is consumed
+  // 1. Phase proceeds to mission!
+  assert.equal(g.phase, 'mission');
+  // 2. Target player[0] was blown away from team1 and replaced by an unseated player!
+  assert.equal(g.rounds[0].team.includes(players[0].id), false);
+  assert.equal(g.rounds[0].team.length, 3);
+  // 3. Oberon's fan is consumed
   assert.equal(g.treasuresState?.bananaFan?.used, true);
   assert.equal(g.treasuresState?.bananaFan?.armed, false);
-  // 5. Public notice is displayed
+  // 4. Public notice is displayed
   assert.ok(g.bananaFanNotice && g.bananaFanNotice.includes('芭蕉神扇'));
+  assert.ok(g.bananaFanNotice.includes('吹飞') && g.bananaFanNotice.includes('替补出征'));
 });
 
 test('treasures: Guanyin 5-second decision window - skip retains treasure, pick inspects alignment, used mirror bypasses window', () => {
