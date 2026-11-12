@@ -50,6 +50,7 @@ export function TreasureModal({
 
   const tinStaff = self.treasures?.tinStaff;
   const guanyinMirror = self.treasures?.guanyinMirror;
+  const bambooLots = self.treasures?.bambooLots;
   const savingHair = self.treasures?.savingHair;
   const humanBag = self.treasures?.humanBag;
   const jinguSeal = self.treasures?.jinguSeal;
@@ -236,10 +237,61 @@ export function TreasureModal({
                 </div>
               )}
 
-              {/* Guinevere: Saving Hair (v7) or Guanyin Mirror (legacy) */}
+              {/* Guinevere: Bamboo Lots (v7) or Guanyin Mirror (legacy) */}
               {self.role === 'guinevere' && (
                 <div className="treasure-card guanyin-card">
-                  {savingHair ? (
+                  {bambooLots ? (
+                    <>
+                      <div className="treasure-card-header">
+                        <span className="treasure-badge">🎋 慈航圣物</span>
+                        <h3>慈航引渡 · 紫竹灵签</h3>
+                      </div>
+                      <p className="treasure-desc">
+                        观世音菩萨坐镇普陀紫竹林，以灵签拨转天机因果。第 2 轮起，在队长发起表决前摇动灵签，随机钦点一位尚未担任过队长的仙友接替出任车队队长（若全员均已担任过，则从除当前队长外的其他仙友中随机抽取）。
+                        <br />
+                        <small className="hint">
+                          ※ 整局限用 1 次。不改动任务出牌，不泄露任何阵营视野，用于打破红方卡车顺位。
+                        </small>
+                      </p>
+
+                      {bambooLots.used ? (
+                        <div className="treasure-status-idle">
+                          <p>
+                            {bambooLots.swappedLeaderId
+                              ? `✨ 【紫竹灵签】已发动！天机移位，已将队长令移交至【${nameOf(bambooLots.swappedLeaderId)}】。`
+                              : '✅ 紫竹灵签本局已使用完毕。'}
+                          </p>
+                        </div>
+                      ) : bambooLots.available ? (
+                        <div className="treasure-action-box">
+                          <p className="alert-text">
+                            当前正值第 {game?.mission} 轮组队！当前领队为【{players.find(p => p.id === game?.captainId)?.nickname ?? '领队'}】。你可在其发起表决前摇动灵签随机更换队长：
+                          </p>
+                          <button
+                            type="button"
+                            className="treasure-confirm-btn"
+                            disabled={disabled}
+                            onClick={() => {
+                              handleSend({
+                                type: 'useTreasure',
+                                payload: { action: 'bambooLots' },
+                              });
+                            }}
+                          >
+                            🎋 摇动紫竹灵签 · 随机更替队长
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="treasure-status-idle">
+                          <p>
+                            {(game?.mission ?? 1) < 2
+                              ? '⏳ 灵签蕴蓄中：第 1 轮任务结束后，在后续轮次队长发起表决前可用。'
+                              : '⏳ 灵签蓄势中：需等待本轮队长选人论道期间（发起表决前）方可使用。'}
+                          </p>
+                        </div>
+                      )}
+                    </>
+                  ) : savingHair ? (
                     <>
                       <div className="treasure-card-header">
                         <span className="treasure-badge">🪶 慈航圣物</span>

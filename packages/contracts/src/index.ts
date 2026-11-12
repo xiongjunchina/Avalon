@@ -90,6 +90,7 @@ export const commandSchema = z.discriminatedUnion('type', [
     type: z.literal('useTreasure'),
     payload: z.discriminatedUnion('action', [
       z.object({ action: z.literal('tinStaff'), targetId: z.string().uuid() }).strict(),
+      z.object({ action: z.literal('bambooLots') }).strict(),
       z.object({ action: z.literal('savingHair') }).strict(),
       z.object({ action: z.literal('guanyinMirror'), targetId: z.string().uuid().optional(), skip: z.boolean().optional() }).strict(),
       z.object({ action: z.literal('humanBag'), targetId: z.string().uuid() }).strict(),
@@ -324,6 +325,11 @@ export interface SelfTreasures {
     used: boolean;
     available: boolean;
     result?: { targetId: string; alignment: 'pure' | 'evil' };
+  };
+  bambooLots?: {
+    used: boolean;
+    available: boolean;
+    swappedLeaderId?: string;
   };
   savingHair?: {
     used: boolean;

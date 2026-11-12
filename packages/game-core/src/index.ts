@@ -87,6 +87,7 @@ export interface GameState {
   treasuresState?: {
     tinStaff?: { used: boolean; result?: { targetId: string; team: Team } };
     guanyinMirror?: { used: boolean; result?: { targetId: string; alignment: 'pure' | 'evil' } };
+    bambooLots?: { used: boolean; swappedLeaderId?: string };
     savingHair?: { used: boolean; armedMission?: number };
     humanBag?: { used: boolean; targetId?: string; activeBannedMission?: number };
     jinguSeal?: { used: boolean; activatedBy?: string };
@@ -454,6 +455,32 @@ export function transition(state: GameState, userId: string, action: Pick<Comman
           g.treasuresState.tinStaff = { used: true, result: { targetId, team: inspectedTeam } };
           break;
         }
+        case 'bambooLots': {
+          requireRule(g.roles[userId] === 'guinevere', 'NOT_GUINEVERE');
+          requireRule(!g.treasuresState.bambooLots?.used, 'ALREADY_USED');
+          requireRule(g.mission >= 2, 'CANNOT_USE_YET');
+          requireRule(['proposing', 'discussion'].includes(g.phase), 'WRONG_PHASE');
+          const currentCaptain = captain(g);
+          const pastCaptainIds = new Set(g.rounds.map(r => r.captainId));
+          const unseated = g.players.map(p => p.id).filter(id => id !== currentCaptain && !pastCaptainIds.has(id));
+          const pool = unseated.length > 0 ? unseated : g.players.map(p => p.id).filter(id => id !== currentCaptain);
+          requireRule(pool.length > 0, 'NO_ELIGIBLE_PLAYERS');
+          const newCaptainId = pickRandom(pool);
+          if (g.phase === 'discussion') {
+            g.rounds.pop();
+            g.phase = 'proposing';
+          }
+          delete g.draftTeam;
+          const curIdx = g.captainIndex;
+          const targetIdx = g.captainOrder.indexOf(newCaptainId);
+          if (targetIdx !== -1 && targetIdx !== curIdx) {
+            const tmp = g.captainOrder[curIdx];
+            g.captainOrder[curIdx] = g.captainOrder[targetIdx];
+            g.captainOrder[targetIdx] = tmp;
+          }
+          g.treasuresState.bambooLots = { used: true, swappedLeaderId: newCaptainId };
+          break;
+        }
         case 'savingHair': {
           requireRule(g.roles[userId] === 'guinevere', 'NOT_GUINEVERE');
           requireRule(!g.treasuresState.savingHair?.used, 'ALREADY_USED');
@@ -585,10 +612,10 @@ export function projectGame(g: GameState, userId?: string): GameView {
         } : {}),
         ...(role === 'guinevere' && treasuresEnabled ? {
           ...(isV7 ? {
-            savingHair: {
-              used: Boolean(g.treasuresState?.savingHair?.used),
-              available: !g.treasuresState?.savingHair?.used && g.phase === 'mission' && !isEnded(g),
-              armed: Boolean(g.treasuresState?.savingHair?.used && g.treasuresState.savingHair.armedMission === g.mission),
+            bambooLots: {
+              used: Boolean(g.treasuresState?.bambooLots?.used),
+              available: !g.treasuresState?.bambooLots?.used && g.mission >= 2 && ['proposing', 'discussion'].includes(g.phase) && !isEnded(g),
+              swappedLeaderId: g.treasuresState?.bambooLots?.swappedLeaderId,
             },
             ...(g.treasuresState?.guanyinMirror?.result ? {
               guanyinMirror: {

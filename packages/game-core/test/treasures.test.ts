@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createGame, transition, projectGame, RuleError } from '../src/index.js';
+import { createGame, transition, projectGame, RuleError, captain } from '../src/index.js';
 import type { Player, Settings, Command } from '@avalon/contracts';
 
 const defaultSettings: Settings = {
@@ -549,68 +549,141 @@ test('treasures: non-treasure game transitions directly to mission without guany
   assert.equal(g.guanyinEndsAt, undefined);
 });
 
-test('treasures: v7 Guanyin savingHair offsets single mission failure and transitions directly to mission', () => {
+test('treasures: v7 Guanyin bambooLots swaps captain randomly among unseated players in mission 2', () => {
   const roles = ['merlin', 'percival', 'guinevere', 'loyal', 'loyal', 'loyal', 'morgana', 'assassin', 'mordred'];
   const players = makePlayers(9);
   const settings9 = { ...defaultSettings, playerCount: 9, treasuresEnabled: true };
-  let g = createGame('g9-v7-saving-hair', players, settings9, fixedRoles10(roles), { randomBelow: () => 0n });
+  let g = createGame('g9-v7-bamboo-lots', players, settings9, fixedRoles10(roles), { randomBelow: () => 0n });
   const online = players.map(x => x.id);
 
   for (const p of players) {
     g = transition(g, p.id, { type: 'confirmRole', payload: {} }, online);
   }
 
-  const merlinId = players[0].id;
   const guanyinId = players[2].id;
-  const morganaId = players[6].id;
-  const assassinId = players[7].id;
-  const mordredId = players[8].id;
 
-  // v7 Merlin vision: hides Mordred AND Assassin! Only Morgana is visible.
-  const merlinView = projectGame(g, merlinId);
-  assert.deepEqual(merlinView.self?.evilIds, [morganaId]);
+  // In mission 1: bambooLots is not available yet
+  const guanyinViewM1 = projectGame(g, guanyinId);
+  assert.equal(guanyinViewM1.self?.treasures?.bambooLots?.available, false);
+  assert.throws(() => {
+    transition(g, guanyinId, { type: 'useTreasure', payload: { action: 'bambooLots' } }, online);
+  }, (err: unknown) => err instanceof RuleError && err.message === 'CANNOT_USE_YET');
 
-  // Round 1 proposal: team size 3 (Merlin, Percival, Assassin)
-  const cap1 = g.captainOrder[g.captainIndex];
-  const team1 = [players[0].id, players[1].id, assassinId];
+  // Complete mission 1
+  const cap1 = captain(g);
+  const team1 = [players[0].id, players[1].id, players[2].id];
   g = transition(g, cap1, { type: 'proposeTeam', payload: { playerIds: team1, direction: 'clockwise' } }, online);
   g = transition(g, cap1, { type: 'startTeamVote', payload: {} }, online);
   for (const p of players) {
     g = transition(g, p.id, { type: 'teamVote', payload: { approve: true } }, online);
   }
+  for (const memberId of team1) {
+    g = transition(g, memberId, { type: 'missionVote', payload: { success: true } }, online);
+  }
 
-  // In v7: transitions directly to mission, NO guanyin_window!
-  assert.equal(g.phase, 'mission');
-  assert.equal(g.guanyinEndsAt, undefined);
-
-  // Guanyin sees savingHair available
-  const guanyinView = projectGame(g, guanyinId);
-  assert.equal(guanyinView.self?.treasures?.savingHair?.available, true);
-  assert.equal(guanyinView.self?.treasures?.savingHair?.used, false);
-
-  // Guanyin arms savingHair for this mission
-  g = transition(g, guanyinId, { type: 'useTreasure', payload: { action: 'savingHair' } }, online);
-  const guanyinArmedView = projectGame(g, guanyinId);
-  assert.equal(guanyinArmedView.self?.treasures?.savingHair?.used, true);
-  assert.equal(guanyinArmedView.self?.treasures?.savingHair?.armed, true);
-
-  // Mission voting: Merlin & Percival vote success, Assassin votes fail
-  g = transition(g, players[0].id, { type: 'missionVote', payload: { success: true } }, online);
-  g = transition(g, players[1].id, { type: 'missionVote', payload: { success: true } }, online);
-  g = transition(g, assassinId, { type: 'missionVote', payload: { success: false } }, online);
-
-  // Result: The 1 failure was saved by savingHair!
-  const round1Result = g.rounds[0].result;
-  assert.ok(round1Result);
-  assert.equal(round1Result.passed, true);
-  assert.equal(round1Result.failures, 0);
-  assert.equal(round1Result.savingHairSaved, true);
+  // Now in mission 2, proposing phase!
   assert.equal(g.mission, 2);
+  assert.equal(g.phase, 'proposing');
+  const cap2Before = captain(g);
 
-  // Cannot use savingHair again
+  const guanyinViewM2 = projectGame(g, guanyinId);
+  assert.equal(guanyinViewM2.self?.treasures?.bambooLots?.available, true);
+  assert.equal(guanyinViewM2.self?.treasures?.bambooLots?.used, false);
+
+  // Guanyin shakes the Bamboo Lots!
+  g = transition(g, guanyinId, { type: 'useTreasure', payload: { action: 'bambooLots' } }, online);
+
+  const cap2After = captain(g);
+  assert.notEqual(cap2After, cap2Before);
+  assert.notEqual(cap2After, cap1); // Must not be the round 1 captain either!
+  assert.equal(g.treasuresState?.bambooLots?.used, true);
+  assert.equal(g.treasuresState?.bambooLots?.swappedLeaderId, cap2After);
+
+  const guanyinViewAfter = projectGame(g, guanyinId);
+  assert.equal(guanyinViewAfter.self?.treasures?.bambooLots?.used, true);
+  assert.equal(guanyinViewAfter.self?.treasures?.bambooLots?.available, false);
+  assert.equal(guanyinViewAfter.self?.treasures?.bambooLots?.swappedLeaderId, cap2After);
+
+  // Cannot use again
   assert.throws(() => {
-    transition(g, guanyinId, { type: 'useTreasure', payload: { action: 'savingHair' } }, online);
+    transition(g, guanyinId, { type: 'useTreasure', payload: { action: 'bambooLots' } }, online);
   }, (err: unknown) => err instanceof RuleError && err.message === 'ALREADY_USED');
+});
+
+test('treasures: v7 Guanyin bambooLots reverts discussion to proposing and clears draft team', () => {
+  const roles = ['merlin', 'percival', 'guinevere', 'loyal', 'loyal', 'loyal', 'morgana', 'assassin', 'mordred'];
+  const players = makePlayers(9);
+  const settings9 = { ...defaultSettings, playerCount: 9, treasuresEnabled: true };
+  let g = createGame('g9-v7-bamboo-revert', players, settings9, fixedRoles10(roles), { randomBelow: () => 0n });
+  const online = players.map(x => x.id);
+
+  for (const p of players) {
+    g = transition(g, p.id, { type: 'confirmRole', payload: {} }, online);
+  }
+
+  const guanyinId = players[2].id;
+
+  // Complete mission 1
+  const cap1 = captain(g);
+  const team1 = [players[0].id, players[1].id, players[2].id];
+  g = transition(g, cap1, { type: 'proposeTeam', payload: { playerIds: team1, direction: 'clockwise' } }, online);
+  g = transition(g, cap1, { type: 'startTeamVote', payload: {} }, online);
+  for (const p of players) {
+    g = transition(g, p.id, { type: 'teamVote', payload: { approve: true } }, online);
+  }
+  for (const memberId of team1) {
+    g = transition(g, memberId, { type: 'missionVote', payload: { success: true } }, online);
+  }
+
+  // Mission 2: Captain proposes a team into discussion phase
+  const cap2 = captain(g);
+  const team2 = [players[3].id, players[4].id, players[5].id, players[6].id];
+  g = transition(g, cap2, { type: 'proposeTeam', payload: { playerIds: team2, direction: 'clockwise' } }, online);
+  assert.equal(g.phase, 'discussion');
+  assert.equal(g.rounds.length, 2);
+
+  // Guanyin triggers bambooLots during discussion
+  g = transition(g, guanyinId, { type: 'useTreasure', payload: { action: 'bambooLots' } }, online);
+
+  // Must cancel the discussion round, revert to proposing, and assign new captain!
+  assert.equal(g.phase, 'proposing');
+  assert.equal(g.rounds.length, 1);
+  assert.notEqual(captain(g), cap2);
+  assert.equal(g.draftTeam, undefined);
+});
+
+test('treasures: v7 Guanyin bambooLots falls back to other players when all players have been captain', () => {
+  const roles = ['merlin', 'percival', 'guinevere', 'loyal', 'loyal', 'loyal', 'morgana', 'assassin', 'mordred'];
+  const players = makePlayers(9);
+  const settings9 = { ...defaultSettings, playerCount: 9, treasuresEnabled: true };
+  let g = createGame('g9-v7-bamboo-fallback', players, settings9, fixedRoles10(roles), { randomBelow: () => 0n });
+  const online = players.map(x => x.id);
+
+  for (const p of players) {
+    g = transition(g, p.id, { type: 'confirmRole', payload: {} }, online);
+  }
+
+  const guanyinId = players[2].id;
+
+  // Complete mission 1
+  const cap1 = captain(g);
+  g = transition(g, cap1, { type: 'proposeTeam', payload: { playerIds: [players[0].id, players[1].id, players[2].id], direction: 'clockwise' } }, online);
+  g = transition(g, cap1, { type: 'startTeamVote', payload: {} }, online);
+  for (const p of players) g = transition(g, p.id, { type: 'teamVote', payload: { approve: true } }, online);
+  for (const pid of [players[0].id, players[1].id, players[2].id]) g = transition(g, pid, { type: 'missionVote', payload: { success: true } }, online);
+
+  // Manually simulate rounds where all players were captains in rounds history
+  for (const p of players) {
+    g.rounds.push({ number: g.rounds.length + 1, mission: 2, captainId: p.id, team: [players[0].id, players[1].id, players[2].id], direction: 'clockwise' });
+  }
+
+  const capBefore = captain(g);
+  g = transition(g, guanyinId, { type: 'useTreasure', payload: { action: 'bambooLots' } }, online);
+
+  const capAfter = captain(g);
+  assert.notEqual(capAfter, capBefore);
+  assert.equal(g.treasuresState?.bambooLots?.used, true);
+  assert.equal(g.treasuresState?.bambooLots?.swappedLeaderId, capAfter);
 });
 
 test('v7 Oberon single-directionally sees all other evil teammates while others do not see Oberon', () => {

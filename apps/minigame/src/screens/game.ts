@@ -108,6 +108,9 @@ export function gameScreen(room: RoomView, user: User, ui: GameUiState, now = Da
     if (treasure.tinStaff) rows.push({ id: 'treasure:tinStaff', text: treasure.tinStaff.result
       ? `锡杖查验：${playerLabel(treasure.tinStaff.result.targetId)}属${treasure.tinStaff.result.team === 'red' ? '妖魔' : '取经'}阵营`
       : treasure.tinStaff.available ? '九环锡杖：选一名非候选仙友查验' : `九环锡杖：${treasure.tinStaff.used ? '已使用' : '完成两轮任务后可用'}` });
+    if (treasure.bambooLots) rows.push({ id: 'treasure:bambooLots', text: treasure.bambooLots.used
+      ? (treasure.bambooLots.swappedLeaderId ? `紫竹灵签：已移交队长令至${playerLabel(treasure.bambooLots.swappedLeaderId)}` : '紫竹灵签：已使用')
+      : treasure.bambooLots.available ? '紫竹灵签：摇动灵签随机更换队长' : '紫竹灵签：第2轮起表决发起前可用' });
     if (treasure.savingHair) rows.push({ id: 'treasure:savingHair', text: treasure.savingHair.used
       ? (treasure.savingHair.armed ? '救命毫毛：本轮已祭起' : '救命毫毛：已使用')
       : treasure.savingHair.available ? '救命毫毛：祭起庇护本轮出征车队' : '救命毫毛：发车后可用' });
@@ -310,6 +313,8 @@ export function gameAction(room: RoomView, user: User, action: string, ui: Parti
     const validTarget = Boolean(targetId && game.players.some(player => player.id === targetId) && targetId !== user.id);
     if (action === 'treasure:tinStaff' && treasures.tinStaff?.available && validTarget && !self.merlinCandidates.includes(targetId!))
       command = { type: 'useTreasure', payload: { action: 'tinStaff', targetId: targetId! } };
+    if (action === 'treasure:bambooLots' && treasures.bambooLots?.available)
+      command = { type: 'useTreasure', payload: { action: 'bambooLots' } };
     if (action === 'treasure:savingHair' && treasures.savingHair?.available)
       command = { type: 'useTreasure', payload: { action: 'savingHair' } };
     if (action === 'treasure:guanyinMirror' && treasures.guanyinMirror?.available && validTarget && round?.team.includes(targetId!))

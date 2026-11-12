@@ -28,6 +28,7 @@ export function parityFixture(scene = 'game',playerCount=6) {
   if(scene.endsWith('-used')&&room.game.self?.treasures){const t=room.game.self.treasures,targetId=members[1]!.id;
     if(t.tinStaff)t.tinStaff={used:true,available:false,result:{targetId,team:'blue'}};
     if(t.guanyinMirror)t.guanyinMirror={used:true,available:false,result:{targetId,alignment:'evil'}};
+    if(t.bambooLots)t.bambooLots={used:true,available:false,swappedLeaderId:members[1]!.id};
     if(t.savingHair)t.savingHair={used:true,available:false,armed:false};
     if(t.humanBag)t.humanBag={used:true,available:false,targetId};
     if(t.jinguSeal)t.jinguSeal={used:true,available:false};
