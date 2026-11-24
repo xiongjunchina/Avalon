@@ -16,10 +16,36 @@
 .chronicle-surface .error { color: #8c3038; background: #fbe6e2; border-color: #dca5a2; }
 .chronicle-surface .notice { color: #345536; background: #e5eddc; border-color: #b6c8a2; }
 .panel.account-replay.chronicle-surface { margin: 12px; padding: 0; min-width: 0; border: 1px solid #c5a66b; border-radius: 16px; background: #f4ead6; color: #35271f; box-shadow: 0 6px 20px #1e0b0a40; }
-.account-replay.chronicle-surface > .replay-heading { position: sticky; z-index: 5; top: 0; height: 64px; margin: 0; padding: 10px 12px; gap: 8px; border: 0; border-radius: 15px 15px 0 0; background: #321816; }
-.chronicle-surface .replay-heading h1 { margin: 0; color: #fff3db; font: 600 22px/1.4 var(--display); letter-spacing: 0; white-space: nowrap; }
+.account-replay.chronicle-surface > .replay-heading {
+  position: sticky;
+  z-index: 5;
+  top: 0;
+  height: 64px;
+  margin: 0;
+  padding: 10px 14px;
+  gap: 8px;
+  border-bottom: 1.5px solid rgba(212, 175, 55, 0.45);
+  border-radius: 15px 15px 0 0;
+  background: linear-gradient(180deg, #fefcf5 0%, #fbf4e2 100%) !important;
+}
+.chronicle-surface .replay-heading h1 {
+  margin: 0;
+  color: #831843 !important;
+  font: 700 22px/1.4 var(--calligraphy) !important;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
 .replay-heading-actions { display: flex; align-items: center; gap: 6px; }
-.chronicle-surface .replay-heading button { width: auto; padding: 6px 8px; background: #442420; border-color: #856443; color: #f6e6c6; font-size: 12px; }
+.chronicle-surface .replay-heading button {
+  width: auto;
+  padding: 6px 12px;
+  background: #ffffff !important;
+  border: 1.2px solid #d4af37 !important;
+  color: #78350f !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  border-radius: 10px !important;
+}
 .chronicle-surface .replay-heading [aria-pressed="true"] { color: #ffe3a5; border-color: #c5a66b; }
 .chronicle-surface .replay-heading :focus-visible { outline-color: #ffd875; }
 .replay-body { padding: 12px; }
@@ -45,7 +71,7 @@
 .chronicle-surface .battle-history { display: block; min-width: 0; }
 .chronicle-surface .round-jump-nav { top: 0; padding: 4px; gap: 4px; background: #e9dcc1; border-color: #d5c4a6; border-radius: 8px; }
 .chronicle-surface .round-jump-nav > button { min-height: 36px; padding: 5px 8px; font-size: 12px; }
-.chronicle-surface .round-jump-nav [aria-pressed="true"] { border-color: #a28047; color: #683c0b; background: #fffaf0; }
+.chronicle-surface .round-jump-nav [aria-pressed="true"] { border-color: #ffd875; color: #fffdf0; background: linear-gradient(180deg, #1b3a5d 0%, #0d2238 100%); font-weight: 800; box-shadow: 0 2px 8px rgba(10, 25, 45, 0.4), inset 0 1px 0 rgba(255, 235, 160, 0.4); }
 .account-replay.chronicle-surface .round-jump-nav { top: 64px; }
 .chronicle-surface .battle-round-anchor { margin-top: 8px; scroll-margin-top: 52px; }
 .account-replay.chronicle-surface .battle-round-anchor { scroll-margin-top: 116px; }
@@ -92,21 +118,79 @@
 .chronicle-round .battle-card-counts > span { display: inline; font: 600 13px/1.5 var(--sans); }
 .chronicle-round .battle-result > .hint { flex-basis: 100%; margin-top: 0; }
 .chronicle-empty { margin: 8px 0; padding: 18px 12px; color: #6c5a48; background: #fffaf0; border: 1px dashed #d5c4a6; border-radius: 8px; font-size: 14px; text-align: center; }
-.table-modal-sheet.battle-sheet.chronicle-sheet { width: min(100%,600px); padding: 0; gap: 0; border: 1px solid #c5a66b; border-radius: 14px; background: #f4ead6; box-shadow: 0 6px 20px #1e0b0a40; }
-.chronicle-sheet > .table-modal-head { align-items: center; gap: 8px; margin: 0; padding: 10px 12px; border: 0; border-radius: 13px 13px 0 0; background: #321816; }
-.chronicle-sheet .table-modal-head > strong { color: #fff3db; font: 600 20px/1.4 var(--display); }
-.chronicle-sheet .table-modal-head small { margin-left: 6px; color: #e2cda8; font-size: 12px; white-space: nowrap; }
-.chronicle-sheet .chronicle-mission-heading small { display: block; margin-left: 0; font: 400 11px/1.5 var(--sans); }
-.chronicle-sheet .table-modal-head button { color: #f6e6c6; background: #442420; border-color: #856443; font-size: 12px; }
+.table-modal-sheet.battle-sheet.chronicle-sheet {
+  width: min(100%,600px);
+  padding: 0;
+  gap: 0;
+  border: 1.5px solid #d4af37 !important;
+  border-radius: 16px !important;
+  background: linear-gradient(180deg, #fefcf5 0%, #fbf4e2 100%) !important;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25) !important;
+}
+.chronicle-sheet > .table-modal-head {
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 12px 16px !important;
+  border-bottom: 1.5px solid rgba(212, 175, 55, 0.45) !important;
+  border-radius: 15px 15px 0 0;
+  background: linear-gradient(180deg, #fefcf5 0%, #fbf4e2 100%) !important;
+}
+.chronicle-sheet .table-modal-head > strong {
+  color: #831843 !important;
+  font: 700 20px/1.4 var(--calligraphy) !important;
+}
+.chronicle-sheet .table-modal-head small {
+  margin-left: 6px;
+  color: #78350f !important;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.chronicle-sheet .chronicle-mission-heading small {
+  display: block;
+  margin-left: 0;
+  font: 400 11px/1.5 var(--sans);
+  color: #78350f !important;
+}
+.chronicle-sheet .table-modal-head button {
+  color: #78350f !important;
+  background: #ffffff !important;
+  border: 1.2px solid #d4af37 !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  border-radius: 10px !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05) !important;
+}
 .chronicle-sheet .table-modal-head :focus-visible { outline-color: #ffd875; }
 .chronicle-scroll-body { min-height: 0; flex: 1; overflow-y: auto; overscroll-behavior: contain; padding: 10px; }
 .chronicle-sheet .mission-modal-tabs { flex-shrink: 0; padding: 8px 10px; background: #e9dcc1; }
 .chronicle-sheet .mission-modal-tabs button { min-height: 40px; padding: 4px 2px; font-size: 11px; }
 .chronicle-sheet .mission-modal-tabs .wuyue-bg-svg { display: none; }
-.chronicle-sheet .mission-modal-tabs [aria-pressed="true"] { color: #683c0b; border-color: #a28047; background: #fffaf0; }
+.chronicle-sheet .mission-modal-tabs [aria-pressed="true"] { color: #fffdf0; border-color: #ffd875; background: linear-gradient(180deg, #1b3a5d 0%, #0d2238 100%); font-weight: 800; box-shadow: 0 2px 8px rgba(10, 25, 45, 0.4), inset 0 1px 0 rgba(255, 235, 160, 0.4); }
 .chronicle-sheet .game-history { padding: 8px 0; margin: 10px 0 0; border-color: #d5c4a6; }
 .chronicle-sheet .game-history summary { color: #553b25; font-size: 14px; }
-.mp-setup-screen .mp-setup-footer .setup-practice-entry { display: flex; align-items: center; justify-content: center; gap: 12px; width: auto; min-height: 40px; padding: 6px 10px; margin: 2px 0 0; color: #f6e6c6; background: #321816; border: 1px solid #856443; border-radius: 8px; box-shadow: none; text-shadow: none; font: 500 14px/1.4 var(--sans); }
+.mp-setup-screen .mp-setup-footer .setup-practice-entry {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: auto;
+  min-height: 38px;
+  padding: 6px 14px;
+  margin: 2px 0 0;
+  color: #f0f9ff !important;
+  background: linear-gradient(180deg, #0ea5e9 0%, #0284c7 60%, #075985 100%) !important;
+  border: 1.3px solid #bae6fd !important;
+  border-radius: 8px !important;
+  box-shadow: 0 3px 8px rgba(2, 132, 199, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+  font: 700 13.5px/1.4 var(--sans) !important;
+  cursor: pointer;
+}
+.mp-setup-screen .mp-setup-footer .setup-practice-entry:hover:not(:disabled) {
+  background: linear-gradient(180deg, #38bdf8 0%, #0369a1 60%, #0c4a6e 100%) !important;
+  border-color: #e0f2fe !important;
+}
 @media (max-width: 360px) {
   .panel.account-replay.chronicle-surface { margin: 8px; }
   .replay-body { padding: 10px; }
@@ -114,4 +198,313 @@
   .chronicle-direction { font-size: 10px; }
   .chronicle-round .token-portrait { display: none; }
   .chronicle-round .battle-party-grid { gap: 6px; }
+}
+
+/* ==================== Brawl Post-Game Replay & Action Chronicle ==================== */
+.brawl-replay-panel {
+  margin: 14px 0 6px;
+  padding: 12px 14px;
+  background: linear-gradient(135deg, rgba(255, 252, 243, 0.98) 0%, rgba(247, 238, 218, 0.95) 100%) !important;
+  border: 1.3px solid #d4af37 !important;
+  border-radius: 14px !important;
+  box-shadow: 0 4px 14px rgba(60, 25, 8, 0.14) !important;
+  color: #241208 !important;
+}
+
+.brawl-replay-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+  gap: 8px;
+}
+
+.brawl-replay-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  color: #831843 !important;
+  font-weight: 800 !important;
+}
+
+.brawl-replay-title strong small {
+  color: #78350f !important;
+  font-weight: 500;
+  font-size: 12px;
+}
+
+.brawl-replay-toggle-btn {
+  background: linear-gradient(180deg, #0ea5e9 0%, #0284c7 60%, #075985 100%) !important;
+  color: #ffffff !important;
+  border: 1.2px solid #bae6fd !important;
+  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.35) !important;
+  border-radius: 8px !important;
+  padding: 4px 10px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+}
+
+.brawl-replay-body {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.brawl-replay-group {
+  background: rgba(255, 255, 255, 0.65) !important;
+  border: 1px solid #e5d3a5 !important;
+  border-radius: 10px !important;
+  padding: 10px;
+}
+
+.brawl-replay-group-title {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #78350f !important;
+  border-bottom: 1px solid #e5d3a5 !important;
+  padding-bottom: 4px;
+}
+
+.brawl-replay-group-items {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.brawl-replay-card {
+  background: #ffffff !important;
+  border: 1px solid #e5d3a5 !important;
+  border-left: 3px solid #d4af37 !important;
+  border-radius: 8px !important;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  box-shadow: 0 1px 4px rgba(60, 25, 8, 0.06) !important;
+}
+
+.brawl-replay-card.outcome-success {
+  border-left-color: #059669 !important;
+}
+
+.brawl-replay-card.outcome-blocked {
+  border-left-color: #7c3aed !important;
+}
+
+.brawl-replay-card.outcome-info {
+  border-left-color: #0284c7 !important;
+}
+
+.brawl-replay-card.outcome-miss {
+  border-left-color: #94a3b8 !important;
+  opacity: 0.85;
+}
+
+.brawl-replay-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+}
+
+.brawl-replay-actor {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.brawl-replay-seat-tag {
+  background: #fdf8eb !important;
+  color: #78350f !important;
+  border: 1px solid #d4af37 !important;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700 !important;
+}
+
+.brawl-replay-name {
+  color: #451a03 !important;
+  font-weight: 700 !important;
+}
+
+.brawl-replay-role-pill {
+  color: #78350f !important;
+  font-size: 12px;
+  background: rgba(212, 175, 55, 0.18) !important;
+  border: 1px solid rgba(212, 175, 55, 0.5) !important;
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-weight: 600 !important;
+}
+
+.brawl-replay-tags {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.brawl-replay-skill-tag {
+  font-weight: 700;
+  color: #b45309 !important;
+  font-size: 12px;
+}
+
+.brawl-replay-status-badge {
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.brawl-replay-status-badge.is-success {
+  background: rgba(16, 185, 129, 0.15) !important;
+  color: #059669 !important;
+  border: 1px solid rgba(16, 185, 129, 0.4) !important;
+}
+
+.brawl-replay-status-badge.is-blocked {
+  background: rgba(139, 92, 246, 0.15) !important;
+  color: #7c3aed !important;
+  border: 1px solid rgba(139, 92, 246, 0.4) !important;
+}
+
+.brawl-replay-status-badge.is-info {
+  background: rgba(2, 132, 199, 0.15) !important;
+  color: #0284c7 !important;
+  border: 1px solid rgba(2, 132, 199, 0.4) !important;
+}
+
+.brawl-replay-status-badge.is-miss {
+  background: rgba(148, 163, 184, 0.15) !important;
+  color: #64748b !important;
+  border: 1px solid rgba(148, 163, 184, 0.4) !important;
+}
+
+.brawl-replay-target {
+  font-size: 12px;
+  color: #5c2406 !important;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.brawl-replay-target .target-label {
+  color: #78350f !important;
+}
+
+.brawl-replay-target .target-val {
+  color: #831843 !important;
+  font-weight: 700 !important;
+}
+
+.brawl-replay-detail {
+  margin: 2px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #5c2406 !important;
+  opacity: 0.95;
+}
+
+/* In-round chronicle list (inside BattleRound) */
+.battle-brawl-chronicle {
+  background: #fbf5e8;
+  border: 1px dashed #c5a66b;
+  border-radius: 8px;
+  padding: 8px 10px !important;
+  margin-top: 8px !important;
+}
+
+.battle-brawl-chronicle h4 {
+  color: #78480e !important;
+  font-weight: 700 !important;
+  margin-bottom: 6px !important;
+}
+
+.brawl-chronicle-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.brawl-chronicle-item {
+  background: #fffaf0;
+  border: 1px solid #e1d5bf;
+  border-left: 3px solid #d4af37;
+  border-radius: 6px;
+  padding: 6px 8px;
+}
+
+.brawl-chronicle-item.outcome-success {
+  border-left-color: #177448;
+}
+
+.brawl-chronicle-item.outcome-blocked {
+  border-left-color: #8e44ad;
+}
+
+.brawl-chronicle-item.outcome-info {
+  border-left-color: #2980b9;
+}
+
+.brawl-chronicle-item.outcome-miss {
+  border-left-color: #95a5a6;
+}
+
+.brawl-chronicle-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px;
+  font-size: 12px;
+}
+
+.brawl-chronicle-actor {
+  color: #35271f;
+}
+
+.brawl-chronicle-skill {
+  color: #78480e;
+  font-weight: 600;
+}
+
+.brawl-chronicle-badge {
+  font-size: 11px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.brawl-chronicle-badge.is-success {
+  background: #e6f0df;
+  color: #177448;
+}
+
+.brawl-chronicle-badge.is-blocked {
+  background: #f4ecf7;
+  color: #8e44ad;
+}
+
+.brawl-chronicle-badge.is-info {
+  background: #ebf5fb;
+  color: #2980b9;
+}
+
+.brawl-chronicle-badge.is-miss {
+  background: #f2f4f4;
+  color: #7f8c8d;
+}
+
+.brawl-chronicle-detail {
+  margin: 3px 0 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #553b25;
 }

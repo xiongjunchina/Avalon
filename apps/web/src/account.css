@@ -25,34 +25,34 @@
 }
 .account-flow button.secondary:hover:not(:disabled), .account-flow button.text-button:hover:not(:disabled) { color: #35271f; background: #eee0c7; }
 .account-flow :focus-visible { outline: 3px solid #81540f; outline-offset: 2px; }
-.account-topline { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px 0; background: #321816; color: #ffe3a5; }
-.account-topline > span { font: 500 18px/1.5 var(--display); letter-spacing: 2px; }
-.account-flow .account-topline button { min-height: 36px; width: auto; padding: 5px 10px; margin: 0; background: #321816; color: #f6e6c6; border-color: #856443; font-size: 13px; }
-.account-flow .profile-bar { display: flex; position: relative; align-items: center; flex-wrap: wrap; gap: 8px; margin: 0; padding: 10px 14px; border: 0; border-radius: 0; background: #321816; color: #fff3db; }
+.account-topline { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; background: linear-gradient(180deg, rgba(255, 252, 243, 0.98) 0%, rgba(248, 239, 222, 0.94) 100%); border-bottom: 1.5px solid #d4af37; color: #831843; }
+.account-topline > span { font: 700 18px/1.5 var(--display); letter-spacing: 1px; color: #831843; }
+.account-flow .account-topline button { min-height: 34px; width: auto; padding: 4px 10px; margin: 0; background: #fdf8eb; color: #451a03; border: 1.2px solid #d4af37; border-radius: 999px; font-size: 13px; font-weight: 700; }
+.account-flow .profile-bar { display: flex; position: relative; align-items: center; flex-wrap: wrap; gap: 8px; margin: 10px 12px 0; padding: 12px 14px; border: 1.3px solid #d4af37; border-radius: 12px; background: linear-gradient(135deg, rgba(255, 252, 243, 0.98) 0%, rgba(247, 238, 218, 0.96) 100%); color: #241208; box-shadow: 0 3px 10px rgba(0, 0, 0, 0.16); }
 .account-flow .profile-heading { flex: 1; margin: 0; gap: 12px; min-width: 0; }
 .account-flow .profile-heading > div { padding: 0; }
-.account-flow .profile-heading > .avatar { width: 56px; height: 56px; min-width: 56px; border-radius: 50%; outline: 0; border: 1px solid #bd9457; background: #503026; overflow: hidden; }
-.account-flow .profile-heading h1 { margin: 0; font-size: 24px; color: #fff3db; line-height: 1.4; }
-.account-flow .eyebrow { color: #e2cda8; font-size: 11px; letter-spacing: 1px; margin: 0 0 2px; }
-.account-flow .account-player-code { display: block; width: auto; margin: 2px 0 0; padding: 4px 0; min-height: 30px; border: 0; border-radius: 4px; background: #321816; color: #ffe3a5; font-size: 12px; text-align: left; user-select: text; }
-.account-flow button.account-switch { width: auto; padding: 6px 8px; min-height: 36px; margin: 0; background: #442420; border-color: #856443; color: #f6e6c6; font-size: 12px; }
-.account-flow .account-copy-notice { flex-basis: 100%; margin: 0; font-size: 13px; color: #ffe3a5; }
+.account-flow .profile-heading > .avatar { width: 52px; height: 52px; min-width: 52px; border-radius: 50%; outline: 0; border: 2px solid #d4af37; background: #503026; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.25); }
+.account-flow .profile-heading h1 { margin: 0; font-size: 20px; color: #241208; font-weight: 800; line-height: 1.3; }
+.account-flow .eyebrow { color: #78350f; font-size: 11px; letter-spacing: 0.5px; margin: 0 0 2px; font-weight: 700; }
+.account-flow .account-player-code { display: inline-flex; align-items: center; gap: 4px; width: auto; margin: 3px 0 0; padding: 2px 8px; min-height: 24px; border: 0.8px solid #d4af37; border-radius: 4px; background: #fdf8eb; color: #78350f; font-size: 11px; font-weight: 700; text-align: left; user-select: text; }
+.account-flow button.account-switch { width: auto; padding: 4px 10px; min-height: 32px; margin: 0; background: #fdf8eb; border: 1.2px solid #d4af37; border-radius: 999px; color: #451a03; font-size: 12px; font-weight: 700; }
+.account-flow .account-copy-notice { flex-basis: 100%; margin: 4px 0 0; font-size: 12px; color: #b45309; }
 .account-flow .profile-bar :focus-visible, .account-topline :focus-visible { outline-color: #ffd875; }
-.account-flow .account-quick-tools { margin: 0; padding: 0 14px 12px; gap: 8px; background: #321816; }
-.account-flow .account-quick-tools > button { min-height: 38px; background: #442420; border-color: #856443; color: #f6e6c6; font-size: 13px; }
-.account-flow .account-tabs { gap: 0; margin: 0; padding: 6px 8px; border: 0; border-bottom: 1px solid var(--border); border-radius: 0; background: #e9dcc1; }
-.account-flow .account-tabs button { padding: 8px 2px; min-height: 44px; border: 0; border-radius: 7px; font-size: 14px; font-weight: 500; color: #6c5a48; background: transparent; }
-.account-flow .account-tabs [aria-current="page"] { background: #fffaf0; color: #683c0b; font-weight: 700; box-shadow: 0 1px 3px #65422224; }
-.account-content { padding: 14px; min-width: 0; }
+.account-flow .account-quick-tools { margin: 0; padding: 8px 12px 0; gap: 8px; background: transparent; display: flex; }
+.account-flow .account-quick-tools > button { flex: 1; min-height: 36px; background: linear-gradient(180deg, rgba(255, 252, 243, 0.98) 0%, rgba(247, 238, 218, 0.94) 100%); border: 1.2px solid #d4af37; border-radius: 8px; color: #451a03; font-size: 12px; font-weight: 800; box-shadow: 0 2px 6px rgba(0,0,0,0.12); }
+.account-flow .account-tabs { gap: 6px; margin: 8px 12px 0; padding: 4px 6px; border: 1px solid #d4af37; border-radius: 10px; background: rgba(255, 252, 243, 0.85); display: flex; }
+.account-flow .account-tabs button { flex: 1; padding: 6px 2px; min-height: 36px; border: 0; border-radius: 7px; font-size: 13px; font-weight: 700; color: #451a03; background: transparent; }
+.account-flow .account-tabs [aria-current="page"] { background: linear-gradient(180deg, #b45309 0%, #78350f 100%); color: #fffbeb; font-weight: 800; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25); }
+.account-content { padding: 10px 12px; min-width: 0; }
 .account-section-heading { margin: 0 0 8px; }
-.account-section-heading h2 { margin: 0 0 4px; color: #35271f; font: 600 22px/1.4 var(--display); text-align: left; }
-.account-section-heading p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.6; }
-.account-flow .hint { color: var(--muted); background: none; padding: 0; margin: 8px 0; font-size: 14px; line-height: 1.6; }
+.account-section-heading h2 { margin: 0 0 2px; color: #241208; font: 800 18px/1.4 var(--display); text-align: left; }
+.account-section-heading p { margin: 0; color: #78350f; font-size: 12px; line-height: 1.4; }
+.account-flow .hint { color: #78350f; background: none; padding: 0; margin: 6px 0; font-size: 12px; line-height: 1.5; }
 .account-flow .empty-state { padding: 24px 16px; margin: 10px 0; color: var(--muted); background: #fffaf0; border: 1px dashed var(--border); border-radius: 10px; font-size: 16px; text-align: center; }
 .account-flow .error { color: #8c3038; background: #fbe6e2; border: 1px solid #dca5a2; }
 .account-flow .notice { color: #345536; background: #e5eddc; border: 1px solid #b6c8a2; }
-.account-flow .history-list { display: grid; gap: 10px; }
-.account-flow .history-list .history-card { padding: 8px 12px 0; margin: 0; border: 1px solid var(--border); border-left: 3px solid #b7a994; border-radius: 10px; background: #fffaf0; }
+.account-flow .history-list { display: grid; gap: 8px; margin-top: 6px; }
+.account-flow .history-list .history-card { padding: 8px 12px 0; margin: 0; border: 1px solid #d4af37; border-left: 3.5px solid #b7a994; border-radius: 10px; background: linear-gradient(135deg, rgba(255, 252, 243, 0.98) 0%, rgba(247, 238, 218, 0.95) 100%); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12); }
 .account-flow .history-list .result-victory { border-color: #9bbc9e; border-left-color: #177448; background: #eff6e9; }
 .account-flow .history-list .result-defeat { border-left-color: #a36365; }
 .history-card-heading { display: flex; align-items: center; gap: 8px; min-width: 0; }
@@ -66,8 +66,15 @@
 .history-card-role strong { font-weight: 600; }
 .history-card-role > span { color: #6c5a48; font-size: 12px; }
 .account-flow .history-list .history-card-reason { margin: 3px 0 6px; color: #6c5a48; font-size: 13px; line-height: 1.5; }
-.history-card-actions { position: relative; border-top: 1px solid #d5c4a6; }
-.account-flow .history-replay-button { position: absolute; top: 0; right: 0; z-index: 1; margin: 0; padding: 6px 0 6px 12px; width: 100px; min-height: 42px; border: 0; border-radius: 4px; background: transparent; color: #78480e; font-size: 14px; font-weight: 700; text-align: right; }
+.history-card-actions { position: relative; border-top: 1px solid #d4af37; }
+.account-flow .history-replay-button {
+  position: absolute; top: 6px; right: 0; z-index: 1; margin: 0;
+  padding: 4px 10px; min-height: 28px; height: 28px; width: auto;
+  border: 1.2px solid #bae6fd; border-radius: 6px;
+  background: linear-gradient(180deg, #0ea5e9 0%, #0284c7 60%, #075985 100%);
+  color: #f0f9ff; font-size: 12px; font-weight: 800; text-align: center;
+  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.35); cursor: pointer;
+}
 .history-replay-button span { margin-left: 4px; }
 .account-flow .history-game-details { margin: 0; padding: 0; border: 0; border-radius: 0; background: none; }
 .account-flow .history-game-details > summary { width: calc(100% - 108px); min-height: 42px; padding: 10px 0; color: #584536; font: 500 14px/1.5 var(--sans); }
@@ -98,31 +105,96 @@
 .account-flow .preset-list .action-pair { gap: 8px; }
 .account-flow .preset-list .action-pair button { font-size: 14px; }
 .account-flow .preset-new-button { margin: 4px 0 12px; background: #563026; color: #fff0d1; border-color: #563026; }
-.account-flow .stat-grid { background: #fffaf0 !important; box-shadow: none !important; border-color: #d5c4a6 !important; padding: 12px 0 !important; }
-.account-flow .stat-grid strong { color: #553b25 !important; }
-.account-flow .stat-grid > div:nth-child(2) strong { color: #855000 !important; }
-.account-flow .stat-grid > div:nth-child(3) strong { color: #91424b !important; }
-.account-flow .stat-grid span { color: #6c5a48 !important; font-size: 12px !important; }
-.account-flow .ornament-heading { background: none !important; border: 0 !important; border-bottom: 1px solid #d5c4a6 !important; border-radius: 0 !important; padding: 6px 0 !important; justify-content: start !important; }
-.account-flow .ornament-heading h2 { color: #553b25 !important; letter-spacing: 0 !important; font-size: 18px !important; }
-.account-flow .faction-card, .account-flow .role-card { --faction: #245a70; --muted: #6c5a48; color: #35271f; background: #fffaf0 !important; border-color: #c6c5b3; box-shadow: none !important; }
-.account-flow .allegiance-red { --faction: #8c3038; border-color: #d8b6a7; }
+.account-flow .stat-grid {
+  background: linear-gradient(135deg, rgba(255, 252, 243, 0.96) 0%, rgba(247, 238, 218, 0.94) 100%) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12) !important;
+  border: 1.2px solid #d4af37 !important;
+  border-radius: 10px !important;
+  padding: 10px 4px !important;
+}
+.account-flow .stat-grid strong { color: #831843 !important; font-size: 20px !important; }
+.account-flow .stat-grid > div:nth-child(2) strong { color: #0f766e !important; }
+.account-flow .stat-grid > div:nth-child(3) strong { color: #b91c1c !important; }
+.account-flow .stat-grid > div:nth-child(4) strong { color: #b45309 !important; }
+.account-flow .stat-grid span { color: #78350f !important; font-size: 11px !important; font-weight: 700 !important; }
+.account-flow .ornament-heading { background: none !important; border: 0 !important; border-bottom: 1px solid #d4af37 !important; border-radius: 0 !important; padding: 6px 0 !important; justify-content: start !important; }
+.account-flow .ornament-heading h2 { color: #831843 !important; letter-spacing: 0.5px !important; font-size: 16px !important; font-weight: 800 !important; }
+.account-flow .faction-card, .account-flow .role-card {
+  --faction: #0284c7; --muted: #78350f; color: #241208;
+  background: linear-gradient(135deg, rgba(255, 252, 243, 0.96) 0%, rgba(247, 238, 218, 0.94) 100%) !important;
+  border: 1.2px solid #d4af37 !important;
+  border-left: 3.5px solid #0284c7 !important;
+  border-radius: 10px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12) !important;
+}
+.account-flow .allegiance-red { --faction: #b91c1c; border-left-color: #b91c1c !important; }
 .account-flow .faction-card::before { display: none; }
 .account-flow .faction-card > .emblem, .account-flow .faction-card h3, .account-flow .faction-motto { color: var(--faction); }
-.account-flow .role-card h3, .account-flow .role-card .role-rate strong { color: #553b25 !important; }
-.account-flow .role-card .role-team { background: #eee4d2 !important; color: var(--faction); }
-.account-flow .role-card .role-record { color: #6c5a48; }
-.account-flow .card-foot, .account-flow .role-card .card-foot { color: #6c5a48 !important; opacity: 1 !important; border-top-color: #e1d5bf !important; font-size: 11px !important; }
-.account-flow .score-pair { border-top-color: #e1d5bf !important; }
-/* Editors keep a solid dark reading surface for their game controls. */
-.account-editor { --accent: #ffd875; --muted: #eddcc4; --border: #9b7854; --surface: #291514; --raised: #442420; --ink: #1e0b0a; --glass: #291514; color: #fff3db; background: #291514; border: 1px solid #9b7854; box-shadow: none; }
-.account-editor button { background: #ffd875; color: #3b1402; box-shadow: none; }
-.account-editor button.secondary { background: #442420; color: #fff3db; border-color: #9b7854; }
-.account-editor :focus-visible { outline-color: #ffd875; }
-.account-editor .table-modal-head { background: #291514; }
-.account-editor .flow-fixed-actions { background: #291514; }
-.account-editor .hint, .account-editor label, .account-editor legend { color: #eddcc4; }
-.account-editor .flow-scroll-body { background: #291514; }
+.account-flow .role-card h3, .account-flow .role-card .role-rate strong { color: #241208 !important; }
+.account-flow .role-card .role-team { background: #fdf8eb !important; border: 0.8px solid #d4af37; color: var(--faction); }
+.account-flow .role-card .role-record { color: #78350f; }
+.account-flow .card-foot, .account-flow .role-card .card-foot { color: #78350f !important; opacity: 1 !important; border-top-color: #d4af37 !important; font-size: 11px !important; }
+.account-flow .score-pair { border-top-color: #d4af37 !important; }
+/* Scheme A: Profile & Settings Editors */
+.account-editor {
+  --accent: #831843;
+  --muted: #78350f;
+  --border: #d4af37;
+  --surface: #ffffff;
+  --raised: #fefcf5;
+  --ink: #241208;
+  --glass: #fefcf5;
+  color: #241208 !important;
+  background: linear-gradient(180deg, #fefcf5 0%, #fbf4e2 50%, #f5ebd2 100%) !important;
+  border: 1.5px solid #d4af37 !important;
+  border-radius: 20px !important;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4), 0 0 24px rgba(212, 175, 55, 0.25) !important;
+}
+.account-editor button {
+  background: linear-gradient(135deg, #d97706 0%, #b45309 50%, #78350f 100%) !important;
+  color: #ffffff !important;
+  border: 1.5px solid #fde68a !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 12px rgba(180, 83, 9, 0.35) !important;
+}
+.account-editor button.secondary,
+.account-editor button.tool-pill {
+  background: #ffffff !important;
+  color: #78350f !important;
+  border: 1px solid #d4af37 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08) !important;
+}
+.account-editor button.secondary:hover:not(:disabled),
+.account-editor button.tool-pill:hover:not(:disabled) {
+  background: #fef3c7 !important;
+  color: #831843 !important;
+  border-color: #831843 !important;
+}
+.account-editor :focus-visible { outline-color: #831843; }
+.account-editor .table-modal-head {
+  background: transparent !important;
+  border-bottom: 1.5px solid rgba(212, 175, 55, 0.35) !important;
+}
+.account-editor .table-modal-head strong {
+  color: #831843 !important;
+  font-family: var(--calligraphy) !important;
+  font-size: 20px !important;
+}
+.account-editor .flow-fixed-actions {
+  background: transparent !important;
+  border-top: 1.5px solid rgba(212, 175, 55, 0.35) !important;
+}
+.account-editor .hint, .account-editor label, .account-editor legend {
+  color: #78350f !important;
+}
+.account-editor label, .account-editor legend {
+  color: #831843 !important;
+  font-weight: 700 !important;
+}
+.account-editor .flow-scroll-body {
+  background: transparent !important;
+}
 @media (max-width: 380px) {
   .account.account-flow { margin: 8px; }
   .account-content { padding: 10px; }

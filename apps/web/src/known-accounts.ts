@@ -18,3 +18,9 @@ export function rememberAccount(user: User): KnownAccount[] {
   try { localStorage.setItem(key,JSON.stringify(next)); } catch { /* The current authenticated session remains usable. */ }
   return next;
 }
+export function forgetAccount(playerCode: string): KnownAccount[] {
+  const list = knownAccountsList();
+  const next = list.filter(a => a.playerCode !== playerCode);
+  try { localStorage.setItem(key, JSON.stringify(next)); } catch { /* ignore */ }
+  return next;
+}

@@ -114,38 +114,39 @@
   gap: 3px !important;
   min-height: 84px !important;
   padding: 8px 4px !important;
-  border: 2px solid #582420 !important;
+  border: 1.5px solid #d4af37 !important;
   border-radius: 16px !important;
-  background: linear-gradient(180deg, #2b1110 0%, #150606 100%) !important;
+  background: #ffffff !important;
   cursor: pointer;
   transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease !important;
   box-sizing: border-box !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06) !important;
 }
 .vote-option-icon { font: 900 24px/1 var(--sans) !important; }
 .vote-option-title { font: 700 17px/1.2 var(--calligraphy) !important; letter-spacing: 1px !important; }
-.vote-option-sub { font-size: 11px !important; opacity: 0.85 !important; letter-spacing: 0.5px !important; }
-.vote-option.approve { color: #34d399 !important; border-color: #065f46 !important; }
+.vote-option-sub { font-size: 11px !important; opacity: 0.9 !important; letter-spacing: 0.5px !important; font-weight: 600; }
+.vote-option.approve { color: #047857 !important; border-color: #10b981 !important; }
 .vote-option.approve.selected {
-  background: linear-gradient(180deg, #064e3b 0%, #022c22 100%) !important;
-  border-color: #10b981 !important;
-  box-shadow: 0 0 16px rgba(16, 185, 129, 0.6), inset 0 0 8px rgba(16, 185, 129, 0.4) !important;
-  color: #a7f3d0 !important;
+  background: linear-gradient(180deg, #10b981 0%, #059669 50%, #047857 100%) !important;
+  border-color: #34d399 !important;
+  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.45) !important;
+  color: #ffffff !important;
 }
-.vote-option.reject { color: #f87171 !important; border-color: #7f1d1d !important; }
+.vote-option.reject { color: #b91c1c !important; border-color: #ef4444 !important; }
 .vote-option.reject.selected {
-  background: linear-gradient(180deg, #7f1d1d 0%, #450a0a 100%) !important;
-  border-color: #ef4444 !important;
-  box-shadow: 0 0 16px rgba(239, 68, 68, 0.6), inset 0 0 8px rgba(239, 68, 68, 0.4) !important;
-  color: #fecaca !important;
+  background: linear-gradient(180deg, #ef4444 0%, #dc2626 50%, #991b1b 100%) !important;
+  border-color: #fca5a5 !important;
+  box-shadow: 0 4px 14px rgba(220, 38, 38, 0.45) !important;
+  color: #ffffff !important;
 }
-.vote-option.abstain { color: #fbbf24 !important; border-color: #78350f !important; }
+.vote-option.abstain { color: #b45309 !important; border-color: #f59e0b !important; }
 .vote-option.abstain.selected {
-  background: linear-gradient(180deg, #78350f 0%, #451a03 100%) !important;
-  border-color: #f59e0b !important;
-  box-shadow: 0 0 16px rgba(245, 158, 11, 0.6), inset 0 0 8px rgba(245, 158, 11, 0.4) !important;
-  color: #fde68a !important;
+  background: linear-gradient(180deg, #f59e0b 0%, #d97706 50%, #b45309 100%) !important;
+  border-color: #fde68a !important;
+  box-shadow: 0 4px 14px rgba(217, 119, 6, 0.45) !important;
+  color: #ffffff !important;
 }
-.vote-option:focus-visible { outline: 2px solid #ffd875; outline-offset: 3px; }
+.vote-option:focus-visible { outline: 2px solid #831843; outline-offset: 3px; }
 .team-vote-sheet .vote-submit {
   width: 100% !important;
   max-width: 100% !important;
@@ -156,6 +157,11 @@
   font-family: var(--calligraphy) !important;
   letter-spacing: 2px !important;
   box-sizing: border-box !important;
+  background: linear-gradient(180deg, #f59e0b 0%, #d97706 50%, #b45309 100%) !important;
+  border: 1px solid #fde68a !important;
+  color: #ffffff !important;
+  border-radius: 14px !important;
+  box-shadow: 0 4px 14px rgba(217, 119, 6, 0.4) !important;
 }
 .team-vote-sheet h3 { margin: 12px 0 8px; font: 600 14px/1.3 var(--sans); }
 .team-vote-sheet h3 > span { color: var(--jade); }
@@ -176,6 +182,11 @@
   font-size: 14px;
   line-height: 1.4;
   box-sizing: border-box !important;
+  background: linear-gradient(180deg, #fefcf5 0%, #fbf4e2 50%, #f5ebd2 100%) !important;
+  border: 1.5px solid #d4af37 !important;
+  border-radius: 20px !important;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4), 0 0 24px rgba(212, 175, 55, 0.25) !important;
+  color: #241208 !important;
 }
 .mission-report-head {
   display: flex;
@@ -183,7 +194,7 @@
   align-items: center;
   margin-bottom: 12px;
   padding-bottom: 8px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1.5px solid rgba(212, 175, 55, 0.35) !important;
 }
 .mission-report-head-title {
   display: flex;
@@ -192,12 +203,13 @@
 }
 .mission-report-badge {
   font-size: 11px;
-  color: #ffd875;
+  color: #78350f !important;
+  font-weight: 700;
   letter-spacing: 0.8px;
 }
 .mission-report-head-title strong {
   font: 700 22px/1.2 var(--calligraphy);
-  color: #fff2d5;
+  color: #831843 !important;
   letter-spacing: 1px;
 }
 .mission-report-hero {
@@ -210,14 +222,14 @@
   box-sizing: border-box;
 }
 .mission-report-hero.is-pass {
-  background: radial-gradient(circle at 50% 20%, #064e3b 0%, #022c22 70%, #011913 100%);
-  border: 2px solid #10b981;
-  box-shadow: 0 0 24px rgba(16, 185, 129, 0.45), inset 0 0 16px rgba(16, 185, 129, 0.3);
+  background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%) !important;
+  border: 2px solid #34d399 !important;
+  box-shadow: 0 4px 18px rgba(5, 150, 105, 0.4) !important;
 }
 .mission-report-hero.is-fail {
-  background: radial-gradient(circle at 50% 20%, #7f1d1d 0%, #450a0a 70%, #200404 100%);
-  border: 2px solid #ef4444;
-  box-shadow: 0 0 24px rgba(239, 68, 68, 0.45), inset 0 0 16px rgba(239, 68, 68, 0.3);
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 50%, #991b1b 100%) !important;
+  border: 2px solid #fca5a5 !important;
+  box-shadow: 0 4px 18px rgba(220, 38, 38, 0.4) !important;
 }
 .mission-report-hero-emblem {
   font-size: 32px;
@@ -228,17 +240,17 @@
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 1.5px;
-  opacity: 0.85;
+  opacity: 0.95;
 }
-.mission-report-hero.is-pass .mission-report-kicker { color: #6ee7b7; }
-.mission-report-hero.is-fail .mission-report-kicker { color: #fca5a5; }
+.mission-report-hero.is-pass .mission-report-kicker { color: #d1fae5 !important; }
+.mission-report-hero.is-fail .mission-report-kicker { color: #fee2e2 !important; }
 .mission-report-title {
   font: 700 24px/1.2 var(--calligraphy);
   margin: 4px 0 12px;
   letter-spacing: 1.5px;
 }
-.mission-report-hero.is-pass .mission-report-title { color: #a7f3d0; text-shadow: 0 0 12px rgba(16, 185, 129, 0.7); }
-.mission-report-hero.is-fail .mission-report-title { color: #fecaca; text-shadow: 0 0 12px rgba(239, 68, 68, 0.7); }
+.mission-report-hero.is-pass .mission-report-title { color: #ffffff !important; text-shadow: 0 2px 6px rgba(0, 0, 0, 0.3) !important; }
+.mission-report-hero.is-fail .mission-report-title { color: #ffffff !important; text-shadow: 0 2px 6px rgba(0, 0, 0, 0.3) !important; }
 .mission-report-card-stats {
   display: flex;
   justify-content: center;
@@ -256,30 +268,33 @@
   gap: 2px;
 }
 .stat-card.stat-success {
-  background: rgba(16, 185, 129, 0.15);
-  border: 1px solid rgba(16, 185, 129, 0.5);
-  color: #a7f3d0;
+  background: #ffffff !important;
+  border: 1.5px solid #10b981 !important;
+  color: #047857 !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06) !important;
 }
 .stat-card.stat-failure {
-  background: rgba(239, 68, 68, 0.15);
-  border: 1px solid rgba(239, 68, 68, 0.5);
-  color: #fecaca;
+  background: #ffffff !important;
+  border: 1.5px solid #ef4444 !important;
+  color: #b91c1c !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06) !important;
 }
 .stat-card .stat-icon { font-size: 16px; }
-.stat-card .stat-label { font-size: 11px; opacity: 0.9; }
+.stat-card .stat-label { font-size: 11px; opacity: 0.9; font-weight: 600; }
 .stat-card .stat-val { font: 700 18px/1.2 var(--display); letter-spacing: 1px; }
 .mission-report-rule-note {
   font-size: 11.5px;
-  color: #fce7b2;
-  opacity: 0.85;
+  color: #ffffff !important;
+  opacity: 0.95;
   margin: 6px 0 0;
 }
 .mission-report-section {
-  background: rgba(18, 9, 8, 0.75);
-  border: 1px solid #582420;
+  background: #ffffff !important;
+  border: 1.5px solid #d4af37 !important;
   border-radius: 12px;
   padding: 12px;
   margin-bottom: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
 }
 .mission-report-section-title {
   display: flex;
@@ -287,7 +302,7 @@
   gap: 6px;
   margin: 0 0 10px;
   font: 700 14px/1.2 var(--calligraphy);
-  color: #ffd875;
+  color: #831843 !important;
   letter-spacing: 0.8px;
 }
 .mission-report-team-tray {
@@ -300,8 +315,8 @@
   align-items: center;
   gap: 10px;
   padding: 6px 10px;
-  background: linear-gradient(90deg, rgba(120, 53, 15, 0.4) 0%, rgba(20, 10, 8, 0.6) 100%);
-  border: 1px solid #b45309;
+  background: linear-gradient(90deg, #fef3c7 0%, #fde68a 100%) !important;
+  border: 1.5px solid #d4af37 !important;
   border-radius: 8px;
 }
 .report-captain-meta {
@@ -311,11 +326,12 @@
 }
 .report-meta-tag {
   font: 700 12px/1 var(--calligraphy);
-  color: #ffd875;
+  color: #78350f !important;
 }
 .report-meta-dir {
   font-size: 11px;
-  color: #cbd5e1;
+  color: #241208 !important;
+  font-weight: 600;
 }
 .mission-report-party-members {
   display: flex;
@@ -324,7 +340,8 @@
 }
 .report-party-label {
   font-size: 11.5px;
-  color: #fce7b2;
+  color: #78350f !important;
+  font-weight: 600;
 }
 .report-party-grid {
   display: flex;
@@ -366,10 +383,11 @@
   gap: 8px;
 }
 .mission-report-sheet .report-party-member-chip {
-  background: rgba(35, 12, 10, 0.75);
-  border: 1px solid rgba(212, 163, 89, 0.5);
+  background: #ffffff !important;
+  border: 1px solid #d4af37 !important;
   border-radius: 999px;
   padding: 3px 10px 3px 4px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
 }
 .mission-report-sheet .report-party-member-chip .player-token {
   display: flex !important;
@@ -381,7 +399,7 @@
   width: 32px !important;
   height: 32px !important;
   border-radius: 50% !important;
-  border: 1.5px solid #ffd875 !important;
+  border: 1.5px solid #d4af37 !important;
   padding: 1px !important;
   flex-shrink: 0 !important;
 }
@@ -394,7 +412,8 @@
   border: none !important;
   padding: 0 !important;
   font-size: 13px !important;
-  color: #fff2d5 !important;
+  color: #241208 !important;
+  font-weight: 600;
   white-space: nowrap !important;
 }
 
@@ -437,11 +456,13 @@
   aspect-ratio: 1 !important;
   position: relative !important;
   padding: 2px !important;
-  border: 2px solid #ffd875 !important;
+  border: 1.5px solid #d4af37 !important;
+  background: #ffffff !important;
   border-radius: 50% !important;
   flex-shrink: 0 !important;
   margin: 0 auto !important;
   box-sizing: border-box !important;
+  box-shadow: 0 2px 6px rgba(212, 175, 55, 0.25) !important;
 }
 .mission-report-sheet .report-voter-item .token-vote {
   position: absolute !important;
@@ -465,17 +486,17 @@
   max-width: 100% !important;
   padding: 3px 2px !important;
   border-radius: 8px !important;
-  background: linear-gradient(180deg, rgba(56, 18, 16, 0.95), rgba(28, 9, 8, 0.98)) !important;
-  border: 1px solid rgba(212, 163, 89, 0.65) !important;
+  background: #ffffff !important;
+  border: 1.5px solid rgba(212, 175, 55, 0.45) !important;
   box-sizing: border-box !important;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5) !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05) !important;
   text-align: center !important;
   min-height: 42px !important;
 }
 .mission-report-sheet .report-voter-item .token-seat {
   font-size: 11px !important;
   font-weight: 700 !important;
-  color: #ffd875 !important;
+  color: #78350f !important;
   white-space: nowrap !important;
   line-height: 1.2 !important;
   display: flex !important;
@@ -486,14 +507,14 @@
 .mission-report-sheet .report-voter-item .token-seat small {
   display: inline !important;
   font-size: 9.5px !important;
-  color: #ffe6a3 !important;
+  color: #b45309 !important;
   font-weight: 600 !important;
   white-space: nowrap !important;
 }
 .mission-report-sheet .report-voter-item .token-name {
   font-size: clamp(10.5px, 2.9vw, 12px) !important;
-  font-weight: 600 !important;
-  color: #fff2d5 !important;
+  font-weight: 700 !important;
+  color: #241208 !important;
   white-space: nowrap !important;
   word-break: keep-all !important;
   line-height: 1.25 !important;
@@ -515,23 +536,23 @@
   border: 1px solid currentColor !important;
 }
 .mission-report-sheet .report-voter-item .token-vote-caption.approve {
-  background: rgba(16, 185, 129, 0.22) !important;
-  color: #34d399 !important;
-  border-color: #059669 !important;
+  background: #ecfdf5 !important;
+  color: #047857 !important;
+  border-color: #10b981 !important;
 }
 .mission-report-sheet .report-voter-item .token-vote-caption.reject {
-  background: rgba(239, 68, 68, 0.22) !important;
-  color: #f87171 !important;
-  border-color: #dc2626 !important;
+  background: #fef2f2 !important;
+  color: #b91c1c !important;
+  border-color: #ef4444 !important;
 }
 .mission-report-sheet .report-voter-item .token-vote-caption.abstain {
-  background: rgba(245, 158, 11, 0.22) !important;
-  color: #fbbf24 !important;
-  border-color: #d97706 !important;
+  background: #fffbeb !important;
+  color: #b45309 !important;
+  border-color: #f59e0b !important;
 }
 .mission-report-anon-hint {
   font-size: 12px;
-  color: #eddcc4;
+  color: #78350f;
   margin: 4px 0 0;
   text-align: center;
 }
@@ -572,13 +593,13 @@
 .guide-config h3 { font-size: 14px; color: #ffd54f; margin: 0 0 3px; }
 .guide-config p { font-size: 12px; margin: 2px 0; }
 .guide-missions { display: flex; gap: 4px; padding: 0; margin: 4px 0 0; list-style: none; }
-.guide-missions li { display: flex; flex-direction: column; align-items: center; padding: 2px 5px; background: rgba(255, 255, 255, 0.05); border-radius: 4px; font-size: 11px; margin: 0; }
-.guide-missions li strong { color: #93c5fd; font-size: 11.5px; }
-.guide-options dt { font-size: 13px; font-weight: 700; color: #ffd54f; margin-top: 6px; }
-.guide-options dd { font-size: 12.5px; margin: 2px 0 6px; color: #cbd5e1; }
-.guide-roles > .hint { margin: 6px 0; line-height: 1.45; font-size: 12.5px; }
+.guide-missions li { display: flex; flex-direction: column; align-items: center; padding: 4px 6px; background: rgba(212, 175, 55, 0.1); border: 1px solid rgba(212, 175, 55, 0.25); border-radius: 6px; font-size: 11px; margin: 0; }
+.guide-missions li strong { color: #0369a1; font-size: 11.5px; font-weight: 700; }
+.guide-options dt { font-size: 13px; font-weight: 700; color: #831843; margin-top: 6px; }
+.guide-options dd { font-size: 12.5px; margin: 2px 0 6px; color: #241208; }
+.guide-roles > .hint { margin: 6px 0; line-height: 1.45; font-size: 12.5px; color: #78350f; }
 .guide-faction { margin-top: 12px; }
-.guide-faction > h2 { font-size: 18px; margin: 0 0 8px; gap: 8px; }
+.guide-faction > h2 { font-size: 18px; margin: 0 0 8px; gap: 8px; color: #831843; }
 .guide-role-grid { gap: 8px; }
 .guide-role { padding: 10px 12px; gap: 6px; border-radius: 14px; }
 .guide-role-heading { grid-template-columns: 48px minmax(0,1fr); gap: 10px; padding-bottom: 6px; margin-bottom: 0; }
@@ -586,12 +607,12 @@
 .guide-role-meta { gap: 2px; }
 .guide-role-badges { gap: 4px; }
 .guide-role-faction-pill, .guide-role-title-pill { padding: 1px 6px; font-size: 10.5px; line-height: 1.3; }
-.guide-role-heading h3 { font-size: 18px; line-height: 1.15; margin: 1px 0 0; letter-spacing: 1px; white-space: normal; }
-.guide-role-motto { font-size: 12px; line-height: 1.3; }
+.guide-role-heading h3 { font-size: 18px; line-height: 1.15; margin: 1px 0 0; letter-spacing: 1px; white-space: normal; color: #241208; }
+.guide-role-motto { font-size: 12px; line-height: 1.3; color: #78350f; }
 .guide-role-dl { gap: 4px; }
-.guide-role-detail { display: grid; grid-template-columns: max-content minmax(0, 1fr); align-items: baseline; gap: 8px; padding: 4px 8px; border-radius: 6px; background: rgba(9, 16, 23, 0.42); border: 1px solid rgba(255, 255, 255, 0.05); }
-.guide-role-detail dt { margin: 0; min-width: 64px; font-size: 11.5px; line-height: 1.35; letter-spacing: 0.5px; color: var(--accent); font-weight: 700; white-space: nowrap; }
-.guide-role-detail dd { margin: 0; font-size: 12.5px; line-height: 1.38; color: #e8e3d7; }
+.guide-role-detail { display: grid; grid-template-columns: max-content minmax(0, 1fr); align-items: baseline; gap: 8px; padding: 6px 8px; border-radius: 6px; background: rgba(254, 252, 245, 0.9); border: 1px solid rgba(212, 175, 55, 0.3); }
+.guide-role-detail dt { margin: 0; min-width: 64px; font-size: 11.5px; line-height: 1.35; letter-spacing: 0.5px; color: #831843; font-weight: 700; white-space: nowrap; }
+.guide-role-detail dd { margin: 0; font-size: 12.5px; line-height: 1.38; color: #241208; }
 @media (max-width: 360px), (max-height: 620px) {
   .table-modal-sheet.team-vote-sheet { padding: 10px; }
   .vote-option { min-height: 62px; }

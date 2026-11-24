@@ -19,20 +19,41 @@ button.sound-button {
 }
 .sound-button svg { width: 17px !important; height: 17px !important; }
 button.sound-button.is-on { color: #b3fff0; border-color: #a6d9ca; }
-.sound-dialog { width: min(calc(100% - 24px), 420px); margin: auto; padding: 22px; border: 1px solid #dac28b; border-radius: 24px; background: linear-gradient(145deg, #2a4962, #102b42); box-shadow: var(--frame-shadow); }
-.sound-dialog h2 { margin: 0; font-size: 25px; color: var(--accent); }
+.sound-dialog { width: min(calc(100% - 24px), 420px); margin: auto; padding: 22px; border: 1.5px solid #d4af37; border-radius: 24px; background: linear-gradient(180deg, #fefcf5 0%, #fbf4e2 50%, #f5ebd2 100%); box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4), 0 0 24px rgba(212, 175, 55, 0.25); color: #241208; }
+.sound-dialog h2 { margin: 0; font-size: 24px; color: #831843; font-family: var(--display); }
 .sound-dialog .section-head { gap: 12px; margin-bottom: 10px; }
-.sound-controls { display: grid; gap: 10px; }
-.sound-option { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0; padding: 14px 0; border-bottom: 1px solid #cdbb9438; }
-.sound-option strong { display: block; font-size: 16px; color: #fff2d6; }
-.sound-option small { display: block; margin-top: 5px; font-size: 12px; font-weight: 400; color: #c6d9e4; }
-.sound-option input[role=switch] { appearance: none; flex: 0 0 48px; width: 48px; height: 28px; min-height: 28px; padding: 0; margin: 0; position: relative; border: 1px solid #a6b9c5; border-radius: 18px; background: #405467; cursor: pointer; }
-.sound-option input[role=switch]::before { content: ''; position: absolute; width: 20px; height: 20px; top: 3px; left: 3px; border-radius: 50%; background: #e4edf1; transition: transform .16s; }
-.sound-option input[role=switch]:checked { background: #267d7b; border-color: #a1e7cf; }
-.sound-option input[role=switch]:checked::before { transform: translateX(20px); background: #ddfff1; }
-.sound-hint { margin: 0; font-size: 12px; line-height: 1.65; color: #cfdee6; }
-.account-sound-settings { margin: 12px 0 18px; padding: 14px 16px; border: 1px solid #cdbb9466; border-radius: 16px; background: #10273d66; }
-.account-sound-settings summary { cursor: pointer; color: var(--accent); font-size: 16px; }
+.sound-dialog .section-head button { background: #ffffff; border: 1px solid #d4af37; color: #78350f; border-radius: 12px; }
+.sound-controls { display: grid !important; gap: 10px !important; padding: 4px 0 !important; }
+.sound-option {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  margin: 0 !important;
+  padding: 12px 14px !important;
+  background: #ffffff !important;
+  border: 1.5px solid rgba(212, 175, 55, 0.45) !important;
+  border-radius: 14px !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04) !important;
+}
+.sound-option strong { display: block !important; font-size: 15px !important; font-weight: 700 !important; color: #241208 !important; }
+.sound-option small { display: block !important; margin-top: 4px !important; font-size: 12px !important; font-weight: 500 !important; color: #78350f !important; }
+.sound-option input[role=switch] { appearance: none; flex: 0 0 48px; width: 48px; height: 28px; min-height: 28px; padding: 0; margin: 0; position: relative; border: 1px solid #cbd5e1; border-radius: 18px; background: #e2e8f0; cursor: pointer; }
+.sound-option input[role=switch]::before { content: ''; position: absolute; width: 20px; height: 20px; top: 3px; left: 3px; border-radius: 50%; background: #ffffff; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); transition: transform .16s; }
+.sound-option input[role=switch]:checked { background: linear-gradient(180deg, #10b981 0%, #059669 100%) !important; border-color: #047857 !important; }
+.sound-option input[role=switch]:checked::before { transform: translateX(20px); background: #ffffff !important; }
+.sound-hint {
+  font-size: 12px !important;
+  line-height: 1.6 !important;
+  color: #78350f !important;
+  background: rgba(254, 243, 199, 0.6) !important;
+  padding: 8px 12px !important;
+  border-radius: 10px !important;
+  border: 1px solid rgba(212, 175, 55, 0.35) !important;
+  margin: 4px 0 !important;
+}
+.account-sound-settings { margin: 12px 0 18px; padding: 14px 16px; border: 1.5px solid #d4af37; border-radius: 16px; background: #ffffff; }
+.account-sound-settings summary { cursor: pointer; color: #831843; font-size: 16px; font-weight: 700; }
 .account-sound-settings[open] summary { margin-bottom: 6px; }
 @media (max-width: 380px) {
   .room-top-bar { gap: 4px; }

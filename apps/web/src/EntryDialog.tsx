@@ -6,7 +6,7 @@ import { NICKNAME_CONTENT_SAFETY_NOTICE } from './content-safety-copy';
 import { Modal } from './Modal';
 import { entryRoomKey, EntrySession } from './entry-session';
 
-import { rememberAccount, type KnownAccount } from './known-accounts';
+import { rememberAccount, forgetAccount, type KnownAccount } from './known-accounts';
 export type { KnownAccount } from './known-accounts';
 export type EntryIntent = { type: 'home' | 'create' | 'join' | 'practice' | 'account'; inviteKey?: string };
 
@@ -30,6 +30,7 @@ export function EntryDialog({ intent, knownAccounts, onClose, onAuthenticated }:
   if (!session.current) session.current = new EntrySession({
     request: api, knownAccounts: () => accountsRef.current,
     remember: user => { const next = rememberAccount(user); accountsRef.current = next; setAccounts(next); },
+    forget: playerCode => { const next = forgetAccount(playerCode); accountsRef.current = next; setAccounts(next); },
     registrationId: () => crypto.randomUUID(),
   });
   const purpose = intent.type === 'create' ? '创建房间' : intent.type === 'join' ? '加入房间'
@@ -74,10 +75,29 @@ export function EntryDialog({ intent, knownAccounts, onClose, onAuthenticated }:
       {accounts.length > 0 && <section className="entry-known-accounts" aria-label="本机已保存的仙籍">
         <p className="hint">本机仙籍 · 点击继续原账号</p>
         <div className="guest-known-list">
-          {accounts.map(account => <button key={account.playerCode} type="button" disabled={busy}
-            className="guest-known-item" onClick={() => void authenticate(account.playerCode, account)}>
-            <span>{account.nickname}</span><small>#{account.playerCode} · 继续</small>
-          </button>)}
+          {accounts.map(account => (
+            <div key={account.playerCode} className="guest-known-row">
+              <button type="button" disabled={busy}
+                className="guest-known-item" onClick={() => void authenticate(account.playerCode, account)}>
+                <span>{account.nickname}</span><small>#{account.playerCode} · 继续</small>
+              </button>
+              <button
+                type="button"
+                className="guest-known-delete-btn"
+                title={`从本机移除仙籍 #${account.playerCode}`}
+                aria-label={`移除仙籍 #${account.playerCode}`}
+                disabled={busy}
+                onClick={e => {
+                  e.stopPropagation();
+                  const next = forgetAccount(account.playerCode);
+                  accountsRef.current = next;
+                  setAccounts(next);
+                }}
+              >
+                ✕
+              </button>
+            </div>
+          ))}
         </div>
       </section>}
       <div className="guest-tabs-bar" role="group" aria-label="登录模式选择">
@@ -101,7 +121,7 @@ export function EntryDialog({ intent, knownAccounts, onClose, onAuthenticated }:
           : '输入仙友码即可找回原账号，继续使用原昵称、头像和战绩。'}</p>
         {mode === 'create' && <p className="hint">{NICKNAME_CONTENT_SAFETY_NOTICE}</p>}
         {error && <p className="error entry-error" role="alert">{error}</p>}
-        <button className="mp-cyan-pill" disabled={busy || (mode === 'create' ? !nickname.trim() : code.length !== 6)} type="submit">
+        <button className="entry-submit-btn btn-primary-cta" disabled={busy || (mode === 'create' ? !nickname.trim() : code.length !== 6)} type="submit">
           {busy ? '正在进入…' : mode==='create'?joining?'使用此昵称加入房间':`取好昵称，${purpose}`:joining?'找回账号并加入房间':`找回账号，${purpose}`}
         </button>
       </form>

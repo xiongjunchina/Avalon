@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { Command, GameView, Player, TeamBallot } from '@avalon/contracts';
 import { Modal } from './Modal';
-import { CloudFlourish, ImperialDragonCrown, PlayerAvatar, RuyiSlotFrame } from './Heraldry';
+import { CloudFlourish, ImperialDragonCrown, PlayerAvatar } from './Heraldry';
 import { WUYUE_MISSIONS } from './roles';
 
 export function TeamVoteDialog({ game, players, anonymous, userId, serverTime, disabled, send, onClose }: {
@@ -84,10 +84,9 @@ export function TeamVoteDialog({ game, players, anonymous, userId, serverTime, d
                 return (
                   <div
                     key={p.id}
-                    className={`vote-member-card imperial-ruyi-card ${isSelf ? 'is-self' : ''}`}
+                    className={`vote-member-card ${isSelf ? 'is-self' : ''}`}
                     title={`${p.seat}号 ${p.nickname}`}
                   >
-                    <RuyiSlotFrame isSelf={isSelf} />
                     <div className="vote-member-content">
                       <div className="vote-member-avatar">
                         <PlayerAvatar

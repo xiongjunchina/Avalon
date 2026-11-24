@@ -31,6 +31,7 @@ export class EntrySession {
     request: typeof api;
     knownAccounts: () => KnownAccount[];
     remember: (user: User) => void;
+    forget?: (playerCode: string) => void;
     registrationId: () => string;
   }) {}
 
@@ -53,9 +54,16 @@ export class EntrySession {
     const expectedUserId = previous?.id ?? account?.id;
     let user: User;
     if (playerCode) {
-      ({ user } = await this.options.request<{ user: User }>('/sessions/switch', {
-        playerCode, ...(expectedUserId ? { expectedUserId } : {}),
-      }));
+      try {
+        ({ user } = await this.options.request<{ user: User }>('/sessions/switch', {
+          playerCode, ...(expectedUserId ? { expectedUserId } : {}),
+        }));
+      } catch (err) {
+        if (err instanceof Error && err.message === 'ACCOUNT_CODE_CHANGED' && (input.account || account)) {
+          this.options.forget?.(playerCode);
+        }
+        throw err;
+      }
     } else {
       if(looksLikeRoomNumber(nickname))throw Error('NICKNAME_LOOKS_LIKE_ROOM_CODE');
       if (this.registration?.nickname !== nickname) this.registration = { nickname, id: this.options.registrationId() };

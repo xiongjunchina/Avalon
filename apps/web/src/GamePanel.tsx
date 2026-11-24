@@ -24,6 +24,7 @@ import { IdentityDetails } from './IdentityDetails';
 import { SeatMicBadge } from './SeatMicBadge';
 import type { VoiceState } from './agora-voice';
 import type { EffectCue } from './audio-events';
+import { assetUrl } from './deployment';
 export { roleNames } from './roles';
 
 const phaseNames: Record<GameView['phase'], string> = {
@@ -450,6 +451,31 @@ export function GamePanel({
                 </p>
               </div>
 
+              {/* Action buttons: Restart & Replay */}
+              <div className="ended-result-actions-bar">
+                {room.hostId === userId ? (
+                  <button
+                    disabled={disabled}
+                    className="btn-replay-restart"
+                    onClick={() => send({ type: 'returnToLobby', payload: {} })}
+                  >
+                    回到仙境等待区，再开一局
+                  </button>
+                ) : (
+                  <div className="ended-waiting-host-pill">
+                    <span>⏳ 等待房主返回等待区</span>
+                  </div>
+                )}
+                {onOpenReplay && (
+                  <button
+                    type="button"
+                    className="btn-replay-history secondary"
+                    onClick={() => onOpenReplay(g.id)}
+                  >
+                    查看完整复盘
+                  </button>
+                )}
+              </div>
             </section>
           );
         })()
@@ -616,50 +642,9 @@ export function GamePanel({
         </div>
       )}
 
-        {g.result && (
-          <section className="result-box dock-panel game-result-actions">
-            <div className="result-summary-row">
-              <div>
-                <h3>
-                  {g.result.winner
-                    ? g.result.winner === 'blue'
-                      ? '蓝方获胜'
-                      : '红方获胜'
-                    : '本局不计胜负'}
-                </h3>
-                <p>
-                  {reasons[g.result.reason]}
-                  {g.result.targetId ? `，目标为 ${name(g.result.targetId)}` : ''}。
-                </p>
-              </div>
-              <div className="result-actions">
-                {onOpenReplay && (
-                  <button
-                    type="button"
-                    className="secondary"
-                    onClick={() => onOpenReplay(g.id)}
-                  >
-                    查看完整复盘
-                  </button>
-                )}
-                {room.hostId === userId ? (
-                  <button disabled={disabled} onClick={() => send({ type: 'returnToLobby', payload: {} })}>
-                    回到仙境等待区，再开一局
-                  </button>
-                ) : (
-                  <span className="hint">等待房主返回等待区</span>
-                )}
-              </div>
-            </div>
-          </section>
-        )}
-
-      {/* 3. Scheme A: Dual-Flank Altar Arena (Hidden for non-assassins during assassination phase) */}
+      {/* 3. Pantao Celestial Feast Ring Arena (Hidden for non-assassins during assassination phase) */}
       {!(g.phase === 'assassination' && self?.role !== 'assassin') && (() => {
-        const leftPlayers = g.players.filter((_, idx) => idx % 2 === 0);
-        const rightPlayers = g.players.filter((_, idx) => idx % 2 === 1);
-
-        const renderSeat = (p: Player, flank: 'left' | 'right') => {
+        const renderSeat = (p: Player, flank: 'left' | 'right', style?: React.CSSProperties) => {
           const member = room.members.find(m => m.id === p.id);
           const isCaptain = !ended && g.phase !== 'assassination' && p.id === g.captainId;
           const isNextCaptain = isCaptain && effectivePhase === 'early_window';
@@ -699,6 +684,8 @@ export function GamePanel({
                   handleSeatTap(p.id);
                 }
               }}
+              style={style}
+              data-player-id={p.id}
               className={[
                 'table-seat-card',
                 'flank-seat-card',
@@ -768,21 +755,21 @@ export function GamePanel({
                   {self?.role === 'percival' && jinguAllyId === p.id && (
                     <span className="seat-badge badge-jingu-ally" title="取经护法同修（紧箍佛印自证，百分百纯正蓝方！）">📿 护法</span>
                   )}
+                  {g.humanBagBannedPlayerId === p.id && (
+                    <span className="seat-badge badge-banned" title="被收入后天人种袋，本轮禁选上车">
+                      🎒 禁选
+                    </span>
+                  )}
+                  {isTargeted && (
+                    <span className="seat-badge badge-assassinated">🎯 锁定</span>
+                  )}
+                  {ended && isWinnerSeat && (
+                    <span className="seat-badge badge-winner">🏆 胜</span>
+                  )}
+                  {ended && isAssassinatedTarget && (
+                    <span className="seat-badge badge-assassinated">🎯 被刺</span>
+                  )}
                 </div>
-                {g.humanBagBannedPlayerId === p.id && (
-                  <span className="seat-badge badge-banned" title="被收入后天人种袋，本轮禁选上车">
-                    🎒 禁选
-                  </span>
-                )}
-                {isTargeted && (
-                  <span className="seat-badge badge-assassinated">🎯 锁定</span>
-                )}
-                {ended && isWinnerSeat && (
-                  <span className="seat-badge badge-winner">🏆 胜</span>
-                )}
-                {ended && isAssassinatedTarget && (
-                  <span className="seat-badge badge-assassinated">🎯 被刺</span>
-                )}
                 {seatVoteChip && (
                   <span className={`seat-card-vote-badge ${seatVoteChip.className} flank-vote-chip`} title={seatVoteChip.text}>
                     {seatVoteChip.icon}
@@ -839,27 +826,36 @@ export function GamePanel({
             data-player-count={g.players.length}
             aria-label="对局座位表"
           >
-            <div className="scheme-a-main-arena">
-              <div className="scheme-a-flank flank-left">
-                {leftPlayers.map(p => renderSeat(p, 'left'))}
+            <div className="scheme-a-main-arena circular-ring-arena">
+              {/* Central Pantao Feast Table: 420px pure feathered ellipse with zero rectangular corners and 100% complete platters */}
+              <div className="pantao-celestial-table-bg" aria-hidden="true">
+                <picture className="pantao-celestial-table-picture">
+                  <source srcSet={assetUrl('/art/scenes/pantao_table_ellipse.webp')} type="image/webp" />
+                  <img
+                    src={assetUrl('/art/scenes/pantao_table_ellipse.png')}
+                    alt=""
+                    className="pantao-celestial-table-img"
+                    loading="eager"
+                    decoding="async"
+                  />
+                </picture>
               </div>
 
-              {/* Central BaGua Altar Core (中央八卦伏魔台) */}
-              <div className="scheme-a-center-altar" aria-hidden="true">
-                <div className="altar-bagua-disc">
-                  <span className="altar-core-taichi">☯</span>
-                  <span className="altar-direction-tag">
-                    {direction === 'clockwise' ? '⟳ 顺时针' : '⟲ 逆时针'}
-                  </span>
-                  <span className="altar-mission-tag">
-                    {ended ? '胜负已分' : `第 ${g.mission} 难`}
-                  </span>
-                </div>
-              </div>
-
-              <div className="scheme-a-flank flank-right">
-                {rightPlayers.map(p => renderSeat(p, 'right'))}
-              </div>
+              {g.players.map((p, idx) => {
+                const angleDeg = -90 + (idx * 360) / g.players.length;
+                const rad = (angleDeg * Math.PI) / 180;
+                const cosV = Math.cos(rad);
+                const sinV = Math.sin(rad);
+                const archCos = Math.sign(cosV) * Math.pow(Math.abs(cosV), 0.92);
+                const archSin = Math.sign(sinV) * Math.pow(Math.abs(sinV), 0.78);
+                const leftPct = 50 + archCos * 42.2;
+                const topPct = 50 + archSin * 42.5;
+                const flank = cosV < 0 ? 'left' : 'right';
+                return renderSeat(p, flank, {
+                  left: `${leftPct.toFixed(1)}%`,
+                  top: `${topPct.toFixed(1)}%`,
+                });
+              })}
             </div>
           </div>
         );
