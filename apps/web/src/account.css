@@ -195,6 +195,52 @@
 .account-editor .flow-scroll-body {
   background: transparent !important;
 }
+.account-editor .profile-category-tabs {
+  display: flex !important;
+  gap: 8px !important;
+  margin: 10px 0 6px !important;
+}
+.account-editor .profile-category-tab {
+  flex: 1 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 5px !important;
+  min-height: 40px !important;
+  padding: 6px 10px !important;
+  border-radius: 10px !important;
+  border: 1.5px solid rgba(212, 175, 55, 0.45) !important;
+  background: #ffffff !important;
+  color: #78350f !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05) !important;
+}
+.account-editor .profile-category-tab:hover {
+  background: #fef3c7 !important;
+  border-color: #d4af37 !important;
+}
+.account-editor .profile-category-tab.active {
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%) !important;
+  color: #ffffff !important;
+  border-color: #fde68a !important;
+  box-shadow: 0 3px 10px rgba(180, 83, 9, 0.35) !important;
+}
+.account-editor .profile-avatar-option-card {
+  background: #ffffff !important;
+  color: #78350f !important;
+  border: 1.5px solid rgba(212, 175, 55, 0.45) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05) !important;
+}
+.account-editor .profile-avatar-option input:checked + .profile-avatar-option-card {
+  border-color: #d97706 !important;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%) !important;
+  color: #831843 !important;
+  box-shadow: 0 4px 12px rgba(217, 119, 6, 0.3) !important;
+}
 @media (max-width: 380px) {
   .account.account-flow { margin: 8px; }
   .account-content { padding: 10px; }

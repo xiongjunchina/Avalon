@@ -121,10 +121,7 @@ export function PlayerAvatar({
   className?: string;
 }) {
   const rawSrc = avatarUrl || wechatAvatarUrl || (avatar ? builtinAvatarFor(avatar).src : null);
-  const src =
-    rawSrc && rawSrc.startsWith('/art/avatars/wx-')
-      ? `${rawSrc.split('?')[0]}?v=artifact1`
-      : rawSrc;
+  const src = rawSrc;
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
   if (src && src !== failedSrc) {
     return (

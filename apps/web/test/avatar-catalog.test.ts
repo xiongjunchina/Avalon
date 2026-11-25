@@ -7,9 +7,9 @@ import { avatarSchema, profileSchema } from '@avalon/contracts';
 import { BUILTIN_AVATARS, builtinAvatarFor, findBuiltinAvatar } from '../src/avatar-catalog.js';
 import { PlayerAvatar } from '../src/Heraldry.js';
 
-test('all twelve artifact avatars exist and can be saved through the existing profile contract', () => {
-  assert.equal(BUILTIN_AVATARS.length, 12);
-  assert.equal(new Set(BUILTIN_AVATARS.map(item => item.src)).size, 12);
+test('all thirty artifact avatars exist and can be saved through the existing profile contract', () => {
+  assert.equal(BUILTIN_AVATARS.length, 30);
+  assert.equal(new Set(BUILTIN_AVATARS.map(item => item.src)).size, 30);
   for (const item of BUILTIN_AVATARS) {
     assert.ok(existsSync(new URL(`../public${item.src.split('?')[0]}`, import.meta.url)), item.name);
     assert.equal(profileSchema.parse({ nickname: '仙友', avatar: 'leaf', avatarUrl: item.src }).avatarUrl, item.src);

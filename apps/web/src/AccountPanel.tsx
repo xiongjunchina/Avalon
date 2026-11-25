@@ -10,7 +10,7 @@ import { api, describe } from './api';
 import { PROFILE_CONTENT_SAFETY_NOTICE } from './content-safety-copy';
 import { PresetsPanel, settingsText } from './PresetsPanel';
 import { Emblem, PlayerAvatar, roleTeam } from './Heraldry';
-import { BUILTIN_AVATARS, builtinAvatarFor, findBuiltinAvatar } from './avatar-catalog';
+import { AVATAR_CATEGORIES, BUILTIN_AVATARS, builtinAvatarFor, findBuiltinAvatar, type AvatarCategoryId } from './avatar-catalog';
 import { SoundControls } from './SoundSettings';
 import { usePageSound } from './audio-interactions';
 
@@ -127,7 +127,10 @@ function ProfileEditor({user,onUser,onClose}:{user:User;onUser:(u:User)=>void;on
 
   const activeImage=avatarUrl||wechatAvatarUrl;
   const selectedPreset=findBuiltinAvatar(activeImage)??(!activeImage?builtinAvatarFor(avatar):undefined);
-  const activeSource=selectedPreset?`法宝头像（${selectedPreset.name}）`:avatarUrl?'自定义上传头像':'已有头像';
+  const activeSource=selectedPreset?`${selectedPreset.categoryLabel}（${selectedPreset.name}）`:avatarUrl?'自定义上传头像':'已有头像';
+  const [activeCategory, setActiveCategory] = useState<AvatarCategoryId>(() => {
+    return findBuiltinAvatar(avatarUrl)?.category ?? 'chibi';
+  });
 
   function selectPreset(src:string) {
     setError('');
@@ -186,7 +189,7 @@ function ProfileEditor({user,onUser,onClose}:{user:User;onUser:(u:User)=>void;on
           </span>
           <div className="profile-avatar-meta">
             <span className="avatar-source-tag">头像预览：{activeSource}</span>
-            <small className="hint">选择法宝头像或上传照片；昵称和头像通过内容检测后才会展示给其他玩家。</small>
+            <small className="hint">选择预置头像或上传照片；昵称和头像通过内容检测后才会展示给其他玩家。</small>
           </div>
         </div>
         <div className="profile-avatar-actions">
@@ -204,11 +207,29 @@ function ProfileEditor({user,onUser,onClose}:{user:User;onUser:(u:User)=>void;on
       <p className="hint">{PROFILE_CONTENT_SAFETY_NOTICE}</p>
       <label htmlFor="profile-nickname">昵称</label><input id="profile-nickname" maxLength={20} required value={nickname} onChange={e=>{setNickname(e.target.value);setSaved(false);}}/>
       <fieldset className="profile-preset-fieldset"><legend>预置头像</legend>
-        <p className="hint">十二件法宝，点击选择并预览；保存资料后生效。</p>
+        <p className="hint">三大主题共 30 款国风头像，点击切换分类并选择：</p>
+        <div className="profile-category-tabs" role="tablist" aria-label="头像分类">
+          {AVATAR_CATEGORIES.map(cat => (
+            <button
+              type="button"
+              key={cat.id}
+              role="tab"
+              aria-selected={activeCategory === cat.id}
+              className={`profile-category-tab ${activeCategory === cat.id ? 'active' : ''}`}
+              onClick={() => setActiveCategory(cat.id)}
+            >
+              <span className="cat-icon">{cat.icon}</span>
+              <span className="cat-label">{cat.label}</span>
+            </button>
+          ))}
+        </div>
+        <p className="hint profile-category-hint">
+          {AVATAR_CATEGORIES.find(c => c.id === activeCategory)?.hint}
+        </p>
         <div className="profile-avatar-options">
-          {BUILTIN_AVATARS.map(item=><label className="profile-avatar-option" key={item.src}>
-            <input type="radio" className="sr-only" name="profile-preset-avatar" value={item.src} checked={selectedPreset?.src===item.src} onChange={()=>selectPreset(item.src)}/>
-            <span className="profile-avatar-option-card"><img src={assetUrl(item.src)} alt="" loading="lazy" decoding="async"/><span>{item.name}</span></span>
+          {BUILTIN_AVATARS.filter(item => item.category === activeCategory).map(item => <label className="profile-avatar-option" key={item.src}>
+            <input type="radio" className="sr-only" name="profile-preset-avatar" value={item.src} checked={selectedPreset?.src === item.src} onChange={() => selectPreset(item.src)} />
+            <span className="profile-avatar-option-card"><img src={assetUrl(item.src)} alt="" loading="lazy" decoding="async" /><span>{item.name}</span></span>
           </label>)}
         </div>
       </fieldset>
