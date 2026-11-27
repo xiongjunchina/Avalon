@@ -66,12 +66,12 @@ test('settings and public guides reflect unified treasures without guardian perk
   const render = renderToStaticMarkup(createElement(SettingsFields, {
     settings, onChange: () => {},
   }));
-  assert.doesNotMatch(render, /护法天机/);
+  assert.doesNotMatch(render, /护法天机|心仪选角/);
   assert.match(render, /双方按角色保留专属法宝/);
   assert.match(settingsText(settings), /专属法宝/);
-  assert.doesNotMatch(settingsText(settings), /仅红方|护法天机/);
+  assert.doesNotMatch(settingsText(settings), /仅红方|护法天机|心仪选角/);
   const rules = renderToStaticMarkup(createElement(GuideRules));
-  assert.doesNotMatch(rules, /护法天机/);
+  assert.doesNotMatch(rules, /护法天机|心仪选角/);
   assert.doesNotMatch(rules, /蓝方法宝禁用/);
   for (const role of ['percival', 'guinevere', 'loyal'] as const) assert.doesNotMatch(roleTreasures[role], /未开启护法天机时可用/);
 });

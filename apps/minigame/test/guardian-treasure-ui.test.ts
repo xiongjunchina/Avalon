@@ -41,6 +41,7 @@ test('mini game locks blue treasure entry on legacy v6 projection while modern e
 test('mini game settings and guide representations display unified treasure rule without guardian perks', () => {
   const { settings } = fixture();
   assert.match(settingsScreen(settings).rows.find(r => r.id === 'treasureRule')!.text, /双方按角色保留/);
+  assert.equal(settingsScreen(settings).rows.some(r => r.id === 'rolePreferenceEnabled'), false);
   assert.match(guideScreen().rows.find(r => r.id === 'guide:treasureBalance')!.text, /双方按角色各持专属法宝/);
-  assert.doesNotMatch(webGuideRules.map(r => r.text).join(''), /护法天机/);
+  assert.doesNotMatch(webGuideRules.map(r => r.text).join(''), /护法天机|心仪选角/);
 });

@@ -86,7 +86,7 @@ test('admin overview mode shortcut keeps the write behind explicit confirmation'
 });
 
 test('long twelve-player preset summary stays above its edit and delete controls',async()=>{
- const preset=parityPlayerData().presets[0]!;preset.settings={...preset.settings,playerCount:12,earlyAssassinationEnabled:true,guardianPerksEnabled:true,autoRevealRoleEnabled:true,treasuresEnabled:true,rolePreferenceEnabled:true};
+ const preset=parityPlayerData().presets[0]!;preset.settings={...preset.settings,playerCount:12,earlyAssassinationEnabled:true,autoRevealRoleEnabled:true,treasuresEnabled:true};
  const p=new PlayerPanel({presets:async()=>({presets:[preset]})} as any,parityFixture().user);await p.open('presets');
  for(const width of [320,390,430]){const l=layoutWebScreen(p.model(),{width,height:844,top:0,bottom:0}),description=l.nodes.find(n=>n.id==='preset-settings:'+preset.id)!,edit=l.nodes.find(n=>n.id==='apply:'+preset.id)!;assert.ok(description.y+description.height<edit.y);}
 });

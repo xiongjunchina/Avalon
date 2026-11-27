@@ -10,7 +10,6 @@ import {abortConfirmation} from './screens/abort-confirm.js';
 import {RoomBubbles} from './screens/room-bubbles.js';
 import {configureDocumentMetrics,setBackdropCanvasFactory} from './ui/web-render.js';
 import {invitationUrl} from './net/urls.js';
-import {RolePreferenceDraft} from './screens/role-preferences.js';
 import type {Role} from '@avalon/contracts';
 import {commandId} from './screens/lobby.js';
 import { attachTouchNavigation } from './ui/touch.js';
@@ -105,9 +104,8 @@ let nickname = '';
 let switchCode = '';
 let guestHomeVisible=true;let authIntent:'create'|'join'|undefined;
 let authMode: 'create' | 'switch' = 'create';
-const rolePreferenceDraft=new RolePreferenceDraft();
 let waitingMissionsExpanded=false;
-let auxiliary: 'preferences' | 'dedicated' | 'roomTools' | 'practiceSeats' | 'sound' | 'switchAccount' | 'join' | 'webHandoff' | undefined;
+let auxiliary: 'dedicated' | 'roomTools' | 'practiceSeats' | 'sound' | 'switchAccount' | 'join' | 'webHandoff' | undefined;
 let joinKey = '';
 let joinSubmitting = false;
 let dedicatedRooms: DedicatedRoom[] = [];
@@ -142,7 +140,6 @@ function model(): ScreenModel {
     title: '大家都在等你', rows: [{ id: 'guide:ready', text: '其他玩家均已准备，只差你一位。' }, { id: 'ready', text: '我已准备' }, { id: 'readyLater', text: '稍后准备' }],
     web: { page: 'sheet', sheet: 'ready', background: 'pavilion', backId: 'readyLater',document:{kind:'tools',modal:true},underlay:lobbyScreen(room,user) },
   });
-  if(auxiliary==='preferences'&&room)return feedback(rolePreferenceDraft.model(room));
   if (auxiliary === 'join') return feedback(joinScreen(user, joinKey, joinSubmitting));
   if(auxiliary==='dedicated')return feedback({title:'选择开桌方式',rows:[{id:'dedicated:normal',text:'普通房 · 随机房号'},...dedicatedRooms.map(r=>({id:'dedicated:'+r.id,text:r.code+' · '+r.name+(r.activeRoomId?'（已开桌）':''),disabled:!!r.activeRoomId}))],web:{page:'sheet',background:'library',backId:'auxiliaryClose',document:{kind:'tools',modal:true}}});
   if (auxiliary === 'switchAccount') return feedback({ ...entryScreen(undefined,undefined,true), web: {...entryScreen(undefined,undefined,true).web!, authMode, nickname, switchCode, knownAccounts: knownAccounts.list(), backId: 'auxiliaryClose' } });
@@ -300,12 +297,6 @@ async function select(id: string) {
   if(id==='settingChoice:close'){settingsChoice.close();render();return;}
   if(id.startsWith('settingChoice:value:')){const selected=settingsChoice.choose(id.slice(20));if(!selected){render();return;}id=selected;}
   else {const settings=model().web?.document?.settings;if(settings&&settingsChoice.open(id,settings)){render();return;}settingsChoice.close();}
-  if(id==='rolePreferences'&&room){rolePreferenceDraft.open(room);auxiliary='preferences';scroll=0;render();return;}
-  if(auxiliary==='preferences'&&room){
-    if(id.startsWith('pref:'))return run(async()=>{rolePreferenceDraft.toggle(id.slice(5) as Role,room!);});
-    if(id==='prefClear'){rolePreferenceDraft.selected=[];render();return;}
-    if(id==='prefSave')return run(async()=>{if(!connection||room!.phase!=='waiting'||!room!.settings.rolePreferenceEnabled)throw Error('当前无法保存心仪志愿');rolePreferenceDraft.sync(room!);await connection.sendConfirmed({type:'setRolePreferences',payload:{preferences:rolePreferenceDraft.selected},commandId:commandId(),expectedVersion:room!.version});auxiliary=undefined;notice='心仪志愿已保存';});
-  }
   if (id === 'readyLater') { reminderDismissed = room?.id ?? ''; render(); return; }
   if (id === 'leave' && view === 'game' && ['finished', 'aborted'].includes(room?.game?.phase ?? '')) { lobby?.leave(); return; }
   if (id === 'leave' && view === 'game') id = room?.hostId === user?.id ? 'endGame' : 'requestAbort';

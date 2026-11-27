@@ -1,14 +1,13 @@
 import {test} from 'node:test';import assert from 'node:assert/strict';
-import {RolePreferenceDraft} from '../src/screens/role-preferences.js';
 import {parityFixture,parityPlayerData} from '../scripts/parity-fixture.js';
 import {adminReplayScreen} from '../src/screens/admin/views.js';
 import {replayScreen} from '../src/screens/replay.js';
-import {settingsScreen,toggleSetting} from '../src/screens/settings.js';
+import {settingsScreen} from '../src/screens/settings.js';
 import {layoutWebScreen} from '../src/ui/web-layout.js';
 import type {RoomView,Replay} from '@avalon/contracts';
-test('preference draft preserves edits across snapshots, limits three and filters unavailable roles',()=>{
- const r={...parityFixture().room,phase:'waiting',settings:{...parityFixture().room.settings,rolePreferenceEnabled:true}} as RoomView;const d=new RolePreferenceDraft();d.open(r);d.toggle('merlin',r);d.toggle('percival',r);d.toggle('assassin',r);assert.throws(()=>d.toggle('loyal',r),/3/);d.sync({...r,selfRolePreferences:[]});assert.deepEqual(d.selected,['merlin','percival','assassin']);d.toggle('merlin',r);assert.deepEqual(d.selected,['percival','assassin']);assert.throws(()=>d.toggle('loyal',{...r,phase:'playing'}));
- const m=d.model(r);const l=layoutWebScreen(m,{width:390,height:844,top:0,bottom:0})!;assert.ok(l.nodes.some(n=>n.id==='prefSave'));assert.ok(l.nodes.some(n=>n.image?.startsWith('roles/')));assert.ok(settingsScreen(r.settings).rows.some(r=>r.id==='rolePreferenceEnabled'));assert.equal(toggleSetting(r.settings,'rolePreferenceEnabled').rolePreferenceEnabled,false);
+test('settings screen excludes role preference toggle',()=>{
+ const r={...parityFixture().room,phase:'waiting'} as RoomView;
+ assert.equal(settingsScreen(r.settings).rows.some(r=>r.id==='rolePreferenceEnabled'), false);
 });
 test('deal audit appears only in authenticated admin replay even when ordinary replay receives extra data',()=>{
  const r=parityPlayerData().replay as Replay;r.roleAssignmentAudit={algorithmVersion:'test',weightVersion:'test',protectionLevel:0,playerOrder:[],players:{},draws:[]};assert.ok(adminReplayScreen(r).rows.some(r=>r.id==='audit:meta'));assert.ok(!replayScreen(r,'back').rows.some(r=>r.id.startsWith('audit:')));

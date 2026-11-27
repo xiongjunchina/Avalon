@@ -162,7 +162,7 @@ export function layoutWebScreen(model: ScreenModel, v: SafeViewport): WebLayout 
       const canStart=host&&room.members.length===count&&room.members.every(m=>m.ready);
       const naturalDockY=y+12,dockY=Math.min(naturalDockY,bottom-76),pinned=dockY<naturalDockY;
       add('panel','action-dock','',10,dockY,w-20,64,{fixed:pinned});
-      const actions=[['ready',me?.ready?'取消取经':'✋ 出发取经'],...(room.settings.rolePreferenceEnabled?[['rolePreferences','🎭 心仪角色']]:[]),[canStart?'start':'practice',canStart?'📜 仙友齐聚 · 敕令发牌':'🐒 幻化分身试玩 ('+count+'人局)']];
+      const actions=[['ready',me?.ready?'取消取经':'✋ 出发取经'],[canStart?'start':'practice',canStart?'📜 仙友齐聚 · 敕令发牌':'🐒 幻化分身试玩 ('+count+'人局)']];
       const aw=(w-40-8*(actions.length-1))/actions.length;
       actions.forEach(([id,title],i)=>add('button',id!,title!,20+i*(aw+8),dockY+8,aw,48,{skin:'waiting-primary',fontSize:id==='ready'?cssClamp(14,w*.038,16):cssClamp(12,w*.034,14),selected:id==='ready'&&!!me?.ready,fixed:pinned}));
       y=naturalDockY+68;
