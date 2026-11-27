@@ -39,23 +39,31 @@ test('Merlin identity only mentions Mordred when this game configuration include
   }
 });
 
-test('IdentityDetails renders guardian perk clue for loyal players when guardianPerksEnabled is true', () => {
+test('IdentityDetails renders guardian perk clue for legacy saved games while modern games omit it', () => {
   const players = Array.from({ length: 12 }, (_, i) => ({ id: `p${i + 1}`, seat: i + 1, nickname: `仙友${i + 1}` }));
-  const game = createGame('perk-ui', players, { ...defaultSettings, playerCount: 12, guardianPerksEnabled: true }, a => a);
+  const game = createGame('perk-ui', players, { ...defaultSettings, playerCount: 12 }, a => a);
   const loyalPlayers = players.filter(p => game.roles[p.id] === 'loyal');
   assert.ok(loyalPlayers.length > 0);
 
-  for (const p of loyalPlayers) {
-    const self = projectGame(game, p.id).self!;
-    assert.ok(self.guardianClue);
-    const html = renderToStaticMarkup(createElement(IdentityDetails, { self, players }));
-    assert.ok(html.includes(self.guardianClue.title));
-    assert.ok(html.includes(self.guardianClue.description));
-    for (const tid of self.guardianClue.targetIds) {
-      const targetPlayer = players.find(x => x.id === tid)!;
-      assert.ok(html.includes(targetPlayer.nickname));
-    }
-  }
+  const targetPlayer = players[0];
+  game.guardianClues = {
+    [loyalPlayers[0].id]: {
+      kind: 'zhubajie',
+      title: '【八戒巡山】天机灵觉',
+      description: '你巡山探路获知：此仙友绝非混世魔猴六耳猕猴（假猴王）。',
+      targetIds: [targetPlayer.id],
+    },
+  };
+
+  const self = projectGame(game, loyalPlayers[0].id).self!;
+  assert.ok(self.guardianClue);
+  const html = renderToStaticMarkup(createElement(IdentityDetails, { self, players }));
+  assert.ok(html.includes(self.guardianClue.title));
+  assert.ok(html.includes(self.guardianClue.description));
+  assert.ok(html.includes(targetPlayer.nickname));
+
+  const fresh = createGame('perk-v7', players, { ...defaultSettings, playerCount: 12 }, a => a);
+  assert.equal(projectGame(fresh, loyalPlayers[0].id).self?.guardianClue, undefined);
 });
 
 test('IdentityDetails treasure button is locked for non-assassins when treasures disabled, but available for assassin', () => {

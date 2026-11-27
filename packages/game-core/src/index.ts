@@ -65,9 +65,10 @@ export function treasuresEnabledFor(
   role: Role,
   rulesetVersion = RULESET_VERSION
 ): boolean {
-  const balanceRule = Number(rulesetVersion.match(/-v(\d+)$/)?.[1]) >= 6;
-  return Boolean(settings.treasuresEnabled && playerCount >= 8 &&
-    !(balanceRule && settings.guardianPerksEnabled && teamOf(role) === 'blue'));
+  if (!settings.treasuresEnabled || playerCount < 8) return false;
+  const versionNum = Number(rulesetVersion.match(/-v(\d+)$/)?.[1] ?? '0');
+  const legacyV6Balance = versionNum === 6 && settings.guardianPerksEnabled;
+  return !legacyV6Balance || teamOf(role) !== 'blue';
 }
 export class RuleError extends Error {}
 function requireRule(condition: unknown, code: string): asserts condition { if (!condition) throw new RuleError(code); }
@@ -130,68 +131,12 @@ export function createGame(
       .filter(p => p.id === mordredId || p.id === decoyId)
       .map(p => p.id);
   }
-  let guardianClues: Record<string, GuardianClue> | undefined;
-  if (settings.guardianPerksEnabled) {
-    guardianClues = {};
-    const loyalGuardians = assignLoyalGuardians(id, sorted, roles);
-    const loyalPlayers = sorted.filter(p => roles[p.id] === 'loyal');
-    for (const p of loyalPlayers) {
-      const gKind = loyalGuardians[p.id];
-      if (gKind === 'zhubajie') {
-        const nonMorganas = sorted.filter(q => q.id !== p.id && roles[q.id] !== 'morgana');
-        const target = shuffle(nonMorganas)[0];
-        guardianClues[p.id] = {
-          kind: 'zhubajie',
-          title: '【八戒巡山】天机灵觉',
-          description: '你巡山探路获知：此仙友绝非混世魔猴六耳猕猴（假猴王）。',
-          targetIds: target ? [target.id] : [],
-        };
-      } else if (gKind === 'shawujing') {
-        const otherLoyals = sorted.filter(q => q.id !== p.id && roles[q.id] === 'loyal');
-        const target = shuffle(otherLoyals)[0];
-        guardianClues[p.id] = {
-          kind: 'shawujing',
-          title: '【同修感应】天机灵觉',
-          description: target ? '你感应到同门佛光：此仙友亦是取经护法同修，可互为倚仗。' : '你感应天地流沙：其余护法皆在天庭未下凡，此局取经唯君独守。',
-          targetIds: target ? [target.id] : [],
-        };
-      } else if (gKind === 'bailong') {
-        const percivalPlayer = sorted.find(q => roles[q.id] === 'percival');
-        const redPool = sorted.filter(q => teamOf(roles[q.id]) === 'red');
-        const redDecoy = shuffle(redPool)[0];
-        const targetIds = percivalPlayer && redDecoy
-          ? sorted.filter(q => q.id === percivalPlayer.id || q.id === redDecoy.id).map(q => q.id)
-          : [];
-        guardianClues[p.id] = {
-          kind: 'bailong',
-          title: '【龙驹护圣】天机灵觉',
-          description: '你隐闻圣僧佛光：两位仙友之中，必有一位是大唐圣僧（唐三藏）。',
-          targetIds,
-        };
-      } else if (gKind === 'jingang') {
-        const redPool = sorted.filter(q => teamOf(roles[q.id]) === 'red');
-        const bluePool = sorted.filter(q => teamOf(roles[q.id]) === 'blue' && roles[q.id] !== 'merlin' && q.id !== p.id);
-        const chosenRed = shuffle(redPool)[0];
-        const chosenBlue = shuffle(bluePool)[0];
-        const targetIds = chosenRed && chosenBlue
-          ? sorted.filter(q => q.id === chosenRed.id || q.id === chosenBlue.id).map(q => q.id)
-          : [];
-        guardianClues[p.id] = {
-          kind: 'jingang',
-          title: '【金刚怒目】天机灵觉',
-          description: '你目运金光察得：两位仙友之中，至少潜藏一位混世妖魔。',
-          targetIds,
-        };
-      }
-    }
-  }
   const seats = sorted.map(p => p.id);
   const captainOrder = settings.captainMode === 'random_order' ? shuffle(seats) : seats;
   return { id, rulesetVersion: RULESET_VERSION, settings: { ...settings }, players: sorted,
     roles, roleAssignmentAudit: audit, phase: 'role_reveal', mission: 1,
     rejectionCount: 0, captainOrder,
     ...(guinevereCandidates ? { guinevereCandidates } : {}),
-    ...(guardianClues ? { guardianClues } : {}),
     ...(settings.earlyAssassinationEnabled ? { earlyAssassination: { used: false, windows: [] } } : {}),
     ...(settings.treasuresEnabled && sorted.length >= 8 ? { treasuresState: {} } : {}),
     captainIndex: 0, confirmed: [], teamVotes: {}, missionVotes: {}, rounds: [] };

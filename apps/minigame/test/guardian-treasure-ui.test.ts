@@ -18,8 +18,10 @@ function fixture() {
   return { players, settings, game, player, room };
 }
 
-test('mini game locks blue treasure entry from private projection while legacy entry stays available', () => {
+test('mini game locks blue treasure entry on legacy v6 projection while modern entry stays available', () => {
   const { game, player, room } = fixture();
+  game.rulesetVersion = 'standard-no-lancelot-v6';
+  room.game = projectGame(game, player.id);
   const ui = { privateRoleVisible: true, ballotVisible: false, overlay: 'identity' as const };
   const identity = gameScreen(room, player, ui);
   const button = layoutWebScreen(identity, { width: 390, height: 844, top: 0, bottom: 0 }).nodes.find(n => n.id === 'treasures');
@@ -30,16 +32,15 @@ test('mini game locks blue treasure entry from private projection while legacy e
   assert.match(JSON.stringify(treasure.rows), /蓝方法宝本局禁用；红方法宝保留/);
   assert.equal(treasure.rows.some(r => r.id === 'treasure:tinStaff'), false);
   assert.equal(treasure.rows.some(r => r.id.startsWith('player:')), false);
-  game.rulesetVersion = 'standard-no-lancelot-v5';
+  game.rulesetVersion = 'standard-no-lancelot-v7';
   room.game = projectGame(game, player.id);
-  const legacy = layoutWebScreen(gameScreen(room, player, ui), { width: 390, height: 844, top: 0, bottom: 0 }).nodes.find(n => n.id === 'treasures');
-  assert.equal(legacy?.disabled, false);
+  const modern = layoutWebScreen(gameScreen(room, player, ui), { width: 390, height: 844, top: 0, bottom: 0 }).nodes.find(n => n.id === 'treasures');
+  assert.equal(modern?.disabled, false);
 });
 
-test('mini game settings and both guide representations explain red-only treasures', () => {
+test('mini game settings and guide representations display unified treasure rule without guardian perks', () => {
   const { settings } = fixture();
-  assert.match(settingsScreen(settings).rows.find(r => r.id === 'treasureRule')!.text, /蓝方禁用、红方保留/);
-  assert.match(settingsScreen({ ...settings, guardianPerksEnabled: false }).rows.find(r => r.id === 'treasureRule')!.text, /双方按角色保留/);
-  assert.match(guideScreen().rows.find(r => r.id === 'guide:treasureBalance')!.text, /蓝方法宝禁用，红方法宝保留/);
-  assert.match(webGuideRules.map(r => r.text).join(''), /若已开启护法天机，则蓝方法宝禁用，仅红方法宝生效/);
+  assert.match(settingsScreen(settings).rows.find(r => r.id === 'treasureRule')!.text, /双方按角色保留/);
+  assert.match(guideScreen().rows.find(r => r.id === 'guide:treasureBalance')!.text, /双方按角色各持专属法宝/);
+  assert.doesNotMatch(webGuideRules.map(r => r.text).join(''), /护法天机/);
 });

@@ -9,11 +9,10 @@ export function settingsScreen(settings: Settings): ScreenModel {
     { id: 'anonymousTeamVote', text: `匿名投票：${settings.anonymousTeamVote ? '开' : '关'}` },
     { id: 'ladyEnabled', text: `照妖宝镜：${settings.ladyEnabled ? '开' : '关'}` },
     { id: 'earlyAssassinationEnabled', text: `提前刺杀：${settings.earlyAssassinationEnabled ? '开' : '关'}` },
-    { id: 'guardianPerksEnabled', text: `护法天机：${settings.guardianPerksEnabled ? '开' : '关'}` },
     { id: 'voiceChatEnabled', text: `网页端声网兼容：${settings.voiceChatEnabled ? '开启' : '关闭'}（不影响微信语音）` },
     { id: 'autoRevealRoleEnabled', text: `自动亮身份：${settings.autoRevealRoleEnabled ? '开' : '关'}` },
     { id: 'treasuresEnabled', text: `8–12人法宝：${settings.treasuresEnabled ? '开' : '关'}（仅8人以上生效）` },
-    ...(settings.treasuresEnabled && settings.playerCount >= 8 ? [{ id: 'treasureRule', text: settings.guardianPerksEnabled ? '新局法宝：护法天机已开，蓝方禁用、红方保留' : '新局法宝：护法天机未开，双方按角色保留' }] : []),
+    ...(settings.treasuresEnabled && settings.playerCount >= 8 ? [{ id: 'treasureRule', text: '新局法宝：8–12人双方按角色保留专属法宝' }] : []),
     { id: 'rolePreferenceEnabled', text: `心仪选角：${settings.rolePreferenceEnabled ? '开' : '关'}` },
     { id: 'apply', text: '应用设置并返回' },
   ] };
@@ -26,7 +25,7 @@ export function toggleSetting(settings: Settings, key: keyof Settings): Settings
   }
   if (key === 'captainMode') return { ...settings, captainMode: settings.captainMode === 'seat_order' ? 'random_order' : 'seat_order' };
   if (key === 'rejectionScope') return { ...settings, rejectionScope: settings.rejectionScope === 'game' ? 'mission' : 'game' };
-  if (key === 'anonymousTeamVote' || key === 'ladyEnabled' || key === 'earlyAssassinationEnabled' || key === 'guardianPerksEnabled' || key === 'voiceChatEnabled' || key === 'autoRevealRoleEnabled' || key === 'treasuresEnabled' || key === 'rolePreferenceEnabled')
+  if (key === 'anonymousTeamVote' || key === 'ladyEnabled' || key === 'earlyAssassinationEnabled' || key === 'voiceChatEnabled' || key === 'autoRevealRoleEnabled' || key === 'treasuresEnabled' || key === 'rolePreferenceEnabled')
     return { ...settings, [key]: !settings[key] };
   return settings;
 }

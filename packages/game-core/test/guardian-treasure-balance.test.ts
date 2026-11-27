@@ -23,22 +23,18 @@ function afterTwoFailures(g: GameState) {
   return g;
 }
 
-test('v7 treasure policy covers every role, both feature switches, and all supported player counts', () => {
+test('v7 treasure policy covers every role and all supported player counts without guardian restriction', () => {
   assert.equal(RULESET_VERSION, 'standard-no-lancelot-v7');
   for (const count of [5, 6, 7, 8, 9, 10, 11, 12]) {
     for (const guardian of [false, true]) for (const treasures of [false, true]) {
       const g = fixture(count, guardian, treasures);
       for (const player of g.players) {
-        const role = g.roles[player.id], blue = teamOf(role) === 'blue';
-        const expected = treasures && count >= 8 && !(guardian && blue);
+        const role = g.roles[player.id];
+        const expected = Boolean(treasures && count >= 8);
         const self = projectGame(g, player.id).self!;
         assert.equal(treasuresEnabledFor(g.settings, count, role), expected, `${count}/${guardian}/${treasures}/${role}`);
         assert.equal(self.treasures?.enabled, expected, `${count}/${guardian}/${treasures}/${role}`);
-        if (treasures && count >= 8 && guardian && blue) {
-          assert.deepEqual(self.treasures, { enabled: false, disabledReason: 'guardian_perks' });
-        } else {
-          assert.equal(self.treasures?.disabledReason, undefined);
-        }
+        assert.equal(self.treasures?.disabledReason, undefined);
       }
     }
   }
@@ -46,7 +42,7 @@ test('v7 treasure policy covers every role, both feature switches, and all suppo
 
 test('v6 guardian mode rejects every blue treasure on the authoritative transition', () => {
   for (const count of [8, 9, 10, 11, 12]) {
-    const g = afterTwoFailures(fixture(count));
+    const g = afterTwoFailures(fixture(count, true, true, 'standard-no-lancelot-v6'));
     const percival = playerWith(g, 'percival'), loyal = playerWith(g, 'loyal'), assassin = playerWith(g, 'assassin');
     assert.throws(() => use(g, percival, { action: 'tinStaff', targetId: assassin }), { message: 'BLUE_TREASURES_DISABLED' });
     assert.throws(() => use(g, loyal, { action: 'jinguSeal' }), { message: 'BLUE_TREASURES_DISABLED' });
@@ -64,7 +60,7 @@ test('v6 guardian mode rejects every blue treasure on the authoritative transiti
 
 test('v6 guardian mode keeps human bag, banana fan and heart bell operational for red players', () => {
   for (const count of [8, 9, 10, 11, 12]) {
-    const g = afterTwoFailures(fixture(count));
+    const g = afterTwoFailures(fixture(count, true, true, 'standard-no-lancelot-v6'));
     const mordred = playerWith(g, 'mordred'), loyal = playerWith(g, 'loyal');
     const bag = use(g, mordred, { action: 'humanBag', targetId: loyal });
     assert.equal(bag.treasuresState?.humanBag?.targetId, loyal);

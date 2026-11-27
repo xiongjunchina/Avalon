@@ -16,6 +16,7 @@ function fixture() {
   const players = Array.from({ length: 12 }, (_, i) => ({ id: `p${i + 1}`, seat: i + 1, nickname: `仙友${i + 1}` }));
   const settings = { ...defaultSettings, playerCount: 12, treasuresEnabled: true, guardianPerksEnabled: true };
   const game = createGame('guardian-treasure-ui', players, settings, a => a);
+  game.rulesetVersion = 'standard-no-lancelot-v6';
   return { players, settings, game };
 }
 
@@ -60,19 +61,17 @@ test('saved legacy games keep projected blue treasures even with both settings e
   assert.equal(identityTreasure(view.self!, players.length, settings.treasuresEnabled, view).enabled, true);
 });
 
-test('settings and public guides explain the new blue treasure exclusion without changing the switches', () => {
+test('settings and public guides reflect unified treasures without guardian perks', () => {
   const { settings } = fixture();
-  const render = (guardianPerksEnabled: boolean) => renderToStaticMarkup(createElement(SettingsFields, {
-    settings: { ...settings, guardianPerksEnabled }, onChange: () => {},
+  const render = renderToStaticMarkup(createElement(SettingsFields, {
+    settings, onChange: () => {},
   }));
-  assert.match(render(true), /蓝方法宝禁用，仅红方法宝生效/);
-  assert.match(render(false), /双方按角色保留专属法宝/);
-  assert.match(settingsText(settings), /专属法宝（仅红方）/);
-  assert.match(settingsText(settings, 'standard-no-lancelot-v6'), /专属法宝（仅红方）/);
-  assert.doesNotMatch(settingsText(settings, 'standard-no-lancelot-v5'), /仅红方/);
-  assert.doesNotMatch(settingsText({ ...settings, guardianPerksEnabled: false }), /仅红方/);
+  assert.doesNotMatch(render, /护法天机/);
+  assert.match(render, /双方按角色保留专属法宝/);
+  assert.match(settingsText(settings), /专属法宝/);
+  assert.doesNotMatch(settingsText(settings), /仅红方|护法天机/);
   const rules = renderToStaticMarkup(createElement(GuideRules));
-  assert.match(rules, /若已开启护法天机，则蓝方法宝禁用，仅红方法宝生效/);
-  assert.match(rules, /也不会出现观音法宝等待期/);
-  for (const role of ['percival', 'guinevere', 'loyal'] as const) assert.match(roleTreasures[role], /未开启护法天机时可用/);
+  assert.doesNotMatch(rules, /护法天机/);
+  assert.doesNotMatch(rules, /蓝方法宝禁用/);
+  for (const role of ['percival', 'guinevere', 'loyal'] as const) assert.doesNotMatch(roleTreasures[role], /未开启护法天机时可用/);
 });

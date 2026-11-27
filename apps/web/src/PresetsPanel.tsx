@@ -13,8 +13,8 @@ export function SettingsFields({settings,onChange,prefix='room'}:{settings:Setti
     <RoomVoiceHint enabled={settings.voiceChatEnabled} />
     <label htmlFor={`${prefix}-captain`}>队长分配</label><select id={`${prefix}-captain`} value={settings.captainMode} onChange={e=>onChange({captainMode:e.target.value as Settings['captainMode']})}><option value="seat_order">按座位循环</option><option value="random_order">开局打乱一次，整局循环</option></select>
     <label htmlFor={`${prefix}-rejections`}>流局计数</label><select id={`${prefix}-rejections`} value={settings.rejectionScope} onChange={e=>onChange({rejectionScope:e.target.value as Settings['rejectionScope']})}><option value="game">全局累计，5 次判负</option><option value="mission">单次任务累计，5 次判负</option></select>
-    {([['anonymousTeamVote','匿名组队投票'],['earlyAssassinationEnabled','提前刺杀'],['guardianPerksEnabled','护法天机（建议7-12人）'],['autoRevealRoleEnabled','倒计时后亮明真身'],['treasuresEnabled','专属法宝（8-12人专属）'],['rolePreferenceEnabled','心仪选角（偏好匹配模式）']] as const).map(([key,label])=><div className="check" key={key}><label htmlFor={`${prefix}-${key}`}>{label}</label><input id={`${prefix}-${key}`} type="checkbox" checked={settings[key]} onChange={e=>onChange({[key]:e.target.checked})}/></div>)}
-    {settings.treasuresEnabled && <p className="hint">{settings.playerCount < 8 ? '专属法宝仅在 8–12 人局生效。' : settings.guardianPerksEnabled ? '新局同时开启护法天机时，蓝方法宝禁用，仅红方法宝生效。' : '新局未开启护法天机时，双方按角色保留专属法宝。'}</p>}
+    {([['anonymousTeamVote','匿名组队投票'],['earlyAssassinationEnabled','提前刺杀'],['autoRevealRoleEnabled','倒计时后亮明真身'],['treasuresEnabled','专属法宝（8-12人专属）'],['rolePreferenceEnabled','心仪选角（偏好匹配模式）']] as const).map(([key,label])=><div className="check" key={key}><label htmlFor={`${prefix}-${key}`}>{label}</label><input id={`${prefix}-${key}`} type="checkbox" checked={settings[key]} onChange={e=>onChange({[key]:e.target.checked})}/></div>)}
+    {settings.treasuresEnabled && <p className="hint">{settings.playerCount < 8 ? '专属法宝仅在 8–12 人局生效。' : '8–12 人局中双方按角色保留专属法宝。'}</p>}
   </>;
 }
 export function PresetsPanel({currentSettings,disabled=false,canApply=false,onApply}:{currentSettings?:Settings;disabled?:boolean;canApply?:boolean;onApply?:(s:Settings)=>void}) {
