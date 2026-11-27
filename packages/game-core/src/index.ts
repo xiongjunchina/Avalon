@@ -555,7 +555,7 @@ export function projectGame(g: GameState, userId?: string): GameView {
   const isV7 = versionNum >= 7;
   const role = userId && g.phase !== 'dealing' ? g.roles[userId] : undefined;
   const evilIds = role === 'merlin'
-    ? g.players.filter(p => teamOf(g.roles[p.id]) === 'red' && g.roles[p.id] !== 'mordred' && (!isV7 || g.roles[p.id] !== 'assassin')).map(p => p.id)
+    ? g.players.filter(p => teamOf(g.roles[p.id]) === 'red' && g.roles[p.id] !== 'mordred').map(p => p.id)
     : role === 'oberon' && isV7
       ? g.players.filter(p => p.id !== userId && teamOf(g.roles[p.id]) === 'red').map(p => p.id)
       : role && teamOf(role) === 'red' && role !== 'oberon'
