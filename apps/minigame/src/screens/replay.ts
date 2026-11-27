@@ -15,7 +15,7 @@ export function replayScreen(replay: Replay, backId: string, showFavorite = fals
       { id: `replay:round:${round.number}`, text: `第${round.number}轮 / 任务${round.mission} · 队长${name(round.captainId)}` },
       { id: `replay:team:${round.number}`, text: `出征：${round.team.map(name).join('、') || '未确定'}` },
       ...(round.vote ? [{ id: `replay:vote:${round.number}`, text: `组队投票：赞成${round.vote.approvals} · 反对${round.vote.rejections} · 弃权${round.vote.abstentions ?? 0} · ${round.vote.passed ? '通过' : '否决'}` }] : []),
-      ...(round.result ? [{ id: `replay:mission:${round.number}`, text: `任务：成功${round.result.successes} · 失败${round.result.failures} · ${round.result.passed ? '成功' : '失败'}` }] : []),
+      ...(round.result ? [{ id: `replay:mission:${round.number}`, text: `任务：成功${round.result.successes} · 失败${round.result.failures} · ${round.result.passed ? '成功' : '失败'}${round.result.cards ? `（出牌：${round.team.map(id => `${name(id)}·${round.result!.cards![id] ? '护经' : '作祟'}`).join('、')}）` : ''}` }] : []),
       ...replay.inspections.filter(item => item.afterMission === round.mission && round.result).map((item, index) => ({ id: `replay:inspection:${round.number}:${index}`, text: `宝镜：${name(item.inspectorId)} 查验 ${name(item.targetId)}` })),
       ...replay.earlyWindows.filter(item => item.afterProposal === round.number).map((item, index) => ({ id: `replay:early:${round.number}:${index}`, text: `提前刺杀窗口：${item.decision === 'attempt' ? '发起' : '跳过'}` })),
     ]),

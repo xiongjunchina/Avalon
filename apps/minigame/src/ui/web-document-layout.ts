@@ -114,15 +114,43 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
           totals.forEach((item,index)=>{const tw=measure(item.text,13.5,roundFace,item.weight);if(used&&used+12+tw>inner){rows.push([]);used=0;}rows.at(-1)!.push({index,width:tw});used+=tw+(used?12:0);});
           const totalHeight=18+rows.length*20.25+(rows.length-1)*6;panel('round-vote:'+r.number,y,totalHeight,'battle-vote-totals',x+sectionPad,totalWidth);
           rows.forEach((row,ri)=>{const rw=row.reduce((sum,item)=>sum+item.width,0)+(row.length-1)*12;let tx=x+sectionPad+(totalWidth-rw)/2;for(const {index,width:tw} of row){const item=totals[index]!;txt(index===3?'round-vote-outcome:'+r.number:'round-vote-total:'+r.number+':'+index,item.text,y+9+ri*26.25,13.5,{tone:'tone' in item?item.tone:undefined,weight:item.weight,lineHeight:20.25,lines:[item.text],align:'center'},tx,tw+.1);tx+=tw+12;}});y+=totalHeight+6;
-          if(!anonymous&&r.vote.ballots){
+          const showBallots=(!anonymous||doc.kind==='replay'||adminReplay)&&Boolean(r.vote.ballots);
+          if(showBallots){
             const gap=compact?3:6,cw=(w-sectionPad*2-gap*5)/6,labelLines=Math.max(1,Math.ceil(22/Math.max(11,cw-26))),labelH=4+labelLines*11,rowH=portrait+28.875+labelH,rowGap=compact?6:10;
             y+=compact?2:6;
             players.forEach((p,i)=>{const ballot=r.vote!.ballots![p.id];add('portrait','public-ballot:'+r.number+':'+p.id,p.nickname,x+sectionPad+i%6*(cw+gap),y+Math.floor(i/6)*(rowH+rowGap),cw,rowH,{skin:'battle-token',fontSize:portrait,image:p.avatarUrl??p.wechatAvatarUrl??'emblems/'+(p.avatar??'cards')+'.png',count:p.seat,badge:ballot===true?'✓':ballot===false?'×':ballot==='abstain'?'−':undefined,selected:p.id===doc.user?.id,detail:ballot===true?'准行':ballot===false?'封驳':ballot==='abstain'?'旁观':'',tone:ballot===true?'green':ballot===false?'red':'gold'});});y+=Math.ceil(players.length/6)*rowH+(Math.ceil(players.length/6)-1)*rowGap+(compact?8:6);
-            const hint=txt('round-vote-privacy:'+r.number,'图标表示组队投票，不代表任务出牌。',y,12.5,{align:'center',tone:'muted',lineHeight:17.5},x+sectionPad,w-sectionPad*2);y+=hint.height+(compact?9:13);
+            const hint=txt('round-vote-privacy:'+r.number,(doc.kind==='replay'||adminReplay)?'复盘已解密各仙友当时所投真实票型。':'图标表示组队投票，不代表任务出牌。',y,12.5,{align:'center',tone:'muted',lineHeight:17.5},x+sectionPad,w-sectionPad*2);y+=hint.height+(compact?9:13);
           }else{const hint=txt('round-vote-privacy:'+r.number,anonymous?'匿名组队投票，仅展示总票数。':'本次未记录个人票型，仅展示总票数。',y,12.5,{align:'center',tone:'muted',lineHeight:17.5},x+sectionPad,w-sectionPad*2);y+=hint.height+(compact?9:13);}
         }else{const hint=txt('round-vote-pending:'+r.number,'本次表决未完成，不展示未收齐的个人选择。',y,12.5,{align:'center',tone:'muted',lineHeight:17.5},x+sectionPad,w-sectionPad*2);y+=hint.height+(compact?9:13);}
         voteFrame.height=y-voteFrame.y;y+=sectionGap;
-        if(r.result){const frame=panel('round-result:'+r.number,y,compact?105.140625:113.140625,'battle-section');txt('round-result-title:'+r.number,r.result.passed?'✓ 任务成功':'× 任务失败',y+(compact?15:19),19,{fontFace:'display',tone:r.result.passed?'green':'red',align:'center',lineHeight:25.640625},x+14,w-28);add('label','round-result-count:'+r.number,r.result.successes+'|'+r.result.failures,x+14,y+(compact?46.640625:50.640625),w-28,26,{skin:'battle-card-counts',fontFace:roundFace});txt('round-result-privacy:'+r.number,'任务牌始终匿名，不对应个人。',y+(compact?78.640625:82.640625),12.5,{align:'center',tone:'muted',lineHeight:17.5},x+14,w-28);y=frame.y+frame.height+(adminReplay?8:doc.kind==='replay'?22:10);}
+        if(r.result){
+          const showCards=Boolean(r.result.cards);
+          const cardCols=r.team.length<=4?Math.max(1,r.team.length):6;
+          const cardGap=compact?3:6,cardCw=(w-sectionPad*2-cardGap*(cardCols-1))/cardCols;
+          const cardLabelH=15,cardRowH=portrait+28.875+cardLabelH,cardRowGap=compact?6:10;
+          const cardGridH=showCards?Math.ceil(r.team.length/cardCols)*cardRowH+(Math.ceil(r.team.length/cardCols)-1)*cardRowGap+(compact?8:6):0;
+          const totalResultH=(compact?105.140625:113.140625)+cardGridH;
+          const frame=panel('round-result:'+r.number,y,totalResultH,'battle-section');
+          txt('round-result-title:'+r.number,r.result.passed?'✓ 任务成功':'× 任务失败',y+(compact?15:19),19,{fontFace:'display',tone:r.result.passed?'green':'red',align:'center',lineHeight:25.640625},x+14,w-28);
+          add('label','round-result-count:'+r.number,r.result.successes+'|'+r.result.failures,x+14,y+(compact?46.640625:50.640625),w-28,26,{skin:'battle-card-counts',fontFace:roundFace});
+          if(showCards){
+            const cardY=y+(compact?78:82);
+            r.team.forEach((id,i)=>{
+              const p=players.find(item=>item.id===id);
+              if(!p)return;
+              const card=r.result!.cards![id];
+              add('portrait','task-card:'+r.number+':'+id,p.nickname,x+sectionPad+i%cardCols*(cardCw+cardGap),cardY+Math.floor(i/cardCols)*(cardRowH+cardRowGap),cardCw,cardRowH,{
+                skin:'battle-token',fontSize:portrait,image:p.avatarUrl??p.wechatAvatarUrl??'emblems/'+(p.avatar??'cards')+'.png',count:p.seat,
+                badge:card===true?'✓':'×',selected:p.id===doc.user?.id,
+                detail:card===true?'护经':'作祟',tone:card===true?'green':'red'
+              });
+            });
+            txt('round-result-privacy:'+r.number,'复盘已解密出征队员实际出牌。',y+totalResultH-(compact?19:22),12.5,{align:'center',tone:'muted',lineHeight:17.5},x+14,w-28);
+          }else{
+            txt('round-result-privacy:'+r.number,'任务牌未记录个人出牌，仅展示总数。',y+(compact?78.640625:82.640625),12.5,{align:'center',tone:'muted',lineHeight:17.5},x+14,w-28);
+          }
+          y=frame.y+frame.height+(adminReplay?8:doc.kind==='replay'?22:10);
+        }
         // Replay inspection and early-window records are rendered once in the shared disclosure sections below.
       }
   };
@@ -848,14 +876,14 @@ export function layoutDocument(model:ScreenModel,v:SafeViewport):WebLayout {
       if(metadataOpen){const result=g.result.winner===null?'中断':g.result.winner===g.self.team?'胜利':'失败';const date=txt('replay-date','开始 '+formatDate(g.startedAt)+'\n结束 '+formatDate(g.endedAt)+' · 你的结果：'+result,y+2,14,{lineHeight:25.1875},x+12,w-24);y=date.y+date.height+14;
         const uid=txt('replay-uid','对局编号 ID：'+g.id,y,11.5,{lineHeight:20.6875},x+12,w-24);y+=uid.height+14;
         const settings=txt('replay-settings',settingsText(g.settings,g.rulesetVersion)+'\n规则版本：'+g.rulesetVersion,y,14,{lineHeight:25.1875},x+12,w-24);y+=settings.height+16;
-        const privacy=txt('replay-privacy','仅本局参与者可看。'+(g.settings.anonymousTeamVote?'组队投票仅展示总数。':'组队投票展示当时公开的个人赞反。')+'任务出牌始终不对应个人。',y+15,16,{lineHeight:28,tone:'muted',emphasis:[{text:'仅本局参与者可看。',color:'#f0dcb0'}]},x+31,w-62),notice=panel('replay-privacy-frame',y,privacy.height+30,'replay-notice',x+12,w-24);nodes.splice(nodes.indexOf(notice),1);nodes.splice(nodes.indexOf(privacy),0,notice);y+=notice.height+28;metadata.height=y-metadata.y;
+        const privacy=txt('replay-privacy','仅本局参与者可看。复盘已解密展示真实组队投票与各队员任务出牌。',y+15,16,{lineHeight:28,tone:'muted',emphasis:[{text:'仅本局参与者可看。',color:'#f0dcb0'}]},x+31,w-62),notice=panel('replay-privacy-frame',y,privacy.height+30,'replay-notice',x+12,w-24);nodes.splice(nodes.indexOf(notice),1);nodes.splice(nodes.indexOf(privacy),0,notice);y+=notice.height+28;metadata.height=y-metadata.y;
       }y+=8;
       const identities=panel('replay-identities',y,70,'replay-details');button('details:identities',(identitiesOpen?'▾':'▸')+' 全员最终身份（'+g.players.length+' 人）',y+10,{skin:'plain-summary',fontSize:13},x+12,w-24,30);y+=70;
       const guardians=assignLoyalGuardians(g.id,g.players,g.roles,g.rulesetVersion),demons=assignFemaleDemons(g.id,g.players,g.roles);
       if(identitiesOpen){for(const p of g.players){const role=g.roles[p.id];if(!role)continue;const item=getRoleGalleryItem(role,guardians[p.id],demons[p.id]);add('label','replay-player:'+p.id,name(p.id),x+12,y,w-24,adminReplay?64:76,{skin:adminReplay?'admin-replay-identity':'replay-identity',image:'roles/'+item.artPrefix+'-160.webp',detail:formatRoleName(role,guardians[p.id],demons[p.id]),team:item.team});y+=adminReplay?72:76;}y+=12;identities.height=y-identities.y;}y+=18;
       txt('replay-rounds','逐轮记录',y,21,{fontFace:'display'});y+=42;
       roundNavigation(g.rounds);y+=adminReplay?70.796875:78;
-      renderRounds(g.rounds,g.players,g.settings.anonymousTeamVote);replayRoundEnd=y;
+      renderRounds(g.rounds,g.players,false);replayRoundEnd=y;
       for(const [key,label,items] of [['inspections','宝镜查验记录',g.inspections.map(i=>'第'+i.afterMission+'难：'+name(i.inspectorId)+' 查验 '+name(i.targetId)+'，随后交接给被查验者。')],['earlyWindows','轮间确认记录',g.earlyWindows.map(e=>'第'+e.afterProposal+'次提案后：'+(e.decision==='skip'?'跳过提前刺杀':'发起提前刺杀')+'（完成任务 '+e.afterMission+' 后）')]] as const){if(!items.length)continue;const opened=doc.expanded?.includes(key),frame=panel('replay-'+key,y,70,'replay-details');button('details:'+key,(opened?'▾':'▸')+' '+label,y+10,{skin:'plain-summary',fontSize:13},x+12,w-24,30);y+=70;if(opened){for(const [i,value] of items.entries()){const n=txt('replay-'+key+':'+i,value,y,14,{lineHeight:25.1875},x+12,w-24);y+=n.height+14;}y+=12;frame.height=y-frame.y;}y+=adminReplay?0:8;}
       const audit=adminReplay?g.roleAssignmentAudit:undefined;
       if(audit&&g.endedAt&&g.result){

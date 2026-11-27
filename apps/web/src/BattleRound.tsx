@@ -4,13 +4,13 @@ import { WUYUE_MISSIONS } from './roles';
 import { useRef, useState } from 'react';
 
 /** Shared by live mission details, all rounds and historical replays. */
-export function BattleRound({ round: r, players, anonymous, userId }: {
-  round: RoundView; players: Player[]; anonymous: boolean; userId?: string;
+export function BattleRound({ round: r, players, anonymous, userId, replay }: {
+  round: RoundView; players: Player[]; anonymous: boolean; userId?: string; replay?: boolean;
 }) {
   const captain = players.find(p => p.id === r.captainId);
   const playerById = (id: string): Player => players.find(p => p.id === id) ?? { id, seat: 0, nickname: '未知成员' };
-  // Even if a stale/inconsistent response contains ballots, anonymous rooms never render them.
-  const ballots = !anonymous ? r.vote?.ballots : undefined;
+  // Even if a stale/inconsistent response contains ballots, anonymous rooms never render them unless in replay.
+  const ballots = (!anonymous || replay) ? r.vote?.ballots : undefined;
   const state=r.result?(r.result.passed?'✓ 任务成功':'× 任务失败'):r.vote?(r.vote.passed?'等待任务结算':'组队未通过'):'表决未完成';
   const tone=r.result?(r.result.passed?'pass':'fail'):r.vote&&!r.vote.passed?'fail':'pending';
   return <article className="battle-round chronicle-round" aria-label={`第${r.number}次提案`}>
@@ -24,13 +24,27 @@ export function BattleRound({ round: r, players, anonymous, userId }: {
       <h4>组队表决</h4>
       {r.vote ? <>
         <div className="battle-vote-totals"><span className="approve">✓ {r.vote.approvals} 赞成</span><span className="reject">× {r.vote.rejections} 反对</span><span className="abstain">− {r.vote.abstentions ?? 0} 弃权</span><strong>{r.vote.passed ? '组队通过' : '组队未通过（流局）'}</strong></div>
-        {ballots ? <details className="chronicle-ballots"><summary>全员公开票型 · {players.length} 人</summary><div className="battle-voters" aria-label="全员公开票型">{players.map(p => <div key={p.id} aria-label={`${p.seat} 号 ${p.nickname}：${ballots[p.id] === true ? '赞成' : ballots[p.id] === false ? '反对' : ballots[p.id] === 'abstain' ? '弃权' : '无票型记录'}`}><PlayerToken player={p} vote={ballots[p.id]} self={p.id === userId} />{ballots[p.id]===undefined&&<span className="chronicle-no-ballot">无记录</span>}</div>)}</div><p className="hint">图标表示组队投票，不代表任务出牌。</p></details> : <p className="hint">{anonymous ? '匿名组队投票，仅展示总票数。' : '本次未记录个人票型，仅展示总票数。'}</p>}
+        {ballots ? <details className="chronicle-ballots" open={replay}><summary>全员{replay ? '真实' : '公开'}票型 · {players.length} 人</summary><div className="battle-voters" aria-label="全员公开票型">{players.map(p => <div key={p.id} aria-label={`${p.seat} 号 ${p.nickname}：${ballots[p.id] === true ? '赞成' : ballots[p.id] === false ? '反对' : ballots[p.id] === 'abstain' ? '弃权' : '无票型记录'}`}><PlayerToken player={p} vote={ballots[p.id]} self={p.id === userId} />{ballots[p.id]===undefined&&<span className="chronicle-no-ballot">无记录</span>}</div>)}</div><p className="hint">{replay ? '解密显示各仙友当时所投真实票型。' : '图标表示组队投票，不代表任务出牌。'}</p></details> : <p className="hint">{anonymous ? '匿名组队投票，仅展示总票数。' : '本次未记录个人票型，仅展示总票数。'}</p>}
       </> : <p className="hint">本次表决未完成，不展示未收齐的个人选择。</p>}
     </section>
     {r.result && <section className={`battle-section battle-result ${r.result.passed ? 'is-pass' : 'is-fail'}`} aria-label="任务结算">
       <h4>任务结算</h4>
       <div className="battle-card-counts"><span className="approve">成功牌 × {r.result.successes}</span><span className="reject">失败牌 × {r.result.failures}</span></div>
-      <p className="hint">任务牌始终匿名，不对应个人。</p>
+      {r.result.cards ? <div className="battle-task-cards" aria-label="出征队员出牌明细">
+        <div className="battle-cards-list">
+          {r.team.map(id => {
+            const p = playerById(id);
+            const card = r.result!.cards![id];
+            return (
+              <div key={id} className={`battle-card-badge is-${card ? 'pass' : 'fail'}`} aria-label={`${p.seat} 号 ${p.nickname}：${card ? '护经（成功）' : '作祟（失败）'}`}>
+                <span className="card-player">{p.seat} 号 {p.nickname}</span>
+                <span className="card-val">{card ? '✓ 护经' : '× 作祟'}</span>
+              </div>
+            );
+          })}
+        </div>
+        <p className="hint">复盘已解密出征队员实际出牌。</p>
+      </div> : <p className="hint">任务牌未记录个人出牌，仅展示总数。</p>}
     </section>}
   </article>;
 }

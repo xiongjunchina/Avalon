@@ -281,7 +281,7 @@ export interface RoundView {
   number: number; mission: number; captainId: string; team: string[];
   direction: 'clockwise' | 'counterclockwise';
   vote?: { approvals: number; rejections: number; abstentions?: number; passed: boolean; ballots?: Record<string, TeamBallot> };
-  result?: { successes: number; failures: number; passed: boolean; savingHairSaved?: boolean };
+  result?: { successes: number; failures: number; passed: boolean; savingHairSaved?: boolean; cards?: Record<string, boolean> };
 }
 export interface GameResult {
   winner: Team | null;

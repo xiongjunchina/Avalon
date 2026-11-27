@@ -65,7 +65,7 @@ test('final command replay does not double count; rename keeps game snapshots; h
   assert.deepEqual(await stats(),before);
 });
 
-test('replay allowlist honors anonymous and named ballots and never exposes task mapping, private vision or raw inspection result',async t=>{
+test('replay allowlist reveals team ballots and task cards in completed replays, never exposes private vision or raw inspection result',async t=>{
   for(const anonymousTeamVote of [true,false]) {
     const f=await gameFixture(t,true,{anonymousTeamVote}),auth=cookie(f.people[0].token);
     const activeId=(await f.state()).game!.id;
@@ -75,15 +75,15 @@ test('replay allowlist honors anonymous and named ballots and never exposes task
     await confirm(f);await mission(f);const id=await abort(f);
     const g=(await f.pool.query('SELECT state FROM games WHERE id=$1',[id])).rows[0].state;
     const raw=Object.fromEntries(f.people.map(p=>[p.user.id,true]));
-    g.rounds[0].vote.ballots=raw;g.rounds[0].result.cards=raw;g.rounds[0].missionVotes=raw;g.missionVotes=raw;g.teamVotes=raw;
+    g.rounds[0].vote.ballots=raw;g.rounds[0].result.cards=raw;g.rounds[0].missionVotes=raw;g.teamVotes=raw;
     g.lady={holderId:f.people[1].user.id,holderIds:f.people.map(p=>p.user.id),inspections:[{afterMission:1,inspectorId:f.people[0].user.id,targetId:f.people[1].user.id,team:'red',secret:'private'}]};
     await f.pool.query('UPDATE games SET state=$2 WHERE id=$1',[id,g]);
     const r=(await f.app.inject({url:`/api/games/${id}/replay`,headers:auth})).json<Replay>();
-    assert.equal(r.rounds[0].vote!.ballots===undefined,anonymousTeamVote);
-    if(!anonymousTeamVote)assert.deepEqual(r.rounds[0].vote!.ballots,raw);
-    assert.deepEqual(Object.keys(r.rounds[0].result!).sort(),['failures','passed','successes']);
+    assert.deepEqual(r.rounds[0].vote!.ballots,raw);
+    assert.deepEqual(Object.keys(r.rounds[0].result!).sort(),['cards','failures','passed','successes']);
+    assert.deepEqual(r.rounds[0].result!.cards,Object.fromEntries(r.rounds[0].team.map(id=>[id,true])));
     assert.deepEqual(Object.keys(r.inspections[0]).sort(),['afterMission','inspectorId','targetId']);
-    for(const field of ['missionVotes','teamVotes','cards','self.evilIds','token','invite','roomId','connectionId'])assert.ok(!JSON.stringify(r).includes(field),field);
+    for(const field of ['missionVotes','teamVotes','self.evilIds','token','invite','roomId','connectionId'])assert.ok(!JSON.stringify(r).includes(field),field);
     assert.deepEqual(Object.keys(r).sort(),['id','startedAt','endedAt','rulesetVersion','playerCount','self','result','favorite','settings','players','roles','rounds','inspections','earlyWindows'].sort());
   }
 });

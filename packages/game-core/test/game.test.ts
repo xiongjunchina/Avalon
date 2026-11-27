@@ -107,7 +107,7 @@ test('confirmation, permission, exact unique team size and fixed shuffled captai
   const order=[...g.captainOrder];g=vote(propose(g),0);assert.equal(captain(g),order[1]);assert.deepEqual(g.captainOrder,order);
   assert.equal(g.mission,1);assert.equal(g.rejectionCount,1);
 });
-test('tie rejects; ballots private until completion; anonymous mode never retains named team votes',()=>{
+test('tie rejects; ballots private until completion; anonymous mode retains ballots in state but suppresses in active projection',()=>{
   for(const anonymousTeamVote of [false,true]){
     let g=propose(ready(game(6,{anonymousTeamVote})));
     g=act(g,g.players[0].id,'teamVote',{approve:true});
@@ -115,10 +115,12 @@ test('tie rejects; ballots private until completion; anonymous mode never retain
     assert.throws(()=>act(g,g.players[0].id,'teamVote',{approve:false}),/ALREADY_SUBMITTED/);
     for(let i=1;i<6;i++)g=act(g,g.players[i].id,'teamVote',{approve:i<3});
     assert.equal(g.phase,'proposing');assert.equal(g.rounds[0].vote?.passed,false);
-    assert.equal(!!g.rounds[0].vote?.ballots,!anonymousTeamVote);assert.deepEqual(g.teamVotes,{});
+    assert.equal(!!g.rounds[0].vote?.ballots,true);
+    assert.equal(!!projectGame(g).rounds[0].vote?.ballots,!anonymousTeamVote);
+    assert.deepEqual(g.teamVotes,{});
   }
 });
-test('only chosen players can play; blue cannot fail; failed commands do not mutate state',()=>{
+test('only chosen players can play; blue cannot fail; failed commands do not mutate state; cards recorded for replay',()=>{
   let g=vote(propose(ready(game())),5), before=structuredClone(g);
   assert.throws(()=>act(g,g.players[2].id,'missionVote',{success:true}),/NOT_ON_TEAM/);
   assert.throws(()=>act(g,g.players[0].id,'missionVote',{success:false}),/BLUE_MUST_SUCCEED/);
@@ -126,6 +128,8 @@ test('only chosen players can play; blue cannot fail; failed commands do not mut
   g=act(g,g.players[0].id,'missionVote',{success:true});assert.throws(()=>act(g,g.players[0].id,'missionVote',{success:true}),/ALREADY_SUBMITTED/);
   assert.equal(projectGame(g).rounds[0].result,undefined);
   g=act(g,g.players[1].id,'missionVote',{success:true});assert.equal(g.mission,2);assert.deepEqual(g.missionVotes,{});
+  assert.deepEqual(g.rounds[0].result?.cards,{[g.players[0].id]:true,[g.players[1].id]:true});
+  assert.equal(projectGame(g).rounds[0].result?.cards,undefined);
 });
 test('7–12 fourth mission and 11/12 third mission take two fails, all others take one',()=>{
   for(let n=5;n<=12;n++) for(const failures of [1,2]){

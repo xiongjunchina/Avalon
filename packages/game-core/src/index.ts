@@ -249,8 +249,7 @@ export function transition(state: GameState, userId: string, action: Pick<Comman
       if (Object.keys(g.teamVotes).length === g.players.length) {
         const values = Object.values(g.teamVotes), approvals = values.filter(v => v === true).length, rejections = values.filter(v => v === false).length, abstentions = values.filter(v => v === 'abstain').length;
         const passed = approvals > rejections;
-        g.rounds.at(-1)!.vote = { approvals, rejections, abstentions, passed,
-          ...(!g.settings.anonymousTeamVote ? { ballots: { ...g.teamVotes } } : {}) };
+        g.rounds.at(-1)!.vote = { approvals, rejections, abstentions, passed, ballots: { ...g.teamVotes } };
         g.teamVotes = {};
         if (passed) {
           if (g.treasuresState?.bananaFan?.armed) {
@@ -325,7 +324,7 @@ export function transition(state: GameState, userId: string, action: Pick<Comman
           failures = 0;
           savingHairSaved = true;
         }
-        round.result = { successes: round.team.length-failures, failures, passed: failures < failuresRequired(g), ...(savingHairSaved ? { savingHairSaved: true } : {}) };
+        round.result = { successes: round.team.length-failures, failures, passed: failures < failuresRequired(g), ...(savingHairSaved ? { savingHairSaved: true } : {}), cards: { ...g.missionVotes } };
         g.missionVotes = {};
         const completed = g.rounds.filter(r => r.result), successes = completed.filter(r => r.result!.passed).length;
         if (completed.length-successes >= 3) finish(g, { winner: 'red', reason: 'three_failures' });
@@ -516,11 +515,25 @@ export function projectGame(g: GameState, userId?: string): GameView {
       g.mission === bell.mission && !(bell.targetId in g.missionVotes) } : undefined;
   const bellTargets = role === 'minion' && userId ? heartBellTargets(g, userId) : [];
 
+  const ended = isEnded(g);
+  const projectedRounds = g.rounds.map(r => {
+    const round = structuredClone(r);
+    if (!ended) {
+      if (g.settings.anonymousTeamVote && round.vote) {
+        delete round.vote.ballots;
+      }
+      if (round.result) {
+        delete round.result.cards;
+      }
+    }
+    return round;
+  });
+
   return { id: g.id, rulesetVersion: g.rulesetVersion, phase: g.phase, players: structuredClone(g.players), mission: g.mission,
     ...(g.phase === 'dealing' ? { dealEndsAt: g.dealEndsAt } : {}),
     ...(g.phase === 'guanyin_window' ? { guanyinEndsAt: g.guanyinEndsAt } : {}),
     missionSizes: [...MISSION_SIZES[g.players.length]], failuresRequired: failuresRequired(g), rejectionCount: g.rejectionCount,
-    captainId: captain(g), captainOrder: [...g.captainOrder], rounds: structuredClone(g.rounds),
+    captainId: captain(g), captainOrder: [...g.captainOrder], rounds: projectedRounds,
     ...(['role_reveal','proposing','discussion'].includes(g.phase) && g.draftTeam ? { draftTeam: structuredClone(g.draftTeam) } : {}),
     ...(g.phase === 'team_vote' ? { teamVote: { startedAt: g.teamVoteStartedAt, votedIds: Object.keys(g.teamVotes), ...(!g.settings.anonymousTeamVote ? { ballots: { ...g.teamVotes } } : {}) } } : {}),
     progress: { confirmed: g.confirmed.length, teamVotes: Object.keys(g.teamVotes).length, missionVotes: Object.keys(g.missionVotes).length },

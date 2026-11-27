@@ -103,7 +103,10 @@ test('card/send ordering: a card already submitted rejects the bell; a delivered
   for (const pid of game.rounds.at(-1)!.team.filter(id => id !== target)) {
     next = transition(next, pid, { type: 'missionVote', payload: { success: true } }, online);
   }
-  assert.deepEqual(next.rounds.at(-1)!.result, { successes: 2, failures: 1, passed: false });
+  assert.deepEqual(next.rounds.at(-1)!.result, {
+    successes: 2, failures: 1, passed: false,
+    cards: { [target]: false, ...Object.fromEntries(game.rounds.at(-1)!.team.filter(id => id !== target).map(id => [id, true])) }
+  });
   assert.equal(projectGame(next, target).self?.treasures?.incomingHeartBell?.active, false);
 });
 

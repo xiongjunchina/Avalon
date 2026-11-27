@@ -451,7 +451,7 @@ export class AdminService {
               rejections: rnd.vote.rejections,
               abstentions: rnd.vote.abstentions ?? 0,
               passed: rnd.vote.passed,
-              ...(!g.settings?.anonymousTeamVote && rnd.vote.ballots ? {
+              ...(rnd.vote.ballots ? {
                 ballots: Object.fromEntries(
                   g.players
                     .filter((p: any) => typeof rnd.vote.ballots[p.id] === 'boolean' || rnd.vote.ballots[p.id] === 'abstain')
@@ -465,6 +465,13 @@ export class AdminService {
               successes: rnd.result.successes,
               failures: rnd.result.failures,
               passed: rnd.result.passed,
+              ...(rnd.result.cards ? {
+                cards: Object.fromEntries(
+                  rnd.team
+                    .filter((id: any) => typeof rnd.result.cards[id] === 'boolean')
+                    .map((id: any) => [id, rnd.result.cards[id]])
+                ),
+              } : {}),
             },
           } : {}),
         })),
